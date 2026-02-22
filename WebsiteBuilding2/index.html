@@ -1,0 +1,479 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Normativity is a civic space for moral disagreement, honest confidence updates, and accountable action when belief crosses practical thresholds.">
+  <title>Normativity | Moral Dialogue With Accountability</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Merriweather:wght@400;700;900&family=Newsreader:opsz,wght@6..72,500;6..72,700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script>
+    (function () {
+      var key = "normativity-theme";
+      var saved = null;
+      try {
+        saved = localStorage.getItem(key);
+      } catch (error) {
+        saved = null;
+      }
+      var prefersDark =
+        typeof window.matchMedia === "function" && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      var theme = saved === "dark" || saved === "light" ? saved : prefersDark ? "dark" : "light";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <link rel="stylesheet" href="conviction.css">
+  <script src="conviction.js" defer></script>
+</head>
+<body>
+  <div class="orb orb-a" aria-hidden="true"></div>
+  <div class="orb orb-b" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="#top">Normativity</a>
+      <div class="header-tools">
+        <nav class="main-nav" aria-label="Primary">
+          <a href="#progress">Progress</a>
+          <a href="#comparison">Math vs Ethics</a>
+          <a href="#rule">Rule</a>
+          <a href="#matching">Matching</a>
+          <a href="#pledge">Pledge</a>
+          <a href="#studio">Dialogue Studio</a>
+          <a href="#ledger">Action Ledger</a>
+          <a href="moral-market.html">Normativity Market</a>
+        </nav>
+        <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle color theme" aria-pressed="false">
+          Dark mode
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main id="top" class="container">
+    <section id="deliberation" class="section reveal">
+      <div class="section-head">
+        <p class="eyebrow">Mutual Deliberation</p>
+        <h2>Taking Everyone's Beliefs Seriously Can Improve Moral Estimates</h2>
+      </div>
+      <div class="deliberation-grid">
+        <article class="panel deliberation-copy">
+          <p>
+            In each round, participants hear one another's strongest reasons, revise credences in light of the whole group,
+            and test whether the collective estimate is moving toward a better moral judgment.
+          </p>
+          <div class="deliberation-steps">
+            <p><strong>1) Share:</strong> Distinct moral theory families state a full credence distribution.</p>
+            <p><strong>2) Deliberate:</strong> Each person updates while considering all other positions.</p>
+            <p><strong>3) Converge:</strong> Group disagreement narrows as the consensus approaches moral truth.</p>
+          </div>
+          <ul id="beliefChips" class="belief-chip-list"></ul>
+        </article>
+
+        <article class="panel deliberation-stage">
+          <div class="deliberation-head">
+            <h3>Live Convergence Simulation</h3>
+            <p id="deliberationRound" class="hint">Round 1 of deliberation</p>
+          </div>
+          <svg
+            id="deliberationChart"
+            class="deliberation-chart"
+            viewBox="0 0 720 300"
+            role="img"
+            aria-label="Animated chart showing credence distribution updates across major moral theory families"
+          ></svg>
+          <div class="deliberation-metrics">
+            <p><span class="metric-label">Leading theory share</span><strong id="consensusValue">0%</strong></p>
+            <p><span class="metric-label">Reference level</span><strong id="truthValue">0%</strong></p>
+            <p><span class="metric-label">Credence spread</span><strong id="spreadValue">0</strong></p>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <section class="hero reveal" data-motion-root>
+      <div class="hero-main">
+        <p class="eyebrow">Dialogue, Not Debate</p>
+        <h1>Discuss your deepest moral convictions, then live by what you genuinely believe.</h1>
+        <p class="lead">
+          Normativity pairs people with opposing views, asks both sides to update their confidence honestly, and enforces one core rule:
+          if you are genuinely over 50% sure a moral argument is true, you must act on its implication in real life.
+        </p>
+        <div class="hero-floats" aria-hidden="true">
+          <span class="float-pill float-a">Good-faith matching</span>
+          <span class="float-pill float-b">Belief updates</span>
+          <span class="float-pill float-c">Real-world commitments</span>
+        </div>
+        <div class="button-row">
+          <a class="btn btn-primary" href="#pledge">Sign The Pledge</a>
+          <a class="btn btn-secondary" href="#studio">Open Dialogue Studio</a>
+          <a class="btn btn-ghost" href="moral-market.html">Open Normativity Market</a>
+        </div>
+        <div class="hero-stats">
+          <article class="stat-chip">
+            <p class="stat-value" data-count-to="50" data-suffix="%+">50%+</p>
+            <p class="stat-label">Action threshold</p>
+          </article>
+          <article class="stat-chip">
+            <p class="stat-value" data-count-to="4" data-suffix="x">4x</p>
+            <p class="stat-label">Match signals ranked</p>
+          </article>
+          <article class="stat-chip">
+            <p class="stat-value" data-count-to="100" data-suffix="%">100%</p>
+            <p class="stat-label">Pledge required to join</p>
+          </article>
+        </div>
+      </div>
+      <aside class="hero-card">
+        <h2>The Oath</h2>
+        <ol>
+          <li>Reflect on convictions without fear or favor.</li>
+          <li>Continuously test convictions through discussion with others.</li>
+          <li>Act in everyday life according to genuine conviction.</li>
+        </ol>
+      </aside>
+    </section>
+
+    <section id="progress" class="section reveal">
+      <div class="section-head">
+        <p class="eyebrow">Moral Progress</p>
+        <h2>History Shows Progress, But Harder Questions Remain</h2>
+      </div>
+      <div class="progress-grid">
+        <article class="panel progress-copy">
+          <p>
+            In the 19th century, slavery was treated as normal by many institutions and social orders. People in the 21st century
+            now judge that as deeply wrong. Future generations may similarly judge some of our current practices.
+          </p>
+          <p>
+            The remaining problems are often harder to resolve. This model treats mutual deliberation as the main force that keeps
+            moral progress moving even as difficulty rises.
+          </p>
+          <ul id="progressEraList" class="progress-era-list">
+            <li data-era="nineteenth">
+              <strong>19th century</strong>
+              <p>Widespread slavery is normalized in many societies.</p>
+            </li>
+            <li data-era="twentyfirst">
+              <strong>21st century</strong>
+              <p>Slavery is condemned, yet some harms may still be normalized.</p>
+            </li>
+            <li data-era="future">
+              <strong>22nd century and beyond</strong>
+              <p>Future citizens may judge our era as morally incomplete.</p>
+            </li>
+          </ul>
+        </article>
+
+        <article class="panel progress-stage">
+          <div class="progress-head">
+            <h3>Moral Learning Over Time</h3>
+            <p id="progressYear" class="hint">Year 1850</p>
+          </div>
+          <p id="progressNarrative" class="progress-narrative">
+            Moral norms around slavery are still widely unjust.
+          </p>
+          <svg
+            id="progressChart"
+            class="progress-chart"
+            viewBox="0 0 720 320"
+            role="img"
+            aria-label="Animated timeline of moral progress, difficulty, and deliberation effects from the 19th century into the future"
+          ></svg>
+          <div class="progress-metrics">
+            <p><span class="metric-label">Moral adequacy</span><strong id="moralProgressValue">0%</strong></p>
+            <p><span class="metric-label">Difficulty pressure</span><strong id="moralDifficultyValue">0%</strong></p>
+            <p><span class="metric-label">Deliberation lift</span><strong id="deliberationLiftValue">0 pts</strong></p>
+          </div>
+          <p id="progressLongCaption" class="progress-long-caption" hidden>
+            <strong>700,000<sup>1</sup></strong>: Even if humans only survive as long as a typical mammalian species (1 million years).
+            See MacAskill, <em>What We Owe the Future</em>, 23.
+          </p>
+        </article>
+      </div>
+    </section>
+
+    <section id="comparison" class="section reveal">
+      <div class="section-head">
+        <p class="eyebrow">Comparative Progress</p>
+        <h2>Mathematics vs Non-religious Ethics Across History</h2>
+      </div>
+      <p class="comparison-intro">
+        Both domains improve through argument and critique. But mathematical questions often become tractable faster,
+        while non-religious ethical questions remain entangled with social interests, plural values, and contested tradeoffs.
+      </p>
+      <p id="comparisonYear" class="hint comparison-year">Year 1800</p>
+
+      <div class="comparison-grid">
+        <article class="panel comparison-card comparison-math">
+          <div class="comparison-card-head">
+            <h3>Mathematics</h3>
+            <p id="mathProgressValue" class="comparison-pill">0%</p>
+          </div>
+          <p id="mathStageNote" class="comparison-note">
+            Formal proof standards are strengthening, but many foundations are still unsettled.
+          </p>
+          <svg
+            id="mathProgressChart"
+            class="comparison-chart"
+            viewBox="0 0 680 250"
+            role="img"
+            aria-label="Timeline of progress and difficulty in mathematics"
+          ></svg>
+        </article>
+
+        <article class="panel comparison-card comparison-ethics">
+          <div class="comparison-card-head">
+            <h3>Non-religious Ethics</h3>
+            <p id="ethicsProgressValue" class="comparison-pill">0%</p>
+          </div>
+          <p id="ethicsStageNote" class="comparison-note">
+            Public moral reasoning exists, but norms are still deeply constrained by power and inherited practice.
+          </p>
+          <svg
+            id="ethicsProgressChart"
+            class="comparison-chart"
+            viewBox="0 0 680 250"
+            role="img"
+            aria-label="Timeline of progress and difficulty in non-religious ethics"
+          ></svg>
+        </article>
+      </div>
+
+      <div class="comparison-metrics">
+        <p><span class="metric-label">Progress gap</span><strong id="comparisonGapValue">0 pts</strong></p>
+        <p id="comparisonNarrative" class="comparison-narrative">
+          Relative to mathematics, ethical convergence remains slower and more fragile.
+        </p>
+      </div>
+    </section>
+
+    <section id="rule" class="section reveal">
+      <div class="section-head">
+        <p class="eyebrow">Core Mechanism</p>
+        <h2>The 50% Action Threshold</h2>
+      </div>
+      <div class="rule-grid">
+        <article class="panel">
+          <h3>What is measured</h3>
+          <p>After each dialogue, each participant reports how confident they are that the discussed claim is true.</p>
+        </article>
+        <article class="panel">
+          <h3>Trigger condition</h3>
+          <p>If your confidence is <strong>51% or higher</strong>, your moral uncertainty no longer excuses inaction.</p>
+        </article>
+        <article class="panel">
+          <h3>Required response</h3>
+          <p>You must log a concrete action plan and carry it out in ordinary life. The app tracks this in your action ledger.</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="matching" class="section reveal">
+      <div class="section-head">
+        <p class="eyebrow">Pairing Logic</p>
+        <h2>How Matching Works</h2>
+      </div>
+      <div class="rule-grid">
+        <article class="panel">
+          <h3>1) Opposed belief first</h3>
+          <p>We prioritize people whose confidence moves in the opposite direction of your claim.</p>
+        </article>
+        <article class="panel">
+          <h3>2) Same topic, different reasoning</h3>
+          <p>Topical overlap (animal welfare, climate, justice, etc.) plus moral-framework diversity creates sharper, more useful dialogue.</p>
+        </article>
+        <article class="panel">
+          <h3>3) Good-faith safeguard</h3>
+          <p>Match score is weighted by each counterpart's dialogue reliability so you get disagreement without trolling.</p>
+        </article>
+      </div>
+      <article class="panel formula-panel">
+        <h3>Scoring formula used in this demo</h3>
+        <p><strong>Match score = 0.45 × disagreement + 0.30 × topic fit + 0.15 × framework diversity + 0.10 × reliability</strong></p>
+        <p class="hint">Each component is normalized to 0–100, then combined into a final score out of 100.</p>
+      </article>
+    </section>
+
+    <section id="pledge" class="section reveal">
+      <div class="section-head">
+        <p class="eyebrow">Entry Gate</p>
+        <h2>Mandatory Community Pledge</h2>
+      </div>
+      <form id="pledgeForm" class="panel pledge-form">
+        <label class="check-row"><input type="checkbox" name="fearless" required> I pledge to reflect on my convictions without fear or favor.</label>
+        <label class="check-row"><input type="checkbox" name="continuous" required> I pledge to keep testing my convictions by discussing with others.</label>
+        <label class="check-row"><input type="checkbox" name="action" required> I pledge to act in everyday life according to my genuine convictions.</label>
+        <label class="field-row" for="pledgeName">
+          Name or handle
+          <input id="pledgeName" name="pledgeName" type="text" maxlength="60" required placeholder="e.g., Mira K.">
+        </label>
+        <button class="btn btn-primary" type="submit">Sign Pledge And Unlock Studio</button>
+        <p id="pledgeStatus" class="status-line" role="status" aria-live="polite"></p>
+      </form>
+    </section>
+
+    <section id="studio" class="section reveal">
+      <div class="section-head">
+        <p class="eyebrow">Dialogue Workspace</p>
+        <h2>Match, Discuss, Update, Commit</h2>
+      </div>
+      <p id="gateBanner" class="gate-banner">Studio is locked until the pledge is signed.</p>
+
+      <div id="studioContent" class="studio-content locked">
+        <div class="studio-grid">
+          <article class="panel">
+            <h3>1) Publish Your Conviction</h3>
+            <form id="convictionForm" class="compact-form">
+              <label class="field-row" for="claimInput">
+                Moral claim under discussion
+                <textarea id="claimInput" name="claim" rows="3" required placeholder="e.g., Buying factory-farmed meat is morally wrong."></textarea>
+              </label>
+              <label class="field-row" for="reasonInput">
+                Why this claim matters
+                <textarea id="reasonInput" name="reason" rows="3" required placeholder="Describe suffering, fairness, rights, duties, etc."></textarea>
+              </label>
+              <label class="field-row" for="implicationInput">
+                If this claim is true, what action follows?
+                <textarea id="implicationInput" name="implication" rows="2" required placeholder="e.g., Stop buying factory-farmed meat this month."></textarea>
+              </label>
+              <label class="field-row" for="topicInput">
+                Topic cluster
+                <select id="topicInput" name="topic" required>
+                  <option value="auto">Auto-detect from claim</option>
+                  <option value="animal_welfare">Animal welfare</option>
+                  <option value="climate">Climate and consumption</option>
+                  <option value="global_poverty">Global poverty</option>
+                  <option value="criminal_justice">Criminal justice</option>
+                  <option value="free_speech">Free speech and censorship</option>
+                  <option value="bioethics">Bioethics</option>
+                  <option value="ai_governance">AI governance</option>
+                </select>
+              </label>
+              <label class="field-row" for="frameworkInput">
+                Moral framework (best fit)
+                <select id="frameworkInput" name="framework" required>
+                  <option value="utilitarian">Utilitarian / consequentialist</option>
+                  <option value="deontological">Deontological / duty-based</option>
+                  <option value="rights">Rights-based</option>
+                  <option value="virtue">Virtue ethics</option>
+                  <option value="care">Care ethics</option>
+                  <option value="contractarian">Contractarian</option>
+                  <option value="pluralist">Moral pluralist</option>
+                </select>
+              </label>
+              <label class="field-row" for="confidenceInput">
+                Current confidence in the claim: <span id="confidenceValue">50%</span>
+                <input id="confidenceInput" name="confidence" type="range" min="0" max="100" step="1" value="50">
+              </label>
+              <button class="btn btn-secondary" type="submit">Publish Conviction</button>
+            </form>
+
+            <div class="subhead-row">
+              <h4>Your Convictions</h4>
+              <p class="hint">Pick one to find a counterpart.</p>
+            </div>
+            <ul id="convictionList" class="stack-list"></ul>
+          </article>
+
+          <article class="panel">
+            <h3>2) Match With A Counterpart</h3>
+            <p class="hint">Choose someone who disagrees with your current active conviction.</p>
+            <div id="activeConvictionSummary" class="mini-summary">No active conviction selected yet.</div>
+            <label class="field-row inline-field" for="matchModeInput">
+              Matching mode
+              <select id="matchModeInput" name="matchMode">
+                <option value="challenge">Maximize challenge</option>
+                <option value="balanced">Balanced disagreement</option>
+                <option value="bridge">Constructive bridge-building</option>
+              </select>
+            </label>
+            <p id="matchRationale" class="hint">Publish and select a conviction to generate candidates.</p>
+            <div id="counterpartList" class="counterpart-list"></div>
+
+            <h3 class="session-head">3) Log The Dialogue Outcome</h3>
+            <form id="sessionForm" class="compact-form">
+              <p id="sessionPartnerSummary" class="mini-summary">No counterpart selected yet.</p>
+              <label class="field-row" for="counterArgumentInput">
+                Strongest argument you heard from your counterpart
+                <textarea id="counterArgumentInput" name="counterArgument" rows="3" required></textarea>
+              </label>
+              <label class="field-row" for="replyInput">
+                Your strongest reply (or concession)
+                <textarea id="replyInput" name="reply" rows="3" required></textarea>
+              </label>
+              <label class="field-row" for="postConfidenceInput">
+                After discussion, confidence that the active claim is true: <span id="postConfidenceValue">50%</span>
+                <input id="postConfidenceInput" name="postConfidence" type="range" min="0" max="100" step="1" value="50">
+              </label>
+
+              <p id="thresholdNotice" class="threshold-note" role="status" aria-live="polite"></p>
+
+              <div id="actionCommitmentBlock" class="action-block hidden">
+                <label class="field-row" for="actionPlanInput">
+                  Required action (because confidence is over 50%)
+                  <textarea id="actionPlanInput" name="actionPlan" rows="2" placeholder="State the concrete behavior change you will implement."></textarea>
+                </label>
+                <div class="date-grid">
+                  <label class="field-row" for="startDateInput">
+                    Start date
+                    <input id="startDateInput" name="startDate" type="date">
+                  </label>
+                  <label class="field-row" for="checkinDateInput">
+                    Accountability check-in
+                    <input id="checkinDateInput" name="checkinDate" type="date">
+                  </label>
+                </div>
+              </div>
+
+              <button class="btn btn-primary" type="submit">Log Dialogue Result</button>
+              <p id="sessionStatus" class="status-line" role="status" aria-live="polite"></p>
+            </form>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="ledger" class="section reveal">
+      <div class="section-head ledger-head">
+        <div>
+          <p class="eyebrow">Accountability</p>
+          <h2>Action Ledger</h2>
+        </div>
+        <button id="resetDemoBtn" class="btn btn-ghost" type="button">Reset Local Demo Data</button>
+      </div>
+      <p class="hint">Every rule-triggered conviction appears here until marked completed.</p>
+      <div id="ledgerList" class="ledger-list"></div>
+    </section>
+
+    <section class="section reveal">
+      <div class="section-head">
+        <p class="eyebrow">Discussion Norms</p>
+        <h2>How To Use The Platform Well</h2>
+      </div>
+      <div class="rule-grid">
+        <article class="panel">
+          <h3>Steelman First</h3>
+          <p>State your counterpart's strongest case before criticizing it.</p>
+        </article>
+        <article class="panel">
+          <h3>Update Publicly</h3>
+          <p>Say what changed in your confidence and why, even when uncomfortable.</p>
+        </article>
+        <article class="panel">
+          <h3>No Strategic Posturing</h3>
+          <p>Confidence reporting is for sincere belief, not social signaling or point-scoring.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>Normativity: moral reflection without fear or favor, dialogue without contempt, action without evasion.</p>
+    </div>
+  </footer>
+</body>
+</html>

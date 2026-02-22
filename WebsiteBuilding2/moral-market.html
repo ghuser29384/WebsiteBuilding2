@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Normativity Market is a Polymarket-inspired credence board where users allocate 100 weekly credence tokens across binary and multi-choice moral propositions.">
+  <title>Normativity Market | Normativity</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700;800&family=Merriweather:wght@400;700;900&family=Source+Sans+3:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <script>
+    (function () {
+      var key = "normativity-theme";
+      var saved = null;
+      try {
+        saved = localStorage.getItem(key);
+      } catch (error) {
+        saved = null;
+      }
+      var prefersDark =
+        typeof window.matchMedia === "function" && window.matchMedia("(prefers-color-scheme: dark)").matches;
+      var theme = saved === "dark" || saved === "light" ? saved : prefersDark ? "dark" : "light";
+      document.documentElement.setAttribute("data-theme", theme);
+    })();
+  </script>
+  <link rel="stylesheet" href="moral-market.css">
+  <script src="moral-market.js" defer></script>
+</head>
+<body>
+  <div class="bg-orb orb-one" aria-hidden="true"></div>
+  <div class="bg-orb orb-two" aria-hidden="true"></div>
+
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="index.html">Normativity</a>
+      <div class="header-tools">
+        <nav class="top-nav" aria-label="Primary">
+          <a href="index.html#studio">Dialogue Studio</a>
+          <a href="index.html#matching">Matching</a>
+          <a href="moral-market.html" aria-current="page">Normativity Market</a>
+        </nav>
+        <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle color theme" aria-pressed="false">
+          Dark mode
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+    <section id="heroSection" class="hero reveal">
+      <div class="hero-main">
+        <p class="eyebrow">Normativity Market</p>
+        <h1>Moral Credence Board</h1>
+        <p class="lead">
+          Cast your credence tokens on hard ethical questions using explicit binary and multi-choice outcomes.
+          Every user receives 100 credence tokens each week, and allocation size makes your confidence legible to others.
+        </p>
+        <div class="hero-pills" aria-hidden="true">
+          <span>Binary + multi-choice ballots</span>
+          <span>100 credence tokens / week</span>
+          <span>No rewards, just conviction</span>
+        </div>
+      </div>
+      <div class="hero-stats">
+        <article class="stat-card">
+          <p class="stat-value" id="marketCount">0</p>
+          <p class="stat-label">Open markets</p>
+        </article>
+        <article class="stat-card">
+          <p class="stat-value" id="castCount">0</p>
+          <p class="stat-label">Votes this week</p>
+        </article>
+        <article class="stat-card">
+          <p class="stat-value" id="positionCount">0</p>
+          <p class="stat-label">Credence tokens remaining</p>
+        </article>
+      </div>
+    </section>
+
+    <section id="boardSection" class="board reveal">
+      <div class="market-column">
+        <div id="boardControls" class="panel controls">
+          <label class="search-wrap" for="searchInput">
+            Search moral issues
+            <input id="searchInput" type="search" placeholder="e.g., abortion, factory farming, free speech">
+          </label>
+          <div id="categoryFilters" class="filter-row" role="tablist" aria-label="Market categories"></div>
+        </div>
+        <div id="marketGrid" class="market-grid"></div>
+
+        <article id="marketDetailMain" class="panel market-detail-main hidden" hidden>
+          <div class="detail-nav-row">
+            <a class="detail-back-link" href="moral-market.html">Back to all markets</a>
+            <span id="detailMarketType" class="category-tag">Market</span>
+          </div>
+          <div class="detail-meta-row">
+            <span id="detailCategory" class="category-tag"></span>
+            <span id="detailVolume" class="volume-tag"></span>
+          </div>
+          <h2 id="detailQuestion" class="detail-question"></h2>
+          <p id="detailConsensusLine" class="ticket-consensus"></p>
+          <p id="detailWeekLine" class="hint"></p>
+
+          <section class="trend-panel detail-trend-panel" aria-live="polite">
+            <div class="trend-head">
+              <p class="trend-title">Market Trend</p>
+              <p class="trend-meta" id="detailTrendMeta"></p>
+            </div>
+            <svg id="detailTrendChart" class="trend-chart detail-trend-chart" viewBox="0 0 920 300" role="img" aria-label="Detailed credence trend chart"></svg>
+            <div id="detailTrendLegend" class="trend-legend"></div>
+          </section>
+
+          <section class="detail-context-block">
+            <h3>Proposition Context</h3>
+            <p id="detailContext"></p>
+          </section>
+
+          <section id="detailOutcomeContext" class="detail-outcome-grid" aria-live="polite"></section>
+          <section id="detailTheoryContext" class="detail-theory-list" aria-live="polite"></section>
+
+          <section class="detail-activity-block">
+            <h3>Recent Market Activity</h3>
+            <ul id="detailActivityList" class="feed-list"></ul>
+          </section>
+        </article>
+      </div>
+
+      <aside id="ticketColumn" class="ticket-column">
+        <section class="panel ticket" id="ticketPanel">
+          <h2>Normativity Ticket</h2>
+          <p id="ticketPrompt" class="hint">Select a market card to begin casting credence tokens.</p>
+
+          <div id="ticketContent" class="ticket-content hidden">
+            <p id="ticketQuestion" class="ticket-question"></p>
+            <p id="ticketConsensus" class="ticket-consensus"></p>
+            <p id="weekWindow" class="ticket-consensus"></p>
+
+            <section class="trend-panel" id="trendPanel" aria-live="polite">
+              <div class="trend-head">
+                <p class="trend-title">Real-time Credence Trend</p>
+                <p class="trend-meta" id="trendMeta"></p>
+              </div>
+              <svg id="trendChart" class="trend-chart" viewBox="0 0 680 220" role="img" aria-label="Credence trend chart"></svg>
+              <div id="trendLegend" class="trend-legend"></div>
+            </section>
+
+            <div id="ticketControls" class="ticket-controls"></div>
+
+            <p id="remainingLine" class="hint"></p>
+
+            <div id="ticketPreview" class="preview"></div>
+            <button id="castBtn" class="btn btn-primary" type="button">Cast Credence Tokens</button>
+            <button id="clearBtn" class="btn btn-ghost" type="button">Clear This Market Allocation</button>
+            <p id="ticketStatus" class="status-line" role="status" aria-live="polite"></p>
+          </div>
+        </section>
+
+        <section id="feedPanel" class="panel side-panel">
+          <h3>Recent Normativity Feed</h3>
+          <ul id="feedList" class="feed-list"></ul>
+        </section>
+
+        <section id="positionsPanel" class="panel side-panel">
+          <h3>Your Positions</h3>
+          <ul id="positionsList" class="positions-list"></ul>
+        </section>
+      </aside>
+    </section>
+
+    <section id="resolutionSection" class="reveal">
+      <div class="panel disclosure">
+        <h3>Weekly Resolution Rules</h3>
+        <p>Each user gets exactly <strong>100 credence tokens per week</strong>. You can split them across markets however you want, but not exceed your weekly budget.</p>
+        <p>At the end of each week, the board resolves and your allocation resets to 100. There are no payouts or rewards, including on multi-option markets.</p>
+        <p id="resolutionSummary" class="hint">No prior week resolution snapshot yet.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <div class="container">
+      <p>
+        This is a moral reasoning interface, not financial advice or wagering.
+        Use it to make uncertainty explicit and discuss differences in good faith.
+      </p>
+    </div>
+  </footer>
+</body>
+</html>
