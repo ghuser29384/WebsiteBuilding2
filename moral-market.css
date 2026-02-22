@@ -88,9 +88,9 @@ a {
 
 .brand {
   text-decoration: none;
-  font-family: "Garamond", "EB Garamond", "Adobe Garamond Pro", "Times New Roman", serif;
+  font-family: "Helvetica Neue UltraLight", "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-size: clamp(1.4rem, 2vw, 1.82rem);
-  font-weight: 700;
+  font-weight: 200;
   color: rgb(54, 54, 54);
 }
 
