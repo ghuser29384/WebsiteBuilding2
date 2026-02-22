@@ -9,21 +9,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@600;700&family=Manrope:wght@400;500;600;700;800&family=Merriweather:wght@400;700;900&family=Source+Sans+3:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
-  <script>
-    (function () {
-      var key = "normativity-theme";
-      var saved = null;
-      try {
-        saved = localStorage.getItem(key);
-      } catch (error) {
-        saved = null;
-      }
-      var prefersDark =
-        typeof window.matchMedia === "function" && window.matchMedia("(prefers-color-scheme: dark)").matches;
-      var theme = saved === "dark" || saved === "light" ? saved : prefersDark ? "dark" : "light";
-      document.documentElement.setAttribute("data-theme", theme);
-    })();
-  </script>
   <link rel="stylesheet" href="moral-market.css">
   <script src="moral-market.js" defer></script>
 </head>
@@ -40,9 +25,6 @@
           <a href="index.html#matching">Matching</a>
           <a href="moral-market.html" aria-current="page">Normativity Market</a>
         </nav>
-        <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle color theme" aria-pressed="false">
-          Dark mode
-        </button>
       </div>
     </div>
   </header>

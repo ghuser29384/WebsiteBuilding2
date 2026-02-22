@@ -3,7 +3,6 @@
 
   const STORAGE_KEY = "normativity-market-state-v4";
   const LEGACY_STORAGE_KEYS = ["normativity-market-state-v3"];
-  const THEME_STORAGE_KEY = "normativity-theme";
   const WEEKLY_COINS = 100;
   const BASELINE_LIQUIDITY = 240;
   const FEED_LIMIT = 12;
@@ -280,7 +279,6 @@
   const isDetailRoute = Boolean(detailRouteMarketId);
 
   const el = {
-    themeToggle: document.getElementById("themeToggle"),
     heroSection: document.getElementById("heroSection"),
     boardSection: document.getElementById("boardSection"),
     boardControls: document.getElementById("boardControls"),
@@ -332,7 +330,6 @@
   init();
 
   function init() {
-    initTheme();
     if (isDetailRoute) {
       selectedMarketId = detailRouteMarketId;
       if (routeSelection.side === "yes" || routeSelection.side === "no") {
@@ -344,65 +341,6 @@
     renderAll();
     bindRevealAnimation();
     bindLiveTrendTicker();
-  }
-
-  function initTheme() {
-    if (!el.themeToggle) return;
-
-    const mediaQuery =
-      typeof window.matchMedia === "function" ? window.matchMedia("(prefers-color-scheme: dark)") : null;
-    const savedTheme = readStoredTheme();
-    const initialTheme = savedTheme || (mediaQuery && mediaQuery.matches ? "dark" : "light");
-    applyTheme(initialTheme, false);
-
-    el.themeToggle.addEventListener("click", function () {
-      const current = document.documentElement.getAttribute("data-theme");
-      const nextTheme = current === "dark" ? "light" : "dark";
-      applyTheme(nextTheme, true);
-    });
-
-    if (!savedTheme && mediaQuery) {
-      const onThemeChange = function (event) {
-        if (readStoredTheme()) return;
-        applyTheme(event.matches ? "dark" : "light", false);
-      };
-
-      if (typeof mediaQuery.addEventListener === "function") {
-        mediaQuery.addEventListener("change", onThemeChange);
-      } else if (typeof mediaQuery.addListener === "function") {
-        mediaQuery.addListener(onThemeChange);
-      }
-    }
-  }
-
-  function readStoredTheme() {
-    try {
-      const theme = localStorage.getItem(THEME_STORAGE_KEY);
-      return theme === "dark" || theme === "light" ? theme : null;
-    } catch (error) {
-      return null;
-    }
-  }
-
-  function applyTheme(theme, persist) {
-    const normalized = theme === "dark" ? "dark" : "light";
-    document.documentElement.setAttribute("data-theme", normalized);
-    updateThemeToggle(normalized);
-
-    if (!persist) return;
-    try {
-      localStorage.setItem(THEME_STORAGE_KEY, normalized);
-    } catch (error) {
-      // Ignore localStorage failures in restricted browsing modes.
-    }
-  }
-
-  function updateThemeToggle(theme) {
-    if (!el.themeToggle) return;
-    const darkActive = theme === "dark";
-    el.themeToggle.textContent = darkActive ? "Light mode" : "Dark mode";
-    el.themeToggle.setAttribute("aria-pressed", String(darkActive));
-    el.themeToggle.setAttribute("aria-label", darkActive ? "Switch to light mode" : "Switch to dark mode");
   }
 
   function bindEvents() {
