@@ -755,6 +755,13 @@ export const WREAssistantPage: React.FC<WREAssistantPageProps> = ({
               <p className="mt-1 text-sm text-slate-600">
                 Three-pane wide reflective equilibrium workspace with persistence, conflict analysis, and revision support.
               </p>
+              <p className="mt-1 text-xs text-slate-600">
+                When deliberating as individuals, our moral principles are often accidental generalizations of moral facts.
+                Candidate moral principles should cohere with candidate background theories, and wide reflective equilibrium
+                tests that coherence by independently checking principles against background theories. Analogously, scientific
+                generalizations that happen to fit observations can be distinguished from correct laws when they fail to
+                cohere with connected theories (Daniels 1996: 22; Knight 2025).
+              </p>
               <p className="mt-1 text-xs text-slate-500">Session: {session.id}</p>
             </div>
             <div className="flex flex-wrap gap-2">
