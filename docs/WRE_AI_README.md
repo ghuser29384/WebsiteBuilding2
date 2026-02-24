@@ -104,6 +104,9 @@ Given conflictSet {judgmentIds, principleIds}, output JSON array with: action_ty
 - If `AI_SEND_TO_THIRD_PARTY=true`, adapter calls can be attempted with `temperature=0`, but responses are still schema-validated and length-limited.
 - If validation fails, server falls back to deterministic generation.
 
+## Wide RE motivation
+When deliberating as individuals, our moral principles are often accidental generalizations of moral facts. Candidate moral principles should cohere with corresponding candidate background theories, and wide reflective equilibrium secures this by independently testing moral principles against background theories. Analogously, scientific generalizations that accidentally correspond to observations can be distinguished from correct scientific laws by identifying their lack of coherence with connected theories (Daniels 1996: 22; Knight 2025).
+
 ## Cloud vs self-hosted tradeoffs
 - Cloud adapter (`CloudLLMAdapter`): best model quality, faster iteration, higher privacy/compliance burden.
 - Local adapter (`LocalLLMAdapter`): stronger data control, lower recurring costs for high volume, potentially lower quality/latency tradeoffs.
