@@ -277,6 +277,7 @@
   const detailRouteMarketId =
     routeSelection.marketId && marketById.has(routeSelection.marketId) ? routeSelection.marketId : "";
   const isDetailRoute = Boolean(detailRouteMarketId);
+  const chartZoomStateByEl = new WeakMap();
 
   const el = {
     heroSection: document.getElementById("heroSection"),
@@ -330,6 +331,7 @@
   init();
 
   function init() {
+    initChartTrackpadZooming();
     if (isDetailRoute) {
       selectedMarketId = detailRouteMarketId;
       if (routeSelection.side === "yes" || routeSelection.side === "no") {
@@ -341,6 +343,169 @@
     renderAll();
     bindRevealAnimation();
     bindLiveTrendTicker();
+  }
+
+  function initChartTrackpadZooming() {
+    enableTrackpadZoomForChart(el.trendChart, { maxScale: 16 });
+    enableTrackpadZoomForChart(el.detailTrendChart, { maxScale: 16 });
+  }
+
+  function enableTrackpadZoomForChart(svgEl, options) {
+    if (!svgEl || chartZoomStateByEl.has(svgEl)) return;
+
+    const baseViewBox = readSvgViewBox(svgEl);
+    if (!baseViewBox) return;
+
+    const zoomState = {
+      base: baseViewBox,
+      current: {
+        x: baseViewBox.x,
+        y: baseViewBox.y,
+        width: baseViewBox.width,
+        height: baseViewBox.height,
+      },
+      maxScale: Math.max(1, Number(options && options.maxScale) || 12),
+      gestureScale: 1,
+    };
+    chartZoomStateByEl.set(svgEl, zoomState);
+    svgEl.style.touchAction = "none";
+
+    svgEl.addEventListener(
+      "wheel",
+      function (event) {
+        if (!event.ctrlKey) return;
+        if (!Number.isFinite(event.deltaY) || event.deltaY === 0) return;
+        event.preventDefault();
+
+        const rect = svgEl.getBoundingClientRect();
+        if (!rect || rect.width <= 0 || rect.height <= 0) return;
+
+        const anchorX = clamp((event.clientX - rect.left) / rect.width, 0, 1);
+        const anchorY = clamp((event.clientY - rect.top) / rect.height, 0, 1);
+        const deltaMultiplier = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 80 : 1;
+        const zoomFactor = Math.exp(-(event.deltaY * deltaMultiplier) * 0.0022);
+        applySvgZoom(svgEl, zoomState, zoomFactor, anchorX, anchorY);
+      },
+      { passive: false }
+    );
+
+    svgEl.addEventListener(
+      "gesturestart",
+      function (event) {
+        event.preventDefault();
+        zoomState.gestureScale = Number.isFinite(event.scale) && event.scale > 0 ? event.scale : 1;
+      },
+      { passive: false }
+    );
+
+    svgEl.addEventListener(
+      "gesturechange",
+      function (event) {
+        event.preventDefault();
+        const nextGestureScale = Number.isFinite(event.scale) && event.scale > 0 ? event.scale : 1;
+        const previousGestureScale = zoomState.gestureScale > 0 ? zoomState.gestureScale : 1;
+        zoomState.gestureScale = nextGestureScale;
+
+        const factor = clamp(nextGestureScale / previousGestureScale, 0.5, 2);
+        const rect = svgEl.getBoundingClientRect();
+        const anchorX =
+          rect && rect.width > 0 && Number.isFinite(event.clientX)
+            ? clamp((event.clientX - rect.left) / rect.width, 0, 1)
+            : 0.5;
+        const anchorY =
+          rect && rect.height > 0 && Number.isFinite(event.clientY)
+            ? clamp((event.clientY - rect.top) / rect.height, 0, 1)
+            : 0.5;
+        applySvgZoom(svgEl, zoomState, factor, anchorX, anchorY);
+      },
+      { passive: false }
+    );
+
+    svgEl.addEventListener(
+      "gestureend",
+      function (event) {
+        event.preventDefault();
+        zoomState.gestureScale = 1;
+      },
+      { passive: false }
+    );
+  }
+
+  function readSvgViewBox(svgEl) {
+    if (!svgEl) return null;
+
+    const rawViewBox = svgEl.getAttribute("viewBox");
+    if (rawViewBox) {
+      const parts = rawViewBox
+        .trim()
+        .split(/[\s,]+/)
+        .map(function (value) {
+          return Number(value);
+        });
+      if (
+        parts.length === 4 &&
+        Number.isFinite(parts[0]) &&
+        Number.isFinite(parts[1]) &&
+        Number.isFinite(parts[2]) &&
+        Number.isFinite(parts[3]) &&
+        parts[2] > 0 &&
+        parts[3] > 0
+      ) {
+        return { x: parts[0], y: parts[1], width: parts[2], height: parts[3] };
+      }
+    }
+
+    const baseVal = svgEl.viewBox && svgEl.viewBox.baseVal;
+    if (baseVal && baseVal.width > 0 && baseVal.height > 0) {
+      return { x: baseVal.x, y: baseVal.y, width: baseVal.width, height: baseVal.height };
+    }
+
+    return null;
+  }
+
+  function writeSvgViewBox(svgEl, viewBox) {
+    if (!svgEl || !viewBox) return;
+    svgEl.setAttribute(
+      "viewBox",
+      [viewBox.x, viewBox.y, viewBox.width, viewBox.height]
+        .map(function (value) {
+          return Number(value.toFixed(4));
+        })
+        .join(" ")
+    );
+  }
+
+  function applySvgZoom(svgEl, zoomState, zoomFactor, anchorX, anchorY) {
+    if (!zoomState || !Number.isFinite(zoomFactor) || zoomFactor <= 0) return;
+
+    const base = zoomState.base;
+    const current = zoomState.current;
+    const minScale = 1;
+    const maxScale = zoomState.maxScale;
+
+    const currentScale = base.width / current.width;
+    const nextScale = clamp(currentScale * zoomFactor, minScale, maxScale);
+    const nextWidth = base.width / nextScale;
+    const nextHeight = base.height / nextScale;
+
+    const normalizedAnchorX = clamp(anchorX, 0, 1);
+    const normalizedAnchorY = clamp(anchorY, 0, 1);
+
+    const anchorWorldX = current.x + normalizedAnchorX * current.width;
+    const anchorWorldY = current.y + normalizedAnchorY * current.height;
+
+    const rawX = anchorWorldX - normalizedAnchorX * nextWidth;
+    const rawY = anchorWorldY - normalizedAnchorY * nextHeight;
+    const boundedX = clamp(rawX, base.x, base.x + base.width - nextWidth);
+    const boundedY = clamp(rawY, base.y, base.y + base.height - nextHeight);
+
+    zoomState.current = {
+      x: boundedX,
+      y: boundedY,
+      width: nextWidth,
+      height: nextHeight,
+    };
+    writeSvgViewBox(svgEl, zoomState.current);
   }
 
   function bindEvents() {

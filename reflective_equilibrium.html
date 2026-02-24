@@ -1,0 +1,1604 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Reflective Equilibrium Simulator</title>
+  <style>
+    :root {
+      --bg: #f7f8fb;
+      --panel: #ffffff;
+      --line: #d6dbe6;
+      --ink: #1e2735;
+      --ink-soft: #5a6778;
+      --blue: #0072b2;
+      --green: #009e73;
+      --orange: #e69f00;
+      --violet: #6b5b95;
+      --error: #b44557;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      margin: 0;
+      height: 100%;
+      background: var(--bg);
+      color: var(--ink);
+      font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    }
+
+    #app {
+      height: 100%;
+      display: grid;
+      grid-template-columns: 340px minmax(0, 1fr);
+      gap: 10px;
+      padding: 10px;
+    }
+
+    #ui-panel,
+    #canvas-wrap {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+    }
+
+    #ui-panel {
+      padding: 12px;
+      overflow: auto;
+    }
+
+    #canvas-wrap {
+      position: relative;
+      overflow: hidden;
+      min-width: 0;
+    }
+
+    canvas {
+      display: block;
+    }
+
+    .ui-title {
+      margin: 0 0 6px;
+      font-size: 1.1rem;
+      line-height: 1.25;
+    }
+
+    .ui-sub {
+      margin: 0 0 10px;
+      color: var(--ink-soft);
+      font-size: 0.85rem;
+      line-height: 1.35;
+    }
+
+    .ui-section {
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 10px;
+      margin-bottom: 10px;
+      background: #fbfcff;
+    }
+
+    .ui-section h2 {
+      margin: 0 0 8px;
+      font-size: 0.92rem;
+    }
+
+    .ui-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .ui-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .ui-label {
+      min-width: 120px;
+      font-size: 0.8rem;
+      color: var(--ink-soft);
+    }
+
+    .ui-value {
+      font-size: 0.8rem;
+      font-variant-numeric: tabular-nums;
+      color: #2f3b4f;
+      min-width: 66px;
+      text-align: right;
+    }
+
+    button {
+      border: 1px solid #c8d0dd;
+      background: #ffffff;
+      color: var(--ink);
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 0.8rem;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #f2f6ff;
+    }
+
+    .status {
+      margin-top: 8px;
+      font-size: 0.82rem;
+      color: #33455f;
+      line-height: 1.35;
+    }
+
+    .blurb {
+      margin-top: 6px;
+      font-size: 0.8rem;
+      line-height: 1.35;
+      color: #44556d;
+      background: #f5f8ff;
+      border: 1px dashed #ccd5e4;
+      border-radius: 8px;
+      padding: 8px;
+    }
+
+    .small {
+      font-size: 0.76rem;
+      color: var(--ink-soft);
+      line-height: 1.35;
+    }
+
+    .seed {
+      font-family: "Consolas", "SFMono-Regular", Menlo, Monaco, monospace;
+      font-size: 0.78rem;
+      background: #f4f7fc;
+      border: 1px solid #d6deea;
+      border-radius: 6px;
+      padding: 4px 6px;
+      display: inline-block;
+    }
+
+    @media (max-width: 1180px) {
+      #app {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto minmax(440px, 1fr);
+      }
+
+      #ui-panel {
+        max-height: 48vh;
+      }
+    }
+  </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script>
+    /*
+      README
+      ======
+      How to run:
+      1) Save this file as "reflective_equilibrium.html".
+      2) Open it directly in any modern browser.
+      3) No build steps are needed.
+
+      Where to edit model data:
+      - Edit SENTENCE_POOL, IMPLICATION_EDGES, CONFLICT_PAIRS, and INITIAL_STATE below.
+      - This is the only place you need to change to use your own sentence set.
+
+      Conceptual mapping (papers -> visualization -> algorithm):
+      - Daniels (1979/1996): "wide" reflective equilibrium includes background theories.
+        Here that is the Background cluster and the background influence toggle.
+      - Beisbart, Betz, Brun (2021): account/systematicity/faithfulness and achievement
+        function guide equilibration. Here we implement deterministic approximations of those
+        measures and combine them by normalized user-set weights.
+      - Baumberger & Brun (2020/2021): RE is not static coherence alone; it balances a
+        conservative pull (faithfulness to initial commitments) and progressive pull
+        (systematic explanatory power). Here that is represented by the iterative alternation
+        between theory revision and commitment revision.
+    */
+
+    // ----------------------------
+    // Editable model data section.
+    // ----------------------------
+    const SENTENCE_POOL = [
+      { id: "s1", text: "Needlessly causing severe suffering is pro tanto wrong.", tags: ["principle", "commitment"] },
+      { id: "s2", text: "Practices that impose avoidable suffering require strong moral justification.", tags: ["principle"] },
+      { id: "s3", text: "Buying factory-farmed meat contributes to large-scale animal suffering.", tags: ["background", "commitment"] },
+      { id: "s4", text: "Agents should avoid supporting harmful systems when reasonable alternatives exist.", tags: ["principle"] },
+      { id: "s5", text: "Any single purchase has negligible causal impact.", tags: ["background"] },
+      { id: "s6", text: "Many individual purchases jointly sustain institutional demand.", tags: ["background"] },
+      { id: "s7", text: "It is wrong to support institutions that violate basic rights.", tags: ["principle"] },
+      { id: "s8", text: "Factory farming violates basic animal welfare rights.", tags: ["background", "commitment"] },
+      { id: "s9", text: "Moral demands are limited when compliance costs become excessive.", tags: ["principle"] },
+      { id: "s10", text: "Plant-based alternatives are accessible for many consumers.", tags: ["background", "commitment"] },
+      { id: "s11", text: "Purchasing factory-farmed meat is usually impermissible.", tags: ["commitment"] },
+      { id: "s12", text: "Purchasing factory-farmed meat is often permissible.", tags: ["commitment"] },
+      { id: "s13", text: "Institutions should be reformed rather than boycotted by default.", tags: ["principle"] },
+      { id: "s14", text: "Consumer signaling can accelerate institutional reform.", tags: ["background"] },
+      { id: "s15", text: "Under uncertainty, prefer reversible actions that avoid serious harm.", tags: ["principle"] },
+      { id: "s16", text: "Moral judgments should cohere with best empirical science about sentience.", tags: ["background", "principle"] },
+    ];
+
+    const IMPLICATION_EDGES = [
+      { from: "s2", to: "s1" },
+      { from: "s1", to: "s15" },
+      { from: "s2", to: "s4" },
+      { from: "s4", to: "s11" },
+      { from: "s7", to: "s11" },
+      { from: "s15", to: "s11" },
+      { from: "s16", to: "s8" },
+      { from: "s8", to: "s11" },
+      { from: "s6", to: "s11" },
+      { from: "s10", to: "s11" },
+      { from: "s14", to: "s11" },
+      { from: "s9", to: "s12" },
+      { from: "s5", to: "s12" },
+      { from: "s13", to: "s12" },
+      { from: "s11", to: "s7" },
+      { from: "s3", to: "s8" },
+    ];
+
+    const CONFLICT_PAIRS = [
+      ["s11", "s12"],
+      ["s5", "s6"],
+      ["s4", "s13"],
+      ["s7", "s12"],
+      ["s3", "s12"],
+      ["s9", "s15"],
+      ["s1", "s12"],
+    ];
+
+    const INITIAL_STATE = {
+      initialCommitments: ["s1", "s3", "s8", "s10", "s11"],
+      initialTheory: ["s2", "s4", "s7", "s15"],
+      backgroundSet: ["s3", "s5", "s6", "s8", "s10", "s14", "s16"],
+      theoryCandidateIds: ["s1", "s2", "s4", "s7", "s9", "s13", "s15", "s16"],
+      seed: 20260324,
+    };
+
+    const COLORS = {
+      commit: "#0072B2",
+      theory: "#009E73",
+      background: "#E69F00",
+      pool: "#A0A8B8",
+      text: "#1E2735",
+      muted: "#5A6778",
+      line: "#CCD3DE",
+      panelFill: "#FFFFFF",
+      achievement: "#2E3440",
+      account: "#0072B2",
+      systematicity: "#009E73",
+      faithfulness: "#E69F00",
+      changedTheory: "#6B5B95",
+      changedCommit: "#B44557",
+    };
+
+    const NODE_RADIUS = 18;
+    const ITERATION_INTERVAL_MS = 950;
+
+    const sentenceById = new Map(SENTENCE_POOL.map((sentence) => [sentence.id, sentence]));
+
+    const conflictMap = buildConflictMap(CONFLICT_PAIRS);
+
+    let ui = {};
+    let panelElements = {};
+    let canvasHost = null;
+    let nodeStateById = new Map();
+
+    const sim = {
+      seed: INITIAL_STATE.seed,
+      rng: null,
+      running: false,
+      equilibriumReached: false,
+      stopReason: "",
+      iteration: 0,
+      lastTickMs: 0,
+      commitments: new Set(),
+      theory: new Set(),
+      backgroundSet: new Set(INITIAL_STATE.backgroundSet),
+      initialCommitments: new Set(INITIAL_STATE.initialCommitments),
+      history: [],
+      latestEvaluation: null,
+      latestTheoryChanged: [],
+      latestCommitmentChanged: [],
+      latestStatus: "",
+      latestTheoryCandidate: [],
+      hoveredId: "",
+      panelRects: null,
+    };
+
+    function setup() {
+      const appRoot = select("#app");
+      panelElements.uiPanel = createDiv("").id("ui-panel").parent(appRoot);
+      canvasHost = createDiv("").id("canvas-wrap").parent(appRoot);
+
+      buildUi(panelElements.uiPanel);
+
+      const initialSize = getCanvasSize();
+      const cnv = createCanvas(initialSize.w, initialSize.h);
+      cnv.parent(canvasHost);
+
+      textFont("Segoe UI, Roboto, Helvetica, Arial, sans-serif");
+      textAlign(LEFT, CENTER);
+
+      resetSimulation(true);
+      sim.lastTickMs = millis();
+    }
+
+    function windowResized() {
+      const size = getCanvasSize();
+      resizeCanvas(size.w, size.h);
+    }
+
+    function draw() {
+      background(248, 249, 252);
+
+      if (sim.running && !sim.equilibriumReached && millis() - sim.lastTickMs >= ITERATION_INTERVAL_MS) {
+        performIteration();
+        sim.lastTickMs = millis();
+      }
+
+      sim.latestEvaluation = evaluateState(sim.commitments, sim.theory);
+      sim.panelRects = computePanelRects(width, height);
+
+      updateNodeTargets();
+      integrateNodeMotion();
+
+      drawPanels();
+      drawImplicationEdges();
+      drawNodes();
+      drawAchievementPlot();
+      drawHeaderStatus();
+      drawInterpretiveNote();
+      drawLegend();
+      drawTooltip();
+
+      updateUiReadouts();
+    }
+
+    function buildUi(parent) {
+      createElement("h1", "Reflective Equilibrium Simulator").class("ui-title").parent(parent);
+      createP(
+        "Single-file p5.js visualization of iterative equilibration among considered commitments, candidate principles, and background theories."
+      )
+        .class("ui-sub")
+        .parent(parent);
+
+      const controls = createDiv("").class("ui-section").parent(parent);
+      createElement("h2", "Simulation Controls").parent(controls);
+
+      const btnRow = createDiv("").class("ui-row").parent(controls);
+      ui.startBtn = createButton("Start").parent(btnRow).mousePressed(startSimulation);
+      ui.pauseBtn = createButton("Pause").parent(btnRow).mousePressed(pauseSimulation);
+      ui.stepBtn = createButton("Step").parent(btnRow).mousePressed(stepSimulation);
+      ui.resetBtn = createButton("Reset").parent(btnRow).mousePressed(() => resetSimulation(true));
+
+      const btnRow2 = createDiv("").class("ui-row").parent(controls);
+      ui.randomSeedBtn = createButton("Randomize seed").parent(btnRow2).mousePressed(randomizeSeed);
+      ui.exportBtn = createButton("Export history (JSON)").parent(btnRow2).mousePressed(exportHistory);
+
+      const seedRow = createDiv("").class("ui-row").parent(controls);
+      createSpan("Seed").class("ui-label").parent(seedRow);
+      ui.seedValue = createSpan("0").class("seed").parent(seedRow);
+
+      ui.status = createDiv("Ready.").class("status").parent(controls);
+
+      const measureSection = createDiv("").class("ui-section").parent(parent);
+      createElement("h2", "Achievement Function Weights").parent(measureSection);
+      createP("Weights normalize automatically to sum to 1.").class("small").parent(measureSection);
+
+      ui.accountSlider = sliderRow(measureSection, "w_account", 0, 100, 45, 1);
+      ui.systemSlider = sliderRow(measureSection, "w_systematicity", 0, 100, 30, 1);
+      ui.faithSlider = sliderRow(measureSection, "w_faithfulness", 0, 100, 25, 1);
+
+      const processSection = createDiv("").class("ui-section").parent(parent);
+      createElement("h2", "Search Process").parent(processSection);
+      ui.mutationSlider = sliderRow(processSection, "Mutation rate", 1, 4, 2, 1);
+      ui.breadthSlider = sliderRow(processSection, "Theory search breadth", 5, 260, 70, 1);
+      ui.maxIterationsSlider = sliderRow(processSection, "Max iterations", 10, 100000, 6000, 10);
+
+      const levelSection = createDiv("").class("ui-section").parent(parent);
+      createElement("h2", "Level Structure (Optional)").parent(levelSection);
+
+      const modeRow = createDiv("").class("ui-row").parent(levelSection);
+      createSpan("Mode").class("ui-label").parent(modeRow);
+      ui.levelModeRadio = createRadio().parent(modeRow);
+      ui.levelModeRadio.option("wide", "Wide (I-IV)");
+      ui.levelModeRadio.option("narrow", "Narrow (I-II)");
+      ui.levelModeRadio.selected("wide");
+      ui.levelModeRadio.changed(onLevelModeChanged);
+
+      const bgRow = createDiv("").class("ui-row").parent(levelSection);
+      createSpan("Background influence").class("ui-label").parent(bgRow);
+      ui.backgroundInfluence = createCheckbox("Enabled", true).parent(bgRow);
+      ui.backgroundInfluence.changed(onBackgroundToggleChanged);
+
+      ui.levelBlurb = createDiv("").class("blurb").parent(levelSection);
+      createP(
+        "Our dialogues often stumble due to the lack of addressing disagreements deeper background theories. For example, my principles of justice may depend in part on my views of individual agency; and my views on agency may in turn depend on my views about free will and causation. A large part of wide reflective equilibrium's appeal is its appeal to deeper background theories."
+      )
+        .class("small")
+        .parent(levelSection);
+
+      createP(
+        "Code comments cite: Daniels (1979/1996), Beisbart et al. (2021), and Baumberger & Brun (2020/2021)."
+      )
+        .class("small")
+        .parent(parent);
+    }
+
+    function sliderRow(parent, label, minValue, maxValue, initial, step) {
+      const row = createDiv("").class("ui-row").parent(parent);
+      createSpan(label).class("ui-label").parent(row);
+      const slider = createSlider(minValue, maxValue, initial, step).parent(row);
+      slider.style("width", "126px");
+      const value = createSpan("").class("ui-value").parent(row);
+      return { slider: slider, value: value, label: label };
+    }
+
+    function getCanvasSize() {
+      if (!canvasHost || !canvasHost.elt) {
+        return { w: 1024, h: 720 };
+      }
+      const rect = canvasHost.elt.getBoundingClientRect();
+      return {
+        w: Math.max(760, Math.floor(rect.width || 1024)),
+        h: Math.max(560, Math.floor(rect.height || 720)),
+      };
+    }
+
+    function resetSimulation(keepSeed) {
+      if (!keepSeed) {
+        sim.seed = Math.floor(Math.random() * 1000000000);
+      }
+
+      sim.rng = mulberry32(sim.seed);
+      sim.running = false;
+      sim.equilibriumReached = false;
+      sim.stopReason = "";
+      sim.iteration = 0;
+      sim.lastTickMs = millis();
+
+      sim.commitments = new Set(INITIAL_STATE.initialCommitments);
+      sim.theory = new Set(INITIAL_STATE.initialTheory);
+      sim.backgroundSet = new Set(INITIAL_STATE.backgroundSet);
+      sim.initialCommitments = new Set(INITIAL_STATE.initialCommitments);
+
+      sim.history = [];
+      sim.latestTheoryChanged = [];
+      sim.latestCommitmentChanged = [];
+      sim.latestTheoryCandidate = Array.from(sim.theory);
+      sim.latestStatus = "Simulation reset.";
+      sim.hoveredId = "";
+
+      initNodeState();
+
+      const initialEval = evaluateState(sim.commitments, sim.theory);
+      sim.latestEvaluation = initialEval;
+      pushHistoryRecord("initial", [], [], initialEval);
+      updateUiReadouts();
+    }
+
+    function initNodeState() {
+      nodeStateById = new Map();
+      const centerX = width * 0.5;
+      const centerY = height * 0.46;
+
+      for (const sentence of SENTENCE_POOL) {
+        nodeStateById.set(sentence.id, {
+          id: sentence.id,
+          x: centerX + (rand() - 0.5) * 200,
+          y: centerY + (rand() - 0.5) * 160,
+          tx: centerX,
+          ty: centerY,
+          radius: NODE_RADIUS,
+          theoryFlash: 0,
+          commitmentFlash: 0,
+          pulse: rand(),
+        });
+      }
+    }
+
+    function startSimulation() {
+      if (sim.equilibriumReached) {
+        resetSimulation(true);
+      }
+      sim.running = true;
+      sim.latestStatus = "Running iterative equilibration.";
+    }
+
+    function pauseSimulation() {
+      sim.running = false;
+      sim.latestStatus = "Paused.";
+    }
+
+    function stepSimulation() {
+      if (sim.equilibriumReached) {
+        sim.latestStatus = "Equilibrium already reached. Reset to continue.";
+        return;
+      }
+      sim.running = false;
+      performIteration();
+      sim.lastTickMs = millis();
+    }
+
+    function randomizeSeed() {
+      sim.seed = Math.floor(Math.random() * 1000000000);
+      resetSimulation(true);
+      sim.latestStatus = "New seed sampled; state reinitialized.";
+    }
+
+    function exportHistory() {
+      const payload = {
+        metadata: {
+          seed: sim.seed,
+          levelMode: getLevelMode(),
+          backgroundInfluence: useBackgroundInfluence(),
+          weights: getNormalizedWeights(),
+          mutationRate: int(ui.mutationSlider.slider.value()),
+          searchBreadth: int(ui.breadthSlider.slider.value()),
+          maxIterations: int(ui.maxIterationsSlider.slider.value()),
+          sourceNotes: [
+            "Daniels (1979/1996) on wide reflective equilibrium",
+            "Beisbart, Betz, Brun (2021) on account/systematicity/faithfulness and achievement",
+            "Baumberger & Brun (2020/2021) on conservative vs progressive pulls",
+          ],
+        },
+        sentencePool: SENTENCE_POOL,
+        implications: IMPLICATION_EDGES,
+        conflicts: CONFLICT_PAIRS,
+        history: sim.history,
+      };
+
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = "reflective_equilibrium_history_seed_" + sim.seed + ".json";
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(url);
+
+      sim.latestStatus = "History exported as JSON.";
+    }
+
+    function onLevelModeChanged() {
+      if (getLevelMode() === "narrow") {
+        ui.backgroundInfluence.checked(false);
+      }
+      sim.latestStatus = "Level mode changed to " + getLevelMode() + ".";
+    }
+
+    function onBackgroundToggleChanged() {
+      if (getLevelMode() === "narrow" && ui.backgroundInfluence.checked()) {
+        ui.backgroundInfluence.checked(false);
+      }
+      sim.latestStatus = "Background influence " + (useBackgroundInfluence() ? "enabled" : "disabled") + ".";
+    }
+
+    function performIteration() {
+      if (sim.equilibriumReached) {
+        sim.running = false;
+        return;
+      }
+
+      const maxIterations = int(ui.maxIterationsSlider.slider.value());
+      if (sim.iteration >= maxIterations) {
+        sim.equilibriumReached = true;
+        sim.stopReason = "Maximum iterations reached.";
+        sim.running = false;
+        sim.latestStatus = sim.stopReason;
+        return;
+      }
+
+      const beforeTheory = new Set(sim.theory);
+      const beforeCommitments = new Set(sim.commitments);
+
+      const theoryMove = reviseTheory();
+      const commitmentMove = reviseCommitments();
+
+      const afterEval = evaluateState(sim.commitments, sim.theory);
+
+      sim.iteration += 1;
+      sim.latestTheoryChanged = theoryMove.changed;
+      sim.latestCommitmentChanged = commitmentMove.changed;
+      sim.latestTheoryCandidate = Array.from(sim.theory);
+
+      flashNodeSet(sim.latestTheoryChanged, "theoryFlash", 1);
+      flashNodeSet(sim.latestCommitmentChanged, "commitmentFlash", 1);
+
+      pushHistoryRecord(
+        "iteration",
+        sim.latestTheoryChanged,
+        sim.latestCommitmentChanged,
+        afterEval
+      );
+
+      const noTheoryChange = setsEqual(beforeTheory, sim.theory);
+      const noCommitmentChange = setsEqual(beforeCommitments, sim.commitments);
+      if (noTheoryChange && noCommitmentChange) {
+        sim.equilibriumReached = true;
+        sim.running = false;
+        sim.stopReason = "Fixed point reached: no changes in theory or commitments.";
+      }
+
+      if (!sim.equilibriumReached && sim.iteration >= maxIterations) {
+        sim.equilibriumReached = true;
+        sim.running = false;
+        sim.stopReason = "Maximum iterations reached.";
+      }
+
+      if (sim.equilibriumReached) {
+        sim.latestStatus =
+          "Iteration " +
+          sim.iteration +
+          ". " +
+          sim.stopReason +
+          " Achievement=" +
+          formatPercent(afterEval.achievement);
+      } else {
+        sim.latestStatus =
+          "Iteration " +
+          sim.iteration +
+          ": theory " +
+          (sim.latestTheoryChanged.length ? "updated" : "stable") +
+          ", commitments " +
+          (sim.latestCommitmentChanged.length ? "updated" : "stable") +
+          ". Achievement=" +
+          formatPercent(afterEval.achievement);
+      }
+    }
+
+    // -----------------------------------------------------------
+    // Theory revision step (Beisbart et al. 2021: revision of T).
+    // -----------------------------------------------------------
+    function reviseTheory() {
+      const breadth = int(ui.breadthSlider.slider.value());
+      const currentCommitments = sim.commitments;
+      const candidates = [];
+
+      candidates.push(new Set(sim.theory));
+
+      for (let i = 0; i < breadth; i += 1) {
+        candidates.push(generateCandidateTheory());
+      }
+
+      let bestTheory = candidates[0];
+      let bestEval = evaluateState(currentCommitments, bestTheory);
+
+      for (let i = 1; i < candidates.length; i += 1) {
+        const candidate = candidates[i];
+        const evaluation = evaluateState(currentCommitments, candidate);
+
+        if (isBetterTheoryEvaluation(evaluation, bestEval, candidate, bestTheory)) {
+          bestTheory = candidate;
+          bestEval = evaluation;
+        }
+      }
+
+      const previousTheory = new Set(sim.theory);
+      sim.theory = bestTheory;
+      const changed = symmetricDifference(previousTheory, sim.theory);
+
+      return {
+        changed: changed,
+        evaluation: bestEval,
+      };
+    }
+
+    function generateCandidateTheory() {
+      const eligible = INITIAL_STATE.theoryCandidateIds.slice();
+      shuffleInPlace(eligible);
+
+      let size = 1 + int(rand() * Math.min(6, eligible.length));
+      if (rand() < 0.08) size = 0;
+
+      const candidate = new Set();
+      for (let i = 0; i < size; i += 1) {
+        candidate.add(eligible[i]);
+      }
+      return candidate;
+    }
+
+    function isBetterTheoryEvaluation(candidateEval, bestEval, candidateTheory, bestTheory) {
+      if (candidateEval.achievement > bestEval.achievement + 1e-9) return true;
+      if (Math.abs(candidateEval.achievement - bestEval.achievement) <= 1e-9) {
+        if (candidateEval.account > bestEval.account + 1e-9) return true;
+        if (Math.abs(candidateEval.account - bestEval.account) <= 1e-9) {
+          if (candidateEval.systematicity > bestEval.systematicity + 1e-9) return true;
+          if (Math.abs(candidateEval.systematicity - bestEval.systematicity) <= 1e-9) {
+            return candidateTheory.size < bestTheory.size;
+          }
+        }
+      }
+      return false;
+    }
+
+    // -----------------------------------------------------------------
+    // Commitment revision step (Beisbart et al. 2021: revision of C).
+    // -----------------------------------------------------------------
+    function reviseCommitments() {
+      const current = new Set(sim.commitments);
+      const currentEval = evaluateState(current, sim.theory);
+      const mutationRate = int(ui.mutationSlider.slider.value());
+      const targetCount = Math.max(1, mutationRate);
+
+      const entailed = new Set(currentEval.entailed);
+      const recommendedAdd = Array.from(entailed).filter((id) => !current.has(id));
+      const recommendedRemove = Array.from(current).filter(
+        (id) => !entailed.has(id) || conflictsWithSet(id, entailed)
+      );
+
+      const proposals = [];
+      const attempts = 42;
+
+      for (let attempt = 0; attempt < attempts; attempt += 1) {
+        const proposalSet = new Set(current);
+        const changedLocal = new Set();
+
+        const flips = Math.max(1, targetCount + (rand() < 0.25 ? 1 : 0) - (rand() < 0.25 ? 1 : 0));
+        for (let i = 0; i < flips; i += 1) {
+          const moveType = rand();
+          if (moveType < 0.58 && recommendedAdd.length > 0) {
+            const id = pickRandom(recommendedAdd);
+            if (!proposalSet.has(id)) {
+              proposalSet.add(id);
+              changedLocal.add(id);
+            }
+          } else if (recommendedRemove.length > 0) {
+            const id = pickRandom(recommendedRemove);
+            if (proposalSet.has(id)) {
+              proposalSet.delete(id);
+              changedLocal.add(id);
+            }
+          } else {
+            const id = pickRandom(SENTENCE_POOL).id;
+            if (proposalSet.has(id)) proposalSet.delete(id);
+            else proposalSet.add(id);
+            changedLocal.add(id);
+          }
+        }
+
+        const evaluation = evaluateState(proposalSet, sim.theory);
+        proposals.push({
+          commitments: proposalSet,
+          changed: Array.from(changedLocal),
+          evaluation: evaluation,
+        });
+      }
+
+      let best = proposals[0];
+      for (let i = 1; i < proposals.length; i += 1) {
+        if (proposals[i].evaluation.achievement > best.evaluation.achievement) {
+          best = proposals[i];
+        }
+      }
+
+      const improved = best.evaluation.achievement > currentEval.achievement + 1e-8;
+      const softAccept = !improved && rand() < 0.05;
+
+      if (improved || softAccept) {
+        sim.commitments = best.commitments;
+      }
+
+      return {
+        changed: improved || softAccept ? symmetricDifference(current, sim.commitments) : [],
+        accepted: improved || softAccept,
+        softAccepted: softAccept,
+      };
+    }
+
+    // ------------------------------------------------------------
+    // Measures inspired by Beisbart, Betz, Brun (2021).
+    // ------------------------------------------------------------
+    function evaluateState(commitments, theory) {
+      const weights = getNormalizedWeights();
+      const entailed = inferContent(theory, useBackgroundInfluence());
+
+      // Account (A): fraction of commitments entailed by theory, minus penalties
+      // for inconsistency and for theory implications that are not in commitments.
+      // This follows the prompt-friendly approximation of Beisbart et al.'s "account".
+      const account = measureAccount(commitments, theory, entailed);
+
+      // Systematicity (S): reward theories with broad content and relatively
+      // few principles, approximating the simplicity-content tradeoff.
+      const systematicity = measureSystematicity(theory, entailed);
+
+      // Faithfulness (F): penalize moving away from initial commitments.
+      const faithfulness = measureFaithfulness(commitments);
+
+      // Achievement function (convex combination of A/S/F).
+      const achievement =
+        weights.account * account +
+        weights.systematicity * systematicity +
+        weights.faithfulness * faithfulness;
+
+      return {
+        account: account,
+        systematicity: systematicity,
+        faithfulness: faithfulness,
+        achievement: achievement,
+        weights: weights,
+        entailed: Array.from(entailed),
+      };
+    }
+
+    function measureAccount(commitments, theory, entailedSet) {
+      const commitmentArray = Array.from(commitments);
+      if (commitmentArray.length === 0) return 0;
+
+      let supported = 0;
+      let inconsistent = 0;
+
+      for (const id of commitmentArray) {
+        if (entailedSet.has(id)) supported += 1;
+        if (conflictsWithSet(id, entailedSet)) inconsistent += 1;
+      }
+
+      const entailedOutsideCommitments = Array.from(entailedSet).filter(
+        (id) => !commitments.has(id) && !theory.has(id)
+      ).length;
+
+      const entailedFraction = supported / commitmentArray.length;
+      const inconsistencyPenalty = inconsistent / commitmentArray.length;
+      const outsidePenalty = entailedSet.size > 0 ? entailedOutsideCommitments / entailedSet.size : 0;
+
+      const score = entailedFraction - 0.5 * inconsistencyPenalty - 0.5 * outsidePenalty;
+
+      return clamp01(score);
+    }
+
+    function measureSystematicity(theory, entailedSet) {
+      if (theory.size === 0) return 0;
+      const principleCount = theory.size;
+      const contentSize = entailedSet.size;
+      const raw = contentSize / (1 + principleCount);
+
+      // Normalize by a rough upper bound to keep score in [0,1].
+      const upperBound = Math.max(1, SENTENCE_POOL.length / 2);
+      return clamp01(raw / upperBound);
+    }
+
+    function measureFaithfulness(commitments) {
+      const initial = sim.initialCommitments;
+      if (initial.size === 0) return 1;
+
+      let removedInitial = 0;
+      let explicitDenials = 0;
+
+      for (const id of initial) {
+        if (!commitments.has(id)) removedInitial += 1;
+        if (conflictsWithSet(id, commitments)) explicitDenials += 1;
+      }
+
+      const penalty = (removedInitial + explicitDenials) / Math.max(1, initial.size * 1.25);
+      return clamp01(1 - penalty);
+    }
+
+    // -----------------------------------------------------------------
+    // Inference: deterministic closure over configured implication edges.
+    // -----------------------------------------------------------------
+    function inferContent(theory, includeBackground) {
+      const closure = new Set(theory);
+
+      if (includeBackground) {
+        for (const id of sim.backgroundSet) {
+          closure.add(id);
+        }
+      }
+
+      let changed = true;
+      while (changed) {
+        changed = false;
+        for (const edge of IMPLICATION_EDGES) {
+          if (closure.has(edge.from) && !closure.has(edge.to)) {
+            closure.add(edge.to);
+            changed = true;
+          }
+        }
+      }
+
+      return closure;
+    }
+
+    // ---------------------------------
+    // Rendering and interaction drawing.
+    // ---------------------------------
+    function drawPanels() {
+      const rects = sim.panelRects;
+      if (!rects) return;
+
+      drawClusterPanel(rects.commitments, "Considered Commitments", COLORS.commit, "Level I");
+      drawClusterPanel(rects.theory, "Candidate Theory / Principles", COLORS.theory, "Level II");
+      drawClusterPanel(rects.background, "Background Theories", COLORS.background, "Level III");
+      drawClusterPanel(rects.pool, "Sentence Pool", COLORS.pool, "Reusable statements");
+
+      noStroke();
+      fill(86, 96, 112);
+      textAlign(LEFT, TOP);
+      textSize(12);
+      text(
+        "Inferential links (gray) are fixed for this demo. Nodes can move between sets across iterations.",
+        rects.commitments.x,
+        rects.commitments.y + rects.commitments.h + 8
+      );
+    }
+
+    function drawClusterPanel(rect, title, accent, subtitle) {
+      stroke(213, 219, 230);
+      strokeWeight(1);
+      fill(255, 255, 255, 245);
+      rectRound(rect.x, rect.y, rect.w, rect.h, 10);
+
+      stroke(redFromHex(accent), greenFromHex(accent), blueFromHex(accent), 96);
+      strokeWeight(2);
+      line(rect.x + 10, rect.y + 10, rect.x + 68, rect.y + 10);
+
+      noStroke();
+      fill(26, 34, 48);
+      textAlign(LEFT, TOP);
+      textSize(14);
+      text(title, rect.x + 10, rect.y + 16);
+
+      fill(92, 102, 120);
+      textSize(11);
+      text(subtitle, rect.x + 10, rect.y + 34);
+    }
+
+    function drawImplicationEdges() {
+      const includeBackground = useBackgroundInfluence();
+      for (const edge of IMPLICATION_EDGES) {
+        const fromNode = nodeStateById.get(edge.from);
+        const toNode = nodeStateById.get(edge.to);
+        if (!fromNode || !toNode) continue;
+
+        const fromSentence = sentenceById.get(edge.from);
+        const edgeFromBackgroundOnly =
+          fromSentence && fromSentence.tags.includes("background") && !fromSentence.tags.includes("principle");
+
+        const alpha = !includeBackground && edgeFromBackgroundOnly ? 30 : 90;
+        stroke(160, 168, 181, alpha);
+        strokeWeight(1.1);
+        drawArrow(fromNode.x, fromNode.y, toNode.x, toNode.y, 7);
+      }
+    }
+
+    function drawNodes() {
+      sim.hoveredId = "";
+      const allNodes = Array.from(nodeStateById.values());
+
+      for (const node of allNodes) {
+        const hovered = dist(mouseX, mouseY, node.x, node.y) <= node.radius + 2;
+        if (hovered) {
+          sim.hoveredId = node.id;
+        }
+      }
+
+      for (const node of allNodes) {
+        const roles = getRoles(node.id);
+        const primaryRole = getPrimaryRole(roles);
+        const fillColor = roleColor(primaryRole);
+
+        const theoryFlash = node.theoryFlash;
+        const commitFlash = node.commitmentFlash;
+
+        if (theoryFlash > 0.001) {
+          noFill();
+          stroke(107, 91, 149, 210 * theoryFlash);
+          strokeWeight(6 * theoryFlash + 1.5);
+          circle(node.x, node.y, (node.radius + 5 + 6 * theoryFlash) * 2);
+        }
+
+        if (commitFlash > 0.001) {
+          noFill();
+          stroke(180, 69, 87, 190 * commitFlash);
+          strokeWeight(5 * commitFlash + 1.2);
+          circle(node.x, node.y, (node.radius + 3 + 4 * commitFlash) * 2);
+        }
+
+        stroke(255);
+        strokeWeight(1.4);
+        fill(...fillColor);
+        circle(node.x, node.y, node.radius * 2);
+
+        if (sim.hoveredId === node.id) {
+          stroke(31, 42, 57, 200);
+          strokeWeight(2);
+          noFill();
+          circle(node.x, node.y, (node.radius + 4) * 2);
+        }
+
+        noStroke();
+        fill(255);
+        textAlign(CENTER, CENTER);
+        textSize(10.5);
+        text(node.id.replace("s", ""), node.x, node.y + 0.5);
+
+        drawRoleBadges(node, roles);
+
+        node.theoryFlash = Math.max(0, node.theoryFlash - 0.03);
+        node.commitmentFlash = Math.max(0, node.commitmentFlash - 0.028);
+      }
+    }
+
+    function drawRoleBadges(node, roles) {
+      if (!roles.length) return;
+      const startX = node.x - (roles.length - 1) * 6;
+      const y = node.y + node.radius + 7;
+      for (let i = 0; i < roles.length; i += 1) {
+        const role = roles[i];
+        const badgeX = startX + i * 12;
+        const color = roleColor(role);
+        noStroke();
+        fill(...color);
+        circle(badgeX, y, 7.2);
+      }
+
+      // "Checked" visual cue for commitment membership.
+      if (roles.includes("commitments")) {
+        const cx = node.x + node.radius - 6;
+        const cy = node.y - node.radius + 6;
+        noStroke();
+        fill(255, 255, 255, 240);
+        circle(cx, cy, 10);
+        stroke(0, 114, 178);
+        strokeWeight(1.4);
+        noFill();
+        beginShape();
+        vertex(cx - 2.5, cy + 0.2);
+        vertex(cx - 0.5, cy + 2.4);
+        vertex(cx + 3.0, cy - 2.0);
+        endShape();
+      }
+    }
+
+    function drawAchievementPlot() {
+      const rect = sim.panelRects.plot;
+      if (!rect) return;
+
+      stroke(210, 217, 229);
+      strokeWeight(1);
+      fill(255);
+      rectRound(rect.x, rect.y, rect.w, rect.h, 10);
+
+      const margin = { left: 52, right: 18, top: 28, bottom: 36 };
+      const px = rect.x + margin.left;
+      const py = rect.y + margin.top;
+      const pw = rect.w - margin.left - margin.right;
+      const ph = rect.h - margin.top - margin.bottom;
+
+      stroke(229, 233, 242);
+      strokeWeight(1);
+      for (let i = 0; i <= 4; i += 1) {
+        const y = py + (i / 4) * ph;
+        line(px, y, px + pw, y);
+      }
+
+      fill(87, 97, 113);
+      noStroke();
+      textAlign(LEFT, TOP);
+      textSize(13);
+      text("Achievement Function Across Iterations", rect.x + 12, rect.y + 8);
+
+      textSize(10.5);
+      fill(104, 113, 129);
+      text("1.0", px - 30, py - 5);
+      text("0.75", px - 30, py + ph * 0.25 - 5);
+      text("0.50", px - 30, py + ph * 0.50 - 5);
+      text("0.25", px - 30, py + ph * 0.75 - 5);
+      text("0.00", px - 30, py + ph - 5);
+
+      if (sim.history.length < 2) {
+        fill(112, 122, 138);
+        text("Run iterations to populate the achievement trace.", px, py + ph / 2 - 6);
+        return;
+      }
+
+      const maxPoints = sim.history.length;
+      const xFor = (index) => px + (index / Math.max(1, maxPoints - 1)) * pw;
+      const yFor = (value) => py + (1 - clamp01(value)) * ph;
+
+      drawMetricLine(sim.history, "account", COLORS.account, xFor, yFor);
+      drawMetricLine(sim.history, "systematicity", COLORS.systematicity, xFor, yFor);
+      drawMetricLine(sim.history, "faithfulness", COLORS.faithfulness, xFor, yFor);
+      drawMetricLine(sim.history, "achievement", COLORS.achievement, xFor, yFor, 2.8);
+
+      const lastIndex = sim.history.length - 1;
+      const last = sim.history[lastIndex];
+      const lx = xFor(lastIndex);
+      const ly = yFor(last.achievement);
+      noStroke();
+      fill(30, 39, 53);
+      circle(lx, ly, 7.5);
+
+      fill(86, 96, 112);
+      textAlign(LEFT, TOP);
+      textSize(10.5);
+      text("iter 0", px, py + ph + 8);
+      text("iter " + sim.history[lastIndex].iteration, px + pw - 54, py + ph + 8);
+
+      const legendY = rect.y + rect.h - 20;
+      drawInlineLegend(rect.x + 14, legendY, COLORS.achievement, "achievement");
+      drawInlineLegend(rect.x + 142, legendY, COLORS.account, "account");
+      drawInlineLegend(rect.x + 236, legendY, COLORS.systematicity, "systematicity");
+      drawInlineLegend(rect.x + 367, legendY, COLORS.faithfulness, "faithfulness");
+    }
+
+    function drawInlineLegend(x, y, colorHex, label) {
+      const rgb = hexToRgb(colorHex);
+      noStroke();
+      fill(rgb.r, rgb.g, rgb.b);
+      rectRound(x, y + 3, 12, 3, 1);
+      fill(95, 105, 120);
+      textSize(10.5);
+      textAlign(LEFT, TOP);
+      text(label, x + 16, y - 1);
+    }
+
+    function drawMetricLine(history, key, colorHex, xFor, yFor, strokeW) {
+      const rgb = hexToRgb(colorHex);
+      noFill();
+      stroke(rgb.r, rgb.g, rgb.b, key === "achievement" ? 230 : 168);
+      strokeWeight(strokeW || (key === "achievement" ? 2.4 : 1.6));
+      beginShape();
+      for (let i = 0; i < history.length; i += 1) {
+        vertex(xFor(i), yFor(history[i][key]));
+      }
+      endShape();
+    }
+
+    function drawHeaderStatus() {
+      const evalState = sim.latestEvaluation;
+      if (!evalState) return;
+
+      const rect = sim.panelRects.header;
+      noStroke();
+      fill(255, 255, 255, 240);
+      rectRound(rect.x, rect.y, rect.w, rect.h, 10);
+
+      fill(27, 36, 49);
+      textAlign(LEFT, TOP);
+      textSize(13.5);
+      text("Iteration " + sim.iteration + (sim.equilibriumReached ? " (equilibrium)" : ""), rect.x + 12, rect.y + 9);
+
+      textSize(12);
+      fill(84, 95, 111);
+      text("Achievement " + formatPercent(evalState.achievement), rect.x + 228, rect.y + 9);
+      text("Account " + formatPercent(evalState.account), rect.x + 406, rect.y + 9);
+      text("Systematicity " + formatPercent(evalState.systematicity), rect.x + 548, rect.y + 9);
+      text("Faithfulness " + formatPercent(evalState.faithfulness), rect.x + 722, rect.y + 9);
+
+      textSize(11.5);
+      fill(98, 108, 123);
+      text(sim.latestStatus, rect.x + 12, rect.y + 29);
+    }
+
+    function drawInterpretiveNote() {
+      const rect = sim.panelRects.note;
+      noStroke();
+      fill(250, 252, 255, 240);
+      rectRound(rect.x, rect.y, rect.w, rect.h, 8);
+
+      fill(79, 92, 111);
+      textAlign(LEFT, TOP);
+      textSize(11);
+
+      const note =
+        getLevelMode() === "wide"
+          ? "Wide reflective equilibrium (Daniels): commitments and principles are adjusted in light of background theories (Levels I-IV)."
+          : "Narrow reflective equilibrium: equilibration runs mainly between commitments and candidate principles (Levels I-II).";
+      text(note, rect.x + 10, rect.y + 7, rect.w - 18, rect.h - 10);
+    }
+
+    function drawLegend() {
+      const rect = sim.panelRects.legend;
+      noStroke();
+      fill(255, 255, 255, 240);
+      rectRound(rect.x, rect.y, rect.w, rect.h, 9);
+
+      drawLegendChip(rect.x + 12, rect.y + 12, COLORS.commit, "commitment role");
+      drawLegendChip(rect.x + 176, rect.y + 12, COLORS.theory, "theory/principle role");
+      drawLegendChip(rect.x + 363, rect.y + 12, COLORS.background, "background role");
+      drawLegendChip(rect.x + 522, rect.y + 12, COLORS.changedTheory, "theory change");
+      drawLegendChip(rect.x + 658, rect.y + 12, COLORS.changedCommit, "commitment change");
+    }
+
+    function drawLegendChip(x, y, colorHex, label) {
+      const rgb = hexToRgb(colorHex);
+      noStroke();
+      fill(rgb.r, rgb.g, rgb.b);
+      circle(x, y + 5, 10);
+      fill(87, 97, 113);
+      textAlign(LEFT, TOP);
+      textSize(10.7);
+      text(label, x + 10, y - 1);
+    }
+
+    function drawTooltip() {
+      if (!sim.hoveredId) return;
+      const sentence = sentenceById.get(sim.hoveredId);
+      if (!sentence) return;
+
+      const roles = getRoles(sim.hoveredId);
+      const roleText = roles.length ? roles.join(", ") : "no active role";
+      const textBody = sentence.id + ": " + sentence.text + "\nRole(s): " + roleText;
+
+      textAlign(LEFT, TOP);
+      textSize(11);
+      const maxWidth = 320;
+      const textWidthApprox = Math.min(maxWidth, Math.max(170, estimateTextBlockWidth(textBody, 11, maxWidth)));
+      const textHeightApprox = estimateTextBlockHeight(textBody, 11, textWidthApprox);
+
+      const pad = 8;
+      let x = mouseX + 12;
+      let y = mouseY + 12;
+      if (x + textWidthApprox + pad * 2 > width - 6) x = mouseX - textWidthApprox - pad * 2 - 10;
+      if (y + textHeightApprox + pad * 2 > height - 6) y = mouseY - textHeightApprox - pad * 2 - 10;
+
+      noStroke();
+      fill(26, 34, 49, 236);
+      rectRound(x, y, textWidthApprox + pad * 2, textHeightApprox + pad * 2, 8);
+      fill(246, 249, 255);
+      text(textBody, x + pad, y + pad, textWidthApprox, textHeightApprox + 24);
+    }
+
+    function updateUiReadouts() {
+      const w = getNormalizedWeights();
+
+      ui.accountSlider.value.html(formatPercent(w.account));
+      ui.systemSlider.value.html(formatPercent(w.systematicity));
+      ui.faithSlider.value.html(formatPercent(w.faithfulness));
+      ui.mutationSlider.value.html(String(int(ui.mutationSlider.slider.value())) + " flips");
+      ui.breadthSlider.value.html(String(int(ui.breadthSlider.slider.value())) + " candidates");
+      ui.maxIterationsSlider.value.html(String(int(ui.maxIterationsSlider.slider.value())));
+
+      ui.seedValue.html(String(sim.seed));
+      ui.status.html(sim.latestStatus || "Ready.");
+
+      if (getLevelMode() === "wide") {
+        ui.levelBlurb.html(
+          "<strong>Wide mode (Levels I-IV).</strong> Background theories can affect entailment and thereby the account score. " +
+            "This approximates Daniels' wide reflective equilibrium."
+        );
+      } else {
+        ui.levelBlurb.html(
+          "<strong>Narrow mode (Levels I-II).</strong> Background influence is disabled; equilibration is mostly between commitments and principles."
+        );
+      }
+    }
+
+    function updateNodeTargets() {
+      const rects = sim.panelRects;
+      if (!rects) return;
+
+      const groups = {
+        theory: [],
+        commitments: [],
+        background: [],
+        pool: [],
+      };
+
+      for (const sentence of SENTENCE_POOL) {
+        const id = sentence.id;
+        const roles = getRoles(id);
+        const primary = getPrimaryRole(roles);
+        if (primary === "theory") groups.theory.push(id);
+        else if (primary === "commitments") groups.commitments.push(id);
+        else if (primary === "background") groups.background.push(id);
+        else groups.pool.push(id);
+      }
+
+      placeGroup(groups.commitments, rects.commitments, 4, 58);
+      placeGroup(groups.theory, rects.theory, 4, 58);
+      placeGroup(groups.background, rects.background, 4, 58);
+      placeGroup(groups.pool, rects.pool, 5, 56);
+    }
+
+    function placeGroup(ids, rect, columns, cellSize) {
+      if (!ids.length) return;
+
+      ids.sort();
+      const startY = rect.y + 64;
+      const usableHeight = Math.max(70, rect.h - 80);
+      const rows = Math.max(1, Math.ceil(ids.length / columns));
+      const rowGap = Math.min(cellSize, usableHeight / rows);
+
+      const startX = rect.x + 22;
+      const usableWidth = Math.max(80, rect.w - 42);
+      const colGap = Math.min(cellSize, usableWidth / Math.max(1, columns - 1));
+
+      for (let i = 0; i < ids.length; i += 1) {
+        const row = Math.floor(i / columns);
+        const col = i % columns;
+        const tx = startX + col * colGap;
+        const ty = startY + row * rowGap;
+        const node = nodeStateById.get(ids[i]);
+        if (!node) continue;
+        node.tx = tx;
+        node.ty = ty;
+      }
+    }
+
+    function integrateNodeMotion() {
+      for (const node of nodeStateById.values()) {
+        node.x = lerp(node.x, node.tx, 0.13);
+        node.y = lerp(node.y, node.ty, 0.13);
+      }
+    }
+
+    function getRoles(id) {
+      const roles = [];
+      if (sim.commitments.has(id)) roles.push("commitments");
+      if (sim.theory.has(id)) roles.push("theory");
+      if (sim.backgroundSet.has(id)) roles.push("background");
+      return roles;
+    }
+
+    function getPrimaryRole(roles) {
+      if (roles.includes("theory")) return "theory";
+      if (roles.includes("commitments")) return "commitments";
+      if (roles.includes("background")) return "background";
+      return "pool";
+    }
+
+    function roleColor(role) {
+      if (role === "theory") return [0, 158, 115];
+      if (role === "commitments") return [0, 114, 178];
+      if (role === "background") return [230, 159, 0];
+      return [160, 168, 184];
+    }
+
+    function computePanelRects(w, h) {
+      const header = { x: 14, y: 10, w: w - 28, h: 56 };
+      const note = { x: 14, y: 68, w: w - 28, h: 36 };
+
+      const topY = 112;
+      const panelH = Math.max(180, Math.floor(h * 0.34));
+      const leftW = Math.floor((w - 58) / 3);
+      const middleW = leftW;
+      const rightW = w - 58 - leftW - middleW;
+
+      const commitments = { x: 14, y: topY, w: leftW, h: panelH };
+      const theory = { x: commitments.x + commitments.w + 15, y: topY, w: middleW, h: panelH };
+      const background = { x: theory.x + theory.w + 15, y: topY, w: rightW, h: panelH };
+
+      const poolY = topY + panelH + 12;
+      const poolH = Math.max(120, Math.floor(h * 0.16));
+      const pool = { x: 14, y: poolY, w: w - 28, h: poolH };
+
+      const plotY = poolY + poolH + 10;
+      const plotH = Math.max(180, h - plotY - 60);
+      const plot = { x: 14, y: plotY, w: w - 28, h: plotH };
+
+      const legend = { x: 14, y: h - 40, w: w - 28, h: 30 };
+
+      return {
+        header,
+        note,
+        commitments,
+        theory,
+        background,
+        pool,
+        plot,
+        legend,
+      };
+    }
+
+    function drawArrow(x1, y1, x2, y2, tipSize) {
+      const angle = atan2(y2 - y1, x2 - x1);
+      const endX = x2 - cos(angle) * NODE_RADIUS;
+      const endY = y2 - sin(angle) * NODE_RADIUS;
+      const startX = x1 + cos(angle) * NODE_RADIUS;
+      const startY = y1 + sin(angle) * NODE_RADIUS;
+
+      line(startX, startY, endX, endY);
+
+      push();
+      translate(endX, endY);
+      rotate(angle);
+      noStroke();
+      fill(160, 168, 181, 160);
+      triangle(0, 0, -tipSize, tipSize * 0.55, -tipSize, -tipSize * 0.55);
+      pop();
+    }
+
+    function useBackgroundInfluence() {
+      return getLevelMode() === "wide" && ui.backgroundInfluence.checked();
+    }
+
+    function getLevelMode() {
+      return ui.levelModeRadio.value() || "wide";
+    }
+
+    function getNormalizedWeights() {
+      const a = Number(ui.accountSlider.slider.value()) || 0;
+      const s = Number(ui.systemSlider.slider.value()) || 0;
+      const f = Number(ui.faithSlider.slider.value()) || 0;
+      const sum = a + s + f;
+
+      if (sum <= 0) {
+        return { account: 1 / 3, systematicity: 1 / 3, faithfulness: 1 / 3 };
+      }
+
+      return {
+        account: a / sum,
+        systematicity: s / sum,
+        faithfulness: f / sum,
+      };
+    }
+
+    function pushHistoryRecord(kind, theoryChanged, commitmentChanged, evaluation) {
+      sim.history.push({
+        kind,
+        iteration: sim.iteration,
+        account: evaluation.account,
+        systematicity: evaluation.systematicity,
+        faithfulness: evaluation.faithfulness,
+        achievement: evaluation.achievement,
+        weights: evaluation.weights,
+        commitments: Array.from(sim.commitments),
+        theory: Array.from(sim.theory),
+        entailed: evaluation.entailed,
+        theoryChanged,
+        commitmentChanged,
+        timestamp: new Date().toISOString(),
+      });
+    }
+
+    function conflictsWithSet(sentenceId, sentenceSet) {
+      const neighbors = conflictMap.get(sentenceId);
+      if (!neighbors || neighbors.size === 0) return false;
+      for (const other of sentenceSet) {
+        if (neighbors.has(other)) return true;
+      }
+      return false;
+    }
+
+    function buildConflictMap(pairs) {
+      const map = new Map();
+      for (const sentence of SENTENCE_POOL) {
+        map.set(sentence.id, new Set());
+      }
+      for (const pair of pairs) {
+        const a = pair[0];
+        const b = pair[1];
+        if (!map.has(a) || !map.has(b)) continue;
+        map.get(a).add(b);
+        map.get(b).add(a);
+      }
+      return map;
+    }
+
+    function setsEqual(a, b) {
+      if (a.size !== b.size) return false;
+      for (const item of a) {
+        if (!b.has(item)) return false;
+      }
+      return true;
+    }
+
+    function symmetricDifference(a, b) {
+      const out = [];
+      for (const item of a) {
+        if (!b.has(item)) out.push(item);
+      }
+      for (const item of b) {
+        if (!a.has(item)) out.push(item);
+      }
+      return out;
+    }
+
+    function flashNodeSet(ids, field, value) {
+      for (const id of ids) {
+        const node = nodeStateById.get(id);
+        if (!node) continue;
+        node[field] = Math.max(node[field], value);
+      }
+    }
+
+    function pickRandom(array) {
+      if (!array || array.length === 0) return null;
+      return array[int(rand() * array.length)];
+    }
+
+    function shuffleInPlace(array) {
+      for (let i = array.length - 1; i > 0; i -= 1) {
+        const j = int(rand() * (i + 1));
+        const temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
+      }
+    }
+
+    function rand() {
+      return sim.rng ? sim.rng() : Math.random();
+    }
+
+    function mulberry32(seed) {
+      let t = seed >>> 0;
+      return function () {
+        t += 0x6d2b79f5;
+        let r = Math.imul(t ^ (t >>> 15), 1 | t);
+        r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
+        return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
+      };
+    }
+
+    function estimateTextBlockWidth(textStr, sizePx, capWidth) {
+      const lines = textStr.split("\n");
+      let maxChars = 0;
+      for (const line of lines) {
+        maxChars = Math.max(maxChars, line.length);
+      }
+      return Math.min(capWidth, maxChars * sizePx * 0.58);
+    }
+
+    function estimateTextBlockHeight(textStr, sizePx, widthPx) {
+      const words = textStr.replace(/\n/g, " \n ").split(/\s+/).filter(Boolean);
+      let lines = 1;
+      let currentChars = 0;
+      const maxCharsPerLine = Math.max(10, int(widthPx / (sizePx * 0.55)));
+
+      for (const word of words) {
+        if (word === "\n") {
+          lines += 1;
+          currentChars = 0;
+          continue;
+        }
+        const wlen = word.length + 1;
+        if (currentChars + wlen > maxCharsPerLine) {
+          lines += 1;
+          currentChars = wlen;
+        } else {
+          currentChars += wlen;
+        }
+      }
+
+      return lines * (sizePx * 1.35);
+    }
+
+    function clamp01(value) {
+      return Math.min(1, Math.max(0, Number(value) || 0));
+    }
+
+    function formatPercent(value) {
+      return (clamp01(value) * 100).toFixed(1) + "%";
+    }
+
+    function rectRound(x, y, w, h, r) {
+      rect(x, y, w, h, r);
+    }
+
+    function hexToRgb(hex) {
+      const normalized = hex.replace("#", "");
+      const value = normalized.length === 3
+        ? normalized.split("").map((c) => c + c).join("")
+        : normalized;
+      const num = parseInt(value, 16);
+      return {
+        r: (num >> 16) & 255,
+        g: (num >> 8) & 255,
+        b: num & 255,
+      };
+    }
+
+    function redFromHex(hex) {
+      return hexToRgb(hex).r;
+    }
+
+    function greenFromHex(hex) {
+      return hexToRgb(hex).g;
+    }
+
+    function blueFromHex(hex) {
+      return hexToRgb(hex).b;
+    }
+  </script>
+</body>
+</html>

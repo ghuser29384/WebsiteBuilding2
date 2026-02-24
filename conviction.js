@@ -232,6 +232,141 @@
     { year: 1948, label: "Human rights era" },
     { year: 1971, label: "Justice theory revival" },
   ];
+  const REFLECTIVE_EQUILIBRIUM_COMPONENTS = [
+    {
+      key: "judgments",
+      label: "Considered judgments",
+      note: "Relatively confident case-level judgments that anchor revision.",
+      color: "#8f2236",
+    },
+    {
+      key: "principles",
+      label: "Candidate principles",
+      note: "General principles proposed to organize those judgments.",
+      color: "#375f97",
+    },
+    {
+      key: "background",
+      label: "Background theories",
+      note: "Empirical beliefs and broader theories used in wide equilibrium.",
+      color: "#2a7754",
+    },
+    {
+      key: "revisions",
+      label: "Mutual revision",
+      note: "Any element can be revised when conflict appears.",
+      color: "#a06f2f",
+    },
+    {
+      key: "equilibrium",
+      label: "Provisional fit",
+      note: "A more coherent package, still open to future challenge.",
+      color: "#1f2d3d",
+    },
+  ];
+  const REFLECTIVE_EQUILIBRIUM_NODE_LAYOUT = [
+    { key: "judgments", label: ["Considered", "judgments"], x: 124, y: 82, color: "#8f2236", surface: "#f7ecef" },
+    { key: "principles", label: ["Candidate", "principles"], x: 360, y: 58, color: "#375f97", surface: "#edf2fa" },
+    { key: "background", label: ["Background", "theories"], x: 594, y: 86, color: "#2a7754", surface: "#edf7f2" },
+    { key: "revisions", label: ["Mutual", "revisions"], x: 208, y: 218, color: "#a06f2f", surface: "#f8f1e7" },
+    { key: "equilibrium", label: ["Provisional", "coherence"], x: 512, y: 220, color: "#1f2d3d", surface: "#eef1f4" },
+  ];
+  const REFLECTIVE_EQUILIBRIUM_LINKS = [
+    { from: "judgments", to: "principles", bend: -28 },
+    { from: "principles", to: "background", bend: -20 },
+    { from: "background", to: "equilibrium", bend: 16 },
+    { from: "equilibrium", to: "revisions", bend: 30 },
+    { from: "revisions", to: "judgments", bend: 18 },
+    { from: "principles", to: "equilibrium", bend: 8 },
+    { from: "judgments", to: "revisions", bend: -10 },
+  ];
+  const REFLECTIVE_EQUILIBRIUM_CONFLICT_LINKS = [
+    { from: "judgments", to: "background", bend: 24 },
+    { from: "principles", to: "revisions", bend: -24 },
+  ];
+  const REFLECTIVE_EQUILIBRIUM_STAGES = [
+    {
+      pass: 1,
+      label: "Seed considered judgments.",
+      coherence: 32,
+      support: 26,
+      tension: 68,
+      fits: { judgments: 58, principles: 29, background: 24, revisions: 34, equilibrium: 30 },
+    },
+    {
+      pass: 2,
+      label: "Propose candidate principles.",
+      coherence: 40,
+      support: 33,
+      tension: 61,
+      fits: { judgments: 57, principles: 43, background: 31, revisions: 38, equilibrium: 36 },
+    },
+    {
+      pass: 3,
+      label: "Bring in background theories and facts.",
+      coherence: 48,
+      support: 45,
+      tension: 56,
+      fits: { judgments: 55, principles: 50, background: 46, revisions: 44, equilibrium: 45 },
+    },
+    {
+      pass: 4,
+      label: "Stress-test against hard cases.",
+      coherence: 44,
+      support: 49,
+      tension: 63,
+      fits: { judgments: 50, principles: 47, background: 49, revisions: 56, equilibrium: 43 },
+    },
+    {
+      pass: 5,
+      label: "Revise principles and scope conditions.",
+      coherence: 58,
+      support: 57,
+      tension: 46,
+      fits: { judgments: 62, principles: 62, background: 54, revisions: 66, equilibrium: 58 },
+    },
+    {
+      pass: 6,
+      label: "Revise some judgments as well.",
+      coherence: 67,
+      support: 65,
+      tension: 38,
+      fits: { judgments: 69, principles: 68, background: 62, revisions: 72, equilibrium: 67 },
+    },
+    {
+      pass: 7,
+      label: "Integrate wider theoretical commitments.",
+      coherence: 76,
+      support: 74,
+      tension: 30,
+      fits: { judgments: 75, principles: 75, background: 78, revisions: 80, equilibrium: 76 },
+    },
+    {
+      pass: 8,
+      label: "Reach a provisional wide equilibrium.",
+      coherence: 84,
+      support: 86,
+      tension: 20,
+      fits: { judgments: 83, principles: 84, background: 89, revisions: 84, equilibrium: 87 },
+    },
+    {
+      pass: 9,
+      label: "A new case reopens conflict.",
+      coherence: 72,
+      support: 79,
+      tension: 37,
+      fits: { judgments: 71, principles: 73, background: 81, revisions: 76, equilibrium: 74 },
+    },
+    {
+      pass: 10,
+      label: "Re-balance and recover stronger coherence.",
+      coherence: 95,
+      support: 90,
+      tension: 5,
+      fits: { judgments: 92, principles: 95, background: 90, revisions: 94, equilibrium: 95 },
+    },
+  ];
+  const REFLECTIVE_EQUILIBRIUM_STAGE_ROUNDS = [1, 4, 14, 60, 250, 1100, 5000, 20000, 60000, 100000];
 
   const formStatus = {
     conviction: null,
@@ -243,6 +378,8 @@
 
   let state = loadState();
   let currentMatches = [];
+  const chartZoomStateByEl = new WeakMap();
+  let reflectiveEquilibriumAnimationStarted = false;
 
   const el = {
     pledgeForm: document.getElementById("pledgeForm"),
@@ -306,6 +443,7 @@
   init();
 
   function init() {
+    initChartTrackpadZooming();
     bindRevealAnimation();
     bindCountUpAnimation();
     bindScrollTriggeredAnimations();
@@ -365,6 +503,188 @@
     );
 
     observer.observe(target);
+  }
+
+  function initChartTrackpadZooming() {
+    enableTrackpadZoomForChart(el.deliberationChart, { maxScale: 12 });
+    enableTrackpadZoomForChart(el.progressChart, { maxScale: 16 });
+    enableTrackpadZoomForChart(el.mathProgressChart, { maxScale: 16 });
+    enableTrackpadZoomForChart(el.ethicsProgressChart, { maxScale: 16 });
+  }
+
+  function enableTrackpadZoomForChart(svgEl, options) {
+    if (!svgEl || chartZoomStateByEl.has(svgEl)) return;
+
+    const baseViewBox = readSvgViewBox(svgEl);
+    if (!baseViewBox) return;
+
+    const zoomState = {
+      base: baseViewBox,
+      current: {
+        x: baseViewBox.x,
+        y: baseViewBox.y,
+        width: baseViewBox.width,
+        height: baseViewBox.height,
+      },
+      maxScale: Math.max(1, Number(options && options.maxScale) || 12),
+      gestureScale: 1,
+    };
+    chartZoomStateByEl.set(svgEl, zoomState);
+    svgEl.style.touchAction = "none";
+
+    svgEl.addEventListener(
+      "wheel",
+      function (event) {
+        if (!event.ctrlKey) return;
+        if (!Number.isFinite(event.deltaY) || event.deltaY === 0) return;
+        event.preventDefault();
+
+        const rect = svgEl.getBoundingClientRect();
+        if (!rect || rect.width <= 0 || rect.height <= 0) return;
+
+        const anchorX = clamp((event.clientX - rect.left) / rect.width, 0, 1);
+        const anchorY = clamp((event.clientY - rect.top) / rect.height, 0, 1);
+        const deltaMultiplier = event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? 80 : 1;
+        const zoomFactor = Math.exp(-(event.deltaY * deltaMultiplier) * 0.0022);
+        applySvgZoom(svgEl, zoomState, zoomFactor, anchorX, anchorY);
+      },
+      { passive: false }
+    );
+
+    svgEl.addEventListener(
+      "gesturestart",
+      function (event) {
+        event.preventDefault();
+        zoomState.gestureScale = Number.isFinite(event.scale) && event.scale > 0 ? event.scale : 1;
+      },
+      { passive: false }
+    );
+
+    svgEl.addEventListener(
+      "gesturechange",
+      function (event) {
+        event.preventDefault();
+        const nextGestureScale = Number.isFinite(event.scale) && event.scale > 0 ? event.scale : 1;
+        const previousGestureScale = zoomState.gestureScale > 0 ? zoomState.gestureScale : 1;
+        zoomState.gestureScale = nextGestureScale;
+
+        const factor = clamp(nextGestureScale / previousGestureScale, 0.5, 2);
+        const rect = svgEl.getBoundingClientRect();
+        const anchorX =
+          rect && rect.width > 0 && Number.isFinite(event.clientX)
+            ? clamp((event.clientX - rect.left) / rect.width, 0, 1)
+            : 0.5;
+        const anchorY =
+          rect && rect.height > 0 && Number.isFinite(event.clientY)
+            ? clamp((event.clientY - rect.top) / rect.height, 0, 1)
+            : 0.5;
+        applySvgZoom(svgEl, zoomState, factor, anchorX, anchorY);
+      },
+      { passive: false }
+    );
+
+    svgEl.addEventListener(
+      "gestureend",
+      function (event) {
+        event.preventDefault();
+        zoomState.gestureScale = 1;
+      },
+      { passive: false }
+    );
+  }
+
+  function readSvgViewBox(svgEl) {
+    if (!svgEl) return null;
+
+    const rawViewBox = svgEl.getAttribute("viewBox");
+    if (rawViewBox) {
+      const parts = rawViewBox
+        .trim()
+        .split(/[\s,]+/)
+        .map(function (value) {
+          return Number(value);
+        });
+      if (
+        parts.length === 4 &&
+        Number.isFinite(parts[0]) &&
+        Number.isFinite(parts[1]) &&
+        Number.isFinite(parts[2]) &&
+        Number.isFinite(parts[3]) &&
+        parts[2] > 0 &&
+        parts[3] > 0
+      ) {
+        return { x: parts[0], y: parts[1], width: parts[2], height: parts[3] };
+      }
+    }
+
+    const baseVal = svgEl.viewBox && svgEl.viewBox.baseVal;
+    if (baseVal && baseVal.width > 0 && baseVal.height > 0) {
+      return { x: baseVal.x, y: baseVal.y, width: baseVal.width, height: baseVal.height };
+    }
+
+    return null;
+  }
+
+  function writeSvgViewBox(svgEl, viewBox) {
+    if (!svgEl || !viewBox) return;
+    svgEl.setAttribute(
+      "viewBox",
+      [viewBox.x, viewBox.y, viewBox.width, viewBox.height]
+        .map(function (value) {
+          return Number(value.toFixed(4));
+        })
+        .join(" ")
+    );
+  }
+
+  function applySvgZoom(svgEl, zoomState, zoomFactor, anchorX, anchorY) {
+    if (!zoomState || !Number.isFinite(zoomFactor) || zoomFactor <= 0) return;
+
+    const base = zoomState.base;
+    const current = zoomState.current;
+    const minScale = 1;
+    const maxScale = zoomState.maxScale;
+
+    const currentScale = base.width / current.width;
+    const nextScale = clamp(currentScale * zoomFactor, minScale, maxScale);
+    const nextWidth = base.width / nextScale;
+    const nextHeight = base.height / nextScale;
+
+    const normalizedAnchorX = clamp(anchorX, 0, 1);
+    const normalizedAnchorY = clamp(anchorY, 0, 1);
+
+    const anchorWorldX = current.x + normalizedAnchorX * current.width;
+    const anchorWorldY = current.y + normalizedAnchorY * current.height;
+
+    const rawX = anchorWorldX - normalizedAnchorX * nextWidth;
+    const rawY = anchorWorldY - normalizedAnchorY * nextHeight;
+    const boundedX = clamp(rawX, base.x, base.x + base.width - nextWidth);
+    const boundedY = clamp(rawY, base.y, base.y + base.height - nextHeight);
+
+    zoomState.current = {
+      x: boundedX,
+      y: boundedY,
+      width: nextWidth,
+      height: nextHeight,
+    };
+    writeSvgViewBox(svgEl, zoomState.current);
+  }
+
+  function getNormalizedChartX(svgEl, clientX) {
+    if (!svgEl) return 0;
+    const rect = svgEl.getBoundingClientRect();
+    if (!rect || rect.width <= 0) return 0;
+
+    const localRatio = clamp((clientX - rect.left) / rect.width, 0, 1);
+    const zoomState = chartZoomStateByEl.get(svgEl);
+    if (!zoomState) return localRatio;
+
+    const current = zoomState.current;
+    const base = zoomState.base;
+    if (!current || !base || base.width <= 0) return localRatio;
+
+    const worldX = current.x + localRatio * current.width;
+    return clamp((worldX - base.x) / base.width, 0, 1);
   }
 
   function bindEvents() {
@@ -595,7 +915,439 @@
     renderLedger();
   }
 
+  function runReflectiveEquilibriumAnimation() {
+    if (reflectiveEquilibriumAnimationStarted) return true;
+    if (!el.deliberationChart || !el.beliefChips) return false;
+    if (!Array.isArray(REFLECTIVE_EQUILIBRIUM_STAGES) || REFLECTIVE_EQUILIBRIUM_STAGES.length === 0) return false;
+
+    reflectiveEquilibriumAnimationStarted = true;
+    const chipRefs = buildReflectiveEquilibriumChips();
+    const stages = REFLECTIVE_EQUILIBRIUM_STAGES;
+    const hasTransitions = stages.length > 1;
+    const finalIndex = stages.length - 1;
+    const phaseDuration = 2150;
+    const holdDuration = 460;
+
+    let fromIndex = 0;
+    let toIndex = hasTransitions ? 1 : 0;
+    let phaseStart = performance.now();
+    let holdUntil = 0;
+    let reachedTerminal = !hasTransitions;
+
+    el.deliberationChart.setAttribute(
+      "aria-label",
+      "Animated wide reflective equilibrium process across considered judgments, principles, background theories, and revisions"
+    );
+
+    const initialFrame = buildReflectiveEquilibriumFrame(
+      stages[fromIndex],
+      stages[toIndex],
+      0,
+      fromIndex,
+      toIndex,
+      0,
+      phaseStart
+    );
+    renderReflectiveEquilibriumFrame(initialFrame, chipRefs, prefersReducedMotion);
+
+    if (prefersReducedMotion) {
+      const terminalStage = stages[finalIndex];
+      const terminalFrame = buildReflectiveEquilibriumFrame(
+        terminalStage,
+        terminalStage,
+        1,
+        finalIndex,
+        finalIndex,
+        1,
+        phaseStart
+      );
+      renderReflectiveEquilibriumFrame(terminalFrame, chipRefs, true);
+      return true;
+    }
+
+    function tick(now) {
+      if (reachedTerminal) {
+        const finalStage = stages[finalIndex];
+        const finalFrame = buildReflectiveEquilibriumFrame(
+          finalStage,
+          finalStage,
+          1,
+          finalIndex,
+          finalIndex,
+          1,
+          now
+        );
+        renderReflectiveEquilibriumFrame(finalFrame, chipRefs, false);
+        requestAnimationFrame(tick);
+        return;
+      }
+
+      if (holdUntil && now < holdUntil) {
+        const holdFrame = buildReflectiveEquilibriumFrame(
+          stages[toIndex],
+          stages[toIndex],
+          1,
+          toIndex,
+          toIndex,
+          1,
+          now
+        );
+        renderReflectiveEquilibriumFrame(holdFrame, chipRefs, false);
+        requestAnimationFrame(tick);
+        return;
+      }
+
+      if (holdUntil && now >= holdUntil) {
+        fromIndex = toIndex;
+        toIndex = Math.min(toIndex + 1, finalIndex);
+        holdUntil = 0;
+        phaseStart = now;
+      }
+
+      const rawProgress = clamp((now - phaseStart) / phaseDuration, 0, 1);
+      const eased = easeInOutCubic(rawProgress);
+      const frame = buildReflectiveEquilibriumFrame(
+        stages[fromIndex],
+        stages[toIndex],
+        eased,
+        fromIndex,
+        toIndex,
+        rawProgress,
+        now
+      );
+      renderReflectiveEquilibriumFrame(frame, chipRefs, false);
+
+      if (rawProgress >= 1) {
+        if (toIndex >= finalIndex) {
+          reachedTerminal = true;
+          fromIndex = finalIndex;
+          toIndex = finalIndex;
+        } else {
+          holdUntil = now + holdDuration;
+        }
+      }
+
+      requestAnimationFrame(tick);
+    }
+
+    requestAnimationFrame(tick);
+    return true;
+  }
+
+  function buildReflectiveEquilibriumChips() {
+    if (!el.beliefChips) return [];
+    el.beliefChips.innerHTML = REFLECTIVE_EQUILIBRIUM_COMPONENTS.map(function (component) {
+      return (
+        '<li class="belief-chip re-chip">' +
+        '<div class="belief-chip-head">' +
+        '<span class="belief-chip-name">' +
+        '<span class="belief-dot" style="background:' +
+        component.color +
+        ';"></span>' +
+        escapeHtml(component.label) +
+        "</span>" +
+        '<span class="belief-chip-value" data-re-chip-value="' +
+        component.key +
+        '">0%</span>' +
+        "</div>" +
+        '<p class="re-chip-note">' +
+        escapeHtml(component.note) +
+        "</p>" +
+        "</li>"
+      );
+    }).join("");
+
+    return REFLECTIVE_EQUILIBRIUM_COMPONENTS.map(function (component) {
+      return {
+        key: component.key,
+        valueEl: el.beliefChips.querySelector('[data-re-chip-value="' + component.key + '"]'),
+      };
+    });
+  }
+
+  function getReflectiveRoundAtIndex(index) {
+    const maxIndex = Math.max(0, REFLECTIVE_EQUILIBRIUM_STAGES.length - 1);
+    const safeIndex = clamp(Math.round(Number(index) || 0), 0, maxIndex);
+    const anchorValue = REFLECTIVE_EQUILIBRIUM_STAGE_ROUNDS[safeIndex];
+    if (Number.isFinite(anchorValue) && anchorValue > 0) return anchorValue;
+
+    const fallbackProgress = maxIndex <= 0 ? 0 : safeIndex / maxIndex;
+    return Math.max(1, Math.round(Math.pow(10, fallbackProgress * 5)));
+  }
+
+  function buildReflectiveEquilibriumFrame(fromStage, toStage, easedProgress, fromIndex, toIndex, rawProgress, now) {
+    const interpolation = clamp(Number(easedProgress), 0, 1);
+    const stageFrom = fromStage || REFLECTIVE_EQUILIBRIUM_STAGES[0];
+    const stageTo = toStage || stageFrom;
+    const safeFromIndex = clamp(Math.round(Number(fromIndex) || 0), 0, REFLECTIVE_EQUILIBRIUM_STAGES.length - 1);
+    const safeToIndex = clamp(Math.round(Number(toIndex) || 0), 0, REFLECTIVE_EQUILIBRIUM_STAGES.length - 1);
+    const fromRound = getReflectiveRoundAtIndex(safeFromIndex);
+    const toRound = getReflectiveRoundAtIndex(safeToIndex);
+
+    const fits = {};
+    REFLECTIVE_EQUILIBRIUM_NODE_LAYOUT.forEach(function (node) {
+      const fromFit = Number(stageFrom.fits && stageFrom.fits[node.key]) || 0;
+      const toFit = Number(stageTo.fits && stageTo.fits[node.key]) || fromFit;
+      fits[node.key] = fromFit + (toFit - fromFit) * interpolation;
+    });
+
+    return {
+      pass: Math.round((Number(stageFrom.pass) || 1) + ((Number(stageTo.pass) || 1) - (Number(stageFrom.pass) || 1)) * interpolation),
+      stageLabel: interpolation < 0.5 ? stageFrom.label : stageTo.label,
+      coherence: Number(stageFrom.coherence || 0) + (Number(stageTo.coherence || 0) - Number(stageFrom.coherence || 0)) * interpolation,
+      support: Number(stageFrom.support || 0) + (Number(stageTo.support || 0) - Number(stageFrom.support || 0)) * interpolation,
+      tension: Number(stageFrom.tension || 0) + (Number(stageTo.tension || 0) - Number(stageFrom.tension || 0)) * interpolation,
+      round: fromRound + (toRound - fromRound) * interpolation,
+      fits: fits,
+      fromIndex: safeFromIndex,
+      toIndex: safeToIndex,
+      rawProgress: clamp(Number(rawProgress), 0, 1),
+      pulseProgress: ((Number(safeFromIndex) || 0) + clamp(Number(rawProgress), 0, 1) + (now || 0) * 0.00017) % 1,
+    };
+  }
+
+  function renderReflectiveEquilibriumFrame(frame, chipRefs, reducedMotionMode) {
+    const safeFrame = frame || buildReflectiveEquilibriumFrame(null, null, 0, 0, 0, 0, performance.now());
+    const roundedCoherence = Math.round(safeFrame.coherence);
+    const roundedSupport = Math.round(safeFrame.support);
+    const roundedTension = Math.round(safeFrame.tension);
+
+    if (el.deliberationRound) {
+      el.deliberationRound.textContent = reducedMotionMode
+        ? "Snapshot at round 100,000 (reduced motion)"
+        : "Round " + formatLargeYear(Math.round(safeFrame.round)) + " (Pass " + safeFrame.pass + "): " + safeFrame.stageLabel;
+    }
+    if (el.consensusValue) {
+      el.consensusValue.textContent = roundedCoherence + "%";
+    }
+    if (el.truthValue) {
+      el.truthValue.textContent = roundedSupport + "%";
+    }
+    if (el.spreadValue) {
+      el.spreadValue.textContent = roundedTension + " pts";
+    }
+
+    if (Array.isArray(chipRefs)) {
+      chipRefs.forEach(function (chip) {
+        if (!chip || !chip.valueEl) return;
+        const value = Math.round(Number(safeFrame.fits[chip.key]) || 0);
+        chip.valueEl.textContent = value + "%";
+      });
+    }
+
+    renderReflectiveEquilibriumChart(safeFrame);
+  }
+
+  function renderReflectiveEquilibriumChart(frame) {
+    if (!el.deliberationChart) return;
+
+    const width = 720;
+    const height = 300;
+    const nodeByKey = {};
+    REFLECTIVE_EQUILIBRIUM_NODE_LAYOUT.forEach(function (node) {
+      nodeByKey[node.key] = node;
+    });
+
+    const gridY = [42, 94, 146, 198, 250];
+    const gridLayer = gridY
+      .map(function (y) {
+        return '<line class="re-grid" x1="24" y1="' + y + '" x2="696" y2="' + y + '"></line>';
+      })
+      .join("");
+
+    const fitLinks = REFLECTIVE_EQUILIBRIUM_LINKS.map(function (link) {
+      const fromNode = nodeByKey[link.from];
+      const toNode = nodeByKey[link.to];
+      if (!fromNode || !toNode) return "";
+
+      const path = reflectiveLinkPath(fromNode, toNode, Number(link.bend) || 0);
+      const strength = clamp(
+        (((Number(frame.fits[fromNode.key]) || 0) + (Number(frame.fits[toNode.key]) || 0)) / 200) *
+          (0.36 + (Number(frame.coherence) || 0) / 140),
+        0.08,
+        1
+      );
+      return (
+        '<path class="re-link" d="' +
+        path +
+        '" style="stroke-width:' +
+        (1.2 + strength * 3).toFixed(2) +
+        ";opacity:" +
+        (0.2 + strength * 0.72).toFixed(3) +
+        ';"></path>'
+      );
+    }).join("");
+
+    const conflictOpacity = clamp((Number(frame.tension) || 0) / 100, 0, 1);
+    const conflictLayer = REFLECTIVE_EQUILIBRIUM_CONFLICT_LINKS.map(function (link) {
+      const fromNode = nodeByKey[link.from];
+      const toNode = nodeByKey[link.to];
+      if (!fromNode || !toNode) return "";
+      return (
+        '<path class="re-conflict" d="' +
+        reflectiveLinkPath(fromNode, toNode, Number(link.bend) || 0) +
+        '" style="opacity:' +
+        (0.05 + conflictOpacity * 0.58).toFixed(3) +
+        ';"></path>'
+      );
+    }).join("");
+
+    const nodeLayer = REFLECTIVE_EQUILIBRIUM_NODE_LAYOUT.map(function (node) {
+      const fit = clamp(Number(frame.fits[node.key]) || 0, 0, 100);
+      const left = node.x - 74;
+      const top = node.y - 28;
+      const emphasis = 0.2 + (fit / 100) * 0.8;
+      return (
+        '<rect class="re-node" x="' +
+        left.toFixed(2) +
+        '" y="' +
+        top.toFixed(2) +
+        '" width="148" height="56" rx="12" ry="12" style="stroke:' +
+        node.color +
+        ";fill:" +
+        node.surface +
+        ";opacity:" +
+        emphasis.toFixed(3) +
+        ';"></rect>' +
+        '<text class="re-node-label" x="' +
+        node.x +
+        '" y="' +
+        (node.y - 5) +
+        '" text-anchor="middle">' +
+        escapeHtml(node.label[0]) +
+        "</text>" +
+        '<text class="re-node-label" x="' +
+        node.x +
+        '" y="' +
+        (node.y + 9) +
+        '" text-anchor="middle">' +
+        escapeHtml(node.label[1]) +
+        "</text>" +
+        '<text class="re-node-value" x="' +
+        node.x +
+        '" y="' +
+        (node.y + 23) +
+        '" text-anchor="middle">' +
+        Math.round(fit) +
+        "% fit</text>"
+      );
+    }).join("");
+
+    const pulsePoint = getReflectivePulsePoint(frame.pulseProgress, nodeByKey);
+    const pulseLayer = pulsePoint
+      ? '<circle class="re-pulse" cx="' +
+        pulsePoint.x.toFixed(2) +
+        '" cy="' +
+        pulsePoint.y.toFixed(2) +
+        '" r="6"></circle>'
+      : "";
+
+    const timelineStartX = 72;
+    const timelineEndX = 646;
+    const timelineY = 278;
+    const stageCount = Math.max(1, REFLECTIVE_EQUILIBRIUM_STAGES.length);
+    const activeIndex = frame.rawProgress >= 0.5 ? frame.toIndex : frame.fromIndex;
+    const timelineDots = REFLECTIVE_EQUILIBRIUM_STAGES.map(function (stage, index) {
+      const x =
+        stageCount === 1
+          ? timelineStartX
+          : timelineStartX + (index / (stageCount - 1)) * (timelineEndX - timelineStartX);
+      const active = index === activeIndex;
+      return (
+        '<circle class="re-timeline-dot' +
+        (active ? " active" : "") +
+        '" cx="' +
+        x.toFixed(2) +
+        '" cy="' +
+        timelineY +
+        '" r="' +
+        (active ? "4.8" : "3.3") +
+        '"></circle>'
+      );
+    }).join("");
+
+    const timelineLayer =
+      '<line class="re-timeline" x1="' +
+      timelineStartX +
+      '" y1="' +
+      timelineY +
+      '" x2="' +
+      timelineEndX +
+      '" y2="' +
+      timelineY +
+      '"></line>' +
+      timelineDots +
+      '<text class="re-axis-label" x="' +
+      timelineStartX +
+      '" y="294" text-anchor="start">Earlier rounds</text>' +
+      '<text class="re-axis-label" x="' +
+      timelineEndX +
+      '" y="294" text-anchor="end">Current round</text>';
+
+    const stageCaption =
+      '<text class="re-stage-caption" x="' +
+      width / 2 +
+      '" y="18" text-anchor="middle">Wide reflective equilibrium: ' +
+      escapeHtml(frame.stageLabel) +
+      "</text>" +
+      '<text class="re-axis-label" x="32" y="34">Solid links: explanatory fit | Dashed links: unresolved tension</text>';
+
+    el.deliberationChart.innerHTML =
+      '<rect class="re-bg" x="0" y="0" width="' +
+      width +
+      '" height="' +
+      height +
+      '" rx="12" ry="12"></rect>' +
+      gridLayer +
+      fitLinks +
+      conflictLayer +
+      nodeLayer +
+      pulseLayer +
+      timelineLayer +
+      stageCaption;
+  }
+
+  function reflectiveLinkPath(fromNode, toNode, bend) {
+    const midX = (fromNode.x + toNode.x) / 2;
+    const midY = (fromNode.y + toNode.y) / 2 + bend;
+    return (
+      "M" +
+      fromNode.x.toFixed(2) +
+      " " +
+      fromNode.y.toFixed(2) +
+      " Q" +
+      midX.toFixed(2) +
+      " " +
+      midY.toFixed(2) +
+      " " +
+      toNode.x.toFixed(2) +
+      " " +
+      toNode.y.toFixed(2)
+    );
+  }
+
+  function getReflectivePulsePoint(progress, nodeByKey) {
+    const cycle = ["judgments", "principles", "background", "equilibrium", "revisions", "judgments"];
+    if (!nodeByKey) return null;
+    const totalSegments = cycle.length - 1;
+    if (totalSegments <= 0) return null;
+
+    const normalized = clamp(Number(progress) || 0, 0, 0.999999);
+    const scaled = normalized * totalSegments;
+    const segment = Math.floor(scaled);
+    const local = scaled - segment;
+    const fromNode = nodeByKey[cycle[segment]];
+    const toNode = nodeByKey[cycle[segment + 1]];
+    if (!fromNode || !toNode) return null;
+
+    return {
+      x: fromNode.x + (toNode.x - fromNode.x) * local,
+      y: fromNode.y + (toNode.y - fromNode.y) * local,
+    };
+  }
+
   function initDeliberationAnimation() {
+    if (runReflectiveEquilibriumAnimation()) return;
     if (!el.deliberationChart || !el.beliefChips) return;
 
     const participants = DELIBERATION_PARTICIPANTS.map(function (item) {
@@ -670,7 +1422,7 @@
       const rect = el.deliberationChart.getBoundingClientRect();
       if (!rect || rect.width <= 0) return;
       const points = history.length + 1;
-      const ratio = clamp((clientX - rect.left) / rect.width, 0, 1);
+      const ratio = getNormalizedChartX(el.deliberationChart, clientX);
       inspectIndex = Math.round(ratio * Math.max(0, points - 1));
       renderDeliberationState(inspectBeliefs, inspectRound, inspectReducedMode);
     }

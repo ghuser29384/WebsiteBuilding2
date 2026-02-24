@@ -23,6 +23,7 @@
         <nav class="main-nav" aria-label="Primary">
           <a href="#progress">Progress</a>
           <a href="#comparison">Math vs Ethics</a>
+          <a href="#re-lab">RE Lab</a>
           <a href="#rule">Rule</a>
           <a href="#matching">Matching</a>
           <a href="#pledge">Pledge</a>
@@ -43,34 +44,70 @@
       <div class="deliberation-grid">
         <article class="panel deliberation-copy">
           <p>
-            In each round, participants hear one another's strongest reasons, revise credences in light of the whole group,
-            and test whether the collective estimate is moving toward a better moral judgment.
+            Wide reflective equilibrium starts from considered moral judgments, introduces candidate principles, checks both
+            against background theories and relevant non-moral facts, and revises any part when conflict appears.
+          </p>
+          <p>
+            Reflective Equilibrium in its pure form is nearly impossibile for an individual, but almost possible for collective deliberation.
           </p>
           <div class="deliberation-steps">
-            <p><strong>1) Share:</strong> Distinct moral theory families state a full credence distribution.</p>
-            <p><strong>2) Deliberate:</strong> Each person updates while considering all other positions.</p>
-            <p><strong>3) Converge:</strong> Group disagreement narrows as the consensus approaches moral truth.</p>
+            <p><strong>1) Start with judgments:</strong> Use relatively confident case judgments as provisional fixed points.</p>
+            <p><strong>2) Propose principles:</strong> Build candidate rules that explain and systematize those judgments.</p>
+            <p><strong>3) Go wide:</strong> Test fit with background theories, empirical constraints, and new cases.</p>
+            <p><strong>4) Revise iteratively:</strong> Adjust judgments, principles, or background assumptions until coherence improves.</p>
           </div>
           <ul id="beliefChips" class="belief-chip-list"></ul>
+          <p class="hint re-source-note">
+            Animation informed by SEP (<em>Reflective Equilibrium</em>), Rawls, Daniels, Scanlon, and recent directed reflective equilibrium work.
+          </p>
         </article>
 
         <article class="panel deliberation-stage">
           <div class="deliberation-head">
-            <h3>Live Convergence Simulation</h3>
-            <p id="deliberationRound" class="hint">Round 1 of deliberation</p>
+            <h3>Reflective Equilibrium Simulation</h3>
+            <p id="deliberationRound" class="hint">Round 1 (Pass 1): Seed considered judgments.</p>
           </div>
           <svg
             id="deliberationChart"
             class="deliberation-chart"
             viewBox="0 0 720 300"
             role="img"
-            aria-label="Animated chart showing credence distribution updates across major moral theory families"
+            aria-label="Animated process of wide reflective equilibrium across considered judgments, principles, background theories, and iterative revisions"
           ></svg>
           <div class="deliberation-metrics">
-            <p><span class="metric-label">Leading theory share</span><strong id="consensusValue">0%</strong></p>
-            <p><span class="metric-label">Reference level</span><strong id="truthValue">0%</strong></p>
-            <p><span class="metric-label">Credence spread</span><strong id="spreadValue">0</strong></p>
+            <p><span class="metric-label">Coherence score</span><strong id="consensusValue">0%</strong></p>
+            <p><span class="metric-label">Background support</span><strong id="truthValue">0%</strong></p>
+            <p><span class="metric-label">Judgment-principle tension</span><strong id="spreadValue">0 pts</strong></p>
           </div>
+        </article>
+      </div>
+    </section>
+
+    <section id="re-lab" class="section reveal">
+      <div class="section-head">
+        <p class="eyebrow">Interactive Lab</p>
+        <h2>Reflective Equilibrium Sandbox</h2>
+      </div>
+      <div class="re-lab-grid">
+        <article class="panel re-lab-copy">
+          <p>
+            This embedded page runs the standalone reflective equilibrium simulator with editable sentence pools,
+            account/systematicity/faithfulness weights, and iterative theory/commitment revision.
+          </p>
+          <p>
+            Use this to test wide vs narrow modes, inspect path-dependent convergence behavior, and export iteration history as JSON.
+          </p>
+          <a class="btn btn-secondary" href="reflective_equilibrium.html" target="_blank" rel="noopener">
+            Open Full Screen Lab
+          </a>
+        </article>
+        <article class="panel re-lab-frame-card">
+          <iframe
+            class="re-lab-frame"
+            src="reflective_equilibrium.html"
+            title="Reflective Equilibrium interactive simulator"
+            loading="lazy"
+          ></iframe>
         </article>
       </div>
     </section>
