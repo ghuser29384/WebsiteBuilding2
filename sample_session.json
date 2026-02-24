@@ -1,0 +1,102 @@
+{
+  "id": "wre_sample_trolley",
+  "createdAt": "2026-02-24T00:00:00.000Z",
+  "updatedAt": "2026-02-24T00:00:00.000Z",
+  "judgments": [
+    {
+      "id": "j_t1",
+      "text": "Diverting the trolley away from five people toward one person is permissible in emergency conditions.",
+      "confidence": 78,
+      "tags": ["trolley", "rescue", "numbers"],
+      "sourceNote": "Initial considered judgment from classroom case discussion.",
+      "rejected": false,
+      "createdAt": "2026-02-24T00:00:00.000Z",
+      "updatedAt": "2026-02-24T00:00:00.000Z"
+    },
+    {
+      "id": "j_t2",
+      "text": "Intentionally killing an innocent person is impermissible.",
+      "confidence": 86,
+      "tags": ["deontology", "harm"],
+      "sourceNote": "Strong prohibition intuition.",
+      "rejected": false,
+      "createdAt": "2026-02-24T00:00:00.000Z",
+      "updatedAt": "2026-02-24T00:00:00.000Z"
+    },
+    {
+      "id": "j_t3",
+      "text": "When harms are unavoidable, one should minimize expected deaths.",
+      "confidence": 74,
+      "tags": ["consequentialism", "risk"],
+      "sourceNote": "Pragmatic emergency-response intuition.",
+      "rejected": false,
+      "createdAt": "2026-02-24T00:00:00.000Z",
+      "updatedAt": "2026-02-24T00:00:00.000Z"
+    }
+  ],
+  "principles": [
+    {
+      "id": "p_t1",
+      "text": "One ought to minimize aggregate serious harm in forced-choice emergency contexts.",
+      "scope": "contextual",
+      "plausibility": 0.76,
+      "createdAt": "2026-02-24T00:00:00.000Z",
+      "updatedAt": "2026-02-24T00:00:00.000Z"
+    },
+    {
+      "id": "p_t2",
+      "text": "One must never intentionally use a person merely as a means.",
+      "scope": "universal",
+      "plausibility": 0.83,
+      "createdAt": "2026-02-24T00:00:00.000Z",
+      "updatedAt": "2026-02-24T00:00:00.000Z"
+    }
+  ],
+  "links": [
+    {
+      "id": "l_t1",
+      "fromType": "judgment",
+      "fromId": "j_t1",
+      "toType": "principle",
+      "toId": "p_t1",
+      "relation": "supports",
+      "createdAt": "2026-02-24T00:00:00.000Z"
+    },
+    {
+      "id": "l_t2",
+      "fromType": "judgment",
+      "fromId": "j_t2",
+      "toType": "principle",
+      "toId": "p_t2",
+      "relation": "supports",
+      "createdAt": "2026-02-24T00:00:00.000Z"
+    },
+    {
+      "id": "l_t3",
+      "fromType": "judgment",
+      "fromId": "j_t1",
+      "toType": "judgment",
+      "toId": "j_t2",
+      "relation": "conflicts",
+      "createdAt": "2026-02-24T00:00:00.000Z"
+    },
+    {
+      "id": "l_t4",
+      "fromType": "judgment",
+      "fromId": "j_t3",
+      "toType": "principle",
+      "toId": "p_t1",
+      "relation": "supports",
+      "createdAt": "2026-02-24T00:00:00.000Z"
+    }
+  ],
+  "revisionLog": [
+    {
+      "id": "rev_seed_1",
+      "timestamp": "2026-02-24T00:00:00.000Z",
+      "actorId": "seed_loader",
+      "operation": "SESSION_SEEDED",
+      "details": "Loaded trolley problem starter set."
+    }
+  ]
+}
