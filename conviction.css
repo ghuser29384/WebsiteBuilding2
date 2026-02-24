@@ -42,7 +42,8 @@ h2,
 h3,
 h4 {
   margin: 0 0 0.5rem;
-  font-family: "Newsreader", "Times New Roman", serif;
+  font-family: Garamond, "Times New Roman", serif;
+  font-weight: 400;
   line-height: 1.14;
   letter-spacing: 0;
 }
@@ -1306,7 +1307,8 @@ html:not([data-theme]) h1,
 html:not([data-theme]) h2,
 html:not([data-theme]) h3,
 html:not([data-theme]) h4 {
-  font-family: "Merriweather", "Newsreader", "Times New Roman", serif;
+  font-family: Garamond, "Times New Roman", serif;
+  font-weight: 400;
   color: #172536;
 }
 

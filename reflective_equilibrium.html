@@ -172,10 +172,14 @@
       }
     }
   </style>
+  <link rel="stylesheet" href="wre-assistant.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
 </head>
 <body>
   <div id="app"></div>
+  <section id="wre-assistant-section" aria-label="WRE Assistant">
+    <div id="wre-root"></div>
+  </section>
 
   <script>
     /*
@@ -1600,5 +1604,6 @@
       return hexToRgb(hex).b;
     }
   </script>
+  <script src="wre-assistant.js"></script>
 </body>
 </html>

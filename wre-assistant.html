@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>WRE Assistant | Normativity</title>
+  <link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+  <link rel="stylesheet" href="wre-assistant.css">
+</head>
+<body>
+  <header class="wre-topbar" aria-label="Page navigation">
+    <div class="wre-topbar-inner">
+      <a class="wre-brand" href="index.html">Normativity</a>
+      <nav class="wre-nav" aria-label="Primary">
+        <a href="index.html">Home</a>
+        <a href="reflective_equilibrium.html">Reflective Equilibrium Simulator</a>
+        <a href="wre-assistant.html" aria-current="page">WRE Assistant</a>
+      </nav>
+    </div>
+  </header>
+
+  <main class="wre-page" id="wre-page">
+    <section class="wre-hero" aria-label="Wide Reflective Equilibrium introduction">
+      <p class="wre-kicker">Wide Reflective Equilibrium</p>
+      <h1>Wide Reflective Equilibrium Assistant</h1>
+      <p>
+        This workspace supports mutual adjustment among considered judgments, general principles,
+        and background theories. Build your map, identify tensions, revise selectively, and record
+        rationale for each deliberative step.
+      </p>
+    </section>
+
+    <section class="wre-input-grid" aria-label="Inputs">
+      <article class="wre-panel">
+        <h2>Considered Judgments</h2>
+        <p>Add concrete moral judgments you currently take seriously.</p>
+        <label for="judgment-input" class="wre-label">Judgment text</label>
+        <div class="wre-input-row">
+          <input id="judgment-input" type="text" placeholder="e.g., It is wrong to benefit from severe exploitation.">
+          <button id="add-judgment-btn" type="button">Add Judgment</button>
+        </div>
+      </article>
+
+      <article class="wre-panel">
+        <h2>General Principles</h2>
+        <p>Add candidate principles that might systematize judgments.</p>
+        <label for="principle-input" class="wre-label">Principle text</label>
+        <div class="wre-input-row">
+          <input id="principle-input" type="text" placeholder="e.g., Avoid actions that sustain severe avoidable harm.">
+          <button id="add-principle-btn" type="button">Add Principle</button>
+        </div>
+      </article>
+
+      <article class="wre-panel">
+        <h2>Background Theories</h2>
+        <p>Add empirical or metaphysical assumptions shaping assessment.</p>
+        <label for="theory-input" class="wre-label">Background theory text</label>
+        <div class="wre-input-row">
+          <input id="theory-input" type="text" placeholder="e.g., Individual market choices aggregate into structural demand.">
+          <button id="add-theory-btn" type="button">Add Theory</button>
+        </div>
+      </article>
+    </section>
+
+    <section class="wre-workspace-wrap" aria-label="Deliberation workspace">
+      <article class="wre-panel wre-workspace-panel">
+        <div class="wre-workspace-head">
+          <h2>Deliberation Workspace</h2>
+          <p>Drag cards, connect relations, and iteratively adjust commitments.</p>
+        </div>
+
+        <div id="wre-workspace-board" class="wre-workspace-board" aria-label="Card workspace">
+          <div class="wre-column-guides" aria-hidden="true">
+            <div class="wre-column-guide wre-guide-judgment">
+              <h3>Considered Judgments</h3>
+            </div>
+            <div class="wre-column-guide wre-guide-principle">
+              <h3>General Principles</h3>
+            </div>
+            <div class="wre-column-guide wre-guide-theory">
+              <h3>Background Theories</h3>
+            </div>
+          </div>
+
+          <svg id="wre-connection-layer" class="wre-connection-layer" aria-label="Connections layer"></svg>
+          <div id="wre-card-layer" class="wre-card-layer" aria-live="polite"></div>
+        </div>
+
+        <div class="wre-link-controls" aria-label="Connection controls">
+          <h3>Create Relation</h3>
+          <p>
+            Drag the <strong>Link</strong> handle from one card to another, or select source/target manually below.
+          </p>
+          <div class="wre-link-meta">
+            <span>Source: <strong id="selected-source-label">None</strong></span>
+            <span>Target: <strong id="selected-target-label">None</strong></span>
+          </div>
+          <div class="wre-link-row">
+            <label for="relation-type">Relation</label>
+            <select id="relation-type">
+              <option value="support">Supports</option>
+              <option value="conflict">Conflicts</option>
+              <option value="neutral">Neutral</option>
+            </select>
+            <button id="create-link-btn" type="button">Create Link</button>
+            <button id="clear-selection-btn" type="button" class="ghost">Clear Selection</button>
+          </div>
+        </div>
+      </article>
+
+      <aside class="wre-side-stack" aria-label="Tension and coherence panels">
+        <article class="wre-panel">
+          <h2>Unresolved Tensions</h2>
+          <p>Explicit conflicts and inferred tensions that still need revision.</p>
+          <ul id="unresolved-list" class="wre-list" aria-live="polite"></ul>
+        </article>
+
+        <article class="wre-panel">
+          <h2>Coherence Summary</h2>
+          <div id="coherence-metrics" class="wre-metrics"></div>
+          <p id="coherence-narrative" class="wre-narrative"></p>
+        </article>
+      </aside>
+    </section>
+
+    <section class="wre-panel wre-control-panel" aria-label="Guided deliberation controls">
+      <h2>Guided Deliberation Steps</h2>
+      <div class="wre-step-buttons">
+        <button id="start-deliberation-btn" type="button">Start Deliberation</button>
+        <button id="identify-conflicts-btn" type="button">Identify Conflicts</button>
+        <button id="suggest-revisions-btn" type="button">Suggest Revisions</button>
+        <button id="record-rationale-btn" type="button">Record Rationale</button>
+        <button id="show-summary-btn" type="button">Show Coherence Summary</button>
+      </div>
+
+      <article id="step-guidance" class="wre-step-guidance" aria-live="polite"></article>
+
+      <div class="wre-rationale-row">
+        <label for="step-response-input" class="wre-label">Reflective response</label>
+        <textarea id="step-response-input" rows="3" placeholder="Record your rationale for the current step."></textarea>
+        <div class="wre-rationale-actions">
+          <button id="save-response-btn" type="button">Save Response</button>
+          <button id="save-session-btn" type="button" class="ghost">Save Session</button>
+          <button id="restore-session-btn" type="button" class="ghost">Restore Session</button>
+        </div>
+      </div>
+
+      <h3>Rationale Log</h3>
+      <ul id="response-log" class="wre-list"></ul>
+    </section>
+  </main>
+
+  <script src="wre-assistant.js"></script>
+</body>
+</html>

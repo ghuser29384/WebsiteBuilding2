@@ -159,3 +159,27 @@ Use `sample_session.json` to create a seed session via `POST /api/wre/session`:
 ```
 
 (Replace placeholders with arrays from `sample_session.json`.)
+
+## WRE Assistant
+
+The site now includes a static, browser-only **Wide Reflective Equilibrium Assistant** mounted in `reflective_equilibrium.html` at `#wre-root`.
+
+What it does:
+- Lets users enter a moral belief or principle.
+- Runs a deterministic local analysis (no external AI calls).
+- Returns four structured outputs:
+  - Logical Consistency Check
+  - Potential Conflicts
+  - Questions for Reflection
+  - Suggested Revisions
+
+Current scope:
+- Client-side only (plain HTML/CSS/JavaScript).
+- No backend integration and no package dependencies.
+
+How to modify analysis logic:
+- Edit `/Users/HenryZhu/Documents/New Project 4/wre-assistant.js`.
+- Main functions:
+  - `validateInput()`
+  - `generateAnalysis()`
+  - `renderResults()`
