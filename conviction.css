@@ -493,7 +493,7 @@ textarea:focus-visible {
   border: 1px solid #d8dfe7;
   border-radius: 12px;
   background: #ffffff;
-  cursor: zoom-in;
+  cursor: crosshair;
 }
 
 .featured-market-snapshot {
@@ -677,10 +677,28 @@ textarea:focus-visible {
   stroke-dasharray: 4 5;
 }
 
+.fmc-hover-guide {
+  stroke: rgba(31, 45, 61, 0.58);
+  stroke-width: 1.2;
+  stroke-dasharray: 4 4;
+}
+
+.fmc-hover-label {
+  fill: #24364c;
+  font-size: 11px;
+  font-weight: 700;
+}
+
 .fmc-yes-dot,
 .fmc-no-dot {
   stroke: #ffffff;
   stroke-width: 1.8;
+}
+
+.fmc-yes-hover-dot,
+.fmc-no-hover-dot {
+  stroke: #ffffff;
+  stroke-width: 2;
 }
 
 .fmc-yes-dot {
@@ -688,6 +706,14 @@ textarea:focus-visible {
 }
 
 .fmc-no-dot {
+  fill: #8f2236;
+}
+
+.fmc-yes-hover-dot {
+  fill: #24694a;
+}
+
+.fmc-no-hover-dot {
   fill: #8f2236;
 }
 

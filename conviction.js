@@ -479,6 +479,8 @@
   const featuredMarketUiState = {
     marketId: null,
     range: "1M",
+    hoverIndex: null,
+    activeSeries: [],
   };
 
   const el = {
@@ -820,6 +822,7 @@
           const nextRange = String(button.getAttribute("data-featured-range") || "").toUpperCase();
           if (!Object.prototype.hasOwnProperty.call(FEATURED_RANGE_CONFIG, nextRange)) return;
           featuredMarketUiState.range = nextRange;
+          featuredMarketUiState.hoverIndex = null;
           renderFeaturedMarketOfDay();
         });
       });
@@ -832,7 +835,19 @@
         const marketId = button.getAttribute("data-featured-market-id");
         if (!marketId) return;
         featuredMarketUiState.marketId = marketId;
+        featuredMarketUiState.hoverIndex = null;
         renderFeaturedMarketOfDay();
+      });
+    }
+
+    if (el.featuredMarketChart) {
+      el.featuredMarketChart.addEventListener("pointermove", function (event) {
+        updateFeaturedHoverIndexFromClientX(event.clientX);
+      });
+      el.featuredMarketChart.addEventListener("pointerleave", function () {
+        if (featuredMarketUiState.hoverIndex === null) return;
+        featuredMarketUiState.hoverIndex = null;
+        renderFeaturedMarketOfDay({ skipTopMarkets: true });
       });
     }
 
@@ -1052,7 +1067,8 @@
     renderLedger();
   }
 
-  function renderFeaturedMarketOfDay() {
+  function renderFeaturedMarketOfDay(options) {
+    const opts = options || {};
     if (!el.featuredMarketTitle || !el.featuredTopMarkets) return;
     if (!Array.isArray(FEATURED_MARKETS) || FEATURED_MARKETS.length === 0) return;
 
@@ -1069,12 +1085,26 @@
 
     const rangeKey = featuredMarketUiState.range;
     const trendSeries = buildFeaturedTrendSeries(featured, rangeKey, today);
+    featuredMarketUiState.activeSeries = trendSeries.slice();
+
+    let inspectIndex = null;
+    if (
+      Number.isInteger(featuredMarketUiState.hoverIndex) &&
+      featuredMarketUiState.hoverIndex >= 0 &&
+      featuredMarketUiState.hoverIndex < trendSeries.length
+    ) {
+      inspectIndex = featuredMarketUiState.hoverIndex;
+    } else {
+      featuredMarketUiState.hoverIndex = null;
+    }
+
     const latestPoint = trendSeries[trendSeries.length - 1] || { yes: featured.yes, no: featured.no };
+    const inspectPoint = inspectIndex === null ? latestPoint : trendSeries[inspectIndex];
     const firstPoint = trendSeries[0] || latestPoint;
     const rangeMove = (latestPoint.yes || 0) - (firstPoint.yes || 0);
     const rangeMovePrefix = rangeMove >= 0 ? "+" : "";
 
-    const yesValue = clamp(Math.round(Number(latestPoint.yes) || 50), 1, 99);
+    const yesValue = clamp(Math.round(Number(inspectPoint.yes) || 50), 1, 99);
     const noValue = 100 - yesValue;
     const dayChange = Number(featured.dayChange) || 0;
     const dayChangePrefix = dayChange > 0 ? "+" : "";
@@ -1102,17 +1132,22 @@
       el.featuredMarketClose.textContent = featured.closesLabel;
     }
     if (el.featuredMarketSnapshot) {
+      const cursorSuffix =
+        inspectIndex === null
+          ? "Latest"
+          : "Cursor (" + Math.round((inspectIndex / Math.max(1, trendSeries.length - 1)) * 100) + "%)";
       el.featuredMarketSnapshot.textContent =
-        "Range " +
+        cursorSuffix +
+        " at " +
         rangeKey +
         ": Yes " +
-        rangeMovePrefix +
-        rangeMove.toFixed(1) +
-        " pts, latest Yes " +
         yesValue +
         "% / No " +
         noValue +
-        "%.";
+        "%. Overall range move: " +
+        rangeMovePrefix +
+        rangeMove.toFixed(1) +
+        " pts.";
     }
     if (el.featuredMarketMeta) {
       el.featuredMarketMeta.textContent =
@@ -1126,8 +1161,10 @@
     }
 
     syncFeaturedRangeButtons(rangeKey);
-    renderFeaturedMarketTrendChart(featured, trendSeries, rangeKey);
-    renderFeaturedTopMarkets(today, featured.id);
+    renderFeaturedMarketTrendChart(featured, trendSeries, rangeKey, inspectIndex);
+    if (!opts.skipTopMarkets) {
+      renderFeaturedTopMarkets(today, featured.id);
+    }
   }
 
   function renderFeaturedTopMarkets(date, featuredMarketId) {
@@ -1184,6 +1221,20 @@
     });
   }
 
+  function updateFeaturedHoverIndexFromClientX(clientX) {
+    if (!el.featuredMarketChart) return;
+    if (!Array.isArray(featuredMarketUiState.activeSeries) || featuredMarketUiState.activeSeries.length === 0) return;
+    if (!Number.isFinite(clientX)) return;
+
+    const seriesLength = featuredMarketUiState.activeSeries.length;
+    const ratio = getNormalizedChartX(el.featuredMarketChart, clientX);
+    const nextIndex = clamp(Math.round(ratio * Math.max(0, seriesLength - 1)), 0, Math.max(0, seriesLength - 1));
+
+    if (nextIndex === featuredMarketUiState.hoverIndex) return;
+    featuredMarketUiState.hoverIndex = nextIndex;
+    renderFeaturedMarketOfDay({ skipTopMarkets: true });
+  }
+
   function syncFeaturedRangeButtons(activeRange) {
     if (!el.featuredRangeButtons || el.featuredRangeButtons.length === 0) return;
     el.featuredRangeButtons.forEach(function (button) {
@@ -1224,7 +1275,7 @@
     return values;
   }
 
-  function renderFeaturedMarketTrendChart(market, series, rangeKey) {
+  function renderFeaturedMarketTrendChart(market, series, rangeKey, inspectIndex) {
     if (!el.featuredMarketChart) return;
     if (!Array.isArray(series) || series.length === 0) {
       el.featuredMarketChart.innerHTML = "";
@@ -1287,8 +1338,6 @@
       })
       .join("");
 
-    const latestYesPoint = yesPoints[yesPoints.length - 1];
-    const latestNoPoint = noPoints[noPoints.length - 1];
     const xLabelY = height - 13;
     const xLabels =
       '<text class="fmc-axis-label" x="' +
@@ -1312,6 +1361,15 @@
       '" text-anchor="end">' +
       escapeHtml(labels[Math.min(2, labels.length - 1)]) +
       "</text>";
+
+    const safeInspectIndex =
+      Number.isInteger(inspectIndex) && inspectIndex >= 0 && inspectIndex < series.length ? inspectIndex : series.length - 1;
+    const inspectYesPoint = yesPoints[safeInspectIndex];
+    const inspectNoPoint = noPoints[safeInspectIndex];
+    const inspectYesValue = Math.round(series[safeInspectIndex].yes);
+    const inspectNoValue = Math.round(series[safeInspectIndex].no);
+    const inspectLabelAnchor = inspectYesPoint[0] > left + chartWidth * 0.74 ? "end" : "start";
+    const inspectLabelX = inspectLabelAnchor === "end" ? inspectYesPoint[0] - 10 : inspectYesPoint[0] + 10;
 
     const legend =
       '<g transform="translate(' +
@@ -1340,25 +1398,36 @@
       '<path class="fmc-no-line" d="' +
       noPath +
       '"></path>' +
-      '<line class="fmc-latest-guide" x1="' +
-      latestYesPoint[0].toFixed(2) +
+      '<line class="fmc-hover-guide" x1="' +
+      inspectYesPoint[0].toFixed(2) +
       '" y1="' +
       top +
       '" x2="' +
-      latestYesPoint[0].toFixed(2) +
+      inspectYesPoint[0].toFixed(2) +
       '" y2="' +
       (height - bottom + 1) +
       '"></line>' +
-      '<circle class="fmc-yes-dot" cx="' +
-      latestYesPoint[0].toFixed(2) +
+      '<circle class="fmc-yes-hover-dot" cx="' +
+      inspectYesPoint[0].toFixed(2) +
       '" cy="' +
-      latestYesPoint[1].toFixed(2) +
-      '" r="5.2"></circle>' +
-      '<circle class="fmc-no-dot" cx="' +
-      latestNoPoint[0].toFixed(2) +
+      inspectYesPoint[1].toFixed(2) +
+      '" r="5.4"></circle>' +
+      '<circle class="fmc-no-hover-dot" cx="' +
+      inspectNoPoint[0].toFixed(2) +
       '" cy="' +
-      latestNoPoint[1].toFixed(2) +
-      '" r="5.2"></circle>' +
+      inspectNoPoint[1].toFixed(2) +
+      '" r="5.4"></circle>' +
+      '<text class="fmc-hover-label" x="' +
+      inspectLabelX.toFixed(2) +
+      '" y="' +
+      (Math.min(inspectYesPoint[1], inspectNoPoint[1]) - 10).toFixed(2) +
+      '" text-anchor="' +
+      inspectLabelAnchor +
+      '">Yes ' +
+      inspectYesValue +
+      "% / No " +
+      inspectNoValue +
+      "%</text>" +
       xLabels +
       legend;
   }
