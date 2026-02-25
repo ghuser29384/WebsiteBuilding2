@@ -1,11 +1,11 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" role="img" aria-label="Normativity favicon">
-  <rect x="0" y="0" width="256" height="256" fill="#efefef"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="1190" height="1190" viewBox="0 0 1190 1190" role="img" aria-label="Normativity favicon">
+  <rect x="0" y="0" width="1190" height="1190" fill="#efefef"/>
   <path
-    d="M 8 256 L 64 8 L 188 256 L 248 8"
+    d="M 103 1097 L 332 125 L 842 1097 L 1071 125"
     fill="none"
     stroke="#3d6f99"
-    stroke-width="28"
-    stroke-linecap="square"
+    stroke-width="42"
+    stroke-linecap="butt"
     stroke-linejoin="miter"
   />
 </svg>
