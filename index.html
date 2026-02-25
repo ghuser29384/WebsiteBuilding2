@@ -21,6 +21,7 @@
       <a class="brand" href="#top">Normativity</a>
       <div class="header-tools">
         <nav class="main-nav" aria-label="Primary">
+          <a href="#featured-market-day">Featured Market</a>
           <a href="#progress">Progress</a>
           <a href="#comparison">Math vs Ethics</a>
           <a href="#re-lab">RE Lab</a>
@@ -36,6 +37,58 @@
   </header>
 
   <main id="top" class="container">
+    <section id="featured-market-day" class="section reveal">
+      <div class="section-head featured-market-section-head">
+        <p class="eyebrow">Featured Market of the Day</p>
+        <h2 id="featuredMarketTitle">Loading featured market...</h2>
+        <p id="featuredMarketPrompt" class="featured-market-prompt"></p>
+      </div>
+      <article class="panel featured-market-showcase">
+        <div class="featured-market-main">
+          <div class="featured-market-main-head">
+            <p id="featuredMarketCategory" class="featured-market-chip">Loading category...</p>
+            <div class="featured-range-controls" aria-label="Featured market trend range">
+              <button type="button" data-featured-range="1D">1D</button>
+              <button type="button" data-featured-range="1W">1W</button>
+              <button type="button" data-featured-range="1M" class="is-active">1M</button>
+              <button type="button" data-featured-range="ALL">ALL</button>
+            </div>
+          </div>
+          <svg
+            id="featuredMarketChart"
+            class="featured-market-chart"
+            viewBox="0 0 760 340"
+            role="img"
+            aria-label="Featured market trend chart showing Yes and No credence over time"
+          ></svg>
+          <p id="featuredMarketSnapshot" class="hint featured-market-snapshot"></p>
+          <div class="featured-market-main-meta">
+            <p><span class="metric-label">24h move</span><strong id="featuredMarketMove">--</strong></p>
+            <p><span class="metric-label">Weekly volume</span><strong id="featuredMarketVolume">--</strong></p>
+            <p><span class="metric-label">Market close</span><strong id="featuredMarketClose">--</strong></p>
+          </div>
+        </div>
+        <aside class="featured-market-sidebar">
+          <div class="featured-market-prices">
+            <p class="featured-price yes">
+              <span>Yes</span>
+              <strong id="featuredYesPrice">--%</strong>
+            </p>
+            <p class="featured-price no">
+              <span>No</span>
+              <strong id="featuredNoPrice">--%</strong>
+            </p>
+          </div>
+          <p id="featuredMarketMeta" class="hint"></p>
+          <a class="btn btn-secondary featured-open-btn" href="moral-market.html">Open Moral Credence Board</a>
+          <div class="featured-top-wrap">
+            <p class="featured-top-label">Top Markets</p>
+            <ul id="featuredTopMarkets" class="featured-top-list"></ul>
+          </div>
+        </aside>
+      </article>
+    </section>
+
     <section id="deliberation" class="section reveal">
       <div class="section-head">
         <p class="eyebrow">Mutual Deliberation</p>

@@ -410,6 +410,287 @@ textarea:focus-visible {
     #fffefb;
 }
 
+.featured-market-section-head {
+  margin-bottom: 0.74rem;
+}
+
+.featured-market-section-head h2 {
+  margin-bottom: 0.26rem;
+}
+
+.featured-market-prompt {
+  margin: 0;
+  color: #546273;
+  font-size: 0.94rem;
+  max-width: 86ch;
+}
+
+.featured-market-showcase {
+  display: grid;
+  grid-template-columns: minmax(0, 1.38fr) minmax(290px, 0.62fr);
+  gap: 0.9rem;
+  background:
+    radial-gradient(96% 78% at 100% 0%, rgba(60, 115, 210, 0.08), transparent 72%),
+    #fffefb;
+}
+
+.featured-market-main {
+  display: grid;
+  gap: 0.56rem;
+}
+
+.featured-market-main-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.54rem;
+}
+
+.featured-market-chip {
+  margin: 0;
+  border: 1px solid #c7d3e2;
+  background: #f4f8fc;
+  border-radius: 999px;
+  color: #355273;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.16rem 0.5rem;
+}
+
+.featured-range-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.32rem;
+}
+
+.featured-range-controls button {
+  border: 1px solid #cfdae7;
+  background: #ffffff;
+  color: #52657b;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 700;
+  padding: 0.16rem 0.5rem;
+  cursor: pointer;
+}
+
+.featured-range-controls button:hover,
+.featured-range-controls button:focus-visible {
+  background: #f4f7fb;
+  border-color: #bccadb;
+}
+
+.featured-range-controls button.is-active {
+  color: #ffffff;
+  border-color: #223246;
+  background: #223246;
+}
+
+.featured-market-chart {
+  width: 100%;
+  display: block;
+  border: 1px solid #d8dfe7;
+  border-radius: 12px;
+  background: #ffffff;
+  cursor: zoom-in;
+}
+
+.featured-market-snapshot {
+  margin: 0;
+  color: #546273;
+  font-size: 0.86rem;
+}
+
+.featured-market-main-meta {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.42rem;
+}
+
+.featured-market-main-meta p {
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 0.46rem 0.54rem;
+  background: #fffdfa;
+  display: grid;
+  gap: 0.1rem;
+}
+
+.featured-market-main-meta strong {
+  font-family: "Newsreader", "Times New Roman", serif;
+  font-size: 1.06rem;
+}
+
+.featured-market-sidebar {
+  display: grid;
+  align-content: start;
+  gap: 0.54rem;
+}
+
+.featured-market-prices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.42rem;
+}
+
+.featured-price {
+  margin: 0;
+  border-radius: 10px;
+  border: 1px solid #d6dfe9;
+  background: #ffffff;
+  padding: 0.36rem 0.58rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.featured-price strong {
+  font-family: "Newsreader", "Times New Roman", serif;
+  font-size: 1.1rem;
+}
+
+.featured-price.yes {
+  border-color: rgba(36, 105, 74, 0.34);
+  background: rgba(36, 105, 74, 0.08);
+  color: #1f5a3f;
+}
+
+.featured-price.no {
+  border-color: rgba(143, 34, 54, 0.32);
+  background: rgba(143, 34, 54, 0.08);
+  color: #702032;
+}
+
+.featured-open-btn {
+  width: 100%;
+}
+
+.featured-top-wrap {
+  margin-top: 0.12rem;
+}
+
+.featured-top-label {
+  margin: 0 0 0.34rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #647388;
+}
+
+.featured-top-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.34rem;
+}
+
+.featured-top-list li {
+  margin: 0;
+}
+
+.featured-top-button {
+  width: 100%;
+  border: 1px solid #d8e0ea;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 0.4rem 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.55rem;
+  text-align: left;
+  cursor: pointer;
+}
+
+.featured-top-button:hover,
+.featured-top-button:focus-visible {
+  background: #f6f9fc;
+  border-color: #c7d2df;
+}
+
+.featured-top-button.is-active {
+  border-color: #223246;
+  background: #f3f7fb;
+}
+
+.featured-top-market-title {
+  color: #2a384b;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.featured-top-market-stats {
+  color: #4d5d72;
+  font-size: 0.76rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.fmc-bg {
+  fill: #ffffff;
+}
+
+.fmc-grid {
+  stroke: rgba(88, 102, 121, 0.22);
+  stroke-width: 1;
+}
+
+.fmc-axis-label {
+  fill: #5d6a79;
+  font-size: 10.8px;
+  font-weight: 600;
+}
+
+.fmc-legend {
+  fill: #4d5d72;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.fmc-yes-line {
+  fill: none;
+  stroke: #24694a;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.fmc-no-line {
+  fill: none;
+  stroke: #8f2236;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.fmc-latest-guide {
+  stroke: rgba(31, 45, 61, 0.36);
+  stroke-width: 1.1;
+  stroke-dasharray: 4 5;
+}
+
+.fmc-yes-dot,
+.fmc-no-dot {
+  stroke: #ffffff;
+  stroke-width: 1.8;
+}
+
+.fmc-yes-dot {
+  fill: #24694a;
+}
+
+.fmc-no-dot {
+  fill: #8f2236;
+}
+
 .deliberation-head {
   display: flex;
   justify-content: space-between;
@@ -1388,6 +1669,13 @@ html:not([data-theme]) .comparison-ethics {
   background: #ffffff !important;
 }
 
+html[data-theme="light"] .featured-market-showcase,
+html:not([data-theme]) .featured-market-showcase {
+  background:
+    radial-gradient(96% 78% at 100% 0%, rgba(60, 115, 210, 0.08), transparent 72%),
+    #fffefb !important;
+}
+
 html[data-theme="light"] .formula-panel,
 html[data-theme="light"] .gate-banner,
 html[data-theme="light"] .mini-summary,
@@ -1548,6 +1836,10 @@ html:not([data-theme]) .site-footer {
     grid-template-columns: 1fr;
   }
 
+  .featured-market-showcase {
+    grid-template-columns: 1fr;
+  }
+
   .progress-grid {
     grid-template-columns: 1fr;
   }
@@ -1585,9 +1877,16 @@ html:not([data-theme]) .site-footer {
   .date-grid,
   .hero-stats,
   .deliberation-metrics,
+  .featured-market-main-meta,
+  .featured-market-prices,
   .progress-metrics,
   .comparison-metrics {
     grid-template-columns: 1fr;
+  }
+
+  .featured-top-button {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .ledger-head {

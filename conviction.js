@@ -158,6 +158,102 @@
       },
     },
   ];
+  const FEATURED_MARKETS = [
+    {
+      id: "fm-factory-farming",
+      title: "Purchasing factory-farmed meat: morally permissible?",
+      prompt: "Should individuals keep buying factory-farmed meat given suffering and demand effects?",
+      category: "Animal welfare",
+      yes: 24,
+      no: 76,
+      weeklyVolume: 18430,
+      closesLabel: "Closes this Sunday",
+      dayChange: -3,
+    },
+    {
+      id: "fm-fast-fashion",
+      title: "Purchasing fast fashion: morally permissible?",
+      prompt: "Do low prices justify environmental and labor externalities of fast fashion supply chains?",
+      category: "Consumption ethics",
+      yes: 31,
+      no: 69,
+      weeklyVolume: 14210,
+      closesLabel: "Closes this Sunday",
+      dayChange: -2,
+    },
+    {
+      id: "fm-abortion",
+      title: "Abortion is morally permissible in most cases?",
+      prompt: "How should autonomy, moral status, and social consequences be weighed in policy and personal decisions?",
+      category: "Bioethics",
+      yes: 57,
+      no: 43,
+      weeklyVolume: 27620,
+      closesLabel: "Closes this Sunday",
+      dayChange: 1,
+    },
+    {
+      id: "fm-carbon-tax",
+      title: "A strong carbon tax is morally required?",
+      prompt: "Are collective climate harms sufficient to justify broad pricing constraints on emissions?",
+      category: "Climate and consumption",
+      yes: 63,
+      no: 37,
+      weeklyVolume: 19980,
+      closesLabel: "Closes this Sunday",
+      dayChange: 2,
+    },
+    {
+      id: "fm-border-aid",
+      title: "High-income citizens owe significant cross-border aid?",
+      prompt: "Do duties to distant strangers require large recurring transfers, beyond local obligations?",
+      category: "Global poverty",
+      yes: 72,
+      no: 28,
+      weeklyVolume: 11860,
+      closesLabel: "Closes this Sunday",
+      dayChange: 1,
+    },
+    {
+      id: "fm-punishment",
+      title: "Retributive punishment is morally justified?",
+      prompt: "Can desert-based punishment be defended apart from deterrence and rehabilitation outcomes?",
+      category: "Criminal justice",
+      yes: 44,
+      no: 56,
+      weeklyVolume: 13240,
+      closesLabel: "Closes this Sunday",
+      dayChange: -1,
+    },
+    {
+      id: "fm-speech",
+      title: "Deplatforming harmful speech is morally permissible?",
+      prompt: "When does harm prevention override broad free-expression protections in public platforms?",
+      category: "Free speech",
+      yes: 53,
+      no: 47,
+      weeklyVolume: 16870,
+      closesLabel: "Closes this Sunday",
+      dayChange: 0,
+    },
+    {
+      id: "fm-ai-pause",
+      title: "A global frontier-AI pause is morally required?",
+      prompt: "Do catastrophic-risk concerns justify strong temporary limits on advanced model deployment?",
+      category: "AI governance",
+      yes: 46,
+      no: 54,
+      weeklyVolume: 22150,
+      closesLabel: "Closes this Sunday",
+      dayChange: 3,
+    },
+  ];
+  const FEATURED_RANGE_CONFIG = {
+    "1D": { points: 36, labels: ["00:00", "12:00", "Now"], volatility: 1.2, waveAmp: 1.4, cycles: 3.2, trendBias: 0.8 },
+    "1W": { points: 56, labels: ["Mon", "Thu", "Sun"], volatility: 0.9, waveAmp: 2.1, cycles: 2.2, trendBias: 1.1 },
+    "1M": { points: 72, labels: ["Week 1", "Week 2", "Week 4"], volatility: 0.75, waveAmp: 2.8, cycles: 1.8, trendBias: 1.3 },
+    ALL: { points: 90, labels: ["Jan", "Mid", "Now"], volatility: 0.6, waveAmp: 3.6, cycles: 1.35, trendBias: 1.7 },
+  };
 
   const DELIBERATION_REFERENCE_LEVEL = 18;
   const DELIBERATION_HISTORY_LIMIT = 16;
@@ -380,6 +476,10 @@
   let currentMatches = [];
   const chartZoomStateByEl = new WeakMap();
   let reflectiveEquilibriumAnimationStarted = false;
+  const featuredMarketUiState = {
+    marketId: null,
+    range: "1M",
+  };
 
   const el = {
     pledgeForm: document.getElementById("pledgeForm"),
@@ -421,6 +521,19 @@
     truthValue: document.getElementById("truthValue"),
     spreadValue: document.getElementById("spreadValue"),
     beliefChips: document.getElementById("beliefChips"),
+    featuredMarketChart: document.getElementById("featuredMarketChart"),
+    featuredMarketTitle: document.getElementById("featuredMarketTitle"),
+    featuredMarketPrompt: document.getElementById("featuredMarketPrompt"),
+    featuredMarketCategory: document.getElementById("featuredMarketCategory"),
+    featuredMarketSnapshot: document.getElementById("featuredMarketSnapshot"),
+    featuredMarketMove: document.getElementById("featuredMarketMove"),
+    featuredMarketVolume: document.getElementById("featuredMarketVolume"),
+    featuredMarketClose: document.getElementById("featuredMarketClose"),
+    featuredYesPrice: document.getElementById("featuredYesPrice"),
+    featuredNoPrice: document.getElementById("featuredNoPrice"),
+    featuredMarketMeta: document.getElementById("featuredMarketMeta"),
+    featuredTopMarkets: document.getElementById("featuredTopMarkets"),
+    featuredRangeButtons: document.querySelectorAll("[data-featured-range]"),
     progressChart: document.getElementById("progressChart"),
     progressYear: document.getElementById("progressYear"),
     progressNarrative: document.getElementById("progressNarrative"),
@@ -506,6 +619,7 @@
   }
 
   function initChartTrackpadZooming() {
+    enableTrackpadZoomForChart(el.featuredMarketChart, { maxScale: 12 });
     enableTrackpadZoomForChart(el.deliberationChart, { maxScale: 12 });
     enableTrackpadZoomForChart(el.progressChart, { maxScale: 16 });
     enableTrackpadZoomForChart(el.mathProgressChart, { maxScale: 16 });
@@ -699,6 +813,28 @@
       updateThresholdState();
     });
     el.matchModeInput.addEventListener("change", renderMatching);
+
+    if (el.featuredRangeButtons && el.featuredRangeButtons.length > 0) {
+      el.featuredRangeButtons.forEach(function (button) {
+        button.addEventListener("click", function () {
+          const nextRange = String(button.getAttribute("data-featured-range") || "").toUpperCase();
+          if (!Object.prototype.hasOwnProperty.call(FEATURED_RANGE_CONFIG, nextRange)) return;
+          featuredMarketUiState.range = nextRange;
+          renderFeaturedMarketOfDay();
+        });
+      });
+    }
+
+    if (el.featuredTopMarkets) {
+      el.featuredTopMarkets.addEventListener("click", function (event) {
+        const button = event.target.closest("button[data-featured-market-id]");
+        if (!button) return;
+        const marketId = button.getAttribute("data-featured-market-id");
+        if (!marketId) return;
+        featuredMarketUiState.marketId = marketId;
+        renderFeaturedMarketOfDay();
+      });
+    }
 
     el.convictionList.addEventListener("click", function (event) {
       const button = event.target.closest("button[data-conviction-id]");
@@ -908,11 +1044,343 @@
   }
 
   function render() {
+    renderFeaturedMarketOfDay();
     renderGate();
     renderConvictionList();
     renderMatching();
     renderSessionPartner();
     renderLedger();
+  }
+
+  function renderFeaturedMarketOfDay() {
+    if (!el.featuredMarketTitle || !el.featuredTopMarkets) return;
+    if (!Array.isArray(FEATURED_MARKETS) || FEATURED_MARKETS.length === 0) return;
+
+    const today = new Date();
+    const dailyFeatured = pickFeaturedMarketForDate(today);
+    const selectedFeatured = getFeaturedMarketById(featuredMarketUiState.marketId);
+    const featured = selectedFeatured || dailyFeatured;
+    if (!featured) return;
+
+    featuredMarketUiState.marketId = featured.id;
+    if (!Object.prototype.hasOwnProperty.call(FEATURED_RANGE_CONFIG, featuredMarketUiState.range)) {
+      featuredMarketUiState.range = "1M";
+    }
+
+    const rangeKey = featuredMarketUiState.range;
+    const trendSeries = buildFeaturedTrendSeries(featured, rangeKey, today);
+    const latestPoint = trendSeries[trendSeries.length - 1] || { yes: featured.yes, no: featured.no };
+    const firstPoint = trendSeries[0] || latestPoint;
+    const rangeMove = (latestPoint.yes || 0) - (firstPoint.yes || 0);
+    const rangeMovePrefix = rangeMove >= 0 ? "+" : "";
+
+    const yesValue = clamp(Math.round(Number(latestPoint.yes) || 50), 1, 99);
+    const noValue = 100 - yesValue;
+    const dayChange = Number(featured.dayChange) || 0;
+    const dayChangePrefix = dayChange > 0 ? "+" : "";
+
+    el.featuredMarketTitle.textContent = featured.title;
+    if (el.featuredMarketPrompt) {
+      el.featuredMarketPrompt.textContent = featured.prompt;
+    }
+    if (el.featuredMarketCategory) {
+      el.featuredMarketCategory.textContent = featured.category;
+    }
+    if (el.featuredYesPrice) {
+      el.featuredYesPrice.textContent = yesValue + "%";
+    }
+    if (el.featuredNoPrice) {
+      el.featuredNoPrice.textContent = noValue + "%";
+    }
+    if (el.featuredMarketMove) {
+      el.featuredMarketMove.textContent = dayChangePrefix + dayChange + " pts";
+    }
+    if (el.featuredMarketVolume) {
+      el.featuredMarketVolume.textContent = formatCompactCount(featured.weeklyVolume) + " tokens";
+    }
+    if (el.featuredMarketClose) {
+      el.featuredMarketClose.textContent = featured.closesLabel;
+    }
+    if (el.featuredMarketSnapshot) {
+      el.featuredMarketSnapshot.textContent =
+        "Range " +
+        rangeKey +
+        ": Yes " +
+        rangeMovePrefix +
+        rangeMove.toFixed(1) +
+        " pts, latest Yes " +
+        yesValue +
+        "% / No " +
+        noValue +
+        "%.";
+    }
+    if (el.featuredMarketMeta) {
+      el.featuredMarketMeta.textContent =
+        featured.category +
+        " | Weekly volume " +
+        formatCompactCount(featured.weeklyVolume) +
+        " credence tokens | Yes " +
+        dayChangePrefix +
+        dayChange +
+        " pts today";
+    }
+
+    syncFeaturedRangeButtons(rangeKey);
+    renderFeaturedMarketTrendChart(featured, trendSeries, rangeKey);
+    renderFeaturedTopMarkets(today, featured.id);
+  }
+
+  function renderFeaturedTopMarkets(date, featuredMarketId) {
+    if (!el.featuredTopMarkets) return;
+
+    const seed = marketDaySeed(date);
+    const ranked = FEATURED_MARKETS.map(function (market) {
+      const activityDrift = (hashString("activity|" + market.id + "|" + seed) % 19) - 9;
+      const confidenceDrift = (hashString("yes|" + market.id + "|" + seed) % 9) - 4;
+      const activity = Math.max(500, Number(market.weeklyVolume) + activityDrift * 130);
+      const yesValue = clamp(Math.round(Number(market.yes) + confidenceDrift), 1, 99);
+      return {
+        market: market,
+        activity: activity,
+        yesValue: yesValue,
+      };
+    }).sort(function (a, b) {
+      return b.activity - a.activity;
+    });
+
+    const featured = ranked.find(function (item) {
+      return item.market.id === featuredMarketId;
+    });
+    const topRows = [];
+    if (featured) {
+      topRows.push(featured);
+    }
+    ranked.forEach(function (item) {
+      if (topRows.length >= 5) return;
+      if (featured && item.market.id === featured.market.id) return;
+      topRows.push(item);
+    });
+
+    el.featuredTopMarkets.innerHTML = "";
+    topRows.forEach(function (row, index) {
+      const item = document.createElement("li");
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "featured-top-button" + (row.market.id === featuredMarketId ? " is-active" : "");
+      button.setAttribute("data-featured-market-id", row.market.id);
+
+      const title = document.createElement("span");
+      title.className = "featured-top-market-title";
+      title.textContent = (index === 0 ? "Featured: " : "") + row.market.title;
+
+      const stats = document.createElement("span");
+      stats.className = "featured-top-market-stats";
+      stats.textContent = "Yes " + row.yesValue + "% · " + formatCompactCount(row.activity) + " vol";
+
+      button.appendChild(title);
+      button.appendChild(stats);
+      item.appendChild(button);
+      el.featuredTopMarkets.appendChild(item);
+    });
+  }
+
+  function syncFeaturedRangeButtons(activeRange) {
+    if (!el.featuredRangeButtons || el.featuredRangeButtons.length === 0) return;
+    el.featuredRangeButtons.forEach(function (button) {
+      const buttonRange = String(button.getAttribute("data-featured-range") || "").toUpperCase();
+      const isActive = buttonRange === activeRange;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-pressed", isActive ? "true" : "false");
+    });
+  }
+
+  function buildFeaturedTrendSeries(market, rangeKey, date) {
+    const config = FEATURED_RANGE_CONFIG[rangeKey] || FEATURED_RANGE_CONFIG["1M"];
+    const points = Math.max(20, Number(config.points) || 72);
+    const baseYes = clamp(Number(market && market.yes) || 50, 1, 99);
+    const seed = hashString(String(market.id || "market") + "|" + rangeKey + "|" + localISODate(date || new Date()));
+    const phase = ((seed % 360) * Math.PI) / 180;
+    let yesCursor = clamp(baseYes + (seed % 5) - 2, 1, 99);
+    const values = [];
+
+    for (let i = 0; i < points; i += 1) {
+      const ratio = points <= 1 ? 0 : i / (points - 1);
+      const wave = Math.sin(ratio * Math.PI * Number(config.cycles || 2) + phase) * Number(config.waveAmp || 2);
+      const jitter = (((hashString("j|" + seed + "|" + i) % 2001) / 1000) - 1) * Number(config.volatility || 1);
+      const drift = (((hashString("d|" + seed + "|" + i) % 2001) / 1000) - 1) * Number(config.trendBias || 1);
+      const target = baseYes + wave + drift;
+      yesCursor = clamp(yesCursor + jitter + (target - yesCursor) * 0.24, 1, 99);
+      values.push({
+        yes: yesCursor,
+        no: 100 - yesCursor,
+      });
+    }
+
+    const closingYes = clamp(baseYes + Number(market.dayChange || 0) * 0.35, 1, 99);
+    if (values.length > 0) {
+      values[values.length - 1].yes = closingYes;
+      values[values.length - 1].no = 100 - closingYes;
+    }
+    return values;
+  }
+
+  function renderFeaturedMarketTrendChart(market, series, rangeKey) {
+    if (!el.featuredMarketChart) return;
+    if (!Array.isArray(series) || series.length === 0) {
+      el.featuredMarketChart.innerHTML = "";
+      return;
+    }
+
+    const width = 760;
+    const height = 340;
+    const left = 54;
+    const right = 22;
+    const top = 20;
+    const bottom = 40;
+    const chartWidth = width - left - right;
+    const chartHeight = height - top - bottom;
+
+    const xAt = function (index) {
+      if (series.length <= 1) return left;
+      return left + (index / (series.length - 1)) * chartWidth;
+    };
+    const yAt = function (value) {
+      return top + ((100 - clamp(value, 0, 100)) / 100) * chartHeight;
+    };
+
+    const yesPoints = [];
+    const noPoints = [];
+    for (let i = 0; i < series.length; i += 1) {
+      yesPoints.push([xAt(i), yAt(series[i].yes)]);
+      noPoints.push([xAt(i), yAt(series[i].no)]);
+    }
+
+    const yesPath = linePath(yesPoints);
+    const noPath = linePath(noPoints);
+    const latestYes = series[series.length - 1].yes;
+    const latestNo = series[series.length - 1].no;
+    const gridTicks = [0, 25, 50, 75, 100];
+    const rangeConfig = FEATURED_RANGE_CONFIG[rangeKey] || FEATURED_RANGE_CONFIG["1M"];
+    const labels = Array.isArray(rangeConfig.labels) ? rangeConfig.labels : ["Start", "Mid", "Now"];
+
+    const gridLayer = gridTicks
+      .map(function (tick) {
+        const y = yAt(tick);
+        return (
+          '<line class="fmc-grid" x1="' +
+          left +
+          '" y1="' +
+          y.toFixed(2) +
+          '" x2="' +
+          (width - right) +
+          '" y2="' +
+          y.toFixed(2) +
+          '"></line>' +
+          '<text class="fmc-axis-label" x="' +
+          (left - 10) +
+          '" y="' +
+          (y + 4).toFixed(2) +
+          '" text-anchor="end">' +
+          tick +
+          "%</text>"
+        );
+      })
+      .join("");
+
+    const latestYesPoint = yesPoints[yesPoints.length - 1];
+    const latestNoPoint = noPoints[noPoints.length - 1];
+    const xLabelY = height - 13;
+    const xLabels =
+      '<text class="fmc-axis-label" x="' +
+      left +
+      '" y="' +
+      xLabelY +
+      '" text-anchor="start">' +
+      escapeHtml(labels[0]) +
+      "</text>" +
+      '<text class="fmc-axis-label" x="' +
+      (left + chartWidth / 2) +
+      '" y="' +
+      xLabelY +
+      '" text-anchor="middle">' +
+      escapeHtml(labels[Math.min(1, labels.length - 1)]) +
+      "</text>" +
+      '<text class="fmc-axis-label" x="' +
+      (width - right) +
+      '" y="' +
+      xLabelY +
+      '" text-anchor="end">' +
+      escapeHtml(labels[Math.min(2, labels.length - 1)]) +
+      "</text>";
+
+    const legend =
+      '<g transform="translate(' +
+      left +
+      ', 8)">' +
+      '<circle class="fmc-yes-dot" cx="6" cy="6" r="4"></circle>' +
+      '<text class="fmc-legend" x="16" y="10">Yes ' +
+      Math.round(latestYes) +
+      "%</text>" +
+      '<circle class="fmc-no-dot" cx="102" cy="6" r="4"></circle>' +
+      '<text class="fmc-legend" x="112" y="10">No ' +
+      Math.round(latestNo) +
+      "%</text>" +
+      "</g>";
+
+    el.featuredMarketChart.innerHTML =
+      '<rect class="fmc-bg" x="0" y="0" width="' +
+      width +
+      '" height="' +
+      height +
+      '" rx="12" ry="12"></rect>' +
+      gridLayer +
+      '<path class="fmc-yes-line" d="' +
+      yesPath +
+      '"></path>' +
+      '<path class="fmc-no-line" d="' +
+      noPath +
+      '"></path>' +
+      '<line class="fmc-latest-guide" x1="' +
+      latestYesPoint[0].toFixed(2) +
+      '" y1="' +
+      top +
+      '" x2="' +
+      latestYesPoint[0].toFixed(2) +
+      '" y2="' +
+      (height - bottom + 1) +
+      '"></line>' +
+      '<circle class="fmc-yes-dot" cx="' +
+      latestYesPoint[0].toFixed(2) +
+      '" cy="' +
+      latestYesPoint[1].toFixed(2) +
+      '" r="5.2"></circle>' +
+      '<circle class="fmc-no-dot" cx="' +
+      latestNoPoint[0].toFixed(2) +
+      '" cy="' +
+      latestNoPoint[1].toFixed(2) +
+      '" r="5.2"></circle>' +
+      xLabels +
+      legend;
+  }
+
+  function getFeaturedMarketById(marketId) {
+    if (!marketId) return null;
+    return (
+      FEATURED_MARKETS.find(function (item) {
+        return item.id === marketId;
+      }) || null
+    );
+  }
+
+  function pickFeaturedMarketForDate(date) {
+    if (!Array.isArray(FEATURED_MARKETS) || FEATURED_MARKETS.length === 0) return null;
+    const seed = marketDaySeed(date);
+    const index = seed % FEATURED_MARKETS.length;
+    return FEATURED_MARKETS[index];
+  }
+
+  function marketDaySeed(date) {
+    return hashString("featured-market|" + localISODate(date || new Date()));
   }
 
   function runReflectiveEquilibriumAnimation() {
@@ -3445,6 +3913,17 @@
 
   function formatLargeYear(value) {
     return Math.round(Number(value) || 0).toLocaleString("en-US");
+  }
+
+  function formatCompactCount(value) {
+    const numeric = Math.max(0, Number(value) || 0);
+    if (numeric >= 1000000) {
+      return (Math.round((numeric / 1000000) * 10) / 10).toString().replace(/\.0$/, "") + "M";
+    }
+    if (numeric >= 1000) {
+      return (Math.round((numeric / 1000) * 10) / 10).toString().replace(/\.0$/, "") + "K";
+    }
+    return String(Math.round(numeric));
   }
 
   function escapeHtml(text) {
