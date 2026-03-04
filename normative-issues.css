@@ -1,0 +1,383 @@
+.normative-main {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.normative-hero {
+  background:
+    radial-gradient(95% 120% at 0% 0%, rgba(143, 34, 54, 0.08), transparent 55%),
+    #ffffff;
+}
+
+.normative-hero h1 {
+  font-size: clamp(2rem, 3.6vw, 3rem);
+  margin-bottom: 0.52rem;
+}
+
+.normative-lead {
+  margin-bottom: 0.7rem;
+  color: var(--ink-soft);
+  max-width: 92ch;
+}
+
+.normative-source-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.normative-source-strip a {
+  text-decoration: none;
+  border: 1px solid #d5dce5;
+  border-radius: 999px;
+  padding: 0.3rem 0.6rem;
+  color: #26476e;
+  font-weight: 600;
+  font-size: 0.84rem;
+  background: #f8fafc;
+}
+
+.normative-source-strip a:hover,
+.normative-source-strip a:focus-visible {
+  border-color: #b6c7d9;
+  background: #eff5fb;
+}
+
+.normative-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.31fr) minmax(0, 0.69fr);
+  gap: 0.9rem;
+  align-items: start;
+}
+
+.normative-toc {
+  position: sticky;
+  top: 86px;
+}
+
+.normative-toc h2 {
+  font-size: 1.35rem;
+  margin-bottom: 0.4rem;
+}
+
+.normative-toc ol {
+  margin: 0;
+  padding-left: 1.05rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.normative-toc a {
+  color: #24486f;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.normative-toc a:hover,
+.normative-toc a:focus-visible {
+  color: #173652;
+  text-decoration: underline;
+}
+
+.normative-content {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.explainer-panel h2 {
+  margin-bottom: 0.55rem;
+}
+
+.explainer-panel h3 {
+  margin-top: 0.15rem;
+  margin-bottom: 0.34rem;
+  font-size: 1.15rem;
+}
+
+.comparison-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+  margin: 0.55rem 0 0.45rem;
+}
+
+.comparison-card-mini {
+  border: 1px solid #d8dfe8;
+  border-radius: 12px;
+  padding: 0.56rem 0.66rem;
+  background: #fafcfe;
+}
+
+.comparison-card-mini h3 {
+  font-size: 1.05rem;
+}
+
+.comparison-card-mini ul {
+  margin: 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.diagram-card {
+  margin-top: 0.56rem;
+  border: 1px solid #d7dee7;
+  border-radius: 12px;
+  padding: 0.5rem;
+  background: #f9fbfd;
+}
+
+.normative-svg {
+  width: 100%;
+  display: block;
+  border: 1px solid #e0e7ef;
+  border-radius: 10px;
+  background: #ffffff;
+}
+
+.svg-node {
+  fill: #f0f5fb;
+  stroke: #b8cadf;
+  stroke-width: 1.5;
+}
+
+.svg-primary {
+  fill: #f7eef1;
+  stroke: #d5a6b0;
+}
+
+.svg-secondary {
+  fill: #f7fafd;
+  stroke: #c4d5e7;
+}
+
+.svg-node-title {
+  fill: #1f3146;
+  font-size: 21px;
+  font-weight: 700;
+  font-family: "Source Sans 3", sans-serif;
+}
+
+.svg-node-sub {
+  fill: #4a5d74;
+  font-size: 18px;
+  font-weight: 600;
+  font-family: "Source Sans 3", sans-serif;
+}
+
+.svg-link {
+  stroke: #8f2236;
+  stroke-width: 2;
+  fill: none;
+}
+
+.svg-link.dashed {
+  stroke-dasharray: 7 7;
+}
+
+.svg-axis {
+  stroke: #7d91aa;
+  stroke-width: 2;
+}
+
+.svg-axis-label {
+  fill: #51667f;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: "Source Sans 3", sans-serif;
+}
+
+.svg-note {
+  fill: #4c5f76;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: "Source Sans 3", sans-serif;
+}
+
+.svg-point {
+  stroke: #ffffff;
+  stroke-width: 2;
+}
+
+.svg-point.p1 {
+  fill: #4c7fb8;
+}
+
+.svg-point.p2 {
+  fill: #a05b63;
+}
+
+.svg-point.p3 {
+  fill: #7a6eb2;
+}
+
+.svg-point.p4 {
+  fill: #37869a;
+}
+
+.svg-point.p5 {
+  fill: #2d8f62;
+}
+
+.theory-filter {
+  margin: 0.66rem 0 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.36rem;
+}
+
+.theory-filter-btn {
+  border: 1px solid #cfd9e5;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #4a5e75;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.18rem 0.52rem;
+  cursor: pointer;
+}
+
+.theory-filter-btn:hover,
+.theory-filter-btn:focus-visible {
+  background: #f3f7fb;
+  border-color: #b9c9da;
+}
+
+.theory-filter-btn.is-active {
+  color: #ffffff;
+  background: #223246;
+  border-color: #223246;
+}
+
+.theory-table-wrap {
+  overflow-x: auto;
+}
+
+.theory-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 860px;
+}
+
+.theory-table th,
+.theory-table td {
+  border: 1px solid #d8e0ea;
+  padding: 0.42rem 0.48rem;
+  vertical-align: top;
+  text-align: left;
+  font-size: 0.88rem;
+}
+
+.theory-table th {
+  background: #f4f8fc;
+  color: #2a3f58;
+  font-weight: 700;
+}
+
+.theory-table tbody tr {
+  background: #ffffff;
+}
+
+.theory-table tbody tr.is-hidden {
+  display: none;
+}
+
+.strategy-chart {
+  margin-top: 0.45rem;
+  display: grid;
+  gap: 0.52rem;
+}
+
+.strategy-row {
+  border: 1px solid #d8dfe9;
+  border-radius: 10px;
+  padding: 0.5rem 0.56rem;
+  background: #fbfdff;
+}
+
+.strategy-row h3 {
+  margin-bottom: 0.16rem;
+  font-size: 1rem;
+}
+
+.strategy-row p {
+  margin-bottom: 0.24rem;
+}
+
+.strategy-meter {
+  position: relative;
+  height: 0.72rem;
+  border-radius: 999px;
+  background: #e8eff6;
+  overflow: hidden;
+}
+
+.strategy-meter span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  background: linear-gradient(90deg, #5b8fcb 0%, #2f5f98 100%);
+  border-radius: inherit;
+  transition: width 0.8s ease;
+}
+
+.strategy-row.is-visible .strategy-meter span {
+  width: calc(var(--strategy-intensity, 50) * 1%);
+}
+
+.strategy-meta {
+  margin-top: 0.18rem;
+  font-size: 0.8rem;
+  color: #5a6e84;
+  font-weight: 600;
+}
+
+.mind-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.mind-card {
+  border: 1px solid #d7dfe9;
+  border-radius: 12px;
+  background: #fafcfe;
+  padding: 0.52rem 0.62rem;
+}
+
+.mind-card h3 {
+  font-size: 1rem;
+}
+
+.mind-card ol {
+  margin: 0;
+  padding-left: 1.03rem;
+  display: grid;
+  gap: 0.34rem;
+}
+
+@media (max-width: 1060px) {
+  .normative-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .normative-toc {
+    position: static;
+  }
+}
+
+@media (max-width: 780px) {
+  .comparison-grid-2,
+  .mind-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .theory-filter {
+    gap: 0.3rem;
+  }
+
+  .theory-filter-btn {
+    font-size: 0.74rem;
+  }
+}

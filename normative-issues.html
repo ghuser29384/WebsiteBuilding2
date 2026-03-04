@@ -3,13 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Explanation of normative issues, normativity, and moral issues for Normativity.">
+  <meta name="description" content="Detailed guide to normative issues, normativity, and moral issues, based on SEP sources.">
   <title>Normative Issues | Normativity</title>
   <link rel="icon" type="image/png" href="assets/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Merriweather:wght@400;700;900&family=Newsreader:opsz,wght@6..72,500;6..72,700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="conviction.css">
+  <link rel="stylesheet" href="normative-issues.css">
+  <script src="normative-issues.js" defer></script>
 </head>
 <body>
   <header class="site-header">
@@ -18,96 +20,623 @@
       <div class="header-tools">
         <nav class="main-nav" aria-label="Primary">
           <a href="index.html#deliberation">Home</a>
-          <a href="index.html#progress">Progress</a>
-          <a href="moral-market.html">Normativity Market</a>
+          <a href="#framework">Framework</a>
+          <a href="#definitions">Definitions</a>
+          <a href="#metaethics">Metaethics</a>
+          <a href="#mind-dependence">Mind-Dependence</a>
+          <a href="#references">References</a>
         </nav>
       </div>
     </div>
   </header>
 
-  <main class="container explainer-main">
-    <section class="explainer-head">
-      <p class="eyebrow">Concept Guide</p>
+  <main class="container explainer-main normative-main">
+    <section class="panel normative-hero" id="framework">
+      <p class="eyebrow">Source-Grounded Guide</p>
       <h1>What Are Normative Issues, Normativity, and Moral Issues?</h1>
-      <p class="explainer-lead">
-        This page uses the Stanford Encyclopedia of Philosophy entries on
-        normativity in metaethics and the definition of morality to clarify key terms used in this project.
+      <p class="normative-lead">
+        This page synthesizes two SEP entries to clarify how the terms relate: one on
+        <strong>normativity in metaethics</strong>, and one on <strong>the definition of morality</strong>.
+        The goal is conceptual precision: what counts as a normative issue, where moral issues fit, and how
+        competing theories differ.
       </p>
+      <div class="normative-source-strip" role="list" aria-label="Primary source entries">
+        <a role="listitem" href="https://plato.stanford.edu/entries/normativity-metaethics/" target="_blank" rel="noopener">
+          SEP: Normativity in Metaethics
+        </a>
+        <a role="listitem" href="https://plato.stanford.edu/entries/morality-definition/" target="_blank" rel="noopener">
+          SEP: The Definition of Morality
+        </a>
+      </div>
     </section>
 
-    <section class="explainer-grid" aria-label="Normativity explainer sections">
-      <article class="panel explainer-panel">
-        <h2>What Is A Normative Issue?</h2>
-        <p>
-          A normative issue asks what should be done, believed, valued, or avoided, not just what is factually true.
-          In metaethics, normative discourse includes moral judgments (for example, what is right or wrong),
-          epistemic judgments (what one ought to believe), and aesthetic judgments (what is beautiful or ugly).
-        </p>
-        <p>
-          So, a normative issue is broader than a strictly moral issue: it covers any domain where reasons,
-          standards, and "ought" claims are in play.
-        </p>
-      </article>
+    <section class="normative-layout" aria-label="Page layout">
+      <aside class="panel normative-toc" aria-label="Table of contents">
+        <h2>On This Page</h2>
+        <ol>
+          <li><a href="#definitions">Core Distinctions</a></li>
+          <li><a href="#morality-two-senses">Two Senses of Morality</a></li>
+          <li><a href="#definition-architecture">Definition Architecture</a></li>
+          <li><a href="#metaethics">Metaethical Landscape</a></li>
+          <li><a href="#strategies">Eight Explanatory Strategies</a></li>
+          <li><a href="#mind-dependence">Mind-Dependence Debate</a></li>
+          <li><a href="#relations">Relations Between Theories</a></li>
+          <li><a href="#references">References + Notes</a></li>
+        </ol>
+      </aside>
 
-      <article class="panel explainer-panel">
-        <h2>What Is Normativity?</h2>
-        <p>
-          Normativity is the structure of standards and reasons that make some judgments or actions justified and others mistaken.
-          The metaethical question is not only which standards we use, but what makes them authoritative:
-          are normative truths objective, mind-dependent, reducible to non-normative facts, or irreducible?
-        </p>
-        <p>
-          This is why debates about reasons, value, motivation, and objectivity are central to normativity.
-          They ask what kind of thing a normative fact is, and how human deliberation can track it.
-        </p>
-      </article>
+      <div class="normative-content">
+        <section id="definitions" class="panel explainer-panel">
+          <h2>1. Core Distinctions</h2>
+          <p>
+            In the normativity entry, normative claims include both <strong>action-guiding</strong> claims (what one should do)
+            and <strong>evaluative</strong> claims (what is good, virtuous, beautiful, etc.). So a <strong>normative issue</strong>
+            is broader than a moral issue: it can be moral, epistemic, aesthetic, prudential, or political.
+          </p>
+          <div class="diagram-card" role="img" aria-label="Diagram of normative domains and where morality fits">
+            <h3>Normative Domain Map</h3>
+            <svg viewBox="0 0 980 420" class="normative-svg">
+              <defs>
+                <marker id="arrowA" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#8f2236"></path>
+                </marker>
+              </defs>
 
-      <article class="panel explainer-panel">
-        <h2>What Counts As A Moral Issue?</h2>
-        <p>
-          The SEP entry on morality stresses that there is no single uncontested definition.
-          One common use is descriptive: "morality" means the code actually accepted by a person or group.
-          Another common use is normative: "morality" means the standards that all rational people would have reason
-          to accept under suitably impartial conditions.
-        </p>
-        <p>
-          On this site, we treat moral issues as a major subset of normative issues, especially where harms,
-          obligations, fairness, rights, and interpersonal treatment are concerned.
-        </p>
-      </article>
+              <rect x="20" y="26" width="300" height="96" rx="14" class="svg-node svg-primary"></rect>
+              <text x="36" y="62" class="svg-node-title">Normative Claims</text>
+              <text x="36" y="89" class="svg-node-sub">Action-guiding + evaluative judgments</text>
 
-      <article class="panel explainer-panel">
-        <h2>How Normativity Uses These Terms</h2>
-        <ul class="explainer-list">
-          <li><strong>Normative issue:</strong> any issue involving reasons or "ought" judgments.</li>
-          <li><strong>Moral issue:</strong> normative issues about right/wrong action and interpersonal obligations.</li>
-          <li><strong>Normativity:</strong> the underlying space of reasons, standards, and evaluative truth-claims.</li>
-        </ul>
-        <p>
-          The practical goal is not to treat disagreement as noise, but to use structured deliberation
-          (including wide reflective equilibrium) to improve coherence between judgments, principles, and background theories.
-        </p>
-      </article>
-    </section>
+              <rect x="360" y="20" width="260" height="74" rx="12" class="svg-node"></rect>
+              <text x="378" y="58" class="svg-node-title">Moral Domain</text>
 
-    <section class="section">
-      <article class="panel explainer-panel">
-        <h2>References</h2>
-        <ul class="source-list">
-          <li>
-            Stanford Encyclopedia of Philosophy,
-            <a href="https://plato.stanford.edu/entries/normativity-metaethics/" target="_blank" rel="noopener">
-              “Normativity in Metaethics”
-            </a>.
-          </li>
-          <li>
-            Stanford Encyclopedia of Philosophy,
-            <a href="https://plato.stanford.edu/entries/morality-definition/" target="_blank" rel="noopener">
-              “The Definition of Morality”
-            </a>.
-          </li>
-        </ul>
-      </article>
+              <rect x="360" y="106" width="260" height="74" rx="12" class="svg-node"></rect>
+              <text x="378" y="145" class="svg-node-title">Epistemic Domain</text>
+
+              <rect x="360" y="192" width="260" height="74" rx="12" class="svg-node"></rect>
+              <text x="378" y="231" class="svg-node-title">Aesthetic Domain</text>
+
+              <rect x="360" y="278" width="260" height="74" rx="12" class="svg-node"></rect>
+              <text x="378" y="317" class="svg-node-title">Prudential / Political Domain</text>
+
+              <line x1="320" y1="72" x2="360" y2="56" class="svg-link" marker-end="url(#arrowA)"></line>
+              <line x1="320" y1="78" x2="360" y2="140" class="svg-link" marker-end="url(#arrowA)"></line>
+              <line x1="320" y1="82" x2="360" y2="226" class="svg-link" marker-end="url(#arrowA)"></line>
+              <line x1="320" y1="86" x2="360" y2="312" class="svg-link" marker-end="url(#arrowA)"></line>
+
+              <rect x="660" y="30" width="290" height="152" rx="14" class="svg-node svg-secondary"></rect>
+              <text x="676" y="62" class="svg-node-title">Morality (Descriptive Sense)</text>
+              <text x="676" y="86" class="svg-node-sub">Actual social/group/individual codes</text>
+              <text x="676" y="112" class="svg-node-sub">Can vary widely in content</text>
+              <text x="676" y="138" class="svg-node-sub">Often overlaps with law/religion but is distinct</text>
+
+              <rect x="660" y="202" width="290" height="152" rx="14" class="svg-node svg-secondary"></rect>
+              <text x="676" y="234" class="svg-node-title">Morality (Normative Sense)</text>
+              <text x="676" y="258" class="svg-node-sub">Code all rational agents would endorse</text>
+              <text x="676" y="284" class="svg-node-sub">Under specified idealized conditions</text>
+              <text x="676" y="310" class="svg-node-sub">Usually treated as public + impartial</text>
+
+              <line x1="620" y1="56" x2="660" y2="92" class="svg-link" marker-end="url(#arrowA)"></line>
+              <line x1="620" y1="56" x2="660" y2="276" class="svg-link" marker-end="url(#arrowA)"></line>
+
+              <text x="22" y="390" class="svg-note">Moral issues are a subset of normative issues, not the whole set.</text>
+            </svg>
+          </div>
+        </section>
+
+        <section id="morality-two-senses" class="panel explainer-panel">
+          <h2>2. Two Senses of “Morality” (SEP: Definition of Morality)</h2>
+          <p>
+            The SEP entry stresses that there is likely no single definition that serves every purpose. The major split is:
+            <strong>descriptive morality</strong> versus <strong>normative morality</strong>.
+          </p>
+
+          <div class="comparison-grid-2">
+            <article class="comparison-card-mini">
+              <h3>Descriptive Morality</h3>
+              <ul>
+                <li>Refers to codes actually endorsed by groups, societies, or individuals.</li>
+                <li>Must be distinguished from law and religion, even with overlap.</li>
+                <li>Can include purity/authority/loyalty norms, not only harm norms.</li>
+                <li>Supports anthropological/psychological description without endorsing the code.</li>
+              </ul>
+            </article>
+            <article class="comparison-card-mini">
+              <h3>Normative Morality</h3>
+              <ul>
+                <li>Refers to the code rational agents would endorse under specified conditions.</li>
+                <li>Needs extra constraints beyond mere endorsement (e.g., impartiality/publicity/function).</li>
+                <li>Need not be identical to any currently accepted social code.</li>
+                <li>Often used in moral theory, realism debates, and justification questions.</li>
+              </ul>
+            </article>
+          </div>
+
+          <div class="diagram-card" role="img" aria-label="Conceptual matrix contrasting descriptive and normative morality">
+            <h3>Conceptual Matrix: Endorsement vs Ideal Rational Endorsement</h3>
+            <svg viewBox="0 0 980 360" class="normative-svg">
+              <line x1="120" y1="30" x2="120" y2="300" class="svg-axis"></line>
+              <line x1="120" y1="300" x2="920" y2="300" class="svg-axis"></line>
+              <text x="126" y="320" class="svg-axis-label">Low empirical endorsement</text>
+              <text x="770" y="320" class="svg-axis-label">High empirical endorsement</text>
+              <text x="18" y="50" class="svg-axis-label" transform="rotate(-90 18 50)">High rational endorsement (idealized)</text>
+
+              <rect x="170" y="72" width="320" height="96" rx="12" class="svg-node svg-secondary"></rect>
+              <text x="188" y="110" class="svg-node-title">Normative morality candidate</text>
+              <text x="188" y="136" class="svg-node-sub">May be under-endorsed socially</text>
+
+              <rect x="560" y="204" width="320" height="84" rx="12" class="svg-node svg-secondary"></rect>
+              <text x="578" y="238" class="svg-node-title">Local descriptive code</text>
+              <text x="578" y="262" class="svg-node-sub">Widely accepted, may still be defective</text>
+
+              <line x1="330" y1="168" x2="560" y2="204" class="svg-link dashed"></line>
+              <text x="356" y="194" class="svg-note">Possible approximation or divergence</text>
+            </svg>
+          </div>
+
+          <p class="hint">
+            SEP also emphasizes practical stakes: in AI/NLP contexts, unclear definitions of morality can blur empirical description and normative evaluation.
+          </p>
+        </section>
+
+        <section id="definition-architecture" class="panel explainer-panel">
+          <h2>3. Definition Architecture for Morality (Detailed)</h2>
+          <p>
+            The morality-definition entry presents a schema-like approach: start with a candidate structure, then vary key parameters.
+            In simplified form, one recurring pattern is: morality as a code that would be put forward by all rational persons,
+            under specified conditions, for governing behavior that affects others.
+          </p>
+
+          <div class="diagram-card" role="img" aria-label="Diagram of morality definition architecture and moving parts">
+            <h3>Definition Components and Moving Parts</h3>
+            <svg viewBox="0 0 980 360" class="normative-svg">
+              <defs>
+                <marker id="arrowC" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#8f2236"></path>
+                </marker>
+              </defs>
+
+              <rect x="28" y="135" width="230" height="86" rx="12" class="svg-node svg-primary"></rect>
+              <text x="45" y="170" class="svg-node-title">Target: Morality</text>
+              <text x="45" y="196" class="svg-node-sub">What concept is defined?</text>
+
+              <rect x="308" y="24" width="300" height="66" rx="12" class="svg-node"></rect>
+              <text x="326" y="63" class="svg-node-title">Endorsement mode</text>
+              <text x="326" y="84" class="svg-node-sub">accepted / advocated / not rejected</text>
+
+              <rect x="308" y="102" width="300" height="66" rx="12" class="svg-node"></rect>
+              <text x="326" y="141" class="svg-node-title">Who endorses?</text>
+              <text x="326" y="162" class="svg-node-sub">all rational persons? all informed persons?</text>
+
+              <rect x="308" y="180" width="300" height="66" rx="12" class="svg-node"></rect>
+              <text x="326" y="219" class="svg-node-title">Conditions</text>
+              <text x="326" y="240" class="svg-node-sub">full information? impartiality? publicity?</text>
+
+              <rect x="308" y="258" width="300" height="66" rx="12" class="svg-node"></rect>
+              <text x="326" y="297" class="svg-node-title">Function/content</text>
+              <text x="326" y="318" class="svg-node-sub">harm reduction? rights? duties? social cooperation?</text>
+
+              <rect x="660" y="103" width="290" height="140" rx="12" class="svg-node svg-secondary"></rect>
+              <text x="678" y="135" class="svg-node-title">Output</text>
+              <text x="678" y="160" class="svg-node-sub">Different moral definitions</text>
+              <text x="678" y="185" class="svg-node-sub">with different scope/exclusions</text>
+              <text x="678" y="210" class="svg-node-sub">(and different implications)</text>
+
+              <line x1="258" y1="170" x2="308" y2="57" class="svg-link" marker-end="url(#arrowC)"></line>
+              <line x1="258" y1="174" x2="308" y2="135" class="svg-link" marker-end="url(#arrowC)"></line>
+              <line x1="258" y1="178" x2="308" y2="213" class="svg-link" marker-end="url(#arrowC)"></line>
+              <line x1="258" y1="182" x2="308" y2="291" class="svg-link" marker-end="url(#arrowC)"></line>
+              <line x1="608" y1="57" x2="660" y2="140" class="svg-link" marker-end="url(#arrowC)"></line>
+              <line x1="608" y1="135" x2="660" y2="160" class="svg-link" marker-end="url(#arrowC)"></line>
+              <line x1="608" y1="213" x2="660" y2="180" class="svg-link" marker-end="url(#arrowC)"></line>
+              <line x1="608" y1="291" x2="660" y2="200" class="svg-link" marker-end="url(#arrowC)"></line>
+            </svg>
+          </div>
+
+          <div class="theory-table-wrap">
+            <table class="theory-table">
+              <thead>
+                <tr>
+                  <th>Parameter</th>
+                  <th>Typical Options Discussed in SEP Entry</th>
+                  <th>Why It Changes the Result</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>Holder of morality</td>
+                  <td>Society, group, person, or all rational persons</td>
+                  <td>Switching holder changes whether morality is local, plural, or universal.</td>
+                </tr>
+                <tr>
+                  <td>Endorsement verb</td>
+                  <td>Accepted, advocated, not rejected</td>
+                  <td>Changes strictness and whether weak non-opposition counts.</td>
+                </tr>
+                <tr>
+                  <td>Rationality constraint</td>
+                  <td>Formal reasoners, prudent reasoners, full-information reasoners</td>
+                  <td>Changes which codes survive idealization.</td>
+                </tr>
+                <tr>
+                  <td>Scope of subject matter</td>
+                  <td>Only behavior affecting others, or wider practical life</td>
+                  <td>Changes boundary between morality and prudence/etiquette/law.</td>
+                </tr>
+                <tr>
+                  <td>Public-system condition</td>
+                  <td>Knowable by all, no opting out, largely informal</td>
+                  <td>Disqualifies very esoteric or purely private codes.</td>
+                </tr>
+                <tr>
+                  <td>Core content emphasis</td>
+                  <td>Harm-avoidance, rights, duties, fairness, cooperation</td>
+                  <td>Changes the shape of “central” vs “peripheral” moral rules.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <h3>Variant Map (V1–V4 Style Progression)</h3>
+          <p>
+            The entry also compares nearby formulations by changing only one variable at a time. A useful simplified map:
+          </p>
+          <ul class="explainer-list">
+            <li><strong>V1-style:</strong> morality as a code all rational people would put forward for governing behavior affecting others.</li>
+            <li><strong>V2-style shift:</strong> swap “put forward” with “accept,” tightening endorsement semantics.</li>
+            <li><strong>V3-style shift:</strong> add an informedness condition to rational endorsement.</li>
+            <li><strong>V4-style shift:</strong> use “advocate” (or similar) to mark stronger active endorsement.</li>
+          </ul>
+          <p class="hint">
+            These near-neighbor variants show why definition disputes are not merely verbal: small parameter changes produce different extension and authority claims.
+          </p>
+        </section>
+
+        <section id="metaethics" class="panel explainer-panel">
+          <h2>4. Metaethical Landscape (SEP: Normativity in Metaethics)</h2>
+          <p>
+            The entry structures major disputes around ontology and explanation:
+            Are there normative facts at all? If yes, are they natural or non-natural? Is normativity in the world,
+            or only in our thought and attitudes? Is it mind-dependent or mind-independent?
+          </p>
+
+          <div class="diagram-card" role="img" aria-label="Metaethical landscape graph showing theory positions">
+            <h3>Landscape Graph: Realism, Anti-Realism, Naturalism, Mind-Dependence</h3>
+            <svg viewBox="0 0 980 420" class="normative-svg">
+              <line x1="100" y1="50" x2="100" y2="360" class="svg-axis"></line>
+              <line x1="100" y1="360" x2="910" y2="360" class="svg-axis"></line>
+              <text x="118" y="381" class="svg-axis-label">Anti-realist / conceptual</text>
+              <text x="694" y="381" class="svg-axis-label">Realist / objectual</text>
+              <text x="18" y="100" class="svg-axis-label" transform="rotate(-90 18 100)">Mind-dependent</text>
+              <text x="24" y="295" class="svg-axis-label" transform="rotate(-90 24 295)">Mind-independent</text>
+
+              <circle cx="190" cy="130" r="14" class="svg-point p1"></circle>
+              <text x="212" y="136" class="svg-node-sub">Expressivism (anti-realist conceptualism)</text>
+
+              <circle cx="210" cy="250" r="14" class="svg-point p2"></circle>
+              <text x="232" y="256" class="svg-node-sub">Error theory (denies normative facts)</text>
+
+              <circle cx="430" cy="165" r="14" class="svg-point p3"></circle>
+              <text x="452" y="171" class="svg-node-sub">Some constructivist/basic realist views</text>
+
+              <circle cx="670" cy="110" r="14" class="svg-point p4"></circle>
+              <text x="692" y="116" class="svg-node-sub">Mind-dependent realism variants</text>
+
+              <circle cx="760" cy="250" r="14" class="svg-point p5"></circle>
+              <text x="782" y="256" class="svg-node-sub">Mind-independent realism</text>
+
+              <rect x="560" y="272" width="320" height="70" rx="12" class="svg-node svg-secondary"></rect>
+              <text x="578" y="302" class="svg-node-title">Typical objectual realism split:</text>
+              <text x="578" y="326" class="svg-node-sub">Non-naturalist primitivism vs reductive naturalism</text>
+            </svg>
+          </div>
+
+          <div class="theory-filter" role="group" aria-label="Filter theory table">
+            <button type="button" class="theory-filter-btn is-active" data-theory-filter="all">All</button>
+            <button type="button" class="theory-filter-btn" data-theory-filter="anti-realist">Anti-Realist</button>
+            <button type="button" class="theory-filter-btn" data-theory-filter="realist">Realist</button>
+            <button type="button" class="theory-filter-btn" data-theory-filter="mind-dependent">Mind-Dependent</button>
+            <button type="button" class="theory-filter-btn" data-theory-filter="mind-independent">Mind-Independent</button>
+            <button type="button" class="theory-filter-btn" data-theory-filter="naturalist">Naturalist</button>
+            <button type="button" class="theory-filter-btn" data-theory-filter="non-naturalist">Non-Naturalist</button>
+          </div>
+
+          <div class="theory-table-wrap">
+            <table class="theory-table">
+              <thead>
+                <tr>
+                  <th>Theory Family</th>
+                  <th>Core Claim About Normativity</th>
+                  <th>Truth/Facts</th>
+                  <th>Mind-Dependence Tendency</th>
+                  <th>Main Pressure Point</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr data-tags="anti-realist">
+                  <td>Error theory</td>
+                  <td>Normative discourse purports to state facts, but no normative facts/properties exist.</td>
+                  <td>Ordinary positive normative claims false (or non-truth-apt in variants).</td>
+                  <td>N/A (denies target facts).</td>
+                  <td>Must defend queerness/ontology arguments and handle semantic formulation issues.</td>
+                </tr>
+                <tr data-tags="anti-realist mind-dependent naturalist">
+                  <td>Expressivism (non-cognitivist)</td>
+                  <td>Normative judgments express conative attitudes or planning-like states.</td>
+                  <td>Normativity located in stance-taking, not robust normative world facts.</td>
+                  <td>Typically mind-dependent orientation.</td>
+                  <td>Explain truth-like discourse and avoid overgeneralizing to merely emotive language.</td>
+                </tr>
+                <tr data-tags="anti-realist">
+                  <td>Quietist / cognitivist anti-realist strands</td>
+                  <td>Normative talk need not add substantive metaphysical commitments.</td>
+                  <td>Allows normative truth talk with deflated ontology.</td>
+                  <td>Varies by formulation.</td>
+                  <td>Clarify what remains of objectivity and explanatory depth.</td>
+                </tr>
+                <tr data-tags="realist non-naturalist mind-independent">
+                  <td>Primitivist non-naturalist realism</td>
+                  <td>Normativity is irreducible and unanalyzable; normative properties are sui generis.</td>
+                  <td>Affirms normative truths/facts/properties.</td>
+                  <td>Usually mind-independent.</td>
+                  <td>Explains less: accepts brute normative layer.</td>
+                </tr>
+                <tr data-tags="realist naturalist">
+                  <td>Primitivist naturalist possibility</td>
+                  <td>Normative may be primitive yet still natural in kind.</td>
+                  <td>Affirms normative truths/facts.</td>
+                  <td>Can vary.</td>
+                  <td>How a primitive natural normative property is theoretically motivated.</td>
+                </tr>
+                <tr data-tags="realist naturalist mind-dependent">
+                  <td>Constructivist / desire-based reasons variants</td>
+                  <td>Normative facts explained through reasons tied to desire-structure or practical standpoint.</td>
+                  <td>Often basic realism without robust mind-independence.</td>
+                  <td>Often mind-dependent.</td>
+                  <td>Higher-order desire conflict, contingency, and scope worries.</td>
+                </tr>
+                <tr data-tags="realist naturalist mind-independent">
+                  <td>Objectual reductive naturalism</td>
+                  <td>Normative properties are worldly and reducible/analyzable in natural terms.</td>
+                  <td>Affirms robust normative facts in the world.</td>
+                  <td>Often mind-independent.</td>
+                  <td>"Just too different" objection and open-question-style resistance.</td>
+                </tr>
+                <tr data-tags="realist naturalist mind-independent">
+                  <td>Natural-function / governance accounts</td>
+                  <td>Normativity grounded in natural function, flourishing, or best standards for governance problems.</td>
+                  <td>Affirms robust facts with naturalistic grounding.</td>
+                  <td>Presented as mind-independent in the entry.</td>
+                  <td>Risk of smuggling normativity into ranking standards; contingency concerns.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
+
+        <section id="strategies" class="panel explainer-panel">
+          <h2>5. Eight Explanatory Strategies (Section 4 Map)</h2>
+          <p>
+            The normativity entry surveys eight strategies for explaining normativity. The chart below classifies each by where
+            it typically locates normativity, and how close it comes to a fully naturalistic constitutive explanation.
+          </p>
+
+          <div class="strategy-chart" role="img" aria-label="Chart of eight explanatory strategies and their classification">
+            <article class="strategy-row" data-intensity="44">
+              <h3>4.1 Motivation (MJI routes)</h3>
+              <p>Links normative judgment and motivation; can motivate expressivist or naturalist realist revisions.</p>
+              <div class="strategy-meter"><span></span></div>
+              <p class="strategy-meta">Naturalistic fit potential: medium</p>
+            </article>
+            <article class="strategy-row" data-intensity="70">
+              <h3>4.2 Desire-based reasons</h3>
+              <p>Analyzes reasons through desire satisfaction (actual or idealized), then normativity via reasons.</p>
+              <div class="strategy-meter"><span></span></div>
+              <p class="strategy-meta">Naturalistic fit potential: medium-high</p>
+            </article>
+            <article class="strategy-row" data-intensity="56">
+              <h3>4.3 Practical identity</h3>
+              <p>Reasons grounded in identities one can endorse as an agent among others.</p>
+              <div class="strategy-meter"><span></span></div>
+              <p class="strategy-meta">Naturalistic fit potential: medium</p>
+            </article>
+            <article class="strategy-row" data-intensity="52">
+              <h3>4.4 Essential agency/action</h3>
+              <p>Normativity explained by constitutive aims of agency or action.</p>
+              <div class="strategy-meter"><span></span></div>
+              <p class="strategy-meta">Naturalistic fit potential: medium</p>
+            </article>
+            <article class="strategy-row" data-intensity="39">
+              <h3>4.5 Self-legislation</h3>
+              <p>Kantian route: rational willing of universal requirements; may presuppose normative rational standards.</p>
+              <div class="strategy-meter"><span></span></div>
+              <p class="strategy-meta">Naturalistic fit potential: low-medium</p>
+            </article>
+            <article class="strategy-row" data-intensity="37">
+              <h3>4.6 Categorical requirements</h3>
+              <p>Attempts to derive robust requirements not hostage to contingent desire.</p>
+              <div class="strategy-meter"><span></span></div>
+              <p class="strategy-meta">Naturalistic fit potential: low-medium</p>
+            </article>
+            <article class="strategy-row" data-intensity="78">
+              <h3>4.7 Natural function/flourishing</h3>
+              <p>Neo-Aristotelian route from functional/biological normativity to practical normativity.</p>
+              <div class="strategy-meter"><span></span></div>
+              <p class="strategy-meta">Naturalistic fit potential: high</p>
+            </article>
+            <article class="strategy-row" data-intensity="82">
+              <h3>4.8 Normative governance practices</h3>
+              <p>Grounds facts in standards best suited to sociality/autonomy governance problems.</p>
+              <div class="strategy-meter"><span></span></div>
+              <p class="strategy-meta">Naturalistic fit potential: high</p>
+            </article>
+          </div>
+        </section>
+
+        <section id="mind-dependence" class="panel explainer-panel">
+          <h2>6. Mind-Dependence vs Mind-Independence</h2>
+          <p>
+            The entry treats this as a grounding question: are all normative facts grounded in mental facts,
+            or do some normative facts remain independent of any such grounding?
+          </p>
+
+          <div class="mind-grid">
+            <article class="mind-card">
+              <h3>Arguments Pushing Toward Mind-Dependence</h3>
+              <ol>
+                <li>
+                  <strong>Epistemic challenge:</strong> if facts are fully mind-independent, explain reliability of substantive normative beliefs.
+                </li>
+                <li>
+                  <strong>Evolutionary debunking forms:</strong> genealogy of moral faculties may undercut reliability under realism.
+                </li>
+                <li>
+                  <strong>Disagreement pressure:</strong> persistent idealized disagreement is taken by some to threaten objectivity.
+                </li>
+              </ol>
+            </article>
+            <article class="mind-card">
+              <h3>Arguments Pushing Toward Mind-Independence</h3>
+              <ol>
+                <li>
+                  <strong>Stand-your-ground cases:</strong> some moral disagreements seem to require refusal to compromise.
+                </li>
+                <li>
+                  <strong>Objectivity intuition:</strong> moral disagreements can resemble factual disagreements more than preference clashes.
+                </li>
+                <li>
+                  <strong>Scope caution:</strong> a few mind-linked particular facts do not settle whether all normative facts are mind-dependent.
+                </li>
+              </ol>
+            </article>
+          </div>
+
+          <div class="diagram-card" role="img" aria-label="Flowchart of mind-dependence debate">
+            <h3>Flow of the Debate</h3>
+            <svg viewBox="0 0 980 320" class="normative-svg">
+              <defs>
+                <marker id="arrowB" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#2f5f98"></path>
+                </marker>
+              </defs>
+              <rect x="30" y="120" width="230" height="80" rx="12" class="svg-node svg-secondary"></rect>
+              <text x="48" y="154" class="svg-node-title">Start: Are all normative facts</text>
+              <text x="48" y="178" class="svg-node-title">grounded in mental facts?</text>
+
+              <rect x="345" y="40" width="270" height="90" rx="12" class="svg-node"></rect>
+              <text x="363" y="76" class="svg-node-title">Yes path</text>
+              <text x="363" y="101" class="svg-node-sub">Mind-dependence theories</text>
+
+              <rect x="345" y="190" width="270" height="90" rx="12" class="svg-node"></rect>
+              <text x="363" y="226" class="svg-node-title">No path</text>
+              <text x="363" y="251" class="svg-node-sub">Mind-independence theories</text>
+
+              <rect x="700" y="40" width="250" height="90" rx="12" class="svg-node svg-secondary"></rect>
+              <text x="718" y="76" class="svg-node-title">Pressure:</text>
+              <text x="718" y="101" class="svg-node-sub">Explain objectivity + standing ground</text>
+
+              <rect x="700" y="190" width="250" height="90" rx="12" class="svg-node svg-secondary"></rect>
+              <text x="718" y="226" class="svg-node-title">Pressure:</text>
+              <text x="718" y="251" class="svg-node-sub">Explain epistemic access + reliability</text>
+
+              <line x1="260" y1="146" x2="345" y2="85" class="svg-link" marker-end="url(#arrowB)"></line>
+              <line x1="260" y1="174" x2="345" y2="235" class="svg-link" marker-end="url(#arrowB)"></line>
+              <line x1="615" y1="85" x2="700" y2="85" class="svg-link" marker-end="url(#arrowB)"></line>
+              <line x1="615" y1="235" x2="700" y2="235" class="svg-link" marker-end="url(#arrowB)"></line>
+            </svg>
+          </div>
+        </section>
+
+        <section id="relations" class="panel explainer-panel">
+          <h2>7. Relations Between Theories (High-Level)</h2>
+          <p>
+            The entries imply a layered relation map, not a simple left-versus-right split. Key relations:
+          </p>
+          <ul class="explainer-list">
+            <li><strong>Error theory</strong> and <strong>expressivism</strong> are both anti-realist options, but for different reasons: error theorists preserve realist-seeming semantics while denying truth, expressivists reinterpret the semantics/pragmatics.</li>
+            <li><strong>Conceptualism vs objectualism</strong> cuts across realism debates: some conceptualist views keep normative truth-talk while relocating normativity to thought.</li>
+            <li><strong>Basic realism</strong> is weaker than <strong>mind-independent realism</strong>: one can accept truth-apt normative representation without committing to fully mind-independent grounds.</li>
+            <li><strong>Primitivism</strong> can be naturalist or non-naturalist in principle, but gives up constitutive explanation.</li>
+            <li><strong>Reductive naturalist realisms</strong> (e.g., function/governance styles) aim for constitutive explanation, but face “smuggling” and open-question style objections.</li>
+            <li><strong>Morality-definition debates</strong> constrain metaethics: whether one uses morality descriptively or normatively changes what any theory is trying to explain.</li>
+          </ul>
+
+          <div class="diagram-card" role="img" aria-label="Network diagram of relations among metaethical theory families">
+            <h3>Theory-Relation Network</h3>
+            <svg viewBox="0 0 980 400" class="normative-svg">
+              <defs>
+                <marker id="arrowD" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                  <path d="M 0 0 L 10 5 L 0 10 z" fill="#6b7f98"></path>
+                </marker>
+              </defs>
+
+              <rect x="40" y="60" width="230" height="70" rx="12" class="svg-node"></rect>
+              <text x="56" y="100" class="svg-node-title">Error Theory</text>
+
+              <rect x="40" y="250" width="230" height="70" rx="12" class="svg-node"></rect>
+              <text x="56" y="290" class="svg-node-title">Expressivism</text>
+
+              <rect x="360" y="52" width="255" height="86" rx="12" class="svg-node svg-secondary"></rect>
+              <text x="378" y="86" class="svg-node-title">Conceptualism (family)</text>
+              <text x="378" y="112" class="svg-node-sub">Normativity in thought/attitude</text>
+
+              <rect x="360" y="246" width="255" height="86" rx="12" class="svg-node svg-secondary"></rect>
+              <text x="378" y="280" class="svg-node-title">Objectualism (family)</text>
+              <text x="378" y="306" class="svg-node-sub">Normative properties in the world</text>
+
+              <rect x="700" y="30" width="240" height="74" rx="12" class="svg-node"></rect>
+              <text x="718" y="68" class="svg-node-title">Mind-Dependent Realisms</text>
+
+              <rect x="700" y="120" width="240" height="74" rx="12" class="svg-node"></rect>
+              <text x="718" y="158" class="svg-node-title">Constructivist Variants</text>
+
+              <rect x="700" y="210" width="240" height="74" rx="12" class="svg-node"></rect>
+              <text x="718" y="248" class="svg-node-title">Non-naturalist Primitivism</text>
+
+              <rect x="700" y="300" width="240" height="74" rx="12" class="svg-node"></rect>
+              <text x="718" y="338" class="svg-node-title">Naturalist Reductionisms</text>
+
+              <line x1="270" y1="95" x2="360" y2="95" class="svg-link dashed" marker-end="url(#arrowD)"></line>
+              <line x1="270" y1="285" x2="360" y2="285" class="svg-link dashed" marker-end="url(#arrowD)"></line>
+              <line x1="615" y1="86" x2="700" y2="68" class="svg-link" marker-end="url(#arrowD)"></line>
+              <line x1="615" y1="95" x2="700" y2="158" class="svg-link" marker-end="url(#arrowD)"></line>
+              <line x1="615" y1="290" x2="700" y2="248" class="svg-link" marker-end="url(#arrowD)"></line>
+              <line x1="615" y1="300" x2="700" y2="338" class="svg-link" marker-end="url(#arrowD)"></line>
+
+              <text x="52" y="145" class="svg-note">Competes with</text>
+              <text x="52" y="334" class="svg-note">Alternative anti-realist strategy</text>
+              <text x="366" y="353" class="svg-note">Conceptualism vs objectualism is not identical to realism vs anti-realism.</text>
+            </svg>
+          </div>
+        </section>
+
+        <section id="references" class="panel explainer-panel">
+          <h2>8. References and How This Page Uses Them</h2>
+          <p>
+            This page is a structured synthesis. It does not attempt to settle the debates; it maps the conceptual terrain so users
+            can track disagreements at the right level (definition, semantics, ontology, grounding, or epistemology).
+          </p>
+          <ul class="source-list">
+            <li>
+              Stanford Encyclopedia of Philosophy,
+              <a href="https://plato.stanford.edu/entries/normativity-metaethics/" target="_blank" rel="noopener">
+                Normativity in Metaethics
+              </a>
+              (first published July 12, 2022).
+            </li>
+            <li>
+              Stanford Encyclopedia of Philosophy,
+              <a href="https://plato.stanford.edu/entries/morality-definition/" target="_blank" rel="noopener">
+                The Definition of Morality
+              </a>
+              (substantive revision January 28, 2025).
+            </li>
+          </ul>
+          <p class="hint">
+            Interpretation note: labels such as “tendency” or “often” reflect comparative summaries drawn from the entries,
+            not claims that every version of a theory has exactly those commitments.
+          </p>
+        </section>
+      </div>
     </section>
   </main>
 </body>

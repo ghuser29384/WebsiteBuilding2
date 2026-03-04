@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Normativity Publications: write articles, mention peers with @handles, receive inbox notifications, and validate syllogistic reasoning.">
+  <title>Publications | Normativity</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Merriweather:wght@400;700;900&family=Newsreader:opsz,wght@6..72,500;6..72,700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="conviction.css">
+  <link rel="stylesheet" href="publication.css">
+  <script src="publication.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="index.html">Normativity</a>
+      <div class="header-tools">
+        <nav class="main-nav" aria-label="Primary">
+          <a href="index.html">Home</a>
+          <a href="moral-market.html">Normativity Market</a>
+          <a href="publication.html" aria-current="page">Publications</a>
+          <a href="wre-assistant.html">WRE Assistant</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main class="container publication-main">
+    <section class="panel publication-hero">
+      <p class="eyebrow">Publication Workspace</p>
+      <h1>Write Articles, Mention Others, And Track Deliberative Replies</h1>
+      <p class="publication-lead">
+        Use <strong>@handles</strong> inside articles to directly address peers. Mentioned users receive
+        notifications in their inbox. Every draft also includes a <strong>native syllogism tool</strong> that checks
+        whether your major premise, minor premise, and conclusion are logically valid.
+      </p>
+    </section>
+
+    <section class="publication-grid">
+      <div class="publication-left-stack">
+        <article class="panel publication-card">
+          <div class="publication-card-head">
+            <h2>Author Session</h2>
+            <p class="hint">Switch active user to simulate multi-user publication and inbox delivery.</p>
+          </div>
+          <div class="publication-form-row">
+            <label for="activeHandleInput">Active handle</label>
+            <input id="activeHandleInput" type="text" maxlength="24" placeholder="e.g., henry">
+            <button id="setActiveUserBtn" type="button" class="btn btn-secondary">Set Active User</button>
+          </div>
+          <div id="activeUserBadge" class="active-user-badge" aria-live="polite"></div>
+          <div class="known-users-wrap">
+            <p class="label-lite">Known users</p>
+            <ul id="knownUsersList" class="known-users-list"></ul>
+          </div>
+        </article>
+
+        <article class="panel publication-card">
+          <div class="publication-card-head">
+            <h2>Write Article</h2>
+            <p class="hint">Mentions are recognized as <code>@username</code>.</p>
+          </div>
+          <form id="articleForm" class="publication-form" novalidate>
+            <label for="articleTitle">Title</label>
+            <input id="articleTitle" name="articleTitle" type="text" maxlength="150" required placeholder="Article title">
+
+            <label for="articleBody">Body</label>
+            <textarea
+              id="articleBody"
+              name="articleBody"
+              rows="10"
+              maxlength="12000"
+              required
+              placeholder="Write your argument clearly. Mention users with @handle."
+            ></textarea>
+
+            <div class="mention-preview-row">
+              <p class="label-lite">Detected mentions:</p>
+              <p id="mentionPreview" class="hint">None</p>
+            </div>
+
+            <div class="publication-action-row">
+              <button type="submit" class="btn btn-primary">Publish Article</button>
+              <button id="clearArticleBtn" type="button" class="btn btn-ghost">Clear</button>
+            </div>
+            <p id="articleStatus" class="status-line" role="status" aria-live="polite"></p>
+          </form>
+        </article>
+
+        <article class="panel publication-card">
+          <div class="publication-card-head">
+            <h2>Syllogism Builder (Native Logic Checker)</h2>
+            <p class="hint">Construct major/minor premises and test whether the conclusion is valid.</p>
+          </div>
+
+          <div class="syllogism-terms-grid">
+            <label>
+              Subject term (S)
+              <input id="termS" type="text" value="humans" maxlength="40">
+            </label>
+            <label>
+              Middle term (M)
+              <input id="termM" type="text" value="rational agents" maxlength="40">
+            </label>
+            <label>
+              Predicate term (P)
+              <input id="termP" type="text" value="morally accountable beings" maxlength="40">
+            </label>
+          </div>
+
+          <div class="syllogism-grid">
+            <div>
+              <h3>Major Premise</h3>
+              <div class="syll-row">
+                <select id="majorMood" aria-label="Major premise form">
+                  <option value="A">All</option>
+                  <option value="E">No</option>
+                  <option value="I">Some</option>
+                  <option value="O">Some ... not</option>
+                </select>
+                <select id="majorFigure" aria-label="Major premise order">
+                  <option value="MP">M → P</option>
+                  <option value="PM">P → M</option>
+                </select>
+              </div>
+              <p id="majorSentence" class="syll-sentence"></p>
+            </div>
+
+            <div>
+              <h3>Minor Premise</h3>
+              <div class="syll-row">
+                <select id="minorMood" aria-label="Minor premise form">
+                  <option value="A">All</option>
+                  <option value="E">No</option>
+                  <option value="I">Some</option>
+                  <option value="O">Some ... not</option>
+                </select>
+                <select id="minorFigure" aria-label="Minor premise order">
+                  <option value="SM">S → M</option>
+                  <option value="MS">M → S</option>
+                </select>
+              </div>
+              <p id="minorSentence" class="syll-sentence"></p>
+            </div>
+
+            <div>
+              <h3>Conclusion</h3>
+              <div class="syll-row">
+                <select id="conclusionMood" aria-label="Conclusion form">
+                  <option value="A">All</option>
+                  <option value="E">No</option>
+                  <option value="I">Some</option>
+                  <option value="O">Some ... not</option>
+                </select>
+                <select id="conclusionFigure" aria-label="Conclusion order">
+                  <option value="SP">S → P</option>
+                  <option value="PS">P → S</option>
+                </select>
+              </div>
+              <p id="conclusionSentence" class="syll-sentence"></p>
+            </div>
+          </div>
+
+          <div class="publication-action-row">
+            <button id="checkSyllogismBtn" type="button" class="btn btn-secondary">Check Validity</button>
+            <button id="insertSyllogismBtn" type="button" class="btn btn-ghost">Insert In Article Draft</button>
+          </div>
+
+          <div id="syllogismResult" class="syll-result" aria-live="polite"></div>
+          <div id="syllogismCounterexample" class="syll-counterexample"></div>
+        </article>
+      </div>
+
+      <aside class="publication-right-stack">
+        <article class="panel publication-card">
+          <div class="publication-card-head inbox-head">
+            <h2>Inbox</h2>
+            <span id="inboxCountBadge" class="inbox-count">0</span>
+          </div>
+          <p class="hint">Users receive inbox alerts when another author mentions <code>@their_handle</code>.</p>
+          <ul id="inboxList" class="inbox-list" aria-live="polite"></ul>
+        </article>
+
+        <article class="panel publication-card">
+          <div class="publication-card-head">
+            <h2>Notification Rules</h2>
+          </div>
+          <ul class="rules-list">
+            <li>A mention like <code>@maya</code> creates a notification for user <code>maya</code>.</li>
+            <li>Newly mentioned handles are automatically added as users.</li>
+            <li>Inbox is per active user and stored locally in this browser.</li>
+          </ul>
+        </article>
+      </aside>
+    </section>
+
+    <section class="panel publication-card publication-feed-card">
+      <div class="publication-card-head">
+        <h2>Publication Feed</h2>
+        <p class="hint">Newest first. Highlight any excerpt to attach a passage comment (public or author-only).</p>
+      </div>
+      <div id="articleFeed" class="article-feed" aria-live="polite"></div>
+    </section>
+  </main>
+</body>
+</html>
