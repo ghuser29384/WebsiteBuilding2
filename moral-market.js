@@ -1,8 +1,14 @@
 (function () {
   "use strict";
 
-  const STORAGE_KEY = "normativity-market-state-v4";
-  const LEGACY_STORAGE_KEYS = ["normativity-market-state-v3"];
+  const STORAGE_KEY_BASE = "normativity-market-state-v4";
+  const LEGACY_STORAGE_KEY_BASE = "normativity-market-state-v3";
+  const STORAGE_KEY = resolveScopedStorageKey(STORAGE_KEY_BASE);
+  const LEGACY_STORAGE_KEYS = [
+    STORAGE_KEY_BASE,
+    resolveScopedStorageKey(LEGACY_STORAGE_KEY_BASE),
+    LEGACY_STORAGE_KEY_BASE,
+  ];
   const WEEKLY_COINS = 100;
   const BASELINE_LIQUIDITY = 240;
   const FEED_LIMIT = 12;
@@ -329,6 +335,17 @@
   };
 
   init();
+
+  function resolveScopedStorageKey(baseKey) {
+    try {
+      if (!window.NormativityAuth || typeof window.NormativityAuth.scopedStorageKey !== "function") {
+        return baseKey;
+      }
+      return window.NormativityAuth.scopedStorageKey(baseKey);
+    } catch (_error) {
+      return baseKey;
+    }
+  }
 
   function init() {
     initChartTrackpadZooming();
@@ -2581,6 +2598,9 @@
     try {
       const stored = readStoredStateRaw();
       if (!stored || !stored.raw) return defaultState(week);
+      if (stored.key !== STORAGE_KEY) {
+        localStorage.setItem(STORAGE_KEY, stored.raw);
+      }
 
       const parsed = JSON.parse(stored.raw);
       if (!parsed || (parsed.version !== 3 && parsed.version !== 4)) {

@@ -7,6 +7,7 @@
   const MAX_PASSAGE_SELECTION = 800;
 
   const DEFAULT_USERS = ["henry", "maya", "sam", "lena", "amir"];
+  const authApi = window.NormativityAuth || null;
 
   let state = loadState();
   let activeUser = loadActiveUser();
@@ -28,6 +29,11 @@
     inboxList: document.getElementById("inboxList"),
 
     articleFeed: document.getElementById("articleFeed"),
+    insightsRange: document.getElementById("insightsRange"),
+    insightCards: document.getElementById("insightCards"),
+    insightTakeaways: document.getElementById("insightTakeaways"),
+    insightsTrendChart: document.getElementById("insightsTrendChart"),
+    insightTrendMeta: document.getElementById("insightTrendMeta"),
 
     termS: document.getElementById("termS"),
     termM: document.getElementById("termM"),
@@ -50,12 +56,19 @@
   init();
 
   function init() {
+    const authenticatedHandle = getAuthenticatedHandle();
+    if (authenticatedHandle) {
+      activeUser = authenticatedHandle;
+      saveActiveUser(activeUser);
+    }
+
     ensureSeedUsers();
     if (!activeUser) {
       activeUser = DEFAULT_USERS[0];
       saveActiveUser(activeUser);
     }
     ensureUser(activeUser);
+    enforceAuthenticatedIdentityUi();
 
     bindEvents();
     updateSyllogismPreview();
@@ -95,6 +108,9 @@
     if (el.inboxList) {
       el.inboxList.addEventListener("click", onInboxAction);
     }
+    if (el.insightsRange) {
+      el.insightsRange.addEventListener("change", renderInsights);
+    }
     if (el.articleFeed) {
       el.articleFeed.addEventListener("mouseup", onArticleSelectionMouseUp);
       el.articleFeed.addEventListener("touchend", onArticleSelectionMouseUp);
@@ -126,6 +142,7 @@
 
     if (el.knownUsersList) {
       el.knownUsersList.addEventListener("click", function (event) {
+        if (isIdentityLockedToAuth()) return;
         const button = event.target.closest("button[data-user-handle]");
         if (!button) return;
         const handle = normalizeHandle(button.getAttribute("data-user-handle"));
@@ -139,6 +156,10 @@
   }
 
   function onSetActiveUser() {
+    if (isIdentityLockedToAuth()) {
+      setArticleStatus("Active handle is tied to your signed-in account.", true);
+      return;
+    }
     if (!el.activeHandleInput) return;
     const next = normalizeHandle(el.activeHandleInput.value);
     if (!next) {
@@ -155,6 +176,7 @@
 
   function onPublishArticle(event) {
     event.preventDefault();
+    syncActiveUserFromAuth();
     ensureUser(activeUser);
 
     const title = (el.articleTitle && el.articleTitle.value ? el.articleTitle.value : "").trim();
@@ -184,6 +206,7 @@
       ensureUser(handle);
       state.notifications.unshift({
         id: makeId("noti"),
+        type: "mention",
         to: handle,
         from: activeUser,
         articleId: article.id,
@@ -284,9 +307,34 @@
       dismissAnnotationEditor(articleId);
       return;
     }
+
+    const replyStartBtn = event.target.closest("button[data-reply-start]");
+    if (replyStartBtn) {
+      const annotationId = String(replyStartBtn.getAttribute("data-reply-start") || "");
+      if (!annotationId) return;
+      openReplyEditor(annotationId);
+      return;
+    }
+
+    const replyCancelBtn = event.target.closest("button[data-reply-cancel]");
+    if (replyCancelBtn) {
+      const annotationId = String(replyCancelBtn.getAttribute("data-reply-cancel") || "");
+      if (!annotationId) return;
+      closeReplyEditor(annotationId);
+      return;
+    }
+
+    const replySaveBtn = event.target.closest("button[data-reply-save]");
+    if (replySaveBtn) {
+      const annotationId = String(replySaveBtn.getAttribute("data-reply-save") || "");
+      if (!annotationId) return;
+      saveReplyFromEditor(annotationId);
+      return;
+    }
   }
 
   function saveAnnotationFromEditor(articleId) {
+    syncActiveUserFromAuth();
     if (!el.articleFeed) return;
     const editor = el.articleFeed.querySelector('[data-annotation-editor="' + cssEscape(articleId) + '"]');
     if (!editor) return;
@@ -333,6 +381,20 @@
     };
 
     state.annotations.unshift(annotation);
+    if (article.author !== activeUser) {
+      ensureUser(article.author);
+      state.notifications.unshift(
+        createNotification({
+          type: "comment",
+          to: article.author,
+          from: activeUser,
+          articleId: article.id,
+          articleTitle: article.title,
+          excerpt: selectedText,
+          annotationId: annotation.id,
+        })
+      );
+    }
     saveState();
 
     const selection = window.getSelection ? window.getSelection() : null;
@@ -341,7 +403,7 @@
     }
 
     setArticleStatus("Passage comment posted.", false);
-    renderFeed();
+    renderAll();
   }
 
   function dismissAnnotationEditor(articleId) {
@@ -399,6 +461,98 @@
     }
   }
 
+  function openReplyEditor(annotationId) {
+    if (!el.articleFeed) return;
+    const editor = el.articleFeed.querySelector('[data-reply-editor="' + cssEscape(annotationId) + '"]');
+    if (!editor) return;
+    editor.hidden = false;
+
+    const textarea = editor.querySelector('[data-reply-input="' + cssEscape(annotationId) + '"]');
+    const status = editor.querySelector('[data-reply-status="' + cssEscape(annotationId) + '"]');
+    const visibility = editor.querySelector('[data-reply-visibility="' + cssEscape(annotationId) + '"]');
+    if (status) status.textContent = "";
+    if (visibility) visibility.value = "public";
+    if (textarea) {
+      textarea.value = "";
+      textarea.focus();
+    }
+  }
+
+  function closeReplyEditor(annotationId) {
+    if (!el.articleFeed) return;
+    const editor = el.articleFeed.querySelector('[data-reply-editor="' + cssEscape(annotationId) + '"]');
+    if (!editor) return;
+    editor.hidden = true;
+
+    const textarea = editor.querySelector('[data-reply-input="' + cssEscape(annotationId) + '"]');
+    const status = editor.querySelector('[data-reply-status="' + cssEscape(annotationId) + '"]');
+    if (textarea) textarea.value = "";
+    if (status) status.textContent = "";
+  }
+
+  function saveReplyFromEditor(annotationId) {
+    syncActiveUserFromAuth();
+    if (!el.articleFeed) return;
+    const editor = el.articleFeed.querySelector('[data-reply-editor="' + cssEscape(annotationId) + '"]');
+    if (!editor) return;
+
+    const input = editor.querySelector('[data-reply-input="' + cssEscape(annotationId) + '"]');
+    const status = editor.querySelector('[data-reply-status="' + cssEscape(annotationId) + '"]');
+    const visibilitySelect = editor.querySelector('[data-reply-visibility="' + cssEscape(annotationId) + '"]');
+    const replyText = input && input.value ? String(input.value).trim() : "";
+    const visibility = visibilitySelect && visibilitySelect.value === "author" ? "author" : "public";
+
+    if (!replyText) {
+      if (status) status.textContent = "Write a reply before posting.";
+      return;
+    }
+
+    const annotation = findAnnotationById(annotationId);
+    if (!annotation) {
+      if (status) status.textContent = "Comment reference not found.";
+      return;
+    }
+    const article = findArticleById(annotation.articleId);
+    if (!article) {
+      if (status) status.textContent = "Article reference not found.";
+      return;
+    }
+
+    const reply = {
+      id: makeId("rpl"),
+      annotationId: annotationId,
+      articleId: annotation.articleId,
+      articleTitle: article.title,
+      articleAuthor: article.author,
+      targetAuthor: annotation.author,
+      author: activeUser,
+      text: replyText,
+      visibility: visibility,
+      createdAt: new Date().toISOString(),
+    };
+    state.annotationReplies.unshift(reply);
+
+    if (annotation.author !== activeUser) {
+      ensureUser(annotation.author);
+      state.notifications.unshift(
+        createNotification({
+          type: "reply",
+          to: annotation.author,
+          from: activeUser,
+          articleId: annotation.articleId,
+          articleTitle: article.title,
+          excerpt: replyText,
+          annotationId: annotation.id,
+          replyId: reply.id,
+        })
+      );
+    }
+
+    saveState();
+    setArticleStatus("Reply posted.", false);
+    renderAll();
+  }
+
   function getSelectionOffsets(container, range) {
     try {
       const startRange = document.createRange();
@@ -446,21 +600,29 @@
     renderActiveUser();
     renderKnownUsers();
     renderInbox();
+    renderInsights();
     renderFeed();
     updateMentionPreview();
   }
 
   function renderActiveUser() {
+    syncActiveUserFromAuth();
     if (el.activeHandleInput) {
       el.activeHandleInput.value = activeUser || "";
     }
     if (el.activeUserBadge) {
       el.activeUserBadge.textContent = activeUser ? "Active user: @" + activeUser : "No active user";
     }
+    enforceAuthenticatedIdentityUi();
   }
 
   function renderKnownUsers() {
     if (!el.knownUsersList) return;
+    if (isIdentityLockedToAuth()) {
+      el.knownUsersList.innerHTML =
+        '<li><span class="user-pill"><button type="button" disabled>@' + escapeHtml(activeUser) + "</button></span></li>";
+      return;
+    }
     const handles = Object.keys(state.users).sort();
     if (handles.length === 0) {
       el.knownUsersList.innerHTML = "<li class=\"hint\">No users yet.</li>";
@@ -507,12 +669,7 @@
 
       const title = document.createElement("div");
       title.className = "inbox-top";
-      title.innerHTML =
-        "<strong>@" +
-        escapeHtml(notification.from) +
-        " mentioned you in \"" +
-        escapeHtml(notification.articleTitle) +
-        "\"</strong>";
+      title.innerHTML = "<strong>" + escapeHtml(renderNotificationTitle(notification)) + "</strong>";
 
       const meta = document.createElement("p");
       meta.className = "inbox-meta";
@@ -520,7 +677,7 @@
 
       const excerpt = document.createElement("p");
       excerpt.className = "inbox-meta";
-      excerpt.innerHTML = "\"" + escapeHtml(notification.excerpt || "") + "\"";
+      excerpt.innerHTML = notification.excerpt ? "\"" + escapeHtml(notification.excerpt || "") + "\"" : "";
 
       const actions = document.createElement("div");
       actions.className = "inbox-actions";
@@ -574,7 +731,7 @@
 
       const visibleAnnotations = getVisibleAnnotationsForArticle(article);
       const highlightedBody = buildAnnotatedArticleBody(article.body, visibleAnnotations);
-      const commentsHtml = renderPassageCommentThread(visibleAnnotations);
+      const commentsHtml = renderPassageCommentThread(article, visibleAnnotations);
 
       card.innerHTML =
         '<h3 class="article-title">' +
@@ -630,7 +787,312 @@
     });
   }
 
-  function renderPassageCommentThread(annotations) {
+  function renderInsights() {
+    if (!el.insightCards || !el.insightTakeaways || !el.insightsTrendChart || !el.insightTrendMeta) return;
+
+    const range = el.insightsRange && el.insightsRange.value ? String(el.insightsRange.value) : "30d";
+    const summary = buildInsightsSummary(range);
+
+    el.insightCards.innerHTML = summary.cards
+      .map(function (card) {
+        return (
+          '<article class="insight-card">' +
+          '<p class="insight-card-label">' +
+          escapeHtml(card.label) +
+          "</p>" +
+          '<p class="insight-card-value">' +
+          escapeHtml(card.value) +
+          "</p>" +
+          '<p class="insight-card-sub">' +
+          escapeHtml(card.sub) +
+          "</p>" +
+          "</article>"
+        );
+      })
+      .join("");
+
+    el.insightTakeaways.innerHTML = summary.takeaways
+      .map(function (line) {
+        return "<li>" + escapeHtml(line) + "</li>";
+      })
+      .join("");
+
+    el.insightTrendMeta.textContent = summary.trendMeta;
+    drawInsightsTrendChart(summary.buckets);
+  }
+
+  function buildInsightsSummary(range) {
+    const startDate = getRangeStartDate(range);
+    const articleById = {};
+    state.articles.forEach(function (article) {
+      articleById[article.id] = article;
+    });
+
+    const filteredArticles = state.articles.filter(function (article) {
+      return inDateWindow(article.createdAt, startDate);
+    });
+    const filteredAnnotations = (Array.isArray(state.annotations) ? state.annotations : []).filter(function (annotation) {
+      return inDateWindow(annotation.createdAt, startDate);
+    });
+
+    const totalArticles = filteredArticles.length;
+    const totalAnnotations = filteredAnnotations.length;
+    const totalMentions = filteredArticles.reduce(function (sum, article) {
+      const mentions = Array.isArray(article.mentions) ? article.mentions.length : 0;
+      return sum + mentions;
+    }, 0);
+    const articlesWithMentions = filteredArticles.filter(function (article) {
+      return Array.isArray(article.mentions) && article.mentions.length > 0;
+    }).length;
+    const articlesWithPassageComments = new Set(
+      filteredAnnotations.map(function (annotation) {
+        return annotation.articleId;
+      })
+    ).size;
+    const publicAnnotations = filteredAnnotations.filter(function (annotation) {
+      return annotation.visibility === "public";
+    }).length;
+    const crossAuthorAnnotations = filteredAnnotations.filter(function (annotation) {
+      const article = articleById[annotation.articleId];
+      if (!article) return false;
+      return annotation.author !== article.author;
+    }).length;
+
+    const cards = [
+      {
+        label: "Mention Coverage",
+        value: formatPercent(articlesWithMentions, totalArticles),
+        sub: articlesWithMentions + " of " + totalArticles + " published articles mention at least one user.",
+      },
+      {
+        label: "Targeted Feedback Rate",
+        value: formatPercent(articlesWithPassageComments, totalArticles),
+        sub: articlesWithPassageComments + " articles received passage-specific comments.",
+      },
+      {
+        label: "Public Comment Share",
+        value: formatPercent(publicAnnotations, totalAnnotations),
+        sub: publicAnnotations + " of " + totalAnnotations + " passage comments are public.",
+      },
+      {
+        label: "Cross-Author Engagement",
+        value: formatPercent(crossAuthorAnnotations, totalAnnotations),
+        sub: crossAuthorAnnotations + " comments were posted by non-authors on others' work.",
+      },
+    ];
+
+    const takeaways = [
+      formatPercent(articlesWithMentions, totalArticles) +
+        " of published articles directly invite peer dialogue through @mentions.",
+      formatPercent(articlesWithPassageComments, totalArticles) +
+        " of articles generated line-by-line feedback, indicating focused disagreement handling.",
+      "Public comments: " +
+        publicAnnotations +
+        ", author-only comments: " +
+        (totalAnnotations - publicAnnotations) +
+        ", total passage comments: " +
+        totalAnnotations +
+        ".",
+      "Average mentions per article: " + formatDecimal(totalMentions / Math.max(totalArticles, 1)) + ".",
+    ];
+
+    const bucketResult = buildInsightBuckets(range, startDate);
+    return {
+      cards: cards,
+      takeaways: takeaways,
+      buckets: bucketResult.buckets,
+      trendMeta:
+        bucketResult.windowLabel +
+        " • " +
+        totalArticles +
+        " articles • " +
+        totalAnnotations +
+        " passage comments • " +
+        totalMentions +
+        " mentions",
+    };
+  }
+
+  function buildInsightBuckets(range, startDate) {
+    const now = new Date();
+    const buckets = [];
+    const keyed = {};
+    let windowLabel = "All time";
+
+    if (range === "7d" || range === "30d") {
+      const dayCount = range === "7d" ? 7 : 30;
+      windowLabel = "Daily trend";
+      for (let i = dayCount - 1; i >= 0; i -= 1) {
+        const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+        const key = date.toISOString().slice(0, 10);
+        const label = date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+        const entry = { key: key, label: label, articles: 0, comments: 0 };
+        buckets.push(entry);
+        keyed[key] = entry;
+      }
+      state.articles.forEach(function (article) {
+        if (!inDateWindow(article.createdAt, startDate)) return;
+        const key = safeDateKey(article.createdAt);
+        if (!keyed[key]) return;
+        keyed[key].articles += 1;
+      });
+      (Array.isArray(state.annotations) ? state.annotations : []).forEach(function (annotation) {
+        if (!inDateWindow(annotation.createdAt, startDate)) return;
+        const key = safeDateKey(annotation.createdAt);
+        if (!keyed[key]) return;
+        keyed[key].comments += 1;
+      });
+      return { buckets: buckets, windowLabel: windowLabel };
+    }
+
+    windowLabel = "Monthly trend";
+    for (let m = 11; m >= 0; m -= 1) {
+      const date = new Date(now.getFullYear(), now.getMonth() - m, 1);
+      const key = date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0");
+      const label = date.toLocaleDateString(undefined, { month: "short", year: "2-digit" });
+      const entry = { key: key, label: label, articles: 0, comments: 0 };
+      buckets.push(entry);
+      keyed[key] = entry;
+    }
+    state.articles.forEach(function (article) {
+      const date = new Date(article.createdAt);
+      if (!Number.isFinite(date.getTime())) return;
+      const key = date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0");
+      if (!keyed[key]) return;
+      keyed[key].articles += 1;
+    });
+    (Array.isArray(state.annotations) ? state.annotations : []).forEach(function (annotation) {
+      const date = new Date(annotation.createdAt);
+      if (!Number.isFinite(date.getTime())) return;
+      const key = date.getFullYear() + "-" + String(date.getMonth() + 1).padStart(2, "0");
+      if (!keyed[key]) return;
+      keyed[key].comments += 1;
+    });
+    return { buckets: buckets, windowLabel: windowLabel };
+  }
+
+  function drawInsightsTrendChart(buckets) {
+    if (!el.insightsTrendChart) return;
+    if (!Array.isArray(buckets) || buckets.length === 0) {
+      el.insightsTrendChart.innerHTML = "";
+      return;
+    }
+
+    const width = 760;
+    const height = 240;
+    const padLeft = 42;
+    const padRight = 16;
+    const padTop = 14;
+    const padBottom = 34;
+    const innerW = width - padLeft - padRight;
+    const innerH = height - padTop - padBottom;
+
+    const maxValue = Math.max(
+      1,
+      buckets.reduce(function (acc, bucket) {
+        return Math.max(acc, bucket.articles, bucket.comments);
+      }, 0)
+    );
+
+    const articlePath = [];
+    const commentPath = [];
+    const articleDots = [];
+    const commentDots = [];
+    const xLabelEvery = Math.max(1, Math.floor(buckets.length / 6));
+
+    buckets.forEach(function (bucket, index) {
+      const x = buckets.length === 1 ? padLeft + innerW / 2 : padLeft + (innerW * index) / (buckets.length - 1);
+      const articleY = padTop + innerH - (bucket.articles / maxValue) * innerH;
+      const commentY = padTop + innerH - (bucket.comments / maxValue) * innerH;
+
+      articlePath.push((index === 0 ? "M " : "L ") + x.toFixed(2) + " " + articleY.toFixed(2));
+      commentPath.push((index === 0 ? "M " : "L ") + x.toFixed(2) + " " + commentY.toFixed(2));
+      articleDots.push('<circle cx="' + x.toFixed(2) + '" cy="' + articleY.toFixed(2) + '" r="2.8" fill="#246c4a"></circle>');
+      commentDots.push('<circle cx="' + x.toFixed(2) + '" cy="' + commentY.toFixed(2) + '" r="2.8" fill="#3a6ea5"></circle>');
+    });
+
+    const grid = [0, 0.25, 0.5, 0.75, 1].map(function (t) {
+      const y = padTop + innerH - t * innerH;
+      const tick = Math.round(t * maxValue);
+      return (
+        '<line x1="' +
+        padLeft +
+        '" y1="' +
+        y.toFixed(2) +
+        '" x2="' +
+        (width - padRight) +
+        '" y2="' +
+        y.toFixed(2) +
+        '" stroke="#dbe3ec" stroke-width="1"></line>' +
+        '<text x="' +
+        (padLeft - 8) +
+        '" y="' +
+        (y + 4).toFixed(2) +
+        '" text-anchor="end" fill="#607286" font-size="10">' +
+        tick +
+        "</text>"
+      );
+    });
+
+    const xLabels = buckets
+      .map(function (bucket, index) {
+        if (index % xLabelEvery !== 0 && index !== buckets.length - 1) return "";
+        const x = buckets.length === 1 ? padLeft + innerW / 2 : padLeft + (innerW * index) / (buckets.length - 1);
+        return (
+          '<text x="' +
+          x.toFixed(2) +
+          '" y="' +
+          (height - 10) +
+          '" text-anchor="middle" fill="#63778e" font-size="10">' +
+          escapeHtml(bucket.label) +
+          "</text>"
+        );
+      })
+      .join("");
+
+    el.insightsTrendChart.innerHTML =
+      '<rect x="0" y="0" width="' +
+      width +
+      '" height="' +
+      height +
+      '" fill="#ffffff"></rect>' +
+      grid.join("") +
+      '<line x1="' +
+      padLeft +
+      '" y1="' +
+      (padTop + innerH) +
+      '" x2="' +
+      (width - padRight) +
+      '" y2="' +
+      (padTop + innerH) +
+      '" stroke="#cfd9e4" stroke-width="1"></line>' +
+      '<path d="' +
+      articlePath.join(" ") +
+      '" fill="none" stroke="#246c4a" stroke-width="2.2"></path>' +
+      '<path d="' +
+      commentPath.join(" ") +
+      '" fill="none" stroke="#3a6ea5" stroke-width="2.2"></path>' +
+      articleDots.join("") +
+      commentDots.join("") +
+      '<rect x="' +
+      (width - 210) +
+      '" y="10" width="200" height="26" rx="8" fill="#f7fbff" stroke="#d4deea"></rect>' +
+      '<circle cx="' +
+      (width - 195) +
+      '" cy="23" r="4" fill="#246c4a"></circle>' +
+      '<text x="' +
+      (width - 186) +
+      '" y="27" fill="#385672" font-size="11">Articles</text>' +
+      '<circle cx="' +
+      (width - 122) +
+      '" cy="23" r="4" fill="#3a6ea5"></circle>' +
+      '<text x="' +
+      (width - 113) +
+      '" y="27" fill="#385672" font-size="11">Passage comments</text>' +
+      xLabels;
+  }
+
+  function renderPassageCommentThread(article, annotations) {
     if (!annotations || annotations.length === 0) {
       return (
         '<section class="article-comments">' +
@@ -646,6 +1108,33 @@
         return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
       })
       .map(function (annotation) {
+        const replies = getVisibleRepliesForAnnotation(annotation, article);
+        const repliesHtml =
+          replies.length === 0
+            ? '<p class="hint annotation-replies-empty">No replies yet.</p>'
+            : '<ul class="annotation-reply-list">' +
+              replies
+                .map(function (reply) {
+                  return (
+                    '<li class="annotation-reply-item">' +
+                    '<p class="article-comment-text">' +
+                    escapeHtml(reply.text) +
+                    "</p>" +
+                    '<p class="article-comment-meta">By @' +
+                    escapeHtml(reply.author) +
+                    " · " +
+                    escapeHtml(relativeTime(reply.createdAt)) +
+                    " · " +
+                    '<span class="annotation-visibility-badge">' +
+                    escapeHtml(reply.visibility === "author" ? "Author only" : "Public") +
+                    "</span>" +
+                    "</p>" +
+                    "</li>"
+                  );
+                })
+                .join("") +
+              "</ul>";
+
         return (
           '<li class="article-comment-item">' +
           '<p class="annotation-quote">"' +
@@ -663,6 +1152,40 @@
           escapeHtml(annotation.visibility === "author" ? "Author only" : "Public") +
           "</span>" +
           "</p>" +
+          '<div class="annotation-reply-wrap">' +
+          '<button type="button" class="btn btn-ghost" data-reply-start="' +
+          escapeHtml(annotation.id) +
+          '">Reply</button>' +
+          '<div class="annotation-reply-editor" data-reply-editor="' +
+          escapeHtml(annotation.id) +
+          '" hidden>' +
+          '<label class="annotation-label">Reply' +
+          '<textarea rows="2" maxlength="1200" data-reply-input="' +
+          escapeHtml(annotation.id) +
+          '" placeholder="Write a reply to this comment."></textarea>' +
+          "</label>" +
+          '<label class="annotation-label">Visibility' +
+          '<select data-reply-visibility="' +
+          escapeHtml(annotation.id) +
+          '">' +
+          '<option value="public">Visible to everyone</option>' +
+          '<option value="author">Visible only to article author</option>' +
+          "</select>" +
+          "</label>" +
+          '<div class="annotation-action-row">' +
+          '<button type="button" class="btn btn-secondary" data-reply-save="' +
+          escapeHtml(annotation.id) +
+          '">Post Reply</button>' +
+          '<button type="button" class="btn btn-ghost" data-reply-cancel="' +
+          escapeHtml(annotation.id) +
+          '">Cancel</button>' +
+          "</div>" +
+          '<p class="annotation-editor-status hint" data-reply-status="' +
+          escapeHtml(annotation.id) +
+          '"></p>' +
+          "</div>" +
+          repliesHtml +
+          "</div>" +
           "</li>"
         );
       })
@@ -751,6 +1274,22 @@
       if (activeUser === annotation.author) return true;
       return false;
     });
+  }
+
+  function getVisibleRepliesForAnnotation(annotation, article) {
+    const replies = Array.isArray(state.annotationReplies) ? state.annotationReplies : [];
+    return replies
+      .filter(function (reply) {
+        if (!reply || reply.annotationId !== annotation.id) return false;
+        if (reply.visibility === "public") return true;
+        if (activeUser === article.author) return true;
+        if (activeUser === annotation.author) return true;
+        if (activeUser === reply.author) return true;
+        return false;
+      })
+      .sort(function (a, b) {
+        return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+      });
   }
 
   function formatArticleFragment(text) {
@@ -959,6 +1498,28 @@
     return Array.from(new Set(results));
   }
 
+  function normalizeNotifications(value) {
+    if (!Array.isArray(value)) return [];
+    return value
+      .map(function (notification) {
+        if (!notification || typeof notification !== "object") return null;
+        return {
+          id: String(notification.id || makeId("noti")),
+          type: String(notification.type || "mention"),
+          to: normalizeHandle(notification.to),
+          from: normalizeHandle(notification.from),
+          articleId: String(notification.articleId || ""),
+          articleTitle: String(notification.articleTitle || ""),
+          excerpt: String(notification.excerpt || ""),
+          annotationId: String(notification.annotationId || ""),
+          replyId: String(notification.replyId || ""),
+          read: Boolean(notification.read),
+          createdAt: String(notification.createdAt || new Date().toISOString()),
+        };
+      })
+      .filter(Boolean);
+  }
+
   function ensureSeedUsers() {
     DEFAULT_USERS.forEach(function (handle) {
       ensureUser(handle);
@@ -985,14 +1546,16 @@
           articles: [],
           notifications: [],
           annotations: [],
+          annotationReplies: [],
         };
       }
       const parsed = JSON.parse(raw);
       return {
         users: parsed && parsed.users && typeof parsed.users === "object" ? parsed.users : {},
         articles: Array.isArray(parsed && parsed.articles) ? parsed.articles : [],
-        notifications: Array.isArray(parsed && parsed.notifications) ? parsed.notifications : [],
+        notifications: normalizeNotifications(parsed && parsed.notifications),
         annotations: Array.isArray(parsed && parsed.annotations) ? parsed.annotations : [],
+        annotationReplies: Array.isArray(parsed && parsed.annotationReplies) ? parsed.annotationReplies : [],
       };
     } catch (_error) {
       return {
@@ -1000,6 +1563,7 @@
         articles: [],
         notifications: [],
         annotations: [],
+        annotationReplies: [],
       };
     }
   }
@@ -1021,10 +1585,116 @@
     return prefix + "-" + Date.now() + "-" + Math.random().toString(36).slice(2, 9);
   }
 
+  function getRangeStartDate(range) {
+    const now = new Date();
+    if (range === "7d") {
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
+    }
+    if (range === "30d") {
+      return new Date(now.getFullYear(), now.getMonth(), now.getDate() - 29);
+    }
+    return null;
+  }
+
+  function inDateWindow(isoDate, startDate) {
+    if (!startDate) return true;
+    const date = new Date(isoDate);
+    if (!Number.isFinite(date.getTime())) return false;
+    return date.getTime() >= startDate.getTime();
+  }
+
+  function safeDateKey(isoDate) {
+    const date = new Date(isoDate);
+    if (!Number.isFinite(date.getTime())) return "";
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate()).toISOString().slice(0, 10);
+  }
+
+  function formatPercent(value, total) {
+    if (!total || total <= 0) return "0%";
+    return Math.round((value / total) * 100) + "%";
+  }
+
+  function formatDecimal(value) {
+    if (!Number.isFinite(value)) return "0.0";
+    return value.toFixed(1);
+  }
+
   function findArticleById(articleId) {
     return state.articles.find(function (article) {
       return article.id === articleId;
     });
+  }
+
+  function findAnnotationById(annotationId) {
+    return (Array.isArray(state.annotations) ? state.annotations : []).find(function (annotation) {
+      return annotation.id === annotationId;
+    });
+  }
+
+  function createNotification(payload) {
+    return {
+      id: makeId("noti"),
+      type: payload.type || "mention",
+      to: normalizeHandle(payload.to),
+      from: normalizeHandle(payload.from),
+      articleId: String(payload.articleId || ""),
+      articleTitle: String(payload.articleTitle || ""),
+      excerpt: String(payload.excerpt || ""),
+      annotationId: payload.annotationId ? String(payload.annotationId) : "",
+      replyId: payload.replyId ? String(payload.replyId) : "",
+      read: false,
+      createdAt: new Date().toISOString(),
+    };
+  }
+
+  function renderNotificationTitle(notification) {
+    const from = "@" + String(notification.from || "user");
+    const article = '"' + String(notification.articleTitle || "an article") + '"';
+    const type = String(notification.type || "mention");
+    if (type === "comment") {
+      return from + " commented on your article " + article;
+    }
+    if (type === "reply") {
+      return from + " replied to your comment in " + article;
+    }
+    return from + " mentioned you in " + article;
+  }
+
+  function getAuthenticatedHandle() {
+    if (!authApi || typeof authApi.getCurrentUser !== "function") return "";
+    const user = authApi.getCurrentUser();
+    if (!user || !user.handle) return "";
+    return normalizeHandle(user.handle);
+  }
+
+  function isIdentityLockedToAuth() {
+    return Boolean(getAuthenticatedHandle());
+  }
+
+  function syncActiveUserFromAuth() {
+    const authHandle = getAuthenticatedHandle();
+    if (!authHandle) return;
+    if (authHandle === activeUser) return;
+    activeUser = authHandle;
+    ensureUser(activeUser);
+    saveActiveUser(activeUser);
+  }
+
+  function enforceAuthenticatedIdentityUi() {
+    if (!el.activeHandleInput || !el.setActiveUserBtn) return;
+    const authHandle = getAuthenticatedHandle();
+    if (!authHandle) {
+      el.activeHandleInput.disabled = false;
+      el.setActiveUserBtn.disabled = false;
+      return;
+    }
+
+    el.activeHandleInput.disabled = true;
+    el.setActiveUserBtn.disabled = true;
+    el.activeHandleInput.value = authHandle;
+    if (el.activeUserBadge) {
+      el.activeUserBadge.textContent = "Signed-in identity: @" + authHandle;
+    }
   }
 
   function trimPreview(text, maxLength) {

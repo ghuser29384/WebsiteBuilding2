@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Your Normativity profile dashboard.">
+  <title>Profile | Normativity</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Merriweather:wght@400;700;900&family=Newsreader:opsz,wght@6..72,500;6..72,700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="conviction.css">
+  <link rel="stylesheet" href="auth.css">
+  <script src="auth.js" defer></script>
+  <script src="profile.js" defer></script>
+</head>
+<body>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="index.html">Normativity</a>
+      <div class="header-tools">
+        <nav class="main-nav" aria-label="Primary">
+          <a href="index.html">Home</a>
+          <a href="moral-market.html">Normativity Market</a>
+          <a href="publication.html">Publications</a>
+          <a href="wre-assistant.html">WRE Assistant</a>
+          <a href="profile.html" aria-current="page">Profile</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main class="container profile-main">
+    <section class="panel">
+      <p class="eyebrow">Account</p>
+      <h1 id="profileTitle">Your Normativity Profile</h1>
+      <p id="profileSubtitle" class="hint"></p>
+    </section>
+
+    <section id="profileMetrics" class="profile-metrics" aria-live="polite"></section>
+
+    <section class="profile-grid">
+      <article class="profile-card">
+        <h3>Past Conversations</h3>
+        <ul id="profileConversations" class="profile-list"></ul>
+      </article>
+
+      <article class="profile-card">
+        <h3>Your Articles</h3>
+        <ul id="profileArticles" class="profile-list"></ul>
+      </article>
+
+      <article class="profile-card">
+        <h3>Notification Center</h3>
+        <ul id="profileNotifications" class="profile-list"></ul>
+      </article>
+
+      <article class="profile-card">
+        <h3>Reflective Equilibriums</h3>
+        <ul id="profileWre" class="profile-list"></ul>
+      </article>
+
+      <article class="profile-card">
+        <h3>Your Pledges</h3>
+        <ul id="profilePledges" class="profile-list"></ul>
+      </article>
+
+      <article class="profile-card">
+        <h3>Suggested Pledges</h3>
+        <ul id="profileSuggestedPledges" class="profile-list"></ul>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

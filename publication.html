@@ -10,7 +10,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:wght@600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=Merriweather:wght@400;700;900&family=Newsreader:opsz,wght@6..72,500;6..72,700&family=Source+Sans+3:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="conviction.css">
+  <link rel="stylesheet" href="auth.css">
   <link rel="stylesheet" href="publication.css">
+  <script src="auth.js" defer></script>
   <script src="publication.js" defer></script>
 </head>
 <body>
@@ -23,6 +25,7 @@
           <a href="moral-market.html">Normativity Market</a>
           <a href="publication.html" aria-current="page">Publications</a>
           <a href="wre-assistant.html">WRE Assistant</a>
+          <a href="profile.html">Profile</a>
         </nav>
       </div>
     </div>
@@ -37,6 +40,47 @@
         notifications in their inbox. Every draft also includes a <strong>native syllogism tool</strong> that checks
         whether your major premise, minor premise, and conclusion are logically valid.
       </p>
+    </section>
+
+    <section class="panel publication-card publication-insights-card">
+      <div class="publication-card-head publication-insights-head">
+        <div>
+          <p class="eyebrow">Student-Data Style Insights</p>
+          <h2>Deliberation Outcomes Snapshot</h2>
+          <p class="hint">
+            Aggregated, anonymized interaction signals from published articles, mentions, and passage comments.
+          </p>
+        </div>
+        <label class="insights-filter-label" for="insightsRange">
+          Window
+          <select id="insightsRange">
+            <option value="7d">Last 7 days</option>
+            <option value="30d" selected>Last 30 days</option>
+            <option value="all">All time</option>
+          </select>
+        </label>
+      </div>
+
+      <div id="insightCards" class="insight-cards" aria-live="polite"></div>
+
+      <section class="insight-trend-wrap">
+        <div class="insight-trend-head">
+          <p class="label-lite">Participation Trend</p>
+          <p id="insightTrendMeta" class="hint"></p>
+        </div>
+        <svg
+          id="insightsTrendChart"
+          class="insights-trend-chart"
+          viewBox="0 0 760 240"
+          role="img"
+          aria-label="Trend of article publishing and passage comments"
+        ></svg>
+      </section>
+
+      <section class="insight-takeaways">
+        <p class="label-lite">Key Findings</p>
+        <ul id="insightTakeaways" class="rules-list"></ul>
+      </section>
     </section>
 
     <section class="publication-grid">

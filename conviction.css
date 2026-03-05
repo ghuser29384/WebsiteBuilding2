@@ -1411,6 +1411,96 @@ textarea:focus-visible {
   max-width: 760px;
 }
 
+.pledge-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.44fr);
+  gap: 0.86rem;
+  align-items: start;
+}
+
+.pledge-side-panel {
+  display: grid;
+  gap: 0.72rem;
+}
+
+.pledge-checklist-progress {
+  margin: -0.22rem 0 0.62rem;
+  font-weight: 700;
+  color: #4a637f;
+}
+
+.pledge-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
+}
+
+.pledge-metric-card {
+  border: 1px solid #d7e0ea;
+  border-radius: var(--radius-sm);
+  background: #f8fbff;
+  padding: 0.48rem 0.52rem;
+}
+
+.pledge-metric-label {
+  margin: 0;
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #5e738a;
+  font-weight: 700;
+}
+
+.pledge-metric-value {
+  margin: 0.18rem 0 0;
+  font-size: 1.36rem;
+  line-height: 1.05;
+  color: #243f60;
+  font-weight: 800;
+}
+
+.pledge-metric-sub {
+  margin: 0.15rem 0 0;
+  font-size: 0.76rem;
+  color: #5d7085;
+}
+
+.pledge-registry-wrap h4 {
+  margin: 0 0 0.36rem;
+  font-size: 1rem;
+}
+
+.pledge-registry-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.42rem;
+}
+
+.pledge-registry-item {
+  border: 1px solid #d7e1eb;
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  padding: 0.48rem 0.54rem;
+}
+
+.pledge-registry-item p {
+  margin: 0;
+}
+
+.pledge-registry-meta {
+  margin-top: 0.12rem;
+  color: #5d7288;
+  font-size: 0.78rem;
+}
+
+.pledge-registry-action {
+  margin-top: 0.2rem;
+  color: #314b68;
+  font-size: 0.82rem;
+}
+
 .field-row {
   display: flex;
   flex-direction: column;
@@ -1988,6 +2078,10 @@ html:not([data-theme]) .site-footer {
     grid-template-columns: 1fr;
   }
 
+  .pledge-grid {
+    grid-template-columns: 1fr;
+  }
+
   .studio-grid {
     grid-template-columns: 1fr;
   }
@@ -2020,7 +2114,8 @@ html:not([data-theme]) .site-footer {
   .featured-market-main-meta,
   .featured-market-prices,
   .progress-metrics,
-  .comparison-metrics {
+  .comparison-metrics,
+  .pledge-metrics {
     grid-template-columns: 1fr;
   }
 

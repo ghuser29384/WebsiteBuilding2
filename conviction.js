@@ -1,7 +1,8 @@
 (function () {
   "use strict";
 
-  const STORAGE_KEY = "normativity-dialogue-state-v1";
+  const STORAGE_KEY_BASE = "normativity-dialogue-state-v1";
+  const STORAGE_KEY = resolveScopedStorageKey(STORAGE_KEY_BASE);
 
   const TOPICS = {
     animal_welfare: {
@@ -485,8 +486,15 @@
 
   const el = {
     pledgeForm: document.getElementById("pledgeForm"),
+    pledgeChecks: document.querySelectorAll('#pledgeForm input[type="checkbox"]'),
     pledgeName: document.getElementById("pledgeName"),
+    pledgeRole: document.getElementById("pledgeRole"),
+    pledgeFocus: document.getElementById("pledgeFocus"),
+    pledgeFirstAction: document.getElementById("pledgeFirstAction"),
+    pledgeChecklistProgress: document.getElementById("pledgeChecklistProgress"),
     pledgeStatus: document.getElementById("pledgeStatus"),
+    pledgeMetrics: document.getElementById("pledgeMetrics"),
+    pledgeRegistryList: document.getElementById("pledgeRegistryList"),
     gateBanner: document.getElementById("gateBanner"),
     studioContent: document.getElementById("studioContent"),
     confidenceInput: document.getElementById("confidenceInput"),
@@ -556,6 +564,17 @@
   };
 
   init();
+
+  function resolveScopedStorageKey(baseKey) {
+    try {
+      if (!window.NormativityAuth || typeof window.NormativityAuth.scopedStorageKey !== "function") {
+        return baseKey;
+      }
+      return window.NormativityAuth.scopedStorageKey(baseKey);
+    } catch (_error) {
+      return baseKey;
+    }
+  }
 
   function init() {
     initChartTrackpadZooming();
@@ -805,6 +824,23 @@
 
   function bindEvents() {
     el.pledgeForm.addEventListener("submit", onPledgeSubmit);
+    if (el.pledgeChecks && el.pledgeChecks.length > 0) {
+      el.pledgeChecks.forEach(function (checkbox) {
+        checkbox.addEventListener("change", renderPledgePanel);
+      });
+    }
+    if (el.pledgeName) {
+      el.pledgeName.addEventListener("input", renderPledgePanel);
+    }
+    if (el.pledgeRole) {
+      el.pledgeRole.addEventListener("change", renderPledgePanel);
+    }
+    if (el.pledgeFocus) {
+      el.pledgeFocus.addEventListener("input", renderPledgePanel);
+    }
+    if (el.pledgeFirstAction) {
+      el.pledgeFirstAction.addEventListener("input", renderPledgePanel);
+    }
     el.convictionForm.addEventListener("submit", onConvictionSubmit);
     el.sessionForm.addEventListener("submit", onSessionSubmit);
     el.confidenceInput.addEventListener("input", function () {
@@ -908,16 +944,45 @@
     event.preventDefault();
     const formData = new FormData(el.pledgeForm);
     const name = String(formData.get("pledgeName") || "").trim();
+    const role = String(formData.get("pledgeRole") || "").trim();
+    const focus = String(formData.get("pledgeFocus") || "").trim();
+    const firstAction = String(formData.get("pledgeFirstAction") || "").trim();
     if (!name) {
       el.pledgeStatus.textContent = "Please add a name or handle.";
       return;
     }
+    if (!role) {
+      el.pledgeStatus.textContent = "Please select your role.";
+      return;
+    }
+    if (!focus) {
+      el.pledgeStatus.textContent = "Please add your normative focus area.";
+      return;
+    }
+    if (!firstAction) {
+      el.pledgeStatus.textContent = "Please specify a first accountability action.";
+      return;
+    }
+    const signedAt = new Date().toISOString();
     state.pledge.signed = true;
     state.pledge.name = name;
-    state.pledge.signedAt = new Date().toISOString();
+    state.pledge.role = role;
+    state.pledge.focus = focus;
+    state.pledge.firstAction = firstAction;
+    state.pledge.signedAt = signedAt;
+    state.pledgeRegistry.unshift({
+      id: uid("pl"),
+      name: name,
+      role: role,
+      focus: focus,
+      firstAction: firstAction,
+      signedAt: signedAt,
+    });
     saveState();
     renderGate();
-    el.pledgeStatus.textContent = name + " signed the pledge on " + formatDate(state.pledge.signedAt) + ".";
+    renderPledgePanel();
+    el.pledgeStatus.textContent =
+      name + " signed the pledge on " + formatDate(state.pledge.signedAt) + ". Studio unlocked.";
   }
 
   function onConvictionSubmit(event) {
@@ -1061,6 +1126,7 @@
   function render() {
     renderFeaturedMarketOfDay();
     renderGate();
+    renderPledgePanel();
     renderConvictionList();
     renderMatching();
     renderSessionPartner();
@@ -3511,17 +3577,143 @@
     svgEl.innerHTML = gridLayer + paths + splitLayer + currentLayer + milestoneLayer + axis;
   }
 
+  function renderPledgePanel() {
+    const totalChecks = el.pledgeChecks ? el.pledgeChecks.length : 0;
+    const checkedCount = el.pledgeChecks
+      ? Array.from(el.pledgeChecks).filter(function (checkbox) {
+          return checkbox.checked;
+        }).length
+      : 0;
+
+    const draftFields = [
+      el.pledgeName && el.pledgeName.value ? el.pledgeName.value.trim() : "",
+      el.pledgeRole && el.pledgeRole.value ? el.pledgeRole.value.trim() : "",
+      el.pledgeFocus && el.pledgeFocus.value ? el.pledgeFocus.value.trim() : "",
+      el.pledgeFirstAction && el.pledgeFirstAction.value ? el.pledgeFirstAction.value.trim() : "",
+    ];
+    const completedDraftFields = draftFields.filter(function (value) {
+      return Boolean(value);
+    }).length;
+
+    if (el.pledgeChecklistProgress) {
+      el.pledgeChecklistProgress.textContent =
+        "Commitments confirmed: " + checkedCount + " / " + totalChecks + " • Profile fields: " + completedDraftFields + " / 4";
+    }
+
+    if (!el.pledgeMetrics || !el.pledgeRegistryList) return;
+
+    const registry = Array.isArray(state.pledgeRegistry) ? state.pledgeRegistry : [];
+    const recent30Count = registry.filter(function (entry) {
+      const timestamp = new Date(entry.signedAt).getTime();
+      if (!Number.isFinite(timestamp)) return false;
+      return Date.now() - timestamp <= 30 * 24 * 60 * 60 * 1000;
+    }).length;
+    const uniqueSignerCount = new Set(
+      registry
+        .map(function (entry) {
+          return String(entry.name || "").trim().toLowerCase();
+        })
+        .filter(Boolean)
+    ).size;
+    const uniqueFocusCount = new Set(
+      registry
+        .map(function (entry) {
+          return String(entry.focus || "").trim().toLowerCase();
+        })
+        .filter(Boolean)
+    ).size;
+    const withActionCount = registry.filter(function (entry) {
+      return String(entry.firstAction || "").trim().length > 0;
+    }).length;
+
+    const actionRate = registry.length === 0 ? 0 : Math.round((withActionCount / registry.length) * 100);
+    el.pledgeMetrics.innerHTML =
+      '<article class="pledge-metric-card">' +
+      '<p class="pledge-metric-label">Total Signatures</p>' +
+      '<p class="pledge-metric-value">' +
+      registry.length +
+      "</p>" +
+      '<p class="pledge-metric-sub">' +
+      uniqueSignerCount +
+      " unique signers</p>" +
+      "</article>" +
+      '<article class="pledge-metric-card">' +
+      '<p class="pledge-metric-label">Last 30 Days</p>' +
+      '<p class="pledge-metric-value">' +
+      recent30Count +
+      "</p>" +
+      '<p class="pledge-metric-sub">Recent pledge signings</p>' +
+      "</article>" +
+      '<article class="pledge-metric-card">' +
+      '<p class="pledge-metric-label">Focus Diversity</p>' +
+      '<p class="pledge-metric-value">' +
+      uniqueFocusCount +
+      "</p>" +
+      '<p class="pledge-metric-sub">Distinct focus areas</p>' +
+      "</article>" +
+      '<article class="pledge-metric-card">' +
+      '<p class="pledge-metric-label">Action Specificity</p>' +
+      '<p class="pledge-metric-value">' +
+      actionRate +
+      "%</p>" +
+      '<p class="pledge-metric-sub">Signed pledges with concrete first action</p>' +
+      "</article>";
+
+    if (registry.length === 0) {
+      el.pledgeRegistryList.innerHTML =
+        '<li class="pledge-registry-item"><p class="hint">No signatories yet. Sign the pledge to initialize the registry.</p></li>';
+      return;
+    }
+
+    el.pledgeRegistryList.innerHTML = registry
+      .slice(0, 7)
+      .map(function (entry) {
+        const roleLabel = pledgeRoleLabel(entry.role);
+        const signedDate = formatDate(entry.signedAt);
+        return (
+          '<li class="pledge-registry-item">' +
+          "<p><strong>" +
+          escapeHtml(entry.name || "Member") +
+          "</strong></p>" +
+          '<p class="pledge-registry-meta">' +
+          escapeHtml(roleLabel) +
+          " • " +
+          escapeHtml(entry.focus || "Unspecified focus") +
+          " • " +
+          escapeHtml(signedDate) +
+          "</p>" +
+          '<p class="pledge-registry-action">First action: ' +
+          escapeHtml(truncateText(entry.firstAction || "Not provided.", 130)) +
+          "</p>" +
+          "</li>"
+        );
+      })
+      .join("");
+  }
+
   function renderGate() {
     const signed = state.pledge.signed;
     el.studioContent.classList.toggle("locked", !signed);
     if (signed) {
       const name = state.pledge.name || "Member";
+      const role = pledgeRoleLabel(state.pledge.role);
+      const focus = state.pledge.focus || "general inquiry";
       const dateLabel = state.pledge.signedAt ? formatDate(state.pledge.signedAt) : "today";
-      el.gateBanner.textContent = "Studio unlocked for " + name + ". Pledge signed on " + dateLabel + ".";
+      el.gateBanner.textContent =
+        "Studio unlocked for " + name + " (" + role + "). Focus: " + focus + ". Pledge signed on " + dateLabel + ".";
       if (!el.pledgeStatus.textContent.trim()) {
         el.pledgeStatus.textContent = name + " signed the pledge on " + dateLabel + ".";
       }
       el.pledgeName.value = state.pledge.name || "";
+      if (el.pledgeRole) {
+        el.pledgeRole.value = state.pledge.role || "";
+      }
+      if (el.pledgeFocus) {
+        el.pledgeFocus.value = state.pledge.focus || "";
+      }
+      if (el.pledgeFirstAction) {
+        el.pledgeFirstAction.value = state.pledge.firstAction || "";
+      }
     } else {
       el.gateBanner.textContent = "Studio is locked until the pledge is signed.";
       el.pledgeStatus.textContent = "";
@@ -3909,8 +4101,12 @@
       pledge: {
         signed: false,
         name: "",
+        role: "",
+        focus: "",
+        firstAction: "",
         signedAt: "",
       },
+      pledgeRegistry: [],
       convictions: [],
       activeConvictionId: null,
       selectedCounterpartId: null,
@@ -3921,21 +4117,42 @@
 
   function loadState() {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      let raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw && STORAGE_KEY !== STORAGE_KEY_BASE) {
+        raw = localStorage.getItem(STORAGE_KEY_BASE);
+        if (raw) {
+          localStorage.setItem(STORAGE_KEY, raw);
+        }
+      }
       if (!raw) return createDefaultState();
       const parsed = JSON.parse(raw);
-      return {
+      const loaded = {
         pledge: {
           signed: Boolean(parsed.pledge && parsed.pledge.signed),
           name: String((parsed.pledge && parsed.pledge.name) || ""),
+          role: String((parsed.pledge && parsed.pledge.role) || ""),
+          focus: String((parsed.pledge && parsed.pledge.focus) || ""),
+          firstAction: String((parsed.pledge && parsed.pledge.firstAction) || ""),
           signedAt: String((parsed.pledge && parsed.pledge.signedAt) || ""),
         },
+        pledgeRegistry: Array.isArray(parsed.pledgeRegistry) ? parsed.pledgeRegistry : [],
         convictions: Array.isArray(parsed.convictions) ? parsed.convictions : [],
         activeConvictionId: parsed.activeConvictionId || null,
         selectedCounterpartId: parsed.selectedCounterpartId || null,
         sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [],
         ledger: Array.isArray(parsed.ledger) ? parsed.ledger : [],
       };
+      if (loaded.pledge.signed && loaded.pledgeRegistry.length === 0) {
+        loaded.pledgeRegistry.push({
+          id: uid("pl"),
+          name: loaded.pledge.name || "Member",
+          role: loaded.pledge.role || "",
+          focus: loaded.pledge.focus || "",
+          firstAction: loaded.pledge.firstAction || "",
+          signedAt: loaded.pledge.signedAt || new Date().toISOString(),
+        });
+      }
+      return loaded;
     } catch (error) {
       return createDefaultState();
     }
@@ -3978,6 +4195,23 @@
     const date = new Date(iso);
     if (Number.isNaN(date.getTime())) return "unknown date";
     return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+  }
+
+  function pledgeRoleLabel(role) {
+    const labels = {
+      student: "Student",
+      educator: "Educator",
+      researcher: "Researcher",
+      practitioner: "Practitioner",
+      citizen: "Citizen participant",
+    };
+    return labels[role] || "Participant";
+  }
+
+  function truncateText(text, limit) {
+    const raw = String(text || "").replace(/\s+/g, " ").trim();
+    if (raw.length <= limit) return raw;
+    return raw.slice(0, Math.max(0, limit - 1)).trimEnd() + "…";
   }
 
   function formatLargeYear(value) {

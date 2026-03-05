@@ -16,7 +16,8 @@
 (function () {
   "use strict";
 
-  var STORAGE_KEY = "normativity-wre-assistant-session-v1";
+  var STORAGE_KEY_BASE = "normativity-wre-assistant-session-v1";
+  var STORAGE_KEY = resolveScopedStorageKey(STORAGE_KEY_BASE);
 
   var state = {
     judgments: [],
@@ -83,6 +84,17 @@
 
   function safeTrim(value) {
     return String(value || "").replace(/\s+/g, " ").trim();
+  }
+
+  function resolveScopedStorageKey(baseKey) {
+    try {
+      if (!window.NormativityAuth || typeof window.NormativityAuth.scopedStorageKey !== "function") {
+        return baseKey;
+      }
+      return window.NormativityAuth.scopedStorageKey(baseKey);
+    } catch (_error) {
+      return baseKey;
+    }
   }
 
   function makeId(prefix) {
@@ -814,6 +826,12 @@
 
   function restoreSession() {
     var raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw && STORAGE_KEY !== STORAGE_KEY_BASE) {
+      raw = window.localStorage.getItem(STORAGE_KEY_BASE);
+      if (raw) {
+        window.localStorage.setItem(STORAGE_KEY, raw);
+      }
+    }
     if (!raw) return null;
 
     try {
