@@ -948,7 +948,7 @@
     const focus = String(formData.get("pledgeFocus") || "").trim();
     const firstAction = String(formData.get("pledgeFirstAction") || "").trim();
     if (!name) {
-      el.pledgeStatus.textContent = "Please add a name or handle.";
+      el.pledgeStatus.textContent = "Please add a name or username.";
       return;
     }
     if (!role) {

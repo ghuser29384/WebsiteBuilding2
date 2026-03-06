@@ -125,7 +125,7 @@
     var acceptedTerms = Boolean(payload && payload.acceptedTerms);
 
     if (!handle || handle.length < 2) {
-      return { ok: false, error: "Handle must be at least 2 characters (letters, numbers, underscore)." };
+      return { ok: false, error: "Username must be at least 2 characters (letters, numbers, underscore)." };
     }
     if (!email || !/^.+@.+\..+$/.test(email)) {
       return { ok: false, error: "Please provide a valid email address." };
@@ -142,7 +142,7 @@
       return normalizeHandle(user.handle) === handle;
     });
     if (handleTaken) {
-      return { ok: false, error: "That handle is already in use." };
+      return { ok: false, error: "That username is already in use." };
     }
 
     var emailTaken = users.some(function (user) {
@@ -178,7 +178,7 @@
     var acceptTerms = Boolean(payload && payload.acceptTerms);
 
     if (!identifier || !password) {
-      return { ok: false, error: "Enter your email/handle and password." };
+      return { ok: false, error: "Enter your email/username and password." };
     }
 
     var handleGuess = normalizeHandle(identifier);

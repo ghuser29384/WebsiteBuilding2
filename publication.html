@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="Normativity Publications: write articles, mention peers with @handles, receive inbox notifications, and validate syllogistic reasoning.">
+  <meta name="description" content="Normativity Publications: write articles, mention peers with @usernames, receive inbox notifications, and validate syllogistic reasoning.">
   <title>Publications | Normativity</title>
   <link rel="icon" type="image/png" href="assets/favicon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -36,7 +36,7 @@
       <p class="eyebrow">Publication Workspace</p>
       <h1>Write Articles, Mention Others, And Track Deliberative Replies</h1>
       <p class="publication-lead">
-        Use <strong>@handles</strong> inside articles to directly address peers. Mentioned users receive
+        Use <strong>@usernames</strong> inside articles to directly address peers. Mentioned users receive
         notifications in their inbox. Every draft also includes a <strong>native syllogism tool</strong> that checks
         whether your major premise, minor premise, and conclusion are logically valid.
       </p>
@@ -91,7 +91,7 @@
             <p class="hint">Switch active user to simulate multi-user publication and inbox delivery.</p>
           </div>
           <div class="publication-form-row">
-            <label for="activeHandleInput">Active handle</label>
+            <label for="activeHandleInput">Active username</label>
             <input id="activeHandleInput" type="text" maxlength="24" placeholder="e.g., Jasmine">
             <button id="setActiveUserBtn" type="button" class="btn btn-secondary">Set Active User</button>
           </div>
@@ -118,7 +118,7 @@
               rows="10"
               maxlength="12000"
               required
-              placeholder="Write your argument clearly. Mention users with @handle."
+              placeholder="Write your argument clearly. Mention users with @username."
             ></textarea>
 
             <div class="mention-preview-row">
@@ -224,7 +224,7 @@
             <h2>Inbox</h2>
             <span id="inboxCountBadge" class="inbox-count">0</span>
           </div>
-          <p class="hint">Users receive inbox alerts when another author mentions <code>@their_handle</code>.</p>
+          <p class="hint">Users receive inbox alerts when another author mentions <code>@their_username</code>.</p>
           <ul id="inboxList" class="inbox-list" aria-live="polite"></ul>
         </article>
 
@@ -234,7 +234,7 @@
           </div>
           <ul class="rules-list">
             <li>A mention like <code>@maya</code> creates a notification for user <code>maya</code>.</li>
-            <li>Newly mentioned handles are automatically added as users.</li>
+            <li>Newly mentioned usernames are automatically added as users.</li>
             <li>Inbox is per active user and stored locally in this browser.</li>
           </ul>
         </article>

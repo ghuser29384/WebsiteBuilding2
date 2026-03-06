@@ -157,13 +157,13 @@
 
   function onSetActiveUser() {
     if (isIdentityLockedToAuth()) {
-      setArticleStatus("Active handle is tied to your signed-in account.", true);
+      setArticleStatus("Active username is tied to your signed-in account.", true);
       return;
     }
     if (!el.activeHandleInput) return;
     const next = normalizeHandle(el.activeHandleInput.value);
     if (!next) {
-      setArticleStatus("Set a valid handle (letters, numbers, underscore).", true);
+      setArticleStatus("Set a valid username (letters, numbers, underscore).", true);
       return;
     }
     activeUser = next;

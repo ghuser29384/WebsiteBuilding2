@@ -79,7 +79,7 @@
       if (dom.signupPanel) dom.signupPanel.classList.remove("active");
       if (dom.signinTab) dom.signinTab.classList.add("active");
       if (dom.signupTab) dom.signupTab.classList.remove("active");
-      setStatus("Sign in and accept the required commitment to continue.", false);
+      setStatus("Sign in and accept the user agreement to continue.", false);
     }
   }
 
