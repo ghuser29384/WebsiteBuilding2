@@ -1,0 +1,31 @@
+@import "./tokens.css";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-size: var(--font-size-base-desktop);
+  }
+
+  body {
+    margin: 0;
+    background: var(--color-bg);
+    color: var(--color-text-default);
+    font-family: var(--font-sans);
+    line-height: 1.6;
+  }
+
+  @media (max-width: 768px) {
+    html {
+      font-size: var(--font-size-base-mobile);
+    }
+  }
+}
+
+@layer utilities {
+  .font-emphasis {
+    font-family: var(--font-emphasis);
+  }
+}
