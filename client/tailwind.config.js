@@ -8,6 +8,7 @@ module.exports = {
         bg: "var(--color-bg)",
         "text-default": "var(--color-text-default)",
         "text-surface": "var(--color-text-surface)",
+        "muted-text": "var(--color-muted-text)",
         cta: "var(--color-cta)",
         "accent-2": "var(--color-accent-2)",
         muted: "var(--color-muted)",
