@@ -11,7 +11,6 @@
     signupPanel: document.getElementById("signupPanel"),
     signinIdentifier: document.getElementById("signinIdentifier"),
     signinPassword: document.getElementById("signinPassword"),
-    signinAcceptTerms: document.getElementById("signinAcceptTerms"),
     signinBtn: document.getElementById("signinBtn"),
     signupHandle: document.getElementById("signupHandle"),
     signupEmail: document.getElementById("signupEmail"),
@@ -79,7 +78,7 @@
       if (dom.signupPanel) dom.signupPanel.classList.remove("active");
       if (dom.signinTab) dom.signinTab.classList.add("active");
       if (dom.signupTab) dom.signupTab.classList.remove("active");
-      setStatus("Sign in and accept the user agreement to continue.", false);
+      setStatus("Sign in to continue.", false);
     }
   }
 
@@ -91,7 +90,6 @@
     var payload = {
       identifier: dom.signinIdentifier && dom.signinIdentifier.value,
       password: dom.signinPassword && dom.signinPassword.value,
-      acceptTerms: Boolean(dom.signinAcceptTerms && dom.signinAcceptTerms.checked),
     };
 
     var result = auth.signIn(payload);

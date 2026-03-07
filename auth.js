@@ -14,13 +14,6 @@
     "    (b) choosing the action I judge least likely to be wrong.";
 
   var GATED_PAGE_NAMES = {
-    "": true,
-    "index.html": true,
-    "moral-market.html": true,
-    "publication.html": true,
-    "wre-assistant.html": true,
-    "reflective_equilibrium.html": true,
-    "normative-issues.html": true,
     "profile.html": true,
   };
 
@@ -175,7 +168,6 @@
   function signIn(payload) {
     var identifier = String(payload && payload.identifier ? payload.identifier : "").trim();
     var password = String(payload && payload.password ? payload.password : "");
-    var acceptTerms = Boolean(payload && payload.acceptTerms);
 
     if (!identifier || !password) {
       return { ok: false, error: "Enter your email/username and password." };
@@ -203,15 +195,7 @@
     }
 
     var needsTermsAcceptance = !user.acceptedTerms || user.termsVersion !== TERMS_VERSION;
-    if (needsTermsAcceptance && !acceptTerms) {
-      return {
-        ok: false,
-        error: "You must accept the Normativity commitment before continuing.",
-        requiresTerms: true,
-      };
-    }
-
-    if (needsTermsAcceptance && acceptTerms) {
+    if (needsTermsAcceptance) {
       updateUser(user.id, function (current) {
         return Object.assign({}, current, {
           acceptedTerms: true,
@@ -265,10 +249,6 @@
     var user = getCurrentUser();
     if (!user) {
       window.location.assign(buildAuthRedirectUrl("signin"));
-      return false;
-    }
-    if (!user.acceptedTerms || user.termsVersion !== TERMS_VERSION) {
-      window.location.assign(buildAuthRedirectUrl("agreement"));
       return false;
     }
     return true;
