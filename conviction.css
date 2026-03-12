@@ -410,6 +410,35 @@ textarea:focus-visible {
   font-size: 1.125rem;
 }
 
+.deliberation-divider {
+  border: 0;
+  border-top: 1px solid var(--line);
+  margin: 0.9rem 0 0.95rem;
+}
+
+.deliberation-ethics {
+  display: grid;
+  gap: 0.95rem;
+}
+
+.deliberation-ethics-block h3 {
+  margin-bottom: 0.35rem;
+  font-size: clamp(1.12rem, 1.7vw, 1.36rem);
+}
+
+.deliberation-ethics-block p {
+  margin-bottom: 0.45rem;
+}
+
+.deliberation-ethics-list {
+  margin: 0 0 0.6rem;
+  padding-left: 1.15rem;
+}
+
+.deliberation-ethics-list li {
+  margin-bottom: 0.45rem;
+}
+
 .deliberation-steps {
   margin-bottom: 0.82rem;
   border-top: 1px solid var(--line);
