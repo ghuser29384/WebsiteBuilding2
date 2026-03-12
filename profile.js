@@ -85,6 +85,26 @@
     });
   }
 
+  function renderGuestProfile() {
+    if (dom.profileTitle) {
+      dom.profileTitle.textContent = "Guest Profile";
+    }
+    if (dom.profileSubtitle) {
+      dom.profileSubtitle.textContent =
+        "Sign in to view your saved conversations, articles, and pledges. Browsing is available without an account.";
+    }
+    if (dom.profileMetrics) {
+      dom.profileMetrics.innerHTML = "";
+    }
+
+    renderList(dom.profileConversations, ["Sign in to view your saved conversations."]);
+    renderList(dom.profileArticles, ["Sign in to view your published articles."]);
+    renderList(dom.profileNotifications, ["Sign in to view notifications and replies."]);
+    renderList(dom.profileWre, ["Sign in to view your reflective equilibrium sessions."]);
+    renderList(dom.profilePledges, ["Sign in to view your pledges."]);
+    renderList(dom.profileSuggestedPledges, ["Sign in to see suggested pledges based on your activity."]);
+  }
+
   function collectProfileData(user) {
     var handle = normalizeHandle(user && user.handle);
 
@@ -358,10 +378,9 @@
   }
 
   document.addEventListener("DOMContentLoaded", function () {
-    if (!auth.requireAccess()) return;
     var user = auth.getCurrentUser();
     if (!user) {
-      window.location.assign("auth.html?mode=signin&next=profile.html");
+      renderGuestProfile();
       return;
     }
     var data = collectProfileData(user);

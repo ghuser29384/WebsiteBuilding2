@@ -13,16 +13,8 @@
     "    (a) avoiding actions I judge to have more than a 50% chance of being morally wrong, and\n" +
     "    (b) choosing the action I judge least likely to be wrong.";
 
-  var GATED_PAGE_NAMES = {
-    "": true,
-    "index.html": true,
-    "moral-market.html": true,
-    "publication.html": true,
-    "wre-assistant.html": true,
-    "reflective_equilibrium.html": true,
-    "normative-issues.html": true,
-    "profile.html": true,
-  };
+  // Keep empty to allow browsing the site without authentication.
+  var GATED_PAGE_NAMES = {};
 
   function parseJson(raw, fallback) {
     try {
