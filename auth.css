@@ -1,3 +1,8 @@
+.auth-shell,
+body {
+  color: #363636;
+}
+
 .auth-controls {
   display: inline-flex;
   align-items: center;
