@@ -13,9 +13,8 @@
     "    (a) avoiding actions I judge to have more than a 50% chance of being morally wrong, and\n" +
     "    (b) choosing the action I judge least likely to be wrong.";
 
-  var GATED_PAGE_NAMES = {
-    "profile.html": true,
-  };
+  // Keep empty to allow browsing the site without authentication.
+  var GATED_PAGE_NAMES = {};
 
   function parseJson(raw, fallback) {
     try {
