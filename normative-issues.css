@@ -155,14 +155,14 @@
   fill: #1f3146;
   font-size: 21px;
   font-weight: 700;
-  font-family: "Source Sans 3", sans-serif;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 .svg-node-sub {
   fill: #4a5d74;
   font-size: 18px;
   font-weight: 600;
-  font-family: "Source Sans 3", sans-serif;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 .svg-link {
@@ -184,14 +184,14 @@
   fill: #51667f;
   font-size: 16px;
   font-weight: 600;
-  font-family: "Source Sans 3", sans-serif;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 .svg-note {
   fill: #4c5f76;
   font-size: 16px;
   font-weight: 600;
-  font-family: "Source Sans 3", sans-serif;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
 .svg-point {

@@ -23,7 +23,7 @@ body {
   padding: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family: "Source Sans 3", "Segoe UI", Arial, sans-serif;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   line-height: 1.45;
 }
 
