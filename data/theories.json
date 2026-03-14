@@ -1,0 +1,422 @@
+[
+  {
+    "id": "normative_ethics",
+    "name": "Normative Ethics",
+    "parent": null,
+    "type": "theory",
+    "definition": "Normative ethics studies principles and standards that guide what we ought to do, decide, or become.",
+    "sep_citation": {
+      "title": "Moral Theory",
+      "url": "https://plato.stanford.edu/entries/moral-theory/",
+      "quote": "",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Assessing whether an action is permissible or required."]
+  },
+  {
+    "id": "consequentialism",
+    "name": "Consequentialism",
+    "parent": "normative_ethics",
+    "type": "theory",
+    "definition": "Consequentialism holds that the moral status of actions depends only on the consequences they produce.",
+    "sep_citation": {
+      "title": "Consequentialism",
+      "url": "https://plato.stanford.edu/entries/consequentialism/",
+      "quote": "the view that normative properties depend only on consequences",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Evaluating choices by overall outcomes."]
+  },
+  {
+    "id": "utilitarianism",
+    "name": "Utilitarianism",
+    "parent": "consequentialism",
+    "type": "theory",
+    "definition": "Utilitarianism is a consequentialist view that identifies the good with welfare or happiness and directs us to maximize it impartially.",
+    "sep_citation": {
+      "title": "Consequentialism",
+      "url": "https://plato.stanford.edu/entries/consequentialism/",
+      "quote": "The paradigm case of consequentialism is utilitarianism",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Choosing the policy that maximizes overall well-being."]
+  },
+  {
+    "id": "act_consequentialism",
+    "name": "Act Consequentialism",
+    "parent": "consequentialism",
+    "type": "theory",
+    "definition": "Act consequentialism evaluates each action by whether it maximizes the good among available alternatives.",
+    "sep_citation": {
+      "title": "Consequentialism",
+      "url": "https://plato.stanford.edu/entries/consequentialism/",
+      "quote": "an act is morally right if and only if that act maximizes the good",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Choosing the single act that yields the best outcome."]
+  },
+  {
+    "id": "rule_consequentialism",
+    "name": "Rule Consequentialism",
+    "parent": "consequentialism",
+    "type": "theory",
+    "definition": "Rule consequentialism assesses morality by rules selected for their consequences and then applies those rules to individual acts.",
+    "sep_citation": {
+      "title": "Rule Consequentialism",
+      "url": "https://plato.stanford.edu/entries/consequentialism-rule/",
+      "quote": "rules are to be selected solely in terms of their consequences",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Following a rule against lying because such rules have the best consequences overall."]
+  },
+  {
+    "id": "act_utilitarianism",
+    "name": "Act Utilitarianism",
+    "parent": "utilitarianism",
+    "type": "theory",
+    "definition": "Act utilitarianism is act consequentialism with welfare or happiness as the good to be maximized.",
+    "sep_citation": {
+      "title": "Consequentialism",
+      "url": "https://plato.stanford.edu/entries/consequentialism/",
+      "quote": "an act is morally right if and only if that act maximizes the good",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Choosing the act that maximizes total happiness."]
+  },
+  {
+    "id": "rule_utilitarianism",
+    "name": "Rule Utilitarianism",
+    "parent": "utilitarianism",
+    "type": "theory",
+    "definition": "Rule utilitarianism holds that the rightness of acts is determined by rules whose acceptance would maximize overall welfare.",
+    "sep_citation": {
+      "title": "Rule Consequentialism",
+      "url": "https://plato.stanford.edu/entries/consequentialism-rule/",
+      "quote": "rules are to be selected solely in terms of their consequences",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Defending truth-telling as a welfare-maximizing rule."]
+  },
+  {
+    "id": "deontology",
+    "name": "Deontology",
+    "parent": "normative_ethics",
+    "type": "theory",
+    "definition": "Deontology grounds moral requirements in duties and constraints that are not reducible to consequences.",
+    "sep_citation": {
+      "title": "Deontological Ethics",
+      "url": "https://plato.stanford.edu/entries/ethics-deontological/",
+      "quote": "deontology is one of those kinds of normative theories regarding which choices are morally required, forbidden, or permitted",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Wrong to kill an innocent person even for greater good."]
+  },
+  {
+    "id": "kantian_ethics",
+    "name": "Kantian Ethics",
+    "parent": "deontology",
+    "type": "theory",
+    "definition": "Kantian ethics emphasizes universalizable maxims and the requirement to treat persons as ends in themselves.",
+    "sep_citation": {
+      "title": "Deontological Ethics",
+      "url": "https://plato.stanford.edu/entries/ethics-deontological/",
+      "quote": "",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Rejecting coercion that treats persons merely as means."]
+  },
+  {
+    "id": "rights_based_deontology",
+    "name": "Rights-Based Deontology",
+    "parent": "deontology",
+    "type": "theory",
+    "definition": "Rights-based deontology treats individual rights as moral constraints that limit permissible actions.",
+    "sep_citation": {
+      "title": "Deontological Ethics",
+      "url": "https://plato.stanford.edu/entries/ethics-deontological/",
+      "quote": "",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Rights not to be harmed or killed constrain policy."]
+  },
+  {
+    "id": "threshold_deontology",
+    "name": "Threshold Deontology",
+    "parent": "deontology",
+    "type": "theory",
+    "definition": "Threshold deontology holds that deontological constraints can be overridden when consequences cross a critical threshold.",
+    "sep_citation": {
+      "title": "Deontological Ethics",
+      "url": "https://plato.stanford.edu/entries/ethics-deontological/",
+      "quote": "",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Constraints can yield when catastrophic harm is at stake."]
+  },
+  {
+    "id": "contractualism",
+    "name": "Contractualism",
+    "parent": "deontology",
+    "type": "theory",
+    "definition": "Contractualism grounds moral principles in what no one could reasonably reject as a basis for agreement among persons.",
+    "sep_citation": {
+      "title": "Deontological Ethics",
+      "url": "https://plato.stanford.edu/entries/ethics-deontological/",
+      "quote": "",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Justifying rules by their acceptability to each person."]
+  },
+  {
+    "id": "virtue_ethics",
+    "name": "Virtue Ethics",
+    "parent": "normative_ethics",
+    "type": "theory",
+    "definition": "Virtue ethics centers moral evaluation on character and the cultivation of virtues.",
+    "sep_citation": {
+      "title": "Virtue Ethics",
+      "url": "https://plato.stanford.edu/entries/ethics-virtue/",
+      "quote": "Virtue ethics is currently one of three major approaches in normative ethics",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Assessing whether an action expresses honesty or courage."]
+  },
+  {
+    "id": "metaethics",
+    "name": "Metaethics",
+    "parent": null,
+    "type": "theory",
+    "definition": "Metaethics studies the status, meaning, and epistemic standing of moral claims.",
+    "sep_citation": {
+      "title": "Moral Realism",
+      "url": "https://plato.stanford.edu/entries/moral-realism/",
+      "quote": "",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Whether moral statements can be true or false."]
+  },
+  {
+    "id": "moral_cognitivism",
+    "name": "Moral Cognitivism",
+    "parent": "metaethics",
+    "type": "theory",
+    "definition": "Moral cognitivism holds that moral statements express beliefs and are truth-apt.",
+    "sep_citation": {
+      "title": "Moral Cognitivism vs. Non-Cognitivism",
+      "url": "https://plato.stanford.edu/entries/moral-cognitivism/",
+      "quote": "moral statements do express beliefs and that they are apt for truth and falsity",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Treating moral claims as candidates for truth."]
+  },
+  {
+    "id": "moral_realism",
+    "name": "Moral Realism",
+    "parent": "moral_cognitivism",
+    "type": "theory",
+    "definition": "Moral realism holds that moral claims purport to report facts and that at least some moral claims are true.",
+    "sep_citation": {
+      "title": "Moral Realism",
+      "url": "https://plato.stanford.edu/entries/moral-realism/",
+      "quote": "moral claims do purport to report facts and are true if they get the facts right",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Holding that some moral statements correspond to objective facts."]
+  },
+  {
+    "id": "error_theory",
+    "name": "Error Theory",
+    "parent": "moral_cognitivism",
+    "type": "theory",
+    "definition": "Error theory is a cognitivist position claiming that moral statements purport to report facts but none are true.",
+    "sep_citation": {
+      "title": "Moral Realism",
+      "url": "https://plato.stanford.edu/entries/moral-realism/",
+      "quote": "deny that any moral claims are actually true",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Treating all moral claims as systematically false."]
+  },
+  {
+    "id": "moral_antirealism",
+    "name": "Moral Anti-Realism",
+    "parent": "metaethics",
+    "type": "theory",
+    "definition": "Moral anti-realism rejects at least one central commitment of moral realism, such as truth-aptness or factuality.",
+    "sep_citation": {
+      "title": "Moral Realism",
+      "url": "https://plato.stanford.edu/entries/moral-realism/",
+      "quote": "",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Denying that moral claims report objective facts."]
+  },
+  {
+    "id": "noncognitivism",
+    "name": "Non-Cognitivism",
+    "parent": "metaethics",
+    "type": "theory",
+    "definition": "Non-cognitivism holds that moral statements are not truth-apt and do not express beliefs.",
+    "sep_citation": {
+      "title": "Moral Cognitivism vs. Non-Cognitivism",
+      "url": "https://plato.stanford.edu/entries/moral-cognitivism/",
+      "quote": "moral statements have no substantial truth conditions",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Treating moral utterances as expressions of attitude."]
+  },
+  {
+    "id": "moral_epistemology",
+    "name": "Moral Epistemology",
+    "parent": null,
+    "type": "theory",
+    "definition": "Moral epistemology investigates whether and how moral knowledge or justified moral belief is possible.",
+    "sep_citation": {
+      "title": "Moral Epistemology",
+      "url": "https://plato.stanford.edu/entries/moral-epistemology/",
+      "quote": "How is moral knowledge possible? This question is central in moral epistemology",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Assessing evidence for moral beliefs."]
+  },
+  {
+    "id": "ethical_intuitionism",
+    "name": "Ethical Intuitionism",
+    "parent": "moral_epistemology",
+    "type": "theory",
+    "definition": "Ethical intuitionism holds that some basic moral propositions are self-evident and that moral properties are non-natural.",
+    "sep_citation": {
+      "title": "Ethical Intuitionism",
+      "url": "https://plato.stanford.edu/entries/intuitionism-ethics/",
+      "quote": "basic moral propositions are self-evident, and moral properties are non-natural properties",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Treating some moral truths as immediately apprehensible."]
+  },
+  {
+    "id": "moral_skepticism",
+    "name": "Moral Skepticism",
+    "parent": "moral_epistemology",
+    "type": "theory",
+    "definition": "Moral skepticism denies or doubts our moral knowledge or justification.",
+    "sep_citation": {
+      "title": "Moral Skepticism",
+      "url": "https://plato.stanford.edu/entries/skepticism-moral/",
+      "quote": "deny or raise doubts about common beliefs in various roles of reason in morality",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Questioning whether any moral beliefs are justified."]
+  },
+  {
+    "id": "moral_disagreement",
+    "name": "Moral Disagreement",
+    "parent": "moral_epistemology",
+    "type": "theory",
+    "definition": "Moral disagreement emphasizes the prevalence of persistent moral conflict and its epistemic implications.",
+    "sep_citation": {
+      "title": "Moral Disagreement",
+      "url": "https://plato.stanford.edu/entries/disagreement-moral/",
+      "quote": "There is little controversy about the existence of widespread disagreement over moral issues",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Disputes over abortion, capital punishment, or animal ethics."]
+  },
+  {
+    "id": "moral_methodology",
+    "name": "Moral Methodology",
+    "parent": null,
+    "type": "theory",
+    "definition": "Moral methodology covers the tools and procedures used to test, revise, and justify moral judgments and principles.",
+    "sep_citation": {
+      "title": "Reflective Equilibrium",
+      "url": "https://plato.stanford.edu/entries/reflective-equilibrium/",
+      "quote": "",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Reflective equilibrium and thought experiments."]
+  },
+  {
+    "id": "moral_reasoning",
+    "name": "Moral Reasoning",
+    "parent": "moral_methodology",
+    "type": "theory",
+    "definition": "Moral reasoning concerns the practical reasoning agents use to decide what they morally ought to do.",
+    "sep_citation": {
+      "title": "Moral Reasoning",
+      "url": "https://plato.stanford.edu/entries/reasoning-moral/",
+      "quote": "practical reasoning about what, morally, they ought to do",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Balancing reasons to help, harm, or keep a promise."]
+  },
+  {
+    "id": "moral_dilemmas",
+    "name": "Moral Dilemmas",
+    "parent": "moral_methodology",
+    "type": "theory",
+    "definition": "Moral dilemmas involve conflicts between moral requirements that appear to demand incompatible actions.",
+    "sep_citation": {
+      "title": "Moral Dilemmas",
+      "url": "https://plato.stanford.edu/entries/moral-dilemmas/",
+      "quote": "Moral dilemmas, at the very least, involve conflicts between moral requirements",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Cases where duty and consequence appear to clash."]
+  },
+  {
+    "id": "reflective_equilibrium",
+    "name": "Reflective Equilibrium",
+    "parent": "moral_methodology",
+    "type": "theory",
+    "definition": "Reflective equilibrium is a method of mutual adjustment between considered judgments, principles, and background theories.",
+    "sep_citation": {
+      "title": "Reflective Equilibrium",
+      "url": "https://plato.stanford.edu/entries/reflective-equilibrium/",
+      "quote": "the mutual adjustment of principles and judgments in the light of relevant argument and theory",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Revising judgments or principles to improve overall coherence."]
+  },
+  {
+    "id": "narrow_reflective_equilibrium",
+    "name": "Narrow Reflective Equilibrium",
+    "parent": "reflective_equilibrium",
+    "type": "theory",
+    "definition": "Narrow reflective equilibrium aligns principles with initial judgments, allowing limited adjustments to smooth inconsistencies.",
+    "sep_citation": {
+      "title": "Reflective Equilibrium",
+      "url": "https://plato.stanford.edu/entries/reflective-equilibrium/",
+      "quote": "a narrow reflective equilibrium is reached where principles are matched to initial judgments",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Adjusting a principle to fit a set of firm intuitions."]
+  },
+  {
+    "id": "wide_reflective_equilibrium",
+    "name": "Wide Reflective Equilibrium",
+    "parent": "reflective_equilibrium",
+    "type": "theory",
+    "definition": "Wide reflective equilibrium adds broader theoretical and empirical considerations when aligning judgments and principles.",
+    "sep_citation": {
+      "title": "Reflective Equilibrium",
+      "url": "https://plato.stanford.edu/entries/reflective-equilibrium/",
+      "quote": "A wide reflective equilibrium is achieved where the deliberator has brought judgments and principles into agreement",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Revising a judgment after considering background theories."]
+  },
+  {
+    "id": "thought_experiments",
+    "name": "Thought Experiments",
+    "parent": "moral_methodology",
+    "type": "theory",
+    "definition": "Thought experiments use imagination to test the implications of moral principles and judgments.",
+    "sep_citation": {
+      "title": "Thought Experiment",
+      "url": "https://plato.stanford.edu/entries/thought-experiment/",
+      "quote": "Thought experiments are basically devices of the imagination",
+      "accessed": "2026-03-14"
+    },
+    "examples": ["Trolley cases, lifeboat scenarios, and hypothetical dilemmas."]
+  }
+]

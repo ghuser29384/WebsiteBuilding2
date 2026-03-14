@@ -1,0 +1,42 @@
+{
+  "id": "lesson_promise_rule_utilitarianism",
+  "title": "Promise-Breaking and Rule Utilitarianism",
+  "description": "Use a promise-breaking dilemma to compare rule-based and harm-prevention principles.",
+  "estimated_minutes": 3,
+  "steps": [
+    {
+      "type": "case",
+      "case_id": "promise_breaking_case",
+      "text": "You promised to return a borrowed weapon, but the owner is not in his right mind."
+    },
+    {
+      "type": "judgment",
+      "prompt": "Should you keep the promise?",
+      "choices": ["Yes", "No", "Unsure"]
+    },
+    {
+      "type": "principle",
+      "principle_id": "keep_promises",
+      "text": "Test the promise-keeping principle against your judgment."
+    },
+    {
+      "type": "theory",
+      "theory_id": "rule_utilitarianism",
+      "text": "Rule utilitarianism evaluates acts via welfare-maximizing rules."
+    },
+    {
+      "type": "coherence",
+      "action": "recompute",
+      "notes": "Check whether the rule-based principle fits your judgment."
+    },
+    {
+      "type": "principle",
+      "principle_id": "protect_from_harm",
+      "text": "Introduce the harm-prevention priority and see how it changes coherence."
+    },
+    {
+      "type": "revision",
+      "prompt": "Would you revise the rule, the judgment, or both?"
+    }
+  ]
+}

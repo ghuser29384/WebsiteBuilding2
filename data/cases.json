@@ -1,0 +1,68 @@
+[
+  {
+    "id": "trolley_standard",
+    "title": "The Trolley Problem",
+    "description": "A runaway trolley is heading toward five people. You can divert it to a side track where it will kill one.",
+    "sep_citation": {
+      "title": "Moral Theory",
+      "url": "https://plato.stanford.edu/entries/moral-theory/",
+      "quote": "In the Trolley Problem, a person can divert a trolley heading for five to a track where it will kill one",
+      "accessed": "2026-03-14"
+    }
+  },
+  {
+    "id": "transplant_case",
+    "title": "The Transplant Case",
+    "description": "A surgeon can save five failing patients by killing one healthy patient and transplanting his organs.",
+    "sep_citation": {
+      "title": "Moral Theory",
+      "url": "https://plato.stanford.edu/entries/moral-theory/",
+      "quote": "In the Transplant Case, a surgeon can save five failing patients by killing one healthy patient and transplanting his organs",
+      "accessed": "2026-03-14"
+    }
+  },
+  {
+    "id": "trolley_fat_man",
+    "title": "Trolley: The Fat Man Variant",
+    "description": "You can stop the trolley from killing five by pushing a large man off a bridge, killing him instead.",
+    "sep_citation": {
+      "title": "Thought Experiment",
+      "url": "https://plato.stanford.edu/entries/thought-experiment/",
+      "quote": "",
+      "accessed": "2026-03-14"
+    }
+  },
+  {
+    "id": "lifeboat_case",
+    "title": "Lifeboat Cases",
+    "description": "Too many people are on a lifeboat with scarce resources, forcing hard choices about who survives.",
+    "sep_citation": {
+      "title": "Thought Experiment",
+      "url": "https://plato.stanford.edu/entries/thought-experiment/",
+      "quote": "",
+      "accessed": "2026-03-14"
+    }
+  },
+  {
+    "id": "promise_breaking_case",
+    "title": "Promise-Breaking and Repaying Debts",
+    "description": "You promised to return a borrowed weapon, but the owner is not in his right mind and may cause harm.",
+    "sep_citation": {
+      "title": "Moral Dilemmas",
+      "url": "https://plato.stanford.edu/entries/moral-dilemmas/",
+      "quote": "it would be wrong to repay certain debts—for example, to return a borrowed weapon to a friend who is not in his right mind",
+      "accessed": "2026-03-14"
+    }
+  },
+  {
+    "id": "prisoners_dilemma_moral",
+    "title": "Prisoner's Dilemma (Moral Variant)",
+    "description": "Two agents choose between cooperation and defection with outcomes that reward mutual cooperation but tempt betrayal.",
+    "sep_citation": {
+      "title": "Thought Experiment",
+      "url": "https://plato.stanford.edu/entries/thought-experiment/",
+      "quote": "",
+      "accessed": "2026-03-14"
+    }
+  }
+]

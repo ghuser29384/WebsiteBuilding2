@@ -1,0 +1,43 @@
+{
+  "id": "lesson_virtue_ethics_character",
+  "title": "Virtue Ethics and Moral Character",
+  "description": "See how virtue ethics reframes judgments in terms of character.",
+  "estimated_minutes": 3,
+  "steps": [
+    {
+      "type": "case",
+      "case_id": "promise_breaking_case",
+      "text": "You promised to return a borrowed weapon, but doing so could cause harm."
+    },
+    {
+      "type": "judgment",
+      "prompt": "What would a virtuous person do?",
+      "choices": ["Return it", "Refuse to return", "Unsure"]
+    },
+    {
+      "type": "principle",
+      "principle_id": "cultivate_virtue",
+      "text": "Virtue ethics prioritizes traits like practical wisdom, courage, and care."
+    },
+    {
+      "type": "theory",
+      "theory_id": "virtue_ethics",
+      "text": "Virtue ethics centers moral evaluation on character and flourishing."
+    },
+    {
+      "type": "coherence",
+      "action": "recompute",
+      "notes": "Check coherence between your judgment and the virtue framing."
+    },
+    {
+      "type": "principle",
+      "principle_id": "keep_promises",
+      "text": "Introduce promise-keeping to compare duty and character.",
+      "optional": true
+    },
+    {
+      "type": "revision",
+      "prompt": "Would you revise your judgment after weighing character and duty?"
+    }
+  ]
+}

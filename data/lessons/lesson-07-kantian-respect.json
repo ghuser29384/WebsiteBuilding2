@@ -1,0 +1,42 @@
+{
+  "id": "lesson_kantian_respect",
+  "title": "Kantian Respect and the Transplant Case",
+  "description": "Use the transplant case to test the requirement to treat persons as ends.",
+  "estimated_minutes": 3,
+  "steps": [
+    {
+      "type": "case",
+      "case_id": "transplant_case",
+      "text": "A surgeon can save five patients by killing one healthy patient for organs."
+    },
+    {
+      "type": "judgment",
+      "prompt": "Is the surgeon permitted to proceed?",
+      "choices": ["Yes", "No", "Unsure"]
+    },
+    {
+      "type": "principle",
+      "principle_id": "treat_persons_as_ends",
+      "text": "Apply the requirement to treat persons as ends, not merely as means."
+    },
+    {
+      "type": "theory",
+      "theory_id": "kantian_ethics",
+      "text": "Kantian ethics emphasizes universalizable maxims and respect for persons."
+    },
+    {
+      "type": "coherence",
+      "action": "recompute",
+      "notes": "Does your judgment align with the Kantian requirement?"
+    },
+    {
+      "type": "principle",
+      "principle_id": "maximize_welfare",
+      "text": "Contrast the Kantian constraint with outcome maximization."
+    },
+    {
+      "type": "revision",
+      "prompt": "Would you revise your judgment or your principle to improve coherence?"
+    }
+  ]
+}

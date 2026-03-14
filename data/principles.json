@@ -1,0 +1,123 @@
+[
+  {
+    "id": "maximize_welfare",
+    "name": "Maximize Welfare",
+    "definition": "Choose the act or rule that produces the greatest overall good or well-being.",
+    "sep_citation": {
+      "title": "Consequentialism",
+      "url": "https://plato.stanford.edu/entries/consequentialism/",
+      "quote": "an act is morally right if and only if that act maximizes the good",
+      "accessed": "2026-03-14"
+    }
+  },
+  {
+    "id": "rule_selected_by_consequences",
+    "name": "Rules Selected by Consequences",
+    "definition": "Adopt rules based on their expected consequences, then evaluate acts by those rules.",
+    "sep_citation": {
+      "title": "Rule Consequentialism",
+      "url": "https://plato.stanford.edu/entries/consequentialism-rule/",
+      "quote": "rules are to be selected solely in terms of their consequences",
+      "accessed": "2026-03-14"
+    }
+  },
+  {
+    "id": "do_not_kill",
+    "name": "Do Not Kill",
+    "definition": "There is a strong moral constraint against killing, even to save others.",
+    "sep_citation": {
+      "title": "Moral Theory",
+      "url": "https://plato.stanford.edu/entries/moral-theory/",
+      "quote": "We intuitively believe that it is worse to kill someone than to simply let the person die",
+      "accessed": "2026-03-14"
+    }
+  },
+  {
+    "id": "keep_promises",
+    "name": "Keep Promises",
+    "definition": "Promises and debts create moral reasons to keep one\'s word and fulfill commitments.",
+    "sep_citation": {
+      "title": "Moral Dilemmas",
+      "url": "https://plato.stanford.edu/entries/moral-dilemmas/",
+      "quote": "it would be wrong to repay certain debts—for example, to return a borrowed weapon to a friend who is not in his right mind",
+      "accessed": "2026-03-14"
+    }
+  },
+  {
+    "id": "protect_from_harm",
+    "name": "Protect Others from Harm",
+    "definition": "Preventing serious harm to others can take priority over other moral considerations.",
+    "sep_citation": {
+      "title": "Moral Dilemmas",
+      "url": "https://plato.stanford.edu/entries/moral-dilemmas/",
+      "quote": "protecting others from harm is the norm that takes priority",
+      "accessed": "2026-03-14"
+    }
+  },
+  {
+    "id": "respect_autonomy",
+    "name": "Respect Autonomy",
+    "definition": "Respect each person\'s capacity to make their own decisions and pursue their own ends.",
+    "sep_citation": {
+      "title": "Deontological Ethics",
+      "url": "https://plato.stanford.edu/entries/ethics-deontological/",
+      "quote": "",
+      "accessed": "2026-03-14"
+    }
+  },
+  {
+    "id": "treat_persons_as_ends",
+    "name": "Treat Persons as Ends",
+    "definition": "Never treat persons merely as means, but always also as ends in themselves.",
+    "sep_citation": {
+      "title": "Deontological Ethics",
+      "url": "https://plato.stanford.edu/entries/ethics-deontological/",
+      "quote": "",
+      "accessed": "2026-03-14"
+    }
+  },
+  {
+    "id": "cultivate_virtue",
+    "name": "Cultivate Virtue",
+    "definition": "Moral evaluation focuses on developing virtues and moral character rather than just isolated acts.",
+    "sep_citation": {
+      "title": "Virtue Ethics",
+      "url": "https://plato.stanford.edu/entries/ethics-virtue/",
+      "quote": "emphasizes the virtues, or moral character",
+      "accessed": "2026-03-14"
+    }
+  },
+  {
+    "id": "impartiality",
+    "name": "Impartiality",
+    "definition": "Each person\'s interests count equally when assessing what should be done.",
+    "sep_citation": {
+      "title": "Consequentialism",
+      "url": "https://plato.stanford.edu/entries/consequentialism/",
+      "quote": "",
+      "accessed": "2026-03-14"
+    }
+  },
+  {
+    "id": "cooperate_for_mutual_benefit",
+    "name": "Cooperate for Mutual Benefit",
+    "definition": "When cooperation can improve outcomes for all, agents have reason to coordinate rather than defect.",
+    "sep_citation": {
+      "title": "Moral Reasoning",
+      "url": "https://plato.stanford.edu/entries/reasoning-moral/",
+      "quote": "",
+      "accessed": "2026-03-14"
+    }
+  },
+  {
+    "id": "fairness",
+    "name": "Fairness",
+    "definition": "Like cases should be treated alike, and advantages should be justified to those affected.",
+    "sep_citation": {
+      "title": "Moral Disagreement",
+      "url": "https://plato.stanford.edu/entries/disagreement-moral/",
+      "quote": "",
+      "accessed": "2026-03-14"
+    }
+  }
+]

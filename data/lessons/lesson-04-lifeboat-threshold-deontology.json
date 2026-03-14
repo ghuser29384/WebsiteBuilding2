@@ -1,0 +1,42 @@
+{
+  "id": "lesson_lifeboat_threshold_deontology",
+  "title": "Lifeboat Scarcity and Threshold Deontology",
+  "description": "Explore whether deontological constraints can be overridden in catastrophic circumstances.",
+  "estimated_minutes": 3,
+  "steps": [
+    {
+      "type": "case",
+      "case_id": "lifeboat_case",
+      "text": "Too many people are on a lifeboat with scarce resources, forcing tragic choices."
+    },
+    {
+      "type": "judgment",
+      "prompt": "Is it permissible to sacrifice one to save several?",
+      "choices": ["Yes", "No", "Unsure"]
+    },
+    {
+      "type": "principle",
+      "principle_id": "do_not_kill",
+      "text": "Apply the constraint against killing."
+    },
+    {
+      "type": "theory",
+      "theory_id": "threshold_deontology",
+      "text": "Threshold deontology allows constraints to yield past a severe threshold."
+    },
+    {
+      "type": "coherence",
+      "action": "recompute",
+      "notes": "Does your judgment fit a threshold view?"
+    },
+    {
+      "type": "principle",
+      "principle_id": "maximize_welfare",
+      "text": "Compare the outcome-maximizing principle to the constraint."
+    },
+    {
+      "type": "revision",
+      "prompt": "Would you revise the threshold or your initial judgment?"
+    }
+  ]
+}

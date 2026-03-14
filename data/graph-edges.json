@@ -1,0 +1,218 @@
+[
+  {
+    "from": "trolley_standard",
+    "to": "maximize_welfare",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Diverting the trolley saves more lives overall.",
+    "source": "https://plato.stanford.edu/entries/moral-theory/"
+  },
+  {
+    "from": "trolley_standard",
+    "to": "do_not_kill",
+    "weight": -1,
+    "relation": "conflict",
+    "basis": "The diversion intentionally kills one person.",
+    "source": "https://plato.stanford.edu/entries/moral-theory/"
+  },
+  {
+    "from": "trolley_fat_man",
+    "to": "maximize_welfare",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Pushing one saves five, increasing total welfare.",
+    "source": "https://plato.stanford.edu/entries/thought-experiment/"
+  },
+  {
+    "from": "trolley_fat_man",
+    "to": "do_not_kill",
+    "weight": -1,
+    "relation": "conflict",
+    "basis": "The action requires directly killing one person.",
+    "source": "https://plato.stanford.edu/entries/thought-experiment/"
+  },
+  {
+    "from": "transplant_case",
+    "to": "maximize_welfare",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Killing one saves five failing patients.",
+    "source": "https://plato.stanford.edu/entries/moral-theory/"
+  },
+  {
+    "from": "transplant_case",
+    "to": "do_not_kill",
+    "weight": -1,
+    "relation": "conflict",
+    "basis": "The surgeon must kill an innocent person.",
+    "source": "https://plato.stanford.edu/entries/moral-theory/"
+  },
+  {
+    "from": "transplant_case",
+    "to": "respect_autonomy",
+    "weight": -1,
+    "relation": "conflict",
+    "basis": "Using an unwilling donor violates personal autonomy.",
+    "source": "https://plato.stanford.edu/entries/ethics-deontological/"
+  },
+  {
+    "from": "promise_breaking_case",
+    "to": "keep_promises",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Promises and debts normally generate reasons to follow through.",
+    "source": "https://plato.stanford.edu/entries/moral-dilemmas/"
+  },
+  {
+    "from": "promise_breaking_case",
+    "to": "protect_from_harm",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Returning the weapon risks serious harm, so protection may take priority.",
+    "source": "https://plato.stanford.edu/entries/moral-dilemmas/"
+  },
+  {
+    "from": "keep_promises",
+    "to": "protect_from_harm",
+    "weight": -1,
+    "relation": "conflict",
+    "basis": "Keeping a promise can conflict with preventing harm in exceptional cases.",
+    "source": "https://plato.stanford.edu/entries/moral-dilemmas/"
+  },
+  {
+    "from": "lifeboat_case",
+    "to": "maximize_welfare",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Scarcity pressures may push toward saving the greatest number.",
+    "source": "https://plato.stanford.edu/entries/thought-experiment/"
+  },
+  {
+    "from": "lifeboat_case",
+    "to": "do_not_kill",
+    "weight": -1,
+    "relation": "conflict",
+    "basis": "Survival choices may require harming or sacrificing individuals.",
+    "source": "https://plato.stanford.edu/entries/thought-experiment/"
+  },
+  {
+    "from": "prisoners_dilemma_moral",
+    "to": "cooperate_for_mutual_benefit",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Mutual cooperation yields better outcomes for all parties.",
+    "source": "https://plato.stanford.edu/entries/reasoning-moral/"
+  },
+  {
+    "from": "prisoners_dilemma_moral",
+    "to": "fairness",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Cooperation treats each party as a fair partner rather than an exploitable rival.",
+    "source": "https://plato.stanford.edu/entries/disagreement-moral/"
+  },
+  {
+    "from": "maximize_welfare",
+    "to": "act_consequentialism",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Act consequentialism ties right action to maximizing good outcomes.",
+    "source": "https://plato.stanford.edu/entries/consequentialism/"
+  },
+  {
+    "from": "maximize_welfare",
+    "to": "act_utilitarianism",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Act utilitarianism is the act-consequentialist form of utilitarianism.",
+    "source": "https://plato.stanford.edu/entries/consequentialism/"
+  },
+  {
+    "from": "rule_selected_by_consequences",
+    "to": "rule_consequentialism",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Rule consequentialism evaluates acts via rules chosen for their consequences.",
+    "source": "https://plato.stanford.edu/entries/consequentialism-rule/"
+  },
+  {
+    "from": "rule_selected_by_consequences",
+    "to": "rule_utilitarianism",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Rule utilitarianism uses welfare-maximizing rules to assess actions.",
+    "source": "https://plato.stanford.edu/entries/consequentialism-rule/"
+  },
+  {
+    "from": "impartiality",
+    "to": "utilitarianism",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Utilitarianism treats each person\'s welfare as counting equally.",
+    "source": "https://plato.stanford.edu/entries/consequentialism/"
+  },
+  {
+    "from": "do_not_kill",
+    "to": "deontology",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Deontological constraints can forbid killing regardless of outcomes.",
+    "source": "https://plato.stanford.edu/entries/ethics-deontological/"
+  },
+  {
+    "from": "keep_promises",
+    "to": "deontology",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Promise-keeping duties are central to deontological ethics.",
+    "source": "https://plato.stanford.edu/entries/ethics-deontological/"
+  },
+  {
+    "from": "protect_from_harm",
+    "to": "deontology",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Deontological theories often recognize duties to prevent serious harm.",
+    "source": "https://plato.stanford.edu/entries/ethics-deontological/"
+  },
+  {
+    "from": "respect_autonomy",
+    "to": "kantian_ethics",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Kantian ethics centers respect for persons and their autonomy.",
+    "source": "https://plato.stanford.edu/entries/ethics-deontological/"
+  },
+  {
+    "from": "treat_persons_as_ends",
+    "to": "kantian_ethics",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Kantian ethics requires treating persons as ends in themselves.",
+    "source": "https://plato.stanford.edu/entries/ethics-deontological/"
+  },
+  {
+    "from": "cultivate_virtue",
+    "to": "virtue_ethics",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Virtue ethics evaluates actions by the character traits they express.",
+    "source": "https://plato.stanford.edu/entries/ethics-virtue/"
+  },
+  {
+    "from": "cooperate_for_mutual_benefit",
+    "to": "contractualism",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Contractualist reasoning stresses principles acceptable to each person.",
+    "source": "https://plato.stanford.edu/entries/ethics-deontological/"
+  },
+  {
+    "from": "fairness",
+    "to": "contractualism",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Fairness aligns with principles no one could reasonably reject.",
+    "source": "https://plato.stanford.edu/entries/ethics-deontological/"
+  }
+]
