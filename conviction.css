@@ -645,6 +645,18 @@ textarea:focus-visible {
   font-size: 0.86rem;
 }
 
+.sep-link {
+  color: #4a6282;
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(74, 98, 130, 0.5);
+}
+
+.sep-link:hover,
+.sep-link:focus-visible {
+  color: #2a4466;
+  border-bottom-color: rgba(42, 68, 102, 0.8);
+}
+
 .featured-market-main-meta {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -775,6 +787,21 @@ textarea:focus-visible {
   font-size: 0.76rem;
   font-weight: 700;
   white-space: nowrap;
+}
+
+.featured-top-market-link {
+  display: inline-block;
+  margin: 0.25rem 0 0.55rem;
+  font-size: 0.74rem;
+  color: #4a6282;
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(74, 98, 130, 0.5);
+}
+
+.featured-top-market-link:hover,
+.featured-top-market-link:focus-visible {
+  color: #2a4466;
+  border-bottom-color: rgba(42, 68, 102, 0.8);
 }
 
 .fmc-bg {

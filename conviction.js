@@ -165,9 +165,11 @@
   const FEATURED_MARKETS = [
     {
       id: "fm-factory-farming",
-      title: "Purchasing factory-farmed meat: morally permissible?",
+      title: "Is purchasing factory-farmed meat morally permissible?",
       prompt: "Should individuals keep buying factory-farmed meat given suffering and demand effects?",
       category: "Animal welfare",
+      sepUrl: "https://plato.stanford.edu/entries/vegetarianism/",
+      sepTitle: "Vegetarianism",
       yes: 24,
       no: 76,
       weeklyVolume: 18430,
@@ -176,9 +178,11 @@
     },
     {
       id: "fm-fast-fashion",
-      title: "Purchasing fast fashion: morally permissible?",
+      title: "Is purchasing fast fashion morally permissible?",
       prompt: "Do low prices justify environmental and labor externalities of fast fashion supply chains?",
       category: "Consumption ethics",
+      sepUrl: "https://plato.stanford.edu/entries/exploitation/",
+      sepTitle: "Exploitation",
       yes: 31,
       no: 69,
       weeklyVolume: 14210,
@@ -187,9 +191,11 @@
     },
     {
       id: "fm-abortion",
-      title: "Abortion is morally permissible in most cases?",
+      title: "Is abortion morally permissible in most cases?",
       prompt: "How should autonomy, moral status, and social consequences be weighed in policy and personal decisions?",
       category: "Bioethics",
+      sepUrl: "https://plato.stanford.edu/entries/abortion/",
+      sepTitle: "Abortion",
       yes: 57,
       no: 43,
       weeklyVolume: 27620,
@@ -198,9 +204,11 @@
     },
     {
       id: "fm-carbon-tax",
-      title: "A strong carbon tax is morally required?",
+      title: "Is a strong carbon tax morally required?",
       prompt: "Are collective climate harms sufficient to justify broad pricing constraints on emissions?",
       category: "Climate and consumption",
+      sepUrl: "https://plato.stanford.edu/entries/climate-science/",
+      sepTitle: "Climate Science",
       yes: 63,
       no: 37,
       weeklyVolume: 19980,
@@ -209,9 +217,11 @@
     },
     {
       id: "fm-border-aid",
-      title: "High-income citizens owe significant cross-border aid?",
+      title: "Do high-income citizens owe significant cross-border aid?",
       prompt: "Do duties to distant strangers require large recurring transfers, beyond local obligations?",
       category: "Global poverty",
+      sepUrl: "https://plato.stanford.edu/entries/international-justice/",
+      sepTitle: "International Justice",
       yes: 72,
       no: 28,
       weeklyVolume: 11860,
@@ -220,9 +230,11 @@
     },
     {
       id: "fm-punishment",
-      title: "Retributive punishment is morally justified?",
+      title: "Is retributive punishment morally justified?",
       prompt: "Can desert-based punishment be defended apart from deterrence and rehabilitation outcomes?",
       category: "Criminal justice",
+      sepUrl: "https://plato.stanford.edu/entries/legal-punishment/",
+      sepTitle: "Legal Punishment",
       yes: 44,
       no: 56,
       weeklyVolume: 13240,
@@ -231,9 +243,11 @@
     },
     {
       id: "fm-speech",
-      title: "Deplatforming harmful speech is morally permissible?",
+      title: "Is deplatforming harmful speech morally permissible?",
       prompt: "When does harm prevention override broad free-expression protections in public platforms?",
       category: "Free speech",
+      sepUrl: "https://plato.stanford.edu/entries/freedom-speech/",
+      sepTitle: "Freedom of Speech",
       yes: 53,
       no: 47,
       weeklyVolume: 16870,
@@ -242,9 +256,11 @@
     },
     {
       id: "fm-ai-pause",
-      title: "A global frontier-AI pause is morally required?",
+      title: "Is a global frontier-AI pause morally required?",
       prompt: "Do catastrophic-risk concerns justify strong temporary limits on advanced model deployment?",
       category: "AI governance",
+      sepUrl: "https://plato.stanford.edu/entries/ethics-ai/",
+      sepTitle: "Ethics of Artificial Intelligence and Robotics",
       yes: 46,
       no: 54,
       weeklyVolume: 22150,
@@ -1405,14 +1421,21 @@
         " pts.";
     }
     if (el.featuredMarketMeta) {
-      el.featuredMarketMeta.textContent =
-        featured.category +
+      el.featuredMarketMeta.innerHTML =
+        escapeHtml(featured.category) +
         " | Weekly volume " +
         formatCompactCount(featured.weeklyVolume) +
         " credence tokens | Yes " +
         dayChangePrefix +
         dayChange +
-        " pts today";
+        " pts today" +
+        (featured.sepUrl
+          ? ' | <a class="sep-link" href="' +
+            escapeHtml(featured.sepUrl) +
+            '" target="_blank" rel="noopener noreferrer">' +
+            escapeHtml(featured.sepTitle || "SEP reference") +
+            "</a>"
+          : "");
     }
 
     syncFeaturedRangeButtons(rangeKey);
@@ -1472,6 +1495,15 @@
       button.appendChild(title);
       button.appendChild(stats);
       item.appendChild(button);
+      if (row.market.sepUrl) {
+        const link = document.createElement("a");
+        link.className = "featured-top-market-link";
+        link.href = row.market.sepUrl;
+        link.target = "_blank";
+        link.rel = "noopener noreferrer";
+        link.textContent = row.market.sepTitle || "SEP reference";
+        item.appendChild(link);
+      }
       el.featuredTopMarkets.appendChild(item);
     });
   }
