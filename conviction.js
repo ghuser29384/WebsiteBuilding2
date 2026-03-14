@@ -39,6 +39,9 @@
     },
   };
 
+  const AVAILABILITY_SLOT_COUNT = 30;
+  const AVAILABILITY_SLOT_MINUTES = 30;
+
   const MATCH_WEIGHTS = {
     challenge: { disagreement: 0.6, topicFit: 0.2, frameworkDiversity: 0.1, reliability: 0.1 },
     balanced: { disagreement: 0.45, topicFit: 0.3, frameworkDiversity: 0.15, reliability: 0.1 },
@@ -468,7 +471,15 @@
   const formStatus = {
     conviction: null,
     session: null,
+    reservation: null,
+    invite: null,
   };
+
+  const availabilitySlots = buildAvailabilitySlots();
+  const availabilitySlotLookup = availabilitySlots.reduce(function (map, slot) {
+    map[slot.id] = slot.label;
+    return map;
+  }, {});
 
   const prefersReducedMotion =
     typeof window.matchMedia === "function" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -499,18 +510,31 @@
     studioContent: document.getElementById("studioContent"),
     confidenceInput: document.getElementById("confidenceInput"),
     confidenceValue: document.getElementById("confidenceValue"),
+    reservationConfidenceInput: document.getElementById("reservationConfidenceInput"),
+    reservationConfidenceValue: document.getElementById("reservationConfidenceValue"),
     postConfidenceInput: document.getElementById("postConfidenceInput"),
     postConfidenceValue: document.getElementById("postConfidenceValue"),
     thresholdNotice: document.getElementById("thresholdNotice"),
     convictionForm: document.getElementById("convictionForm"),
+    convictionStatus: document.getElementById("convictionStatus"),
     convictionList: document.getElementById("convictionList"),
     claimInput: document.getElementById("claimInput"),
-    reasonInput: document.getElementById("reasonInput"),
-    implicationInput: document.getElementById("implicationInput"),
-    topicInput: document.getElementById("topicInput"),
-    frameworkInput: document.getElementById("frameworkInput"),
+    assumptionInput: document.getElementById("assumptionInput"),
+    truthAptConfirm: document.getElementById("truthAptConfirm"),
+    roomAvailability: document.getElementById("roomAvailability"),
+    reservationForm: document.getElementById("reservationForm"),
+    reservationNameInput: document.getElementById("reservationNameInput"),
+    reservationBeliefInput: document.getElementById("reservationBeliefInput"),
+    reservationReasonInput: document.getElementById("reservationReasonInput"),
+    reservationAvailability: document.getElementById("reservationAvailability"),
+    reservationStatus: document.getElementById("reservationStatus"),
+    reservationList: document.getElementById("reservationList"),
+    inviteForm: document.getElementById("inviteForm"),
+    inviteNameInput: document.getElementById("inviteNameInput"),
+    inviteAvailability: document.getElementById("inviteAvailability"),
+    inviteStatus: document.getElementById("inviteStatus"),
+    inviteList: document.getElementById("inviteList"),
     activeConvictionSummary: document.getElementById("activeConvictionSummary"),
-    matchModeInput: document.getElementById("matchModeInput"),
     matchRationale: document.getElementById("matchRationale"),
     counterpartList: document.getElementById("counterpartList"),
     sessionForm: document.getElementById("sessionForm"),
@@ -582,8 +606,17 @@
     bindCountUpAnimation();
     bindScrollTriggeredAnimations();
     bindEvents();
-    el.confidenceInput.value = "50";
+    if (el.confidenceInput) {
+      el.confidenceInput.value = "60";
+    }
     updateConfidenceText(el.confidenceInput, el.confidenceValue);
+    if (el.reservationConfidenceInput) {
+      el.reservationConfidenceInput.value = "50";
+      updateConfidenceText(el.reservationConfidenceInput, el.reservationConfidenceValue);
+    }
+    renderAvailabilityOptions(el.roomAvailability, "room", availabilitySlots);
+    renderAvailabilityOptions(el.reservationAvailability, "reservation", availabilitySlots);
+    renderAvailabilityOptions(el.inviteAvailability, "invite", availabilitySlots);
     updateConfidenceText(el.postConfidenceInput, el.postConfidenceValue);
     updateThresholdState();
     render();
@@ -842,15 +875,25 @@
       el.pledgeFirstAction.addEventListener("input", renderPledgePanel);
     }
     el.convictionForm.addEventListener("submit", onConvictionSubmit);
+    if (el.reservationForm) {
+      el.reservationForm.addEventListener("submit", onReservationSubmit);
+    }
+    if (el.inviteForm) {
+      el.inviteForm.addEventListener("submit", onInviteSubmit);
+    }
     el.sessionForm.addEventListener("submit", onSessionSubmit);
     el.confidenceInput.addEventListener("input", function () {
       updateConfidenceText(el.confidenceInput, el.confidenceValue);
     });
+    if (el.reservationConfidenceInput) {
+      el.reservationConfidenceInput.addEventListener("input", function () {
+        updateConfidenceText(el.reservationConfidenceInput, el.reservationConfidenceValue);
+      });
+    }
     el.postConfidenceInput.addEventListener("input", function () {
       updateConfidenceText(el.postConfidenceInput, el.postConfidenceValue);
       updateThresholdState();
     });
-    el.matchModeInput.addEventListener("change", renderMatching);
 
     if (el.featuredRangeButtons && el.featuredRangeButtons.length > 0) {
       el.featuredRangeButtons.forEach(function (button) {
@@ -894,6 +937,9 @@
       if (!convictionId) return;
       state.activeConvictionId = convictionId;
       state.selectedCounterpartId = null;
+      formStatus.conviction = "";
+      formStatus.reservation = "";
+      formStatus.invite = "";
       saveState();
       renderMatching();
       renderConvictionList();
@@ -910,7 +956,7 @@
       saveState();
       renderMatching();
       renderSessionPartner();
-      setSessionStatus("Counterpart selected. Start your dialogue and log the outcome.");
+      setSessionStatus("Participant selected. Start your conversation and log the outcome.");
     });
 
     el.ledgerList.addEventListener("click", function (event) {
@@ -933,9 +979,13 @@
       state = createDefaultState();
       currentMatches = [];
       resetConvictionForm();
+      resetReservationForm();
+      resetInviteForm();
       resetSessionForm();
       setSessionStatus("");
       formStatus.conviction = "";
+      formStatus.reservation = "";
+      formStatus.invite = "";
       render();
     });
   }
@@ -988,34 +1038,55 @@
   function onConvictionSubmit(event) {
     event.preventDefault();
     if (!state.pledge.signed) {
-      formStatus.conviction = "Sign the pledge first to publish convictions.";
+      formStatus.conviction = "Sign the pledge first to create conversation rooms.";
       renderMatching();
       return;
     }
 
     const formData = new FormData(el.convictionForm);
     const claim = String(formData.get("claim") || "").trim();
-    const reason = String(formData.get("reason") || "").trim();
-    const implication = String(formData.get("implication") || "").trim();
-    const confidence = clamp(Number(formData.get("confidence")), 0, 100);
-    const framework = String(formData.get("framework") || "pluralist");
-    const rawTopic = String(formData.get("topic") || "auto");
+    const confidence = clamp(Number(formData.get("confidence")), 1, 100);
+    const assumptionsRaw = String(formData.get("assumptions") || "");
+    const assumptions = assumptionsRaw
+      .split(/\n+/)
+      .map(function (line) {
+        return line.trim();
+      })
+      .filter(function (line) {
+        return line.length > 0;
+      });
+    const availability = getSelectedAvailability(el.roomAvailability);
 
-    if (!claim || !reason || !implication) {
-      formStatus.conviction = "Complete all conviction fields before publishing.";
+    if (!claim) {
+      formStatus.conviction = "Enter a truth-apt proposition before creating the room.";
+      renderMatching();
+      return;
+    }
+    if (confidence <= 50) {
+      formStatus.conviction = "Room creators must believe the proposition is more likely than not (>50%).";
+      renderMatching();
+      return;
+    }
+    if (!el.truthAptConfirm || !el.truthAptConfirm.checked) {
+      formStatus.conviction = "Confirm that the proposition is truth-apt and that you believe it is more likely than not.";
+      renderMatching();
+      return;
+    }
+    if (!availability.length) {
+      formStatus.conviction = "Select at least one 30-minute availability slot.";
       renderMatching();
       return;
     }
 
-    const topic = rawTopic === "auto" ? inferTopic(claim + " " + reason) : rawTopic;
     const conviction = {
       id: uid("cv"),
       claim: claim,
-      reason: reason,
-      implication: implication,
       confidence: confidence,
-      topic: topic,
-      framework: framework,
+      assumptions: assumptions,
+      availability: availability,
+      slotCatalog: availabilitySlots,
+      reservations: [],
+      invites: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -1023,7 +1094,7 @@
     state.convictions.unshift(conviction);
     state.activeConvictionId = conviction.id;
     state.selectedCounterpartId = null;
-    formStatus.conviction = "Conviction published. Choose a counterpart with strong disagreement.";
+    formStatus.conviction = "Conversation room created. Collect reservations to generate matches.";
     saveState();
 
     resetConvictionForm();
@@ -1031,6 +1102,118 @@
     renderMatching();
     renderSessionPartner();
     setSessionStatus("");
+  }
+
+  function onReservationSubmit(event) {
+    event.preventDefault();
+    if (!state.pledge.signed) {
+      formStatus.reservation = "Sign the pledge first to reserve a room.";
+      renderMatching();
+      return;
+    }
+    const activeConviction = getActiveConviction();
+    if (!activeConviction) {
+      formStatus.reservation = "Select a conversation room first.";
+      renderMatching();
+      return;
+    }
+
+    const formData = new FormData(el.reservationForm);
+    const name = String(formData.get("reservationName") || "").trim();
+    const belief = String(formData.get("reservationBelief") || "true");
+    const confidence = clamp(Number(formData.get("reservationConfidence")), 1, 100);
+    const reason = String(formData.get("reservationReason") || "").trim();
+    const availability = getSelectedAvailability(el.reservationAvailability);
+
+    if (!name) {
+      formStatus.reservation = "Add a username to reserve the room.";
+      renderMatching();
+      return;
+    }
+    if (!reason) {
+      formStatus.reservation = "Add your reasons for the confidence level.";
+      renderMatching();
+      return;
+    }
+    if (countSentences(reason) > 4) {
+      formStatus.reservation = "Keep the reasons to four sentences or fewer.";
+      renderMatching();
+      return;
+    }
+    if (!availability.length) {
+      formStatus.reservation = "Select at least one availability slot.";
+      renderMatching();
+      return;
+    }
+
+    const reservation = {
+      id: uid("rs"),
+      name: name,
+      belief: belief === "false" ? "false" : "true",
+      confidence: confidence,
+      reason: reason,
+      availability: availability,
+      createdAt: new Date().toISOString(),
+    };
+
+    if (!Array.isArray(activeConviction.reservations)) {
+      activeConviction.reservations = [];
+    }
+    activeConviction.reservations.unshift(reservation);
+    activeConviction.updatedAt = new Date().toISOString();
+    formStatus.reservation = "Reservation added. Matches will update automatically.";
+    saveState();
+
+    resetReservationForm();
+    renderMatching();
+  }
+
+  function onInviteSubmit(event) {
+    event.preventDefault();
+    if (!state.pledge.signed) {
+      formStatus.invite = "Sign the pledge first to send invites.";
+      renderMatching();
+      return;
+    }
+    const activeConviction = getActiveConviction();
+    if (!activeConviction) {
+      formStatus.invite = "Select a conversation room first.";
+      renderMatching();
+      return;
+    }
+
+    const formData = new FormData(el.inviteForm);
+    const name = String(formData.get("inviteName") || "").trim();
+    const availability = getSelectedAvailability(el.inviteAvailability);
+
+    if (!name) {
+      formStatus.invite = "Enter a username to invite.";
+      renderMatching();
+      return;
+    }
+    if (!availability.length) {
+      formStatus.invite = "Select at least one availability slot to propose.";
+      renderMatching();
+      return;
+    }
+
+    const invite = {
+      id: uid("iv"),
+      name: name,
+      availability: availability,
+      createdAt: new Date().toISOString(),
+    };
+
+    if (!Array.isArray(activeConviction.invites)) {
+      activeConviction.invites = [];
+    }
+    activeConviction.invites.unshift(invite);
+    activeConviction.updatedAt = new Date().toISOString();
+    formStatus.invite = "Invite recorded. Share your availability with the invited participant.";
+    saveState();
+
+    resetInviteForm();
+    renderMatching();
   }
 
   function onSessionSubmit(event) {
@@ -1041,16 +1224,16 @@
     }
     const activeConviction = getActiveConviction();
     if (!activeConviction) {
-      setSessionStatus("Publish and select a conviction first.");
+      setSessionStatus("Create and select a conversation room first.");
       return;
     }
     if (!state.selectedCounterpartId) {
-      setSessionStatus("Select a counterpart before logging the dialogue.");
+      setSessionStatus("Select a participant before logging the conversation.");
       return;
     }
     const selectedCounterpart = getSelectedCounterpart();
     if (!selectedCounterpart) {
-      setSessionStatus("Re-select a counterpart from the current match list before submitting.");
+      setSessionStatus("Re-select a participant from the current match list before submitting.");
       return;
     }
 
@@ -1081,6 +1264,9 @@
       id: uid("ss"),
       convictionId: activeConviction.id,
       counterpartId: selectedCounterpart.id,
+      counterpartName: selectedCounterpart.name,
+      counterpartBelief: selectedCounterpart.belief,
+      counterpartConfidence: selectedCounterpart.confidence,
       counterArgument: counterArgument,
       reply: reply,
       postConfidence: postConfidence,
@@ -1102,7 +1288,10 @@
         convictionId: activeConviction.id,
         counterpartId: selectedCounterpart.id,
         claim: activeConviction.claim,
-        implication: activeConviction.implication,
+        assumptions: Array.isArray(activeConviction.assumptions) ? activeConviction.assumptions : [],
+        participantName: selectedCounterpart.name,
+        participantBelief: selectedCounterpart.belief,
+        participantConfidence: selectedCounterpart.confidence,
         actionPlan: actionPlan,
         startDate: startDate,
         checkinDate: checkinDate,
@@ -1110,9 +1299,9 @@
         status: "pending",
         createdAt: new Date().toISOString(),
       });
-      setSessionStatus("Dialogue logged. You crossed 50%, so this action is now in your ledger.");
+      setSessionStatus("Conversation logged. You crossed 50%, so this action is now in your ledger.");
     } else {
-      setSessionStatus("Dialogue logged. Confidence is at or below 50%, so no mandatory action entry was created.");
+      setSessionStatus("Conversation logged. Confidence is at or below 50%, so no mandatory action entry was created.");
     }
 
     saveState();
@@ -3725,7 +3914,7 @@
     if (state.convictions.length === 0) {
       const empty = document.createElement("li");
       empty.className = "mini-summary";
-      empty.textContent = "No convictions yet. Publish one to start matching.";
+      empty.textContent = "No conversation rooms yet. Create one to start matching.";
       el.convictionList.appendChild(empty);
       return;
     }
@@ -3739,19 +3928,22 @@
 
       const meta = document.createElement("p");
       meta.className = "hint";
+      const assumptionsCount = Array.isArray(item.assumptions) ? item.assumptions.length : 0;
+      const availabilityCount = Array.isArray(item.availability) ? item.availability.length : 0;
       meta.textContent =
-        topicLabel(item.topic) +
-        " | " +
-        frameworkLabel(item.framework) +
-        " | Confidence: " +
+        "Belief: true | Confidence: " +
         item.confidence +
-        "%";
+        "% | Assumptions: " +
+        assumptionsCount +
+        " | Availability: " +
+        availabilityCount +
+        " slots";
 
       const button = document.createElement("button");
       button.type = "button";
       button.className = item.id === state.activeConvictionId ? "btn btn-primary" : "btn btn-ghost";
       button.setAttribute("data-conviction-id", item.id);
-      button.textContent = item.id === state.activeConvictionId ? "Active Conviction" : "Use For Matching";
+      button.textContent = item.id === state.activeConvictionId ? "Active Room" : "Use For Matching";
 
       li.appendChild(title);
       li.appendChild(meta);
@@ -3762,28 +3954,66 @@
 
   function renderMatching() {
     const activeConviction = getActiveConviction();
-    const mode = el.matchModeInput.value || "balanced";
+    if (el.reservationStatus) {
+      el.reservationStatus.textContent = formStatus.reservation || "";
+    }
+    if (el.inviteStatus) {
+      el.inviteStatus.textContent = formStatus.invite || "";
+    }
+    if (el.convictionStatus) {
+      el.convictionStatus.textContent = formStatus.conviction || "";
+    }
 
     if (!activeConviction) {
       currentMatches = [];
-      el.activeConvictionSummary.textContent = "No active conviction selected yet.";
+      el.activeConvictionSummary.textContent = "No active conversation room selected yet.";
       el.counterpartList.innerHTML = "";
-      el.matchRationale.textContent = formStatus.conviction || "Publish and select a conviction to generate candidates.";
+      if (el.reservationList) {
+        el.reservationList.innerHTML = "";
+      }
+      if (el.inviteList) {
+        el.inviteList.innerHTML = "";
+      }
+      el.matchRationale.textContent = formStatus.conviction || "Create and select a room to generate suggested matches.";
       return;
     }
 
+    const assumptionsCount = Array.isArray(activeConviction.assumptions) ? activeConviction.assumptions.length : 0;
+    const availabilityCount = Array.isArray(activeConviction.availability) ? activeConviction.availability.length : 0;
+    const slotCatalog =
+      Array.isArray(activeConviction.slotCatalog) && activeConviction.slotCatalog.length > 0
+        ? activeConviction.slotCatalog
+        : availabilitySlots;
     el.activeConvictionSummary.innerHTML =
-      "<strong>Active claim:</strong> " +
+      "<strong>Active proposition:</strong> " +
       escapeHtml(activeConviction.claim) +
-      "<br><strong>Topic:</strong> " +
-      escapeHtml(topicLabel(activeConviction.topic)) +
-      " | <strong>Framework:</strong> " +
-      escapeHtml(frameworkLabel(activeConviction.framework)) +
-      " | <strong>Confidence:</strong> " +
+      "<br><strong>Confidence:</strong> " +
       activeConviction.confidence +
-      "%";
+      "% | <strong>Assumptions:</strong> " +
+      assumptionsCount +
+      " | <strong>Availability:</strong> " +
+      availabilityCount +
+      " slots";
 
-    currentMatches = buildMatches(activeConviction, mode);
+    if (el.reservationAvailability) {
+      const currentRoomId = el.reservationAvailability.getAttribute("data-room-id");
+      if (currentRoomId !== activeConviction.id) {
+        el.reservationAvailability.setAttribute("data-room-id", activeConviction.id);
+        renderAvailabilityOptions(el.reservationAvailability, "reservation", slotCatalog);
+      }
+    }
+    if (el.inviteAvailability) {
+      const currentRoomId = el.inviteAvailability.getAttribute("data-room-id");
+      if (currentRoomId !== activeConviction.id) {
+        el.inviteAvailability.setAttribute("data-room-id", activeConviction.id);
+        renderAvailabilityOptions(el.inviteAvailability, "invite", slotCatalog);
+      }
+    }
+
+    renderReservationList(activeConviction);
+    renderInviteList(activeConviction);
+
+    currentMatches = buildMatches(activeConviction);
     if (
       state.selectedCounterpartId &&
       !currentMatches.some(function (item) {
@@ -3796,24 +4026,24 @@
 
     if (currentMatches.length === 0) {
       el.counterpartList.innerHTML = "";
-      el.matchRationale.textContent = "No counterparts available.";
+      const reservations = Array.isArray(activeConviction.reservations) ? activeConviction.reservations : [];
+      const hasOpposed = reservations.some(function (res) {
+        return res.belief === "false";
+      });
+      if (reservations.length === 0) {
+        el.matchRationale.textContent = "No reservations yet. Invite participants or add a reservation.";
+      } else if (!hasOpposed) {
+        el.matchRationale.textContent =
+          "Reservations exist, but no one currently holds the opposite belief about the proposition.";
+      } else {
+        el.matchRationale.textContent =
+          "Opposing reservations exist, but there are no overlapping 30-minute slots yet.";
+      }
       return;
     }
 
-    const top = currentMatches[0];
     el.matchRationale.textContent =
-      modeDescription(mode) +
-      " Top result: " +
-      top.name +
-      " (" +
-      top.score +
-      "/100) with disagreement " +
-      top.breakdown.disagreement +
-      ", topic fit " +
-      top.breakdown.topicFit +
-      ", and reliability " +
-      top.breakdown.reliability +
-      ".";
+      "Matches are suggested when beliefs oppose, time slots overlap, and confidence differences are smallest.";
 
     el.counterpartList.innerHTML = "";
     currentMatches.forEach(function (match, index) {
@@ -3831,60 +4061,134 @@
 
       const score = document.createElement("span");
       score.className = "score-pill";
-      score.textContent = "Score " + match.score + "/100";
+      score.textContent = "Δ " + match.confidenceGap + " pts";
 
       head.appendChild(title);
       head.appendChild(score);
 
       const meta = document.createElement("div");
       meta.className = "counterpart-meta";
-      meta.appendChild(chip(topicLabel(match.topic), "chip"));
-      meta.appendChild(chip(frameworkLabel(match.framework), "chip"));
-      meta.appendChild(chip(match.style, "chip"));
-      meta.appendChild(chip("Claim confidence: " + match.claimConfidence + "%", "chip"));
+      meta.appendChild(chip("Belief: " + (match.belief === "false" ? "False" : "True"), "chip"));
+      meta.appendChild(chip("Confidence: " + match.confidence + "%", "chip"));
+      meta.appendChild(chip("Shared slots: " + match.sharedSlots.length, "chip"));
 
-      const scoreGrid = document.createElement("div");
-      scoreGrid.className = "score-grid";
-      scoreGrid.appendChild(scoreLine("Disagreement", match.breakdown.disagreement));
-      scoreGrid.appendChild(scoreLine("Topic fit", match.breakdown.topicFit));
-      scoreGrid.appendChild(scoreLine("Framework diversity", match.breakdown.frameworkDiversity));
-      scoreGrid.appendChild(scoreLine("Reliability", match.breakdown.reliability));
+      const reason = document.createElement("p");
+      reason.className = "hint";
+      reason.textContent = truncateText(match.reason, 160);
 
-      const stance = document.createElement("p");
-      stance.className = "hint";
-      stance.textContent = match.opposed
-        ? "Counterpart currently takes the opposite side of your claim."
-        : "Counterpart is not fully opposed, but still contributes useful pressure-testing.";
+      const slots = document.createElement("p");
+      slots.className = "hint";
+      slots.textContent = "Overlap: " + formatSlotList(match.sharedSlots, 3, activeConviction.slotCatalog);
 
       const button = document.createElement("button");
       button.type = "button";
       button.className = selected ? "btn btn-primary" : "btn btn-secondary";
       button.setAttribute("data-counterpart-id", match.id);
-      button.textContent = selected ? "Selected Counterpart" : "Select Counterpart";
+      button.textContent = selected ? "Selected Participant" : "Select Participant";
 
       card.appendChild(head);
       card.appendChild(meta);
-      card.appendChild(scoreGrid);
-      card.appendChild(stance);
+      card.appendChild(reason);
+      card.appendChild(slots);
       card.appendChild(button);
       el.counterpartList.appendChild(card);
     });
   }
 
+  function renderReservationList(activeConviction) {
+    if (!el.reservationList) return;
+    el.reservationList.innerHTML = "";
+    const reservations = Array.isArray(activeConviction.reservations) ? activeConviction.reservations : [];
+    if (reservations.length === 0) {
+      const empty = document.createElement("li");
+      empty.className = "mini-summary";
+      empty.textContent = "No reservations yet.";
+      el.reservationList.appendChild(empty);
+      return;
+    }
+
+    reservations.forEach(function (reservation) {
+      const item = document.createElement("li");
+      item.className = "conviction-item";
+
+      const title = document.createElement("p");
+      title.innerHTML = "<strong>" + escapeHtml(reservation.name) + "</strong>";
+
+      const meta = document.createElement("p");
+      meta.className = "hint";
+      meta.textContent =
+        "Belief: " +
+        (reservation.belief === "false" ? "False" : "True") +
+        " | Confidence: " +
+        reservation.confidence +
+        "% | Slots: " +
+        (Array.isArray(reservation.availability) ? reservation.availability.length : 0);
+
+      const reason = document.createElement("p");
+      reason.className = "hint";
+      reason.textContent = truncateText(reservation.reason, 160);
+
+      item.appendChild(title);
+      item.appendChild(meta);
+      item.appendChild(reason);
+      el.reservationList.appendChild(item);
+    });
+  }
+
+  function renderInviteList(activeConviction) {
+    if (!el.inviteList) return;
+    el.inviteList.innerHTML = "";
+    const invites = Array.isArray(activeConviction.invites) ? activeConviction.invites : [];
+    if (invites.length === 0) {
+      const empty = document.createElement("li");
+      empty.className = "mini-summary";
+      empty.textContent = "No invites sent yet.";
+      el.inviteList.appendChild(empty);
+      return;
+    }
+
+    invites.forEach(function (invite) {
+      const item = document.createElement("li");
+      item.className = "conviction-item";
+
+      const title = document.createElement("p");
+      title.innerHTML = "<strong>Invite:</strong> " + escapeHtml(invite.name);
+
+      const meta = document.createElement("p");
+      meta.className = "hint";
+      meta.textContent = "Proposed slots: " + formatSlotList(invite.availability || [], 3, activeConviction.slotCatalog);
+
+      item.appendChild(title);
+      item.appendChild(meta);
+      el.inviteList.appendChild(item);
+    });
+  }
+
+  function formatSlotList(slotIds, max, catalog) {
+    const list = Array.isArray(slotIds) ? slotIds : [];
+    if (list.length === 0) return "None";
+    const preview = list.slice(0, max).map(function (slotId) {
+      return formatSlotLabel(slotId, catalog);
+    });
+    const suffix = list.length > max ? " +" + (list.length - max) + " more" : "";
+    return preview.join(", ") + suffix;
+  }
+
   function renderSessionPartner() {
     const chosen = getSelectedCounterpart();
     if (!chosen) {
-      el.sessionPartnerSummary.textContent = "No counterpart selected yet.";
+      el.sessionPartnerSummary.textContent = "No participant selected yet.";
       return;
     }
     el.sessionPartnerSummary.innerHTML =
-      "<strong>Selected counterpart:</strong> " +
+      "<strong>Selected participant:</strong> " +
       escapeHtml(chosen.name) +
-      " | " +
-      escapeHtml(frameworkLabel(chosen.framework)) +
-      " | Match score " +
-      chosen.score +
-      "/100";
+      " | Belief: " +
+      (chosen.belief === "false" ? "False" : "True") +
+      " | Confidence: " +
+      chosen.confidence +
+      "% | Shared slots: " +
+      (Array.isArray(chosen.sharedSlots) ? chosen.sharedSlots.length : 0);
   }
 
   function renderLedger() {
@@ -3892,7 +4196,7 @@
     if (state.ledger.length === 0) {
       const empty = document.createElement("article");
       empty.className = "mini-summary";
-      empty.textContent = "No action commitments yet. Once post-dialogue confidence goes above 50%, entries appear here.";
+      empty.textContent = "No action commitments yet. Once post-conversation confidence goes above 50%, entries appear here.";
       el.ledgerList.appendChild(empty);
       return;
     }
@@ -3916,18 +4220,25 @@
         " | Logged " +
         formatDate(entry.createdAt);
 
-      const implication = document.createElement("p");
-      implication.innerHTML = "<strong>Implication:</strong> " + escapeHtml(entry.implication);
+      const assumptions = Array.isArray(entry.assumptions) ? entry.assumptions : [];
+      const assumptionLine = document.createElement("p");
+      assumptionLine.className = "hint";
+      assumptionLine.textContent =
+        assumptions.length > 0 ? "Assumed propositions: " + truncateText(assumptions.join("; "), 140) : "Assumed propositions: none listed.";
 
       const action = document.createElement("p");
       action.innerHTML = "<strong>Action plan:</strong> " + escapeHtml(entry.actionPlan);
 
-      const counterparty = COUNTERPARTS.find(function (item) {
-        return item.id === entry.counterpartId;
-      });
       const source = document.createElement("p");
       source.className = "hint";
-      source.textContent = "Counterpart: " + (counterparty ? counterparty.name : "Unknown");
+      source.textContent =
+        "Participant: " +
+        (entry.participantName || "Unknown") +
+        " | Belief: " +
+        (entry.participantBelief === "false" ? "False" : "True") +
+        " | Confidence: " +
+        (Number(entry.participantConfidence) || 0) +
+        "%";
 
       const button = document.createElement("button");
       button.type = "button";
@@ -3937,7 +4248,7 @@
 
       row.appendChild(title);
       row.appendChild(meta);
-      row.appendChild(implication);
+      row.appendChild(assumptionLine);
       row.appendChild(action);
       row.appendChild(source);
       row.appendChild(button);
@@ -3945,59 +4256,38 @@
     });
   }
 
-  function buildMatches(conviction, mode) {
-    const weights = MATCH_WEIGHTS[mode] || MATCH_WEIGHTS.balanced;
-    const userAffirms = conviction.confidence >= 50;
-    const topic = conviction.topic || "general";
+  function buildMatches(conviction) {
+    const creatorSlots = new Set(Array.isArray(conviction.availability) ? conviction.availability : []);
+    const reservations = Array.isArray(conviction.reservations) ? conviction.reservations : [];
 
-    return COUNTERPARTS.map(function (counterpart) {
-      const claimConfidence = resolveCounterpartConfidence(counterpart, conviction);
-      const counterpartAffirms = claimConfidence >= 50;
-      const opposed = userAffirms !== counterpartAffirms;
+    return reservations
+      .map(function (reservation) {
+        const belief = reservation.belief === "false" ? "false" : "true";
+        const opposed = belief === "false";
+        const sharedSlots = (reservation.availability || []).filter(function (slotId) {
+          return creatorSlots.has(slotId);
+        });
+        if (!opposed || sharedSlots.length === 0) return null;
+        const confidenceGap = Math.abs(Number(conviction.confidence) - Number(reservation.confidence));
 
-      const rawDisagreement = Math.abs(conviction.confidence - claimConfidence);
-      const disagreement = opposed ? rawDisagreement : Math.round(rawDisagreement * 0.35);
-      const topicFit = Object.prototype.hasOwnProperty.call(counterpart.positions, topic) ? 100 : 35;
-      const frameworkDiversity = conviction.framework === counterpart.framework ? 28 : 100;
-      const reliability = counterpart.reliability;
-
-      const score = Math.round(
-        disagreement * weights.disagreement +
-          topicFit * weights.topicFit +
-          frameworkDiversity * weights.frameworkDiversity +
-          reliability * weights.reliability
-      );
-
-      return {
-        id: counterpart.id,
-        name: counterpart.name,
-        framework: counterpart.framework,
-        style: counterpart.style,
-        topic: topic,
-        claimConfidence: claimConfidence,
-        opposed: opposed,
-        score: score,
-        breakdown: {
-          disagreement: disagreement,
-          topicFit: topicFit,
-          frameworkDiversity: frameworkDiversity,
-          reliability: reliability,
-        },
-      };
-    })
+        return {
+          id: reservation.id,
+          name: reservation.name,
+          belief: belief,
+          confidence: reservation.confidence,
+          reason: reservation.reason || "",
+          sharedSlots: sharedSlots,
+          confidenceGap: confidenceGap,
+        };
+      })
+      .filter(Boolean)
       .sort(function (a, b) {
-        return b.score - a.score;
+        if (a.confidenceGap !== b.confidenceGap) {
+          return a.confidenceGap - b.confidenceGap;
+        }
+        return b.sharedSlots.length - a.sharedSlots.length;
       })
       .slice(0, 6);
-  }
-
-  function resolveCounterpartConfidence(counterpart, conviction) {
-    const topic = conviction.topic || "general";
-    if (Object.prototype.hasOwnProperty.call(counterpart.positions, topic)) {
-      return counterpart.positions[topic];
-    }
-    const seed = hashString(counterpart.id + "|" + conviction.claim + "|" + topic);
-    return 18 + (seed % 65);
   }
 
   function getSelectedCounterpart() {
@@ -4043,7 +4333,102 @@
   }
 
   function updateConfidenceText(slider, label) {
+    if (!slider || !label) return;
     label.textContent = String(slider.value) + "%";
+  }
+
+  function buildAvailabilitySlots() {
+    const slots = [];
+    const now = new Date();
+    const start = new Date(now);
+    start.setSeconds(0, 0);
+    const minute = start.getMinutes();
+    const remainder = minute % AVAILABILITY_SLOT_MINUTES;
+    if (remainder !== 0) {
+      start.setMinutes(minute + (AVAILABILITY_SLOT_MINUTES - remainder));
+    }
+    for (let i = 0; i < AVAILABILITY_SLOT_COUNT; i += 1) {
+      const slotStart = new Date(start.getTime() + i * AVAILABILITY_SLOT_MINUTES * 60000);
+      const slotEnd = new Date(slotStart.getTime() + AVAILABILITY_SLOT_MINUTES * 60000);
+      const label =
+        slotStart.toLocaleString(undefined, {
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        }) +
+        " – " +
+        slotEnd.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+      slots.push({
+        id: slotStart.toISOString(),
+        label: label,
+        startISO: slotStart.toISOString(),
+        endISO: slotEnd.toISOString(),
+      });
+    }
+    return slots;
+  }
+
+  function renderAvailabilityOptions(container, namePrefix, slots) {
+    if (!container) return;
+    container.innerHTML = "";
+    const list = Array.isArray(slots) && slots.length > 0 ? slots : availabilitySlots;
+    list.forEach(function (slot, index) {
+      const label = document.createElement("label");
+      label.className = "availability-item";
+      const input = document.createElement("input");
+      input.type = "checkbox";
+      input.name = namePrefix + "_slot_" + index;
+      input.setAttribute("data-slot-id", slot.id);
+      const text = document.createElement("span");
+      text.textContent = slot.label || formatSlotLabel(slot.id, list);
+      label.appendChild(input);
+      label.appendChild(text);
+      container.appendChild(label);
+    });
+  }
+
+  function getSelectedAvailability(container) {
+    if (!container) return [];
+    const inputs = container.querySelectorAll('input[type="checkbox"][data-slot-id]');
+    const selected = [];
+    inputs.forEach(function (input) {
+      if (input.checked) {
+        selected.push(String(input.getAttribute("data-slot-id")));
+      }
+    });
+    return selected;
+  }
+
+  function resetAvailability(container) {
+    if (!container) return;
+    const inputs = container.querySelectorAll('input[type="checkbox"][data-slot-id]');
+    inputs.forEach(function (input) {
+      input.checked = false;
+    });
+  }
+
+  function formatSlotLabel(slotId, catalog) {
+    if (!slotId) return "";
+    if (Array.isArray(catalog)) {
+      const found = catalog.find(function (slot) {
+        return slot.id === slotId;
+      });
+      if (found) return found.label;
+    }
+    return availabilitySlotLookup[slotId] || slotId;
+  }
+
+  function countSentences(text) {
+    const cleaned = String(text || "")
+      .replace(/\\s+/g, " ")
+      .trim();
+    if (!cleaned) return 0;
+    const parts = cleaned.split(/[.!?]+/).filter(function (part) {
+      return part.trim().length > 0;
+    });
+    return parts.length;
   }
 
   function inferTopic(text) {
@@ -4136,7 +4521,19 @@
           signedAt: String((parsed.pledge && parsed.pledge.signedAt) || ""),
         },
         pledgeRegistry: Array.isArray(parsed.pledgeRegistry) ? parsed.pledgeRegistry : [],
-        convictions: Array.isArray(parsed.convictions) ? parsed.convictions : [],
+        convictions: Array.isArray(parsed.convictions)
+          ? parsed.convictions.map(function (item) {
+              const normalized = Object.assign({}, item);
+              normalized.claim = String(item.claim || "");
+              normalized.confidence = clamp(Number(item.confidence || 50), 0, 100);
+              normalized.assumptions = Array.isArray(item.assumptions) ? item.assumptions : [];
+              normalized.availability = Array.isArray(item.availability) ? item.availability : [];
+              normalized.slotCatalog = Array.isArray(item.slotCatalog) && item.slotCatalog.length > 0 ? item.slotCatalog : availabilitySlots;
+              normalized.reservations = Array.isArray(item.reservations) ? item.reservations : [];
+              normalized.invites = Array.isArray(item.invites) ? item.invites : [];
+              return normalized;
+            })
+          : [],
         activeConvictionId: parsed.activeConvictionId || null,
         selectedCounterpartId: parsed.selectedCounterpartId || null,
         sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [],
@@ -4164,12 +4561,41 @@
 
   function resetConvictionForm() {
     el.claimInput.value = "";
-    el.reasonInput.value = "";
-    el.implicationInput.value = "";
-    el.topicInput.value = "auto";
-    el.frameworkInput.value = "utilitarian";
-    el.confidenceInput.value = "50";
+    if (el.assumptionInput) {
+      el.assumptionInput.value = "";
+    }
+    if (el.truthAptConfirm) {
+      el.truthAptConfirm.checked = false;
+    }
+    if (el.confidenceInput) {
+      el.confidenceInput.value = "60";
+    }
     updateConfidenceText(el.confidenceInput, el.confidenceValue);
+    resetAvailability(el.roomAvailability);
+  }
+
+  function resetReservationForm() {
+    if (el.reservationNameInput) {
+      el.reservationNameInput.value = "";
+    }
+    if (el.reservationBeliefInput) {
+      el.reservationBeliefInput.value = "true";
+    }
+    if (el.reservationConfidenceInput) {
+      el.reservationConfidenceInput.value = "50";
+      updateConfidenceText(el.reservationConfidenceInput, el.reservationConfidenceValue);
+    }
+    if (el.reservationReasonInput) {
+      el.reservationReasonInput.value = "";
+    }
+    resetAvailability(el.reservationAvailability);
+  }
+
+  function resetInviteForm() {
+    if (el.inviteNameInput) {
+      el.inviteNameInput.value = "";
+    }
+    resetAvailability(el.inviteAvailability);
   }
 
   function resetSessionForm() {

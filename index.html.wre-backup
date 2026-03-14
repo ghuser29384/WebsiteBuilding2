@@ -14,7 +14,7 @@
   <script src="auth.js" defer></script>
   <script src="conviction.js" defer></script>
 </head>
-<body>\n  <p id="wre-banner" style="margin:12px 0;padding:8px;background:#f7fdf6;border:1px solid #d6f0d8;border-radius:6px;text-align:center;"><a href="/wre/index.html" style="font-weight:600;color:#0a5f38;text-decoration:none;">Learn WRE — Reflective Equilibrium lessons</a></p>\n
+<body>
   <div class="orb orb-a" aria-hidden="true"></div>
   <div class="orb orb-b" aria-hidden="true"></div>
 
@@ -408,22 +408,22 @@
       </div>
       <div class="rule-grid">
         <article class="panel">
-          <h3>1) Shared time slots</h3>
-          <p>We only suggest matches when both participants have overlapping 30-minute availability windows.</p>
+          <h3>1) Opposed belief first</h3>
+          <p>We prioritize people whose confidence moves in the opposite direction of your claim.</p>
         </article>
         <article class="panel">
-          <h3>2) Opposite beliefs</h3>
-          <p>We then require that participants currently disagree about whether the proposition is true.</p>
+          <h3>2) Same topic, different reasoning</h3>
+          <p>Topical overlap (animal welfare, climate, justice, etc.) plus moral-framework diversity creates sharper, more useful dialogue.</p>
         </article>
         <article class="panel">
-          <h3>3) Closest confidence levels</h3>
-          <p>Among opposing participants with shared time slots, we prefer the smallest confidence-gap to maximize productive exchange.</p>
+          <h3>3) Good-faith safeguard</h3>
+          <p>Match score is weighted by each counterpart's dialogue reliability so you get disagreement without trolling.</p>
         </article>
       </div>
       <article class="panel formula-panel">
-        <h3>Matching Priority</h3>
-        <p><strong>Shared availability → Opposite belief → Lowest confidence gap</strong></p>
-        <p class="hint">Participants can always send direct invites with their availability.</p>
+        <h3>Scoring formula used in this demo</h3>
+        <p><strong>Match score = 0.45 × disagreement + 0.30 × topic fit + 0.15 × framework diversity + 0.10 × reliability</strong></p>
+        <p class="hint">Each component is normalized to 0–100, then combined into a final score out of 100.</p>
       </article>
     </section>
 
@@ -490,104 +490,79 @@
       <div id="studioContent" class="studio-content locked">
         <div class="studio-grid">
           <article class="panel">
-            <h3>1) Create A Conversation Room</h3>
+            <h3>1) Publish Your Conviction</h3>
             <form id="convictionForm" class="compact-form">
               <label class="field-row" for="claimInput">
-                Truth-apt proposition under discussion (you believe this is &gt;50% likely true)
+                Moral claim under discussion
                 <textarea id="claimInput" name="claim" rows="3" required placeholder="e.g., Buying factory-farmed meat is morally wrong."></textarea>
               </label>
+              <label class="field-row" for="reasonInput">
+                Why this claim matters
+                <textarea id="reasonInput" name="reason" rows="3" required placeholder="Describe suffering, fairness, rights, duties, etc."></textarea>
+              </label>
+              <label class="field-row" for="implicationInput">
+                If this claim is true, what action follows?
+                <textarea id="implicationInput" name="implication" rows="2" required placeholder="e.g., Stop buying factory-farmed meat this month."></textarea>
+              </label>
+              <label class="field-row" for="topicInput">
+                Topic cluster
+                <select id="topicInput" name="topic" required>
+                  <option value="auto">Auto-detect from claim</option>
+                  <option value="animal_welfare">Animal welfare</option>
+                  <option value="climate">Climate and consumption</option>
+                  <option value="global_poverty">Global poverty</option>
+                  <option value="criminal_justice">Criminal justice</option>
+                  <option value="free_speech">Free speech and censorship</option>
+                  <option value="bioethics">Bioethics</option>
+                  <option value="ai_governance">AI governance</option>
+                </select>
+              </label>
+              <label class="field-row" for="frameworkInput">
+                Moral framework (best fit)
+                <select id="frameworkInput" name="framework" required>
+                  <option value="utilitarian">Utilitarian / consequentialist</option>
+                  <option value="deontological">Deontological / duty-based</option>
+                  <option value="rights">Rights-based</option>
+                  <option value="virtue">Virtue ethics</option>
+                  <option value="care">Care ethics</option>
+                  <option value="contractarian">Contractarian</option>
+                  <option value="pluralist">Moral pluralist</option>
+                </select>
+              </label>
               <label class="field-row" for="confidenceInput">
-                Your confidence that the proposition is true: <span id="confidenceValue">60%</span>
-                <input id="confidenceInput" name="confidence" type="range" min="1" max="100" step="1" value="60">
+                Current confidence in the claim: <span id="confidenceValue">50%</span>
+                <input id="confidenceInput" name="confidence" type="range" min="0" max="100" step="1" value="50">
               </label>
-              <label class="field-row" for="assumptionInput">
-                Assumed propositions (optional, one per line)
-                <textarea id="assumptionInput" name="assumptions" rows="3" placeholder="e.g., Non-human animal suffering matters morally."></textarea>
-              </label>
-              <label class="field-row checkbox-row" for="truthAptConfirm">
-                <input id="truthAptConfirm" name="truthAptConfirm" type="checkbox" required>
-                I affirm this proposition is truth-apt and that I believe it is more likely than not.
-              </label>
-              <div class="availability-block">
-                <p class="field-label">Your availability (select any of the next 30 half-hour slots)</p>
-                <div id="roomAvailability" class="availability-grid" role="group" aria-label="Room creator availability"></div>
-              </div>
-              <p id="convictionStatus" class="hint"></p>
-              <button class="btn btn-secondary" type="submit">Create Conversation Room</button>
+              <button class="btn btn-secondary" type="submit">Publish Conviction</button>
             </form>
 
             <div class="subhead-row">
-              <h4>Your Conversation Rooms</h4>
-              <p class="hint">Pick one to manage reservations and matches.</p>
+              <h4>Your Convictions</h4>
+              <p class="hint">Pick one to find a counterpart.</p>
             </div>
             <ul id="convictionList" class="stack-list"></ul>
           </article>
 
           <article class="panel">
-            <h3>2) Reserve & Match</h3>
-            <p class="hint">Reservations require an opposing belief, a confidence score, reasons, and overlapping time slots.</p>
+            <h3>2) Match With A Counterpart</h3>
+            <p class="hint">Choose someone who disagrees with your current active conviction.</p>
             <div id="activeConvictionSummary" class="mini-summary">No active conviction selected yet.</div>
-
-            <form id="reservationForm" class="compact-form">
-              <label class="field-row" for="reservationNameInput">
-                Participant username
-                <input id="reservationNameInput" name="reservationName" type="text" placeholder="e.g., jasmine" required>
-              </label>
-              <label class="field-row" for="reservationBeliefInput">
-                Belief about the proposition
-                <select id="reservationBeliefInput" name="reservationBelief" required>
-                  <option value="true">I believe the proposition is true</option>
-                  <option value="false">I believe the proposition is false</option>
-                </select>
-              </label>
-              <label class="field-row" for="reservationConfidenceInput">
-                Confidence in that belief: <span id="reservationConfidenceValue">50%</span>
-                <input id="reservationConfidenceInput" name="reservationConfidence" type="range" min="1" max="100" step="1" value="50">
-              </label>
-              <label class="field-row" for="reservationReasonInput">
-                Reasons for your confidence (4 sentences max)
-                <textarea id="reservationReasonInput" name="reservationReason" rows="3" required placeholder="Explain the main evidence or intuitions driving your confidence."></textarea>
-              </label>
-              <div class="availability-block">
-                <p class="field-label">Your availability (select any of the next 30 half-hour slots)</p>
-                <div id="reservationAvailability" class="availability-grid" role="group" aria-label="Participant availability"></div>
-              </div>
-              <p id="reservationStatus" class="hint"></p>
-              <button class="btn btn-secondary" type="submit">Reserve A Seat</button>
-            </form>
-
-            <div class="subhead-row">
-              <h4>Current Reservations</h4>
-              <p class="hint">Opposing beliefs and overlapping times drive matching.</p>
-            </div>
-            <ul id="reservationList" class="stack-list reservation-list"></ul>
-
-            <h4>Suggested Matches</h4>
-            <p id="matchRationale" class="hint">Select a room to generate suggested matches.</p>
+            <label class="field-row inline-field" for="matchModeInput">
+              Matching mode
+              <select id="matchModeInput" name="matchMode">
+                <option value="challenge">Maximize challenge</option>
+                <option value="balanced">Balanced disagreement</option>
+                <option value="bridge">Constructive bridge-building</option>
+              </select>
+            </label>
+            <p id="matchRationale" class="hint">Publish and select a conviction to generate candidates.</p>
             <div id="counterpartList" class="counterpart-list"></div>
 
-            <div class="invite-block">
-              <h4>Invite A Specific User</h4>
-              <form id="inviteForm" class="compact-form">
-                <label class="field-row" for="inviteNameInput">
-                  Username to invite
-                  <input id="inviteNameInput" name="inviteName" type="text" placeholder="e.g., jasper" required>
-                </label>
-                <div class="availability-block">
-                  <p class="field-label">Your proposed availability</p>
-                  <div id="inviteAvailability" class="availability-grid" role="group" aria-label="Invite availability"></div>
-                </div>
-                <p id="inviteStatus" class="hint"></p>
-                <button class="btn btn-ghost" type="submit">Send Invite</button>
-              </form>
-              <ul id="inviteList" class="stack-list invite-list"></ul>
-            </div>
-
-            <h3 class="session-head">3) Log The Conversation Outcome</h3>
+            <h3 class="session-head">3) Log The Dialogue Outcome</h3>
             <form id="sessionForm" class="compact-form">
-              <p id="sessionPartnerSummary" class="mini-summary">No participant selected yet.</p>
+              <p id="sessionPartnerSummary" class="mini-summary">No counterpart selected yet.</p>
               <label class="field-row" for="counterArgumentInput">
-                Strongest argument you heard from your participant
+                Strongest argument you heard from your counterpart
                 <textarea id="counterArgumentInput" name="counterArgument" rows="3" required></textarea>
               </label>
               <label class="field-row" for="replyInput">
@@ -646,7 +621,7 @@
       <div class="rule-grid">
         <article class="panel">
           <h3>Steelman First</h3>
-      <p>State your participant's strongest case before criticizing it.</p>
+          <p>State your counterpart's strongest case before criticizing it.</p>
         </article>
         <article class="panel">
           <h3>Update Publicly</h3>

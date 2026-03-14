@@ -1596,6 +1596,52 @@ input[type="range"] {
   margin-bottom: 1rem;
 }
 
+.availability-block {
+  margin-bottom: 0.8rem;
+}
+
+.field-label {
+  margin: 0 0 0.35rem;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.availability-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 0.55rem;
+  background: var(--surface);
+  max-height: 220px;
+  overflow: auto;
+}
+
+.availability-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  font-size: 0.86rem;
+  color: var(--ink-soft);
+}
+
+.availability-item input {
+  margin-top: 0.12rem;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.invite-block {
+  margin-top: 0.9rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--line);
+}
+
 .subhead-row {
   display: flex;
   align-items: baseline;
@@ -1619,6 +1665,11 @@ input[type="range"] {
   padding: 0.66rem;
   cursor: pointer;
   transition: border-color 0.16s ease;
+}
+
+.reservation-list .conviction-item,
+.invite-list .conviction-item {
+  cursor: default;
 }
 
 .conviction-item:hover {
@@ -2137,6 +2188,10 @@ html:not([data-theme]) .site-footer {
   .main-nav a {
     font-size: 0.86rem;
     padding: 0.3rem 0.54rem;
+  }
+
+  .availability-grid {
+    grid-template-columns: 1fr;
   }
 
   .rule-grid,
