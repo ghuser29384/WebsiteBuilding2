@@ -1,0 +1,42 @@
+{
+  "id": "lesson_trolley_act_utilitarianism",
+  "title": "Trolley Case and Act Utilitarianism",
+  "description": "Use the trolley case to test act utilitarianism against deontological constraints.",
+  "estimated_minutes": 3,
+  "steps": [
+    {
+      "type": "case",
+      "case_id": "trolley_standard",
+      "text": "A trolley is heading toward five people. You can divert it to a track where it will kill one."
+    },
+    {
+      "type": "judgment",
+      "prompt": "Is it permissible to divert the trolley?",
+      "choices": ["Yes", "No", "Unsure"]
+    },
+    {
+      "type": "principle",
+      "principle_id": "maximize_welfare",
+      "text": "Consider whether maximizing welfare supports your judgment."
+    },
+    {
+      "type": "theory",
+      "theory_id": "act_utilitarianism",
+      "text": "Act utilitarianism evaluates each act by whether it maximizes the good."
+    },
+    {
+      "type": "coherence",
+      "action": "recompute",
+      "notes": "Check coherence between your judgment and the act utilitarian principle."
+    },
+    {
+      "type": "principle",
+      "principle_id": "do_not_kill",
+      "text": "Introduce the constraint against killing and see if it conflicts with your judgment."
+    },
+    {
+      "type": "revision",
+      "prompt": "Which commitment would you revise to improve coherence?"
+    }
+  ]
+}
