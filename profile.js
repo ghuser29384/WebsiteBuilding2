@@ -17,6 +17,8 @@
     profileSubtitle: document.getElementById("profileSubtitle"),
     profileMetrics: document.getElementById("profileMetrics"),
     profileConversations: document.getElementById("profileConversations"),
+    profileRoomsCreated: document.getElementById("profileRoomsCreated"),
+    profileRoomsReserved: document.getElementById("profileRoomsReserved"),
     profileArticles: document.getElementById("profileArticles"),
     profileNotifications: document.getElementById("profileNotifications"),
     profileWre: document.getElementById("profileWre"),
@@ -68,6 +70,24 @@
     return value.slice(0, Math.max(0, maxLen - 1)).trimEnd() + "…";
   }
 
+  function formatSlotLabel(iso) {
+    var date = new Date(iso);
+    if (!Number.isFinite(date.getTime())) return "Unknown slot";
+    return date.toLocaleString(undefined, {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    });
+  }
+
+  function formatAvailabilitySummary(slots) {
+    var list = Array.isArray(slots) ? slots : [];
+    if (list.length === 0) return "0 slots";
+    return list.length + " slots (first: " + formatSlotLabel(list[0]) + ")";
+  }
+
   function renderList(element, lines) {
     if (!element) return;
     element.innerHTML = "";
@@ -98,6 +118,8 @@
     }
 
     renderList(dom.profileConversations, ["Sign in to view your saved conversations."]);
+    renderList(dom.profileRoomsCreated, ["Sign in to view your conversation rooms."]);
+    renderList(dom.profileRoomsReserved, ["Sign in to view your reservations."]);
     renderList(dom.profileArticles, ["Sign in to view your published articles."]);
     renderList(dom.profileNotifications, ["Sign in to view notifications and replies."]);
     renderList(dom.profileWre, ["Sign in to view your reflective equilibrium sessions."]);
@@ -253,6 +275,7 @@
 
   function renderProfile(data) {
     var user = data.user;
+    var handle = normalizeHandle(user && user.handle);
 
     if (dom.profileTitle) {
       dom.profileTitle.textContent = "@" + user.handle + " · Profile";
@@ -290,6 +313,37 @@
     (Array.isArray(data.dialogueState.convictions) ? data.dialogueState.convictions : []).forEach(function (conviction) {
       convictionsById[conviction.id] = conviction;
     });
+
+    var createdRooms = (Array.isArray(data.dialogueState.convictions) ? data.dialogueState.convictions : []).slice(0, 8).map(function (conviction) {
+      var claim = truncate(conviction.claim, 76);
+      var availability = formatAvailabilitySummary(conviction.availability);
+      var createdAt = conviction.createdAt || conviction.updatedAt || "";
+      var createdText = createdAt ? " • created " + formatDate(createdAt) : "";
+      return claim + " • availability: " + availability + createdText;
+    });
+    renderList(dom.profileRoomsCreated, createdRooms);
+
+    var reservedRooms = [];
+    (Array.isArray(data.dialogueState.convictions) ? data.dialogueState.convictions : []).forEach(function (conviction) {
+      var reservations = Array.isArray(conviction.reservations) ? conviction.reservations : [];
+      reservations.forEach(function (reservation) {
+        if (normalizeHandle(reservation.name) !== handle) return;
+        var belief = reservation.belief === "false" ? "not true" : "true";
+        var availability = formatAvailabilitySummary(reservation.availability);
+        var reservedAt = reservation.createdAt ? " • reserved " + formatDate(reservation.createdAt) : "";
+        reservedRooms.push(
+          truncate(conviction.claim, 70) +
+            " • belief: " +
+            belief +
+            " (" +
+            Math.round(Number(reservation.confidence || 0)) +
+            "%) • availability: " +
+            availability +
+            reservedAt
+        );
+      });
+    });
+    renderList(dom.profileRoomsReserved, reservedRooms.slice(0, 10));
 
     var conversationLines = sessions.slice(0, 8).map(function (session) {
       var conviction = convictionsById[session.convictionId];

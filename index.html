@@ -14,7 +14,8 @@
   <script src="auth.js" defer></script>
   <script src="conviction.js" defer></script>
 </head>
-<body>\n  <p id="wre-banner" style="margin:12px 0;padding:8px;background:#f7fdf6;border:1px solid #d6f0d8;border-radius:6px;text-align:center;"><a href="/wre/index.html" style="font-weight:600;color:#0a5f38;text-decoration:none;">Learn WRE — Reflective Equilibrium lessons</a></p>\n
+<body>
+  <p id="wre-banner" style="margin:12px 0;padding:8px;background:#f7fdf6;border:1px solid #d6f0d8;border-radius:6px;text-align:center;"><a href="/wre/index.html" style="font-weight:600;color:#0a5f38;text-decoration:none;">Learn WRE — Reflective Equilibrium lessons</a></p>
   <div class="orb orb-a" aria-hidden="true"></div>
   <div class="orb orb-b" aria-hidden="true"></div>
 
@@ -508,7 +509,7 @@
       <div id="studioContent" class="studio-content locked">
         <div class="studio-grid">
           <article class="panel">
-            <h3>1) Create A Conversation Room</h3>
+            <h3>Create A Conversation Room</h3>
             <form id="convictionForm" class="compact-form">
               <label class="field-row" for="claimInput">
                 Truth-apt proposition under discussion (you believe this is &gt;50% likely true)
@@ -517,6 +518,10 @@
               <label class="field-row" for="confidenceInput">
                 Your confidence that the proposition is true: <span id="confidenceValue">60%</span>
                 <input id="confidenceInput" name="confidence" type="range" min="1" max="100" step="1" value="60">
+              </label>
+              <label class="field-row" for="creatorReasonInput">
+                Reasons for your confidence (10 sentences max)
+                <textarea id="creatorReasonInput" name="creatorReason" rows="3" required placeholder="Explain the main evidence or intuitions driving your confidence."></textarea>
               </label>
               <label class="field-row" for="assumptionInput">
                 Assumed propositions (optional, one per line)
@@ -542,7 +547,7 @@
           </article>
 
           <article class="panel">
-            <h3>2) Reserve & Match</h3>
+            <h3>Reserve and Match</h3>
             <p class="hint">Reservations require an opposing belief, a confidence score, reasons, and overlapping time slots.</p>
             <div id="activeConvictionSummary" class="mini-summary">No active conviction selected yet.</div>
 
@@ -554,8 +559,8 @@
               <label class="field-row" for="reservationBeliefInput">
                 Belief about the proposition
                 <select id="reservationBeliefInput" name="reservationBelief" required>
-                  <option value="true">I believe the proposition is true</option>
-                  <option value="false">I believe the proposition is false</option>
+                  <option value="true">The proposition is true</option>
+                  <option value="false">The proposition is not true</option>
                 </select>
               </label>
               <label class="field-row" for="reservationConfidenceInput">
@@ -563,7 +568,7 @@
                 <input id="reservationConfidenceInput" name="reservationConfidence" type="range" min="1" max="100" step="1" value="50">
               </label>
               <label class="field-row" for="reservationReasonInput">
-                Reasons for your confidence (4 sentences max)
+                Reasons for your confidence (10 sentences max)
                 <textarea id="reservationReasonInput" name="reservationReason" rows="3" required placeholder="Explain the main evidence or intuitions driving your confidence."></textarea>
               </label>
               <div class="availability-block">
@@ -591,10 +596,6 @@
                   Username to invite
                   <input id="inviteNameInput" name="inviteName" type="text" placeholder="e.g., jasper" required>
                 </label>
-                <div class="availability-block">
-                  <p class="field-label">Your proposed availability (next 30 days)</p>
-                  <div id="inviteAvailability" class="availability-grid" role="group" aria-label="Invite availability"></div>
-                </div>
                 <p id="inviteStatus" class="hint"></p>
                 <button class="btn btn-ghost" type="submit">Send Invite</button>
               </form>

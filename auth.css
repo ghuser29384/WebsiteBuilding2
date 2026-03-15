@@ -41,7 +41,7 @@ body {
 
 .auth-shell {
   min-height: 100vh;
-  background: #f4f6fa;
+  background: #ffffff;
   display: grid;
   place-items: center;
   padding: 1rem;

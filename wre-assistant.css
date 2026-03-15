@@ -1,5 +1,5 @@
 :root {
-  --bg: #f4f6fb;
+  --bg: #ffffff;
   --surface: #ffffff;
   --line: #d8deea;
   --ink: #1f2b3f;
@@ -21,7 +21,7 @@ html,
 body {
   margin: 0;
   padding: 0;
-  background: var(--bg);
+  background: #ffffff;
   color: var(--ink);
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   line-height: 1.45;

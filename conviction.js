@@ -537,6 +537,7 @@
     convictionStatus: document.getElementById("convictionStatus"),
     convictionList: document.getElementById("convictionList"),
     claimInput: document.getElementById("claimInput"),
+    creatorReasonInput: document.getElementById("creatorReasonInput"),
     assumptionInput: document.getElementById("assumptionInput"),
     truthAptConfirm: document.getElementById("truthAptConfirm"),
     roomAvailability: document.getElementById("roomAvailability"),
@@ -1087,6 +1088,7 @@
     const formData = new FormData(el.convictionForm);
     const claim = String(formData.get("claim") || "").trim();
     const confidence = clamp(Number(formData.get("confidence")), 1, 100);
+    const creatorReason = String(formData.get("creatorReason") || "").trim();
     const assumptionsRaw = String(formData.get("assumptions") || "");
     const assumptions = assumptionsRaw
       .split(/\n+/)
@@ -1100,6 +1102,16 @@
 
     if (!claim) {
       formStatus.conviction = "Enter a truth-apt proposition before creating the room.";
+      renderMatching();
+      return;
+    }
+    if (!creatorReason) {
+      formStatus.conviction = "Add your reasons for the confidence level.";
+      renderMatching();
+      return;
+    }
+    if (countSentences(creatorReason) > 10) {
+      formStatus.conviction = "Keep the reasons to ten sentences or fewer.";
       renderMatching();
       return;
     }
@@ -1124,6 +1136,7 @@
       claim: claim,
       confidence: confidence,
       assumptions: assumptions,
+      creatorReason: creatorReason,
       availability: availability,
       slotCatalog: availabilitySlots,
       reservations: [],
@@ -1176,8 +1189,8 @@
       renderMatching();
       return;
     }
-    if (countSentences(reason) > 4) {
-      formStatus.reservation = "Keep the reasons to four sentences or fewer.";
+    if (countSentences(reason) > 10) {
+      formStatus.reservation = "Keep the reasons to ten sentences or fewer.";
       renderMatching();
       return;
     }
@@ -1226,13 +1239,14 @@
     const formData = new FormData(el.inviteForm);
     const name = String(formData.get("inviteName") || "").trim();
     const availability = getSelectedAvailability(el.inviteAvailability);
+    const requireAvailability = Boolean(el.inviteAvailability);
 
     if (!name) {
       formStatus.invite = "Enter a username to invite.";
       renderMatching();
       return;
     }
-    if (!availability.length) {
+    if (requireAvailability && !availability.length) {
       formStatus.invite = "Select at least one availability slot to propose.";
       renderMatching();
       return;
@@ -1250,7 +1264,9 @@
     }
     activeConviction.invites.unshift(invite);
     activeConviction.updatedAt = new Date().toISOString();
-    formStatus.invite = "Invite recorded. Share your availability with the invited participant.";
+    formStatus.invite = availability.length
+      ? "Invite recorded. Share your availability with the invited participant."
+      : "Invite recorded. Share availability details with the invited participant.";
     saveState();
 
     resetInviteForm();
@@ -3996,14 +4012,24 @@
         availabilityCount +
         " slots";
 
+      if (item.creatorReason) {
+        const reason = document.createElement("p");
+        reason.className = "hint";
+        reason.textContent = truncateText(item.creatorReason, 150);
+        li.appendChild(title);
+        li.appendChild(meta);
+        li.appendChild(reason);
+      } else {
+        li.appendChild(title);
+        li.appendChild(meta);
+      }
+
       const button = document.createElement("button");
       button.type = "button";
       button.className = item.id === state.activeConvictionId ? "btn btn-primary" : "btn btn-ghost";
       button.setAttribute("data-conviction-id", item.id);
       button.textContent = item.id === state.activeConvictionId ? "Active Room" : "Use For Matching";
 
-      li.appendChild(title);
-      li.appendChild(meta);
       li.appendChild(button);
       el.convictionList.appendChild(li);
     });
@@ -4038,7 +4064,7 @@
     const assumptionsCount = Array.isArray(activeConviction.assumptions) ? activeConviction.assumptions.length : 0;
     const availabilityCount = Array.isArray(activeConviction.availability) ? activeConviction.availability.length : 0;
     const slotCatalog =
-      Array.isArray(activeConviction.slotCatalog) && activeConviction.slotCatalog.length > 0
+      Array.isArray(activeConviction.slotCatalog) && activeConviction.slotCatalog.length >= AVAILABILITY_SLOT_COUNT
         ? activeConviction.slotCatalog
         : availabilitySlots;
     el.activeConvictionSummary.innerHTML =
@@ -4580,8 +4606,12 @@
               normalized.claim = String(item.claim || "");
               normalized.confidence = clamp(Number(item.confidence || 50), 0, 100);
               normalized.assumptions = Array.isArray(item.assumptions) ? item.assumptions : [];
+              normalized.creatorReason = String(item.creatorReason || "");
               normalized.availability = Array.isArray(item.availability) ? item.availability : [];
-              normalized.slotCatalog = Array.isArray(item.slotCatalog) && item.slotCatalog.length > 0 ? item.slotCatalog : availabilitySlots;
+              normalized.slotCatalog =
+                Array.isArray(item.slotCatalog) && item.slotCatalog.length >= AVAILABILITY_SLOT_COUNT
+                  ? item.slotCatalog
+                  : availabilitySlots;
               normalized.reservations = Array.isArray(item.reservations) ? item.reservations : [];
               normalized.invites = Array.isArray(item.invites) ? item.invites : [];
               return normalized;
@@ -4617,6 +4647,9 @@
     el.claimInput.value = "";
     if (el.assumptionInput) {
       el.assumptionInput.value = "";
+    }
+    if (el.creatorReasonInput) {
+      el.creatorReasonInput.value = "";
     }
     if (el.truthAptConfirm) {
       el.truthAptConfirm.checked = false;
