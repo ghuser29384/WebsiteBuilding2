@@ -2,7 +2,7 @@
   "use strict";
 
   const STORAGE_KEY_BASE = "normativity-dialogue-state-v1";
-  const STORAGE_KEY = resolveScopedStorageKey(STORAGE_KEY_BASE);
+  const GUEST_STORAGE_KEY = STORAGE_KEY_BASE + "--guest-session";
 
   const TOPICS = {
     animal_welfare: {
@@ -39,8 +39,10 @@
     },
   };
 
-  const AVAILABILITY_SLOT_COUNT = 30;
   const AVAILABILITY_SLOT_MINUTES = 30;
+  const AVAILABILITY_DAYS = 30;
+  const AVAILABILITY_SLOTS_PER_DAY = Math.round((24 * 60) / AVAILABILITY_SLOT_MINUTES);
+  const AVAILABILITY_SLOT_COUNT = AVAILABILITY_DAYS * AVAILABILITY_SLOTS_PER_DAY;
 
   const MATCH_WEIGHTS = {
     challenge: { disagreement: 0.6, topicFit: 0.2, frameworkDiversity: 0.1, reliability: 0.1 },
@@ -616,6 +618,28 @@
     }
   }
 
+  function getAuthUser() {
+    try {
+      if (window.NormativityAuth && typeof window.NormativityAuth.getCurrentUser === "function") {
+        return window.NormativityAuth.getCurrentUser();
+      }
+    } catch (_error) {
+      return null;
+    }
+    return null;
+  }
+
+  function getStorageKey() {
+    const user = getAuthUser();
+    if (!user) return GUEST_STORAGE_KEY;
+    return resolveScopedStorageKey(STORAGE_KEY_BASE);
+  }
+
+  function getStorageForUser() {
+    const user = getAuthUser();
+    return user ? window.localStorage : window.sessionStorage;
+  }
+
   function init() {
     initChartTrackpadZooming();
     bindRevealAnimation();
@@ -991,7 +1015,8 @@
     });
 
     el.resetDemoBtn.addEventListener("click", function () {
-      localStorage.removeItem(STORAGE_KEY);
+      const storage = getStorageForUser();
+      storage.removeItem(getStorageKey());
       state = createDefaultState();
       currentMatches = [];
       resetConvictionForm();
@@ -4534,13 +4559,9 @@
 
   function loadState() {
     try {
-      let raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw && STORAGE_KEY !== STORAGE_KEY_BASE) {
-        raw = localStorage.getItem(STORAGE_KEY_BASE);
-        if (raw) {
-          localStorage.setItem(STORAGE_KEY, raw);
-        }
-      }
+      const storage = getStorageForUser();
+      const storageKey = getStorageKey();
+      let raw = storage.getItem(storageKey);
       if (!raw) return createDefaultState();
       const parsed = JSON.parse(raw);
       const loaded = {
@@ -4588,7 +4609,8 @@
   }
 
   function saveState() {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    const storage = getStorageForUser();
+    storage.setItem(getStorageKey(), JSON.stringify(state));
   }
 
   function resetConvictionForm() {
