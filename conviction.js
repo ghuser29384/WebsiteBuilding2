@@ -273,7 +273,7 @@
   const FEATURED_RANGE_CONFIG = {
     "1D": { points: 36, labels: ["00:00", "12:00", "Now"], volatility: 1.2, waveAmp: 1.4, cycles: 3.2, trendBias: 0.8 },
     "1W": { points: 56, labels: ["Mon", "Thu", "Sun"], volatility: 0.9, waveAmp: 2.1, cycles: 2.2, trendBias: 1.1 },
-    "1M": { points: 72, labels: ["Week 1", "Week 2", "Week 4"], volatility: 0.75, waveAmp: 2.8, cycles: 1.8, trendBias: 1.3 },
+    "1M": { points: 72, labels: [], volatility: 0.75, waveAmp: 2.8, cycles: 1.8, trendBias: 1.3 },
     ALL: { points: 90, labels: ["Jan", "Mid", "Now"], volatility: 0.6, waveAmp: 3.6, cycles: 1.35, trendBias: 1.7 },
   };
 
@@ -1640,7 +1640,7 @@
     const latestNo = series[series.length - 1].no;
     const gridTicks = [0, 25, 50, 75, 100];
     const rangeConfig = FEATURED_RANGE_CONFIG[rangeKey] || FEATURED_RANGE_CONFIG["1M"];
-    const labels = Array.isArray(rangeConfig.labels) ? rangeConfig.labels : ["Start", "Mid", "Now"];
+    const labels = getFeaturedRangeLabels(rangeKey);
 
     const gridLayer = gridTicks
       .map(function (tick) {
@@ -1667,28 +1667,25 @@
       .join("");
 
     const xLabelY = height - 13;
-    const xLabels =
-      '<text class="fmc-axis-label" x="' +
-      left +
-      '" y="' +
-      xLabelY +
-      '" text-anchor="start">' +
-      escapeHtml(labels[0]) +
-      "</text>" +
-      '<text class="fmc-axis-label" x="' +
-      (left + chartWidth / 2) +
-      '" y="' +
-      xLabelY +
-      '" text-anchor="middle">' +
-      escapeHtml(labels[Math.min(1, labels.length - 1)]) +
-      "</text>" +
-      '<text class="fmc-axis-label" x="' +
-      (width - right) +
-      '" y="' +
-      xLabelY +
-      '" text-anchor="end">' +
-      escapeHtml(labels[Math.min(2, labels.length - 1)]) +
-      "</text>";
+    const safeLabels = Array.isArray(labels) && labels.length ? labels : ["Start", "Mid", "Now"];
+    const xLabels = safeLabels
+      .map(function (label, index) {
+        const ratio = safeLabels.length === 1 ? 0 : index / (safeLabels.length - 1);
+        const x = left + ratio * chartWidth;
+        const anchor = index === 0 ? "start" : index === safeLabels.length - 1 ? "end" : "middle";
+        return (
+          '<text class="fmc-axis-label" x="' +
+          x +
+          '" y="' +
+          xLabelY +
+          '" text-anchor="' +
+          anchor +
+          '">' +
+          escapeHtml(label) +
+          "</text>"
+        );
+      })
+      .join("");
 
     const safeInspectIndex =
       Number.isInteger(inspectIndex) && inspectIndex >= 0 && inspectIndex < series.length ? inspectIndex : series.length - 1;
@@ -4418,6 +4415,31 @@
   function updateConfidenceText(slider, label) {
     if (!slider || !label) return;
     label.textContent = String(slider.value) + "%";
+  }
+
+  function addDays(baseDate, days) {
+    const date = new Date(baseDate);
+    date.setDate(date.getDate() + days);
+    return date;
+  }
+
+  function formatFeaturedDateLabel(date) {
+    return date
+      .toLocaleDateString("en-US", { month: "short", day: "2-digit" })
+      .replace(/\s+/g, "/")
+      .replace(/,/g, "");
+  }
+
+  function getFeaturedRangeLabels(rangeKey) {
+    if (rangeKey === "1M") {
+      const today = new Date();
+      const base = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+      return [-21, -14, -7, 0].map(function (offset) {
+        return formatFeaturedDateLabel(addDays(base, offset));
+      });
+    }
+    const config = FEATURED_RANGE_CONFIG[rangeKey] || FEATURED_RANGE_CONFIG["1M"];
+    return Array.isArray(config.labels) && config.labels.length ? config.labels : ["Start", "Mid", "Now"];
   }
 
   function buildAvailabilitySlots() {
