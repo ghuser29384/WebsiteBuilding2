@@ -1,0 +1,37 @@
+{
+  "id": "lesson_moral_skepticism",
+  "title": "Moral Skepticism and Epistemic Pressure",
+  "description": "Introduce skeptical pressure on moral judgments and test coherence.",
+  "estimated_minutes": 3,
+  "steps": [
+    {
+      "type": "case",
+      "case_id": "trolley_standard",
+      "text": "You face the classic trolley decision to save five by diverting the trolley."
+    },
+    {
+      "type": "judgment",
+      "prompt": "What is your judgment about diverting?",
+      "choices": ["Permissible", "Impermissible", "Unsure"]
+    },
+    {
+      "type": "principle",
+      "principle_id": "do_not_kill",
+      "text": "Test whether the constraint against killing supports your judgment."
+    },
+    {
+      "type": "theory",
+      "theory_id": "moral_skepticism",
+      "text": "Moral skepticism questions whether we have moral knowledge or justification."
+    },
+    {
+      "type": "coherence",
+      "action": "recompute",
+      "notes": "Assess coherence while allowing skeptical pressure to lower confidence."
+    },
+    {
+      "type": "reflection",
+      "prompt": "What evidence or method would strengthen your confidence in this judgment?"
+    }
+  ]
+}

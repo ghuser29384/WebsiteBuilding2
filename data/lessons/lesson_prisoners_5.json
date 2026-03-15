@@ -1,0 +1,42 @@
+{
+  "id": "lesson_prisoners_dilemma_contractualism",
+  "title": "Prisoner's Dilemma and Contractualism",
+  "description": "Use a cooperation dilemma to test principles of fairness and mutual agreement.",
+  "estimated_minutes": 3,
+  "steps": [
+    {
+      "type": "case",
+      "case_id": "prisoners_dilemma_moral",
+      "text": "Two agents can cooperate or defect, with outcomes favoring mutual cooperation but rewarding unilateral defection."
+    },
+    {
+      "type": "judgment",
+      "prompt": "Should you choose to cooperate?",
+      "choices": ["Yes", "No", "Unsure"]
+    },
+    {
+      "type": "principle",
+      "principle_id": "cooperate_for_mutual_benefit",
+      "text": "Test the mutual-benefit principle against your judgment."
+    },
+    {
+      "type": "theory",
+      "theory_id": "contractualism",
+      "text": "Contractualism asks what principles no one could reasonably reject."
+    },
+    {
+      "type": "coherence",
+      "action": "recompute",
+      "notes": "Check coherence between the principle and contractualist framing."
+    },
+    {
+      "type": "principle",
+      "principle_id": "fairness",
+      "text": "Add fairness as a constraint on strategic advantage."
+    },
+    {
+      "type": "revision",
+      "prompt": "Would you revise the principle or your judgment to restore coherence?"
+    }
+  ]
+}

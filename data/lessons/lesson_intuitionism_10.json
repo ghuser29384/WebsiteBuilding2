@@ -1,0 +1,38 @@
+{
+  "id": "lesson_intuitionism_thought_experiments",
+  "title": "Intuitionism and Thought Experiments",
+  "description": "Use a thought experiment to test intuitionist justification.",
+  "estimated_minutes": 3,
+  "steps": [
+    {
+      "type": "case",
+      "case_id": "trolley_fat_man",
+      "text": "You can stop the trolley by pushing a large man off a bridge, killing him to save five."
+    },
+    {
+      "type": "judgment",
+      "prompt": "Is it permissible to push the man?",
+      "choices": ["Yes", "No", "Unsure"]
+    },
+    {
+      "type": "principle",
+      "principle_id": "do_not_kill",
+      "text": "Test whether a basic constraint against killing fits your judgment."
+    },
+    {
+      "type": "theory",
+      "theory_id": "ethical_intuitionism",
+      "text": "Intuitionism holds that some basic moral propositions are self-evident."
+    },
+    {
+      "type": "theory",
+      "theory_id": "thought_experiments",
+      "text": "Thought experiments help reveal and test those intuitions."
+    },
+    {
+      "type": "coherence",
+      "action": "recompute",
+      "notes": "Check whether your intuition and principle align."
+    }
+  ]
+}

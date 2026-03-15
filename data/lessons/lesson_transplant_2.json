@@ -1,0 +1,42 @@
+{
+  "id": "lesson_transplant_deontology",
+  "title": "Transplant Case and Deontological Constraints",
+  "description": "Test deontological constraints against a case that favors outcome maximization.",
+  "estimated_minutes": 3,
+  "steps": [
+    {
+      "type": "case",
+      "case_id": "transplant_case",
+      "text": "A surgeon can save five failing patients by killing one healthy patient and transplanting his organs."
+    },
+    {
+      "type": "judgment",
+      "prompt": "Is it permissible for the surgeon to proceed?",
+      "choices": ["Yes", "No", "Unsure"]
+    },
+    {
+      "type": "principle",
+      "principle_id": "do_not_kill",
+      "text": "Apply the constraint against killing to the case."
+    },
+    {
+      "type": "theory",
+      "theory_id": "deontology",
+      "text": "Deontology treats duties and constraints as central to moral evaluation."
+    },
+    {
+      "type": "coherence",
+      "action": "recompute",
+      "notes": "Check whether your judgment aligns with deontological constraints."
+    },
+    {
+      "type": "principle",
+      "principle_id": "maximize_welfare",
+      "text": "Introduce outcome maximization and observe the tension."
+    },
+    {
+      "type": "revision",
+      "prompt": "Would you revise the judgment, the principle, or the theory to regain coherence?"
+    }
+  ]
+}

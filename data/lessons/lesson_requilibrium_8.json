@@ -1,0 +1,42 @@
+{
+  "id": "lesson_reflective_equilibrium_basics",
+  "title": "Reflective Equilibrium: Basic Cycle",
+  "description": "Walk through a full case-to-principle cycle and recompute coherence.",
+  "estimated_minutes": 3,
+  "steps": [
+    {
+      "type": "case",
+      "case_id": "trolley_standard",
+      "text": "You can divert a trolley to save five at the cost of one life."
+    },
+    {
+      "type": "judgment",
+      "prompt": "Is diverting permissible?",
+      "choices": ["Yes", "No", "Unsure"]
+    },
+    {
+      "type": "principle",
+      "principle_id": "maximize_welfare",
+      "text": "Test whether maximizing welfare supports your judgment."
+    },
+    {
+      "type": "theory",
+      "theory_id": "reflective_equilibrium",
+      "text": "Reflective equilibrium adjusts judgments and principles to improve coherence."
+    },
+    {
+      "type": "coherence",
+      "action": "recompute",
+      "notes": "Compute how well your judgment and principle fit."
+    },
+    {
+      "type": "principle",
+      "principle_id": "do_not_kill",
+      "text": "Add the constraint against killing and observe the tension."
+    },
+    {
+      "type": "revision",
+      "prompt": "Revise your judgment, principle, or background theory to restore coherence."
+    }
+  ]
+}
