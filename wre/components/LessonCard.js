@@ -66,6 +66,8 @@ export class LessonCard {
       "<h2>" +
       escapeHtml(payload && payload.lessonTitle ? payload.lessonTitle : "Lesson") +
       "</h2>" +
+      '<div class="lesson-card-grid" aria-label="Lesson interaction grid">' +
+      '<div class="lesson-card-col lesson-card-col-primary">' +
       '<section class="lesson-case">' +
       '<p class="label-lite">Case</p>' +
       "<p><strong>" +
@@ -75,12 +77,14 @@ export class LessonCard {
       escapeHtml(payload && payload.caseText ? payload.caseText : "No case text provided.") +
       "</p>" +
       "</section>" +
-      '<section aria-label="Question">' +
+      '<section class="lesson-prompt" aria-label="Question">' +
       '<p class="label-lite">Prompt</p>' +
       '<p class="question-text">' +
       escapeHtml(payload && payload.prompt ? payload.prompt : "No prompt in this lesson.") +
       "</p>" +
       "</section>" +
+      "</div>" +
+      '<div class="lesson-card-col lesson-card-col-interact">' +
       '<section class="answer-row" aria-label="Answer choices">' +
       answersHtml +
       "</section>" +
@@ -103,6 +107,8 @@ export class LessonCard {
       "</div>" +
       (revisionUsed ? '<p class="lesson-hint">Revision used for this attempt.</p>' : "") +
       "</section>" +
+      "</div>" +
+      "</div>" +
       "</article>";
 
     this.bindHandlers();
