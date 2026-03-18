@@ -1,0 +1,48 @@
+{
+  "id": "lesson_prisoners_dilemma_contractualism",
+  "title": "Prisoner's Dilemma and Contractualism",
+  "goal": "",
+  "sources": [],
+  "interactions": [
+    {
+      "id": "prisoners_dilemma_moral",
+      "type": "case",
+      "caseId": "prisoners_dilemma_moral",
+      "text": "Two agents can cooperate or defect, with outcomes favoring mutual cooperation but rewarding unilateral defection."
+    },
+    {
+      "id": "should_you_choose_to_cooperate",
+      "type": "question",
+      "prompt": "Should you choose to cooperate?",
+      "options": [
+        "Yes",
+        "No",
+        "Unsure"
+      ]
+    },
+    {
+      "id": "cooperate_for_mutual_benefit",
+      "type": "principle",
+      "principleId": "cooperate_for_mutual_benefit",
+      "text": "Test the mutual-benefit principle against your judgment."
+    },
+    {
+      "type": "theory",
+      "theory_id": "contractualism",
+      "text": "Contractualism asks what principles no one could reasonably reject."
+    },
+    {
+      "type": "recompute"
+    },
+    {
+      "id": "fairness",
+      "type": "principle",
+      "principleId": "fairness",
+      "text": "Add fairness as a constraint on strategic advantage."
+    },
+    {
+      "type": "revision",
+      "prompt": "Would you revise the principle or your judgment to restore coherence?"
+    }
+  ]
+}

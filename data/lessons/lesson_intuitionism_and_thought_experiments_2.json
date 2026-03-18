@@ -1,0 +1,43 @@
+{
+  "id": "lesson_intuitionism_thought_experiments",
+  "title": "Intuitionism and Thought Experiments",
+  "goal": "",
+  "sources": [],
+  "interactions": [
+    {
+      "id": "trolley_fat_man",
+      "type": "case",
+      "caseId": "trolley_fat_man",
+      "text": "You can stop the trolley by pushing a large man off a bridge, killing him to save five."
+    },
+    {
+      "id": "is_it_permissible_to_push_the_man",
+      "type": "question",
+      "prompt": "Is it permissible to push the man?",
+      "options": [
+        "Yes",
+        "No",
+        "Unsure"
+      ]
+    },
+    {
+      "id": "do_not_kill",
+      "type": "principle",
+      "principleId": "do_not_kill",
+      "text": "Test whether a basic constraint against killing fits your judgment."
+    },
+    {
+      "type": "theory",
+      "theory_id": "ethical_intuitionism",
+      "text": "Intuitionism holds that some basic moral propositions are self-evident."
+    },
+    {
+      "type": "theory",
+      "theory_id": "thought_experiments",
+      "text": "Thought experiments help reveal and test those intuitions."
+    },
+    {
+      "type": "recompute"
+    }
+  ]
+}

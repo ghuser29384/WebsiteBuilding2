@@ -1,0 +1,48 @@
+{
+  "id": "lesson_virtue_ethics_character",
+  "title": "Virtue Ethics and Moral Character",
+  "goal": "",
+  "sources": [],
+  "interactions": [
+    {
+      "id": "promise_breaking_case",
+      "type": "case",
+      "caseId": "promise_breaking_case",
+      "text": "You promised to return a borrowed weapon, but doing so could cause harm."
+    },
+    {
+      "id": "what_would_a_virtuous_person_do",
+      "type": "question",
+      "prompt": "What would a virtuous person do?",
+      "options": [
+        "Return it",
+        "Refuse to return",
+        "Unsure"
+      ]
+    },
+    {
+      "id": "cultivate_virtue",
+      "type": "principle",
+      "principleId": "cultivate_virtue",
+      "text": "Virtue ethics prioritizes traits like practical wisdom, courage, and care."
+    },
+    {
+      "type": "theory",
+      "theory_id": "virtue_ethics",
+      "text": "Virtue ethics centers moral evaluation on character and flourishing."
+    },
+    {
+      "type": "recompute"
+    },
+    {
+      "id": "keep_promises",
+      "type": "principle",
+      "principleId": "keep_promises",
+      "text": "Introduce promise-keeping to compare duty and character."
+    },
+    {
+      "type": "revision",
+      "prompt": "Would you revise your judgment after weighing character and duty?"
+    }
+  ]
+}

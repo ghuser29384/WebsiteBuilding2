@@ -1,0 +1,48 @@
+{
+  "id": "lesson_transplant_deontology",
+  "title": "Transplant Case and Deontological Constraints",
+  "goal": "",
+  "sources": [],
+  "interactions": [
+    {
+      "id": "transplant_case",
+      "type": "case",
+      "caseId": "transplant_case",
+      "text": "A surgeon can save five failing patients by killing one healthy patient and transplanting his organs."
+    },
+    {
+      "id": "is_it_permissible_for_the_surgeon_to_proceed",
+      "type": "question",
+      "prompt": "Is it permissible for the surgeon to proceed?",
+      "options": [
+        "Yes",
+        "No",
+        "Unsure"
+      ]
+    },
+    {
+      "id": "do_not_kill",
+      "type": "principle",
+      "principleId": "do_not_kill",
+      "text": "Apply the constraint against killing to the case."
+    },
+    {
+      "type": "theory",
+      "theory_id": "deontology",
+      "text": "Deontology treats duties and constraints as central to moral evaluation."
+    },
+    {
+      "type": "recompute"
+    },
+    {
+      "id": "maximize_welfare",
+      "type": "principle",
+      "principleId": "maximize_welfare",
+      "text": "Introduce outcome maximization and observe the tension."
+    },
+    {
+      "type": "revision",
+      "prompt": "Would you revise the judgment, the principle, or the theory to regain coherence?"
+    }
+  ]
+}

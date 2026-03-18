@@ -1,0 +1,42 @@
+{
+  "id": "lesson_moral_skepticism",
+  "title": "Moral Skepticism and Epistemic Pressure",
+  "goal": "",
+  "sources": [],
+  "interactions": [
+    {
+      "id": "trolley_standard",
+      "type": "case",
+      "caseId": "trolley_standard",
+      "text": "You face the classic trolley decision to save five by diverting the trolley."
+    },
+    {
+      "id": "what_is_your_judgment_about_diverting",
+      "type": "question",
+      "prompt": "What is your judgment about diverting?",
+      "options": [
+        "Permissible",
+        "Impermissible",
+        "Unsure"
+      ]
+    },
+    {
+      "id": "do_not_kill",
+      "type": "principle",
+      "principleId": "do_not_kill",
+      "text": "Test whether the constraint against killing supports your judgment."
+    },
+    {
+      "type": "theory",
+      "theory_id": "moral_skepticism",
+      "text": "Moral skepticism questions whether we have moral knowledge or justification."
+    },
+    {
+      "type": "recompute"
+    },
+    {
+      "type": "reflection",
+      "prompt": "What evidence or method would strengthen your confidence in this judgment?"
+    }
+  ]
+}

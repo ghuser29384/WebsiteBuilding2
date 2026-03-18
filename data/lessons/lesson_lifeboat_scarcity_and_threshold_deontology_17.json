@@ -1,0 +1,48 @@
+{
+  "id": "lesson_lifeboat_threshold_deontology",
+  "title": "Lifeboat Scarcity and Threshold Deontology",
+  "goal": "",
+  "sources": [],
+  "interactions": [
+    {
+      "id": "lifeboat_case",
+      "type": "case",
+      "caseId": "lifeboat_case",
+      "text": "Too many people are on a lifeboat with scarce resources, forcing tragic choices."
+    },
+    {
+      "id": "is_it_permissible_to_sacrifice_one_to_save_several",
+      "type": "question",
+      "prompt": "Is it permissible to sacrifice one to save several?",
+      "options": [
+        "Yes",
+        "No",
+        "Unsure"
+      ]
+    },
+    {
+      "id": "do_not_kill",
+      "type": "principle",
+      "principleId": "do_not_kill",
+      "text": "Apply the constraint against killing."
+    },
+    {
+      "type": "theory",
+      "theory_id": "threshold_deontology",
+      "text": "Threshold deontology allows constraints to yield past a severe threshold."
+    },
+    {
+      "type": "recompute"
+    },
+    {
+      "id": "maximize_welfare",
+      "type": "principle",
+      "principleId": "maximize_welfare",
+      "text": "Compare the outcome-maximizing principle to the constraint."
+    },
+    {
+      "type": "revision",
+      "prompt": "Would you revise the threshold or your initial judgment?"
+    }
+  ]
+}

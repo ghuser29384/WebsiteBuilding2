@@ -1,0 +1,48 @@
+{
+  "id": "lesson_reflective_equilibrium_basics",
+  "title": "Reflective Equilibrium: Basic Cycle",
+  "goal": "",
+  "sources": [],
+  "interactions": [
+    {
+      "id": "trolley_standard",
+      "type": "case",
+      "caseId": "trolley_standard",
+      "text": "You can divert a trolley to save five at the cost of one life."
+    },
+    {
+      "id": "is_diverting_permissible",
+      "type": "question",
+      "prompt": "Is diverting permissible?",
+      "options": [
+        "Yes",
+        "No",
+        "Unsure"
+      ]
+    },
+    {
+      "id": "maximize_welfare",
+      "type": "principle",
+      "principleId": "maximize_welfare",
+      "text": "Test whether maximizing welfare supports your judgment."
+    },
+    {
+      "type": "theory",
+      "theory_id": "reflective_equilibrium",
+      "text": "Reflective equilibrium adjusts judgments and principles to improve coherence."
+    },
+    {
+      "type": "recompute"
+    },
+    {
+      "id": "do_not_kill",
+      "type": "principle",
+      "principleId": "do_not_kill",
+      "text": "Add the constraint against killing and observe the tension."
+    },
+    {
+      "type": "revision",
+      "prompt": "Revise your judgment, principle, or background theory to restore coherence."
+    }
+  ]
+}

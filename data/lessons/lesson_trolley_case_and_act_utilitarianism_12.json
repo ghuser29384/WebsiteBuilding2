@@ -1,0 +1,48 @@
+{
+  "id": "lesson_trolley_act_utilitarianism",
+  "title": "Trolley Case and Act Utilitarianism",
+  "goal": "",
+  "sources": [],
+  "interactions": [
+    {
+      "id": "trolley_standard",
+      "type": "case",
+      "caseId": "trolley_standard",
+      "text": "A trolley is heading toward five people. You can divert it to a track where it will kill one."
+    },
+    {
+      "id": "is_it_permissible_to_divert_the_trolley",
+      "type": "question",
+      "prompt": "Is it permissible to divert the trolley?",
+      "options": [
+        "Yes",
+        "No",
+        "Unsure"
+      ]
+    },
+    {
+      "id": "maximize_welfare",
+      "type": "principle",
+      "principleId": "maximize_welfare",
+      "text": "Consider whether maximizing welfare supports your judgment."
+    },
+    {
+      "type": "theory",
+      "theory_id": "act_utilitarianism",
+      "text": "Act utilitarianism evaluates each act by whether it maximizes the good."
+    },
+    {
+      "type": "recompute"
+    },
+    {
+      "id": "do_not_kill",
+      "type": "principle",
+      "principleId": "do_not_kill",
+      "text": "Introduce the constraint against killing and see if it conflicts with your judgment."
+    },
+    {
+      "type": "revision",
+      "prompt": "Which commitment would you revise to improve coherence?"
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "id": "lesson_kantian_respect",
+  "title": "Kantian Respect and the Transplant Case",
+  "goal": "",
+  "sources": [],
+  "interactions": [
+    {
+      "id": "transplant_case",
+      "type": "case",
+      "caseId": "transplant_case",
+      "text": "A surgeon can save five patients by killing one healthy patient for organs."
+    },
+    {
+      "id": "is_the_surgeon_permitted_to_proceed",
+      "type": "question",
+      "prompt": "Is the surgeon permitted to proceed?",
+      "options": [
+        "Yes",
+        "No",
+        "Unsure"
+      ]
+    },
+    {
+      "id": "treat_persons_as_ends",
+      "type": "principle",
+      "principleId": "treat_persons_as_ends",
+      "text": "Apply the requirement to treat persons as ends, not merely as means."
+    },
+    {
+      "type": "theory",
+      "theory_id": "kantian_ethics",
+      "text": "Kantian ethics emphasizes universalizable maxims and respect for persons."
+    },
+    {
+      "type": "recompute"
+    },
+    {
+      "id": "maximize_welfare",
+      "type": "principle",
+      "principleId": "maximize_welfare",
+      "text": "Contrast the Kantian constraint with outcome maximization."
+    },
+    {
+      "type": "revision",
+      "prompt": "Would you revise your judgment or your principle to improve coherence?"
+    }
+  ]
+}

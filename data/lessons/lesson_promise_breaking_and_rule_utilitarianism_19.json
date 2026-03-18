@@ -1,0 +1,48 @@
+{
+  "id": "lesson_promise_rule_utilitarianism",
+  "title": "Promise-Breaking and Rule Utilitarianism",
+  "goal": "",
+  "sources": [],
+  "interactions": [
+    {
+      "id": "promise_breaking_case",
+      "type": "case",
+      "caseId": "promise_breaking_case",
+      "text": "You promised to return a borrowed weapon, but the owner is not in his right mind."
+    },
+    {
+      "id": "should_you_keep_the_promise",
+      "type": "question",
+      "prompt": "Should you keep the promise?",
+      "options": [
+        "Yes",
+        "No",
+        "Unsure"
+      ]
+    },
+    {
+      "id": "keep_promises",
+      "type": "principle",
+      "principleId": "keep_promises",
+      "text": "Test the promise-keeping principle against your judgment."
+    },
+    {
+      "type": "theory",
+      "theory_id": "rule_utilitarianism",
+      "text": "Rule utilitarianism evaluates acts via welfare-maximizing rules."
+    },
+    {
+      "type": "recompute"
+    },
+    {
+      "id": "protect_from_harm",
+      "type": "principle",
+      "principleId": "protect_from_harm",
+      "text": "Introduce the harm-prevention priority and see how it changes coherence."
+    },
+    {
+      "type": "revision",
+      "prompt": "Would you revise the rule, the judgment, or both?"
+    }
+  ]
+}
