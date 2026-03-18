@@ -104,6 +104,17 @@
 
         <article class="panel publication-card">
           <div class="publication-card-head">
+            <h2>Proposition Views & Credence Markets</h2>
+            <p class="hint">
+              Record your current belief (true/false) and confidence for each overall proposition and its relevant propositions.
+              Credence markets summarize how other users in this browser have voted.
+            </p>
+          </div>
+          <div id="propositionBoard" class="proposition-board" aria-live="polite"></div>
+        </article>
+
+        <article class="panel publication-card">
+          <div class="publication-card-head">
             <h2>Write Article</h2>
             <p class="hint">Mentions are recognized as <code>@username</code>.</p>
           </div>
@@ -124,6 +135,11 @@
             <div class="mention-preview-row">
               <p class="label-lite">Detected mentions:</p>
               <p id="mentionPreview" class="hint">None</p>
+            </div>
+
+            <div class="article-proposition-block">
+              <p class="label-lite">Relevant propositions discussed (required)</p>
+              <div id="articlePropositionPicker" class="article-proposition-picker"></div>
             </div>
 
             <div class="publication-action-row">
@@ -244,7 +260,11 @@
     <section class="panel publication-card publication-feed-card">
       <div class="publication-card-head">
         <h2>Publication Feed</h2>
-        <p class="hint">Newest first. Highlight any excerpt to attach a passage comment (public or author-only).</p>
+        <div class="feed-toggle" role="tablist" aria-label="Article feed filters">
+          <button type="button" data-feed-mode="personal" class="is-active">Your Feed</button>
+          <button type="button" data-feed-mode="all">All Articles</button>
+        </div>
+        <p id="feedHint" class="hint">Articles that argue against views you currently hold appear in your feed, weighted by your confidence.</p>
       </div>
       <div id="articleFeed" class="article-feed" aria-live="polite"></div>
     </section>

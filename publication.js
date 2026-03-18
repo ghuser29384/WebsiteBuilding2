@@ -7,10 +7,72 @@
   const MAX_PASSAGE_SELECTION = 800;
 
   const DEFAULT_USERS = ["henry", "maya", "sam", "lena", "amir"];
+  const PROPOSITION_SETS = [
+    {
+      id: "overall-factory-farming",
+      title: "Buying factory-farmed meat is morally wrong.",
+      summary: "Relevant propositions below are widely cited as determinants of this overall claim.",
+      relevant: [
+        {
+          id: "rp-animal-suffering-matters",
+          title: "Animal suffering matters morally.",
+        },
+        {
+          id: "rp-factory-farming-harm",
+          title: "Factory farming causes large-scale animal suffering.",
+        },
+        {
+          id: "rp-consumer-complicity",
+          title: "Purchasers share moral responsibility for harms they fund.",
+        },
+      ],
+    },
+    {
+      id: "overall-abortion-permissible",
+      title: "Abortion is morally permissible in most circumstances.",
+      summary: "Relevant propositions are treated as key premises in assessing permissibility.",
+      relevant: [
+        {
+          id: "rp-fetal-personhood",
+          title: "The fetus has moral status comparable to persons.",
+        },
+        {
+          id: "rp-bodily-autonomy",
+          title: "Bodily autonomy strongly limits forced use of a person's body.",
+        },
+        {
+          id: "rp-harm-eq-killing",
+          title: "Ending a potential life is morally equivalent to killing a person.",
+        },
+      ],
+    },
+    {
+      id: "overall-wealth-redistribution",
+      title: "People are morally required to redistribute significant wealth beyond charity.",
+      summary: "Relevant propositions reflect common premises behind redistribution arguments.",
+      relevant: [
+        {
+          id: "rp-inequality-harm",
+          title: "Severe inequality causes large, avoidable suffering.",
+        },
+        {
+          id: "rp-duty-beneficence",
+          title: "People have enforceable duties of beneficence beyond voluntary charity.",
+        },
+        {
+          id: "rp-property-not-absolute",
+          title: "Property rights are not absolute when basic needs are unmet.",
+        },
+      ],
+    },
+  ];
+
+  const PROPOSITION_INDEX = buildPropositionIndex(PROPOSITION_SETS);
   const authApi = window.NormativityAuth || null;
 
   let state = loadState();
   let activeUser = loadActiveUser();
+  let feedMode = state.feedMode || "personal";
 
   const el = {
     activeHandleInput: document.getElementById("activeHandleInput"),
@@ -24,11 +86,14 @@
     clearArticleBtn: document.getElementById("clearArticleBtn"),
     mentionPreview: document.getElementById("mentionPreview"),
     articleStatus: document.getElementById("articleStatus"),
+    propositionBoard: document.getElementById("propositionBoard"),
+    articlePropositionPicker: document.getElementById("articlePropositionPicker"),
 
     inboxCountBadge: document.getElementById("inboxCountBadge"),
     inboxList: document.getElementById("inboxList"),
 
     articleFeed: document.getElementById("articleFeed"),
+    feedHint: document.getElementById("feedHint"),
     insightsRange: document.getElementById("insightsRange"),
     insightCards: document.getElementById("insightCards"),
     insightTakeaways: document.getElementById("insightTakeaways"),
@@ -94,6 +159,7 @@
       el.clearArticleBtn.addEventListener("click", function () {
         el.articleTitle.value = "";
         el.articleBody.value = "";
+        resetArticlePropositionPicker();
         updateMentionPreview();
         setArticleStatus("");
       });
@@ -115,6 +181,19 @@
       el.articleFeed.addEventListener("mouseup", onArticleSelectionMouseUp);
       el.articleFeed.addEventListener("touchend", onArticleSelectionMouseUp);
       el.articleFeed.addEventListener("click", onArticleFeedAction);
+    }
+    if (el.propositionBoard) {
+      el.propositionBoard.addEventListener("change", onPropositionBoardChange);
+      el.propositionBoard.addEventListener("input", onPropositionBoardChange);
+    }
+    const feedButtons = document.querySelectorAll("[data-feed-mode]");
+    if (feedButtons.length > 0) {
+      feedButtons.forEach(function (button) {
+        button.addEventListener("click", onFeedModeToggle);
+      });
+    }
+    if (el.articlePropositionPicker) {
+      el.articlePropositionPicker.addEventListener("change", onArticlePropositionToggle);
     }
 
     [
@@ -181,9 +260,14 @@
 
     const title = (el.articleTitle && el.articleTitle.value ? el.articleTitle.value : "").trim();
     const body = (el.articleBody && el.articleBody.value ? el.articleBody.value : "").trim();
+    const positions = collectArticlePositions();
 
     if (!title || !body) {
       setArticleStatus("Title and body are required.", true);
+      return;
+    }
+    if (!positions.length) {
+      setArticleStatus("Select at least one relevant proposition and stance.", true);
       return;
     }
 
@@ -194,6 +278,7 @@
       title: title,
       body: body,
       mentions: mentions,
+      positions: positions,
       createdAt: new Date().toISOString(),
     };
 
@@ -222,6 +307,7 @@
 
     el.articleTitle.value = "";
     el.articleBody.value = "";
+    resetArticlePropositionPicker();
     updateMentionPreview();
 
     const status =
@@ -231,6 +317,64 @@
     setArticleStatus(status, false);
 
     renderAll();
+  }
+
+  function onFeedModeToggle(event) {
+    const button = event.target.closest("[data-feed-mode]");
+    if (!button) return;
+    const nextMode = String(button.getAttribute("data-feed-mode") || "");
+    if (!nextMode || nextMode === feedMode) return;
+    feedMode = nextMode;
+    state.feedMode = feedMode;
+    saveState();
+    renderFeed();
+  }
+
+  function onArticlePropositionToggle(event) {
+    const row = event.target.closest("[data-article-prop]");
+    if (!row) return;
+    const checkbox = row.querySelector('input[type="checkbox"]');
+    const stanceSelect = row.querySelector("select");
+    if (!checkbox || !stanceSelect) return;
+    stanceSelect.disabled = !checkbox.checked;
+  }
+
+  function onPropositionBoardChange(event) {
+    const row = event.target.closest("[data-prop-id]");
+    if (!row) return;
+    if (!activeUser) return;
+
+    const propId = String(row.getAttribute("data-prop-id") || "");
+    if (!propId) return;
+    const userViews = getUserViewMap(activeUser);
+    const current = userViews[propId] || { belief: "", confidence: 50 };
+    let changed = false;
+
+    if (event.target.matches("[data-prop-belief]")) {
+      const belief = String(event.target.value || "");
+      current.belief = belief;
+      if (!belief) {
+        delete userViews[propId];
+      } else {
+        if (!Number.isFinite(Number(current.confidence))) {
+          current.confidence = 50;
+        }
+        userViews[propId] = current;
+      }
+      changed = true;
+    }
+
+    if (event.target.matches("[data-prop-confidence]")) {
+      current.confidence = clamp(Number(event.target.value), 1, 100);
+      userViews[propId] = current;
+      changed = true;
+    }
+
+    if (changed) {
+      saveState();
+      renderPropositionBoard();
+      renderFeed();
+    }
   }
 
   function onInboxAction(event) {
@@ -601,6 +745,8 @@
     renderKnownUsers();
     renderInbox();
     renderInsights();
+    renderPropositionBoard();
+    renderArticlePropositionPicker();
     renderFeed();
     updateMentionPreview();
   }
@@ -706,13 +852,23 @@
 
   function renderFeed() {
     if (!el.articleFeed) return;
-    if (!Array.isArray(state.articles) || state.articles.length === 0) {
-      el.articleFeed.innerHTML = '<p class="hint">No articles published yet.</p>';
+    const feedItems = buildFeedItems();
+    updateFeedHint();
+    updateFeedToggleState();
+    if (feedItems.length === 0) {
+      const emptyLabel =
+        feedMode === "personal"
+          ? "No articles currently challenge your saved views."
+          : "No articles published yet.";
+      el.articleFeed.innerHTML = '<p class="hint">' + escapeHtml(emptyLabel) + "</p>";
       return;
     }
 
     el.articleFeed.innerHTML = "";
-    state.articles.forEach(function (article) {
+    feedItems.forEach(function (item) {
+      const article = item.article;
+      const relevance = item.relevance;
+      const disagreements = item.disagreements || [];
       const card = document.createElement("article");
       card.className = "article-card";
       card.id = "article-" + article.id;
@@ -729,6 +885,7 @@
             "</p>"
           : "";
 
+      const positionLine = renderArticlePositionLine(article, relevance, disagreements);
       const visibleAnnotations = getVisibleAnnotationsForArticle(article);
       const highlightedBody = buildAnnotatedArticleBody(article.body, visibleAnnotations);
       const commentsHtml = renderPassageCommentThread(article, visibleAnnotations);
@@ -742,6 +899,7 @@
         " · " +
         escapeHtml(formatDate(article.createdAt)) +
         "</p>" +
+        positionLine +
         '<p class="article-body" data-article-id="' +
         escapeHtml(article.id) +
         '">' +
@@ -785,6 +943,342 @@
 
       el.articleFeed.appendChild(card);
     });
+  }
+
+  function updateFeedHint() {
+    if (!el.feedHint) return;
+    el.feedHint.textContent =
+      feedMode === "personal"
+        ? "Articles that argue against views you currently hold appear here, weighted by your confidence."
+        : "Newest first. Highlight any excerpt to attach a passage comment (public or author-only).";
+  }
+
+  function updateFeedToggleState() {
+    const buttons = document.querySelectorAll("[data-feed-mode]");
+    if (!buttons.length) return;
+    buttons.forEach(function (button) {
+      const mode = String(button.getAttribute("data-feed-mode") || "");
+      if (mode === feedMode) {
+        button.classList.add("is-active");
+      } else {
+        button.classList.remove("is-active");
+      }
+    });
+  }
+
+  function renderPropositionBoard() {
+    if (!el.propositionBoard) return;
+    if (!activeUser) {
+      el.propositionBoard.innerHTML = '<p class="hint">Sign in or set an active username to save proposition views.</p>';
+      return;
+    }
+
+    const userViews = getUserViewMap(activeUser);
+    const groups = PROPOSITION_SETS.map(function (group) {
+      const overallMarket = computeMarket(group.id);
+      const overallView = userViews[group.id] || {};
+      const overallRow =
+        '<div class="prop-row prop-overall" data-prop-id="' +
+        escapeHtml(group.id) +
+        '">' +
+        '<div class="prop-copy">' +
+        '<p class="prop-title">Overall: ' +
+        escapeHtml(group.title) +
+        "</p>" +
+        '<p class="prop-note">' +
+        escapeHtml(group.summary || "") +
+        "</p>" +
+        "</div>" +
+        renderMarketBlock(overallMarket) +
+        renderUserViewControls(overallView) +
+        "</div>";
+
+      const relevantRows = group.relevant
+        .map(function (prop) {
+          const market = computeMarket(prop.id);
+          const view = userViews[prop.id] || {};
+          return (
+            '<div class="prop-row prop-relevant" data-prop-id="' +
+            escapeHtml(prop.id) +
+            '">' +
+            '<div class="prop-copy">' +
+            '<p class="prop-title">Relevant: ' +
+            escapeHtml(prop.title) +
+            "</p>" +
+            "</div>" +
+            renderMarketBlock(market) +
+            renderUserViewControls(view) +
+            "</div>"
+          );
+        })
+        .join("");
+
+      return '<div class="prop-group">' + overallRow + '<div class="prop-relevant-list">' + relevantRows + "</div></div>";
+    }).join("");
+
+    el.propositionBoard.innerHTML = groups;
+  }
+
+  function renderArticlePropositionPicker() {
+    if (!el.articlePropositionPicker) return;
+    if (el.articlePropositionPicker.dataset.ready === "true") return;
+    const items = PROPOSITION_SETS.map(function (group) {
+      const rows = group.relevant
+        .map(function (prop) {
+          return (
+            '<label class="prop-picker-item" data-article-prop data-overall-id="' +
+            escapeHtml(group.id) +
+            '" data-prop-id="' +
+            escapeHtml(prop.id) +
+            '">' +
+            '<input type="checkbox">' +
+            '<span>' +
+            escapeHtml(prop.title) +
+            "</span>" +
+            '<select disabled>' +
+            '<option value="true">Argues true</option>' +
+            '<option value="false">Argues not true</option>' +
+            "</select>" +
+            "</label>"
+          );
+        })
+        .join("");
+      return (
+        '<div class="prop-picker-group">' +
+        '<p class="prop-picker-title">' +
+        escapeHtml(group.title) +
+        "</p>" +
+        '<div class="prop-picker-list">' +
+        rows +
+        "</div>" +
+        "</div>"
+      );
+    }).join("");
+
+    el.articlePropositionPicker.innerHTML = items;
+    el.articlePropositionPicker.dataset.ready = "true";
+  }
+
+  function resetArticlePropositionPicker() {
+    if (!el.articlePropositionPicker) return;
+    const rows = el.articlePropositionPicker.querySelectorAll("[data-article-prop]");
+    rows.forEach(function (row) {
+      const checkbox = row.querySelector('input[type="checkbox"]');
+      const select = row.querySelector("select");
+      if (checkbox) checkbox.checked = false;
+      if (select) {
+        select.disabled = true;
+        select.value = "true";
+      }
+    });
+  }
+
+  function collectArticlePositions() {
+    if (!el.articlePropositionPicker) return [];
+    const selections = [];
+    const rows = el.articlePropositionPicker.querySelectorAll("[data-article-prop]");
+    rows.forEach(function (row) {
+      const checkbox = row.querySelector('input[type="checkbox"]');
+      const select = row.querySelector("select");
+      if (!checkbox || !checkbox.checked) return;
+      const stance = select ? String(select.value || "") : "";
+      if (stance !== "true" && stance !== "false") return;
+      selections.push({
+        overallId: String(row.getAttribute("data-overall-id") || ""),
+        propositionId: String(row.getAttribute("data-prop-id") || ""),
+        stance: stance,
+      });
+    });
+    return selections;
+  }
+
+  function renderArticlePositionLine(article, relevance, disagreements) {
+    const positions = Array.isArray(article.positions) ? article.positions : [];
+    const chips = positions
+      .map(function (pos) {
+        const label = formatPositionLabel(pos);
+        if (!label) return "";
+        const stanceText = pos.stance === "false" ? "argues not true" : "argues true";
+        return '<span class="article-prop-tag">' + escapeHtml(label + " · " + stanceText) + "</span>";
+      })
+      .filter(Boolean)
+      .join("");
+
+    const relevanceText =
+      typeof relevance === "number"
+        ? '<span class="article-relevance">Relevance: ' + Math.round(relevance) + "%</span>"
+        : "";
+    const disagreementText =
+      Array.isArray(disagreements) && disagreements.length
+        ? '<span class="article-disagreement">Disagrees with your view on ' +
+          escapeHtml(disagreements.map(formatDisagreementLabel).filter(Boolean).join("; ")) +
+          "</span>"
+        : "";
+
+    if (!chips && !relevanceText && !disagreementText) return "";
+    return (
+      '<div class="article-prop-meta">' +
+      relevanceText +
+      (relevanceText && disagreementText ? " · " : "") +
+      disagreementText +
+      (chips ? '<div class="article-prop-tags">' + chips + "</div>" : "") +
+      "</div>"
+    );
+  }
+
+  function buildFeedItems() {
+    const articles = Array.isArray(state.articles) ? state.articles : [];
+    if (feedMode !== "personal") {
+      return articles.map(function (article) {
+        return { article: article };
+      });
+    }
+    const userViews = getUserViewMap(activeUser || "");
+    const scored = articles
+      .map(function (article) {
+        const info = getDisagreementInfo(article, userViews);
+        if (!info) return null;
+        return {
+          article: article,
+          relevance: info.score,
+          disagreements: info.disagreements,
+        };
+      })
+      .filter(Boolean);
+
+    scored.sort(function (a, b) {
+      if (b.relevance !== a.relevance) {
+        return b.relevance - a.relevance;
+      }
+      return new Date(b.article.createdAt).getTime() - new Date(a.article.createdAt).getTime();
+    });
+    return scored;
+  }
+
+  function getDisagreementInfo(article, userViews) {
+    const positions = Array.isArray(article.positions) ? article.positions : [];
+    if (!positions.length) return null;
+    let bestScore = null;
+    const disagreements = [];
+    positions.forEach(function (pos) {
+      const view = userViews && userViews[pos.propositionId];
+      if (!view || (view.belief !== "true" && view.belief !== "false")) return;
+      if (view.belief === pos.stance) return;
+      const confidence = clamp(Number(view.confidence), 1, 100);
+      if (bestScore === null || confidence > bestScore) {
+        bestScore = confidence;
+      }
+      disagreements.push({
+        propositionId: pos.propositionId,
+        overallId: pos.overallId,
+        stance: pos.stance,
+      });
+    });
+    if (bestScore === null) return null;
+    return { score: bestScore, disagreements: disagreements };
+  }
+
+  function formatDisagreementLabel(disagreement) {
+    const label = formatPositionLabel(disagreement);
+    return label ? label : "";
+  }
+
+  function formatPositionLabel(pos) {
+    if (!pos) return "";
+    const relevant = PROPOSITION_INDEX.relevant[pos.propositionId];
+    const overall = PROPOSITION_INDEX.overall[pos.overallId];
+    if (relevant) {
+      return (overall ? overall.shortTitle + ": " : "") + relevant.title;
+    }
+    return overall ? overall.title : "";
+  }
+
+  function renderMarketBlock(market) {
+    if (!market || !market.total) {
+      return '<div class="prop-market"><span class="market-label">Credence market</span><strong>--</strong><span class="market-sub">No votes yet</span></div>';
+    }
+    return (
+      '<div class="prop-market">' +
+      '<span class="market-label">Credence market</span>' +
+      '<strong>Yes ' +
+      market.yes +
+      "% · No " +
+      market.no +
+      "%</strong>" +
+      '<span class="market-sub">' +
+      market.total +
+      " vote" +
+      (market.total === 1 ? "" : "s") +
+      "</span>" +
+      "</div>"
+    );
+  }
+
+  function renderUserViewControls(view) {
+    const belief = view && (view.belief === "true" || view.belief === "false") ? view.belief : "";
+    const confidence = view && Number.isFinite(Number(view.confidence)) ? clamp(Number(view.confidence), 1, 100) : 50;
+    const disabled = !belief;
+    const confidenceLabel = belief ? confidence + "%" : "--";
+    return (
+      '<div class="prop-view">' +
+      '<label class="market-label">Your view</label>' +
+      '<select data-prop-belief>' +
+      '<option value=""' +
+      (belief === "" ? " selected" : "") +
+      ">No view</option>" +
+      '<option value="true"' +
+      (belief === "true" ? " selected" : "") +
+      ">True</option>" +
+      '<option value="false"' +
+      (belief === "false" ? " selected" : "") +
+      ">False</option>" +
+      "</select>" +
+      '<div class="prop-confidence-row">' +
+      '<input type="range" data-prop-confidence min="1" max="100" step="1" value="' +
+      confidence +
+      '"' +
+      (disabled ? " disabled" : "") +
+      ">" +
+      '<span class="prop-confidence-value" data-prop-confidence-value>' +
+      confidenceLabel +
+      "</span>" +
+      "</div>" +
+      "</div>"
+    );
+  }
+
+  function computeMarket(propId) {
+    const views = state.propositionViews || {};
+    let yes = 0;
+    let no = 0;
+    Object.keys(views).forEach(function (handle) {
+      const view = views[handle] && views[handle][propId];
+      if (!view || (view.belief !== "true" && view.belief !== "false")) return;
+      if (view.belief === "true") {
+        yes += 1;
+      } else {
+        no += 1;
+      }
+    });
+    const total = yes + no;
+    if (!total) return { yes: 0, no: 0, total: 0 };
+    return {
+      yes: Math.round((yes / total) * 100),
+      no: Math.round((no / total) * 100),
+      total: total,
+    };
+  }
+
+  function getUserViewMap(handle) {
+    if (!state.propositionViews) {
+      state.propositionViews = {};
+    }
+    const normalized = normalizeHandle(handle);
+    if (!normalized) return {};
+    if (!state.propositionViews[normalized]) {
+      state.propositionViews[normalized] = {};
+    }
+    return state.propositionViews[normalized];
   }
 
   function renderInsights() {
@@ -1535,6 +2029,12 @@
         createdAt: new Date().toISOString(),
       };
     }
+    if (!state.propositionViews) {
+      state.propositionViews = {};
+    }
+    if (!state.propositionViews[normalized]) {
+      state.propositionViews[normalized] = {};
+    }
   }
 
   function loadState() {
@@ -1547,6 +2047,8 @@
           notifications: [],
           annotations: [],
           annotationReplies: [],
+          propositionViews: {},
+          feedMode: "personal",
         };
       }
       const parsed = JSON.parse(raw);
@@ -1556,6 +2058,9 @@
         notifications: normalizeNotifications(parsed && parsed.notifications),
         annotations: Array.isArray(parsed && parsed.annotations) ? parsed.annotations : [],
         annotationReplies: Array.isArray(parsed && parsed.annotationReplies) ? parsed.annotationReplies : [],
+        propositionViews:
+          parsed && parsed.propositionViews && typeof parsed.propositionViews === "object" ? parsed.propositionViews : {},
+        feedMode: parsed && typeof parsed.feedMode === "string" ? parsed.feedMode : "personal",
       };
     } catch (_error) {
       return {
@@ -1564,6 +2069,8 @@
         notifications: [],
         annotations: [],
         annotationReplies: [],
+        propositionViews: {},
+        feedMode: "personal",
       };
     }
   }
@@ -1708,6 +2215,39 @@
       return CSS.escape(String(value || ""));
     }
     return String(value || "").replace(/["\\]/g, "\\$&");
+  }
+
+  function clamp(value, min, max) {
+    if (!Number.isFinite(value)) return min;
+    return Math.min(Math.max(value, min), max);
+  }
+
+  function buildPropositionIndex(sets) {
+    const overall = {};
+    const relevant = {};
+    (Array.isArray(sets) ? sets : []).forEach(function (set) {
+      if (!set || !set.id) return;
+      overall[set.id] = {
+        id: set.id,
+        title: set.title,
+        shortTitle: makeShortTitle(set.title),
+      };
+      (Array.isArray(set.relevant) ? set.relevant : []).forEach(function (prop) {
+        if (!prop || !prop.id) return;
+        relevant[prop.id] = {
+          id: prop.id,
+          title: prop.title,
+          overallId: set.id,
+        };
+      });
+    });
+    return { overall: overall, relevant: relevant };
+  }
+
+  function makeShortTitle(title) {
+    const clean = String(title || "").replace(/\.$/, "");
+    if (clean.length <= 40) return clean;
+    return clean.slice(0, 37).trimEnd() + "…";
   }
 
   function normalizeHandle(value) {
