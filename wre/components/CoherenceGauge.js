@@ -7,6 +7,28 @@ function lerp(start, end, t) {
   return start + (end - start) * t;
 }
 
+function colorFromScale(normalized) {
+  const n = clamp(normalized, 0, 1);
+  if (n < 0.5) {
+    const t = n / 0.5;
+    return {
+      from: "rgb(" + Math.round(214 + (242 - 214) * t) + "," + Math.round(95 + (190 - 95) * t) + "," + Math.round(95 + (90 - 95) * t) + ")",
+      to: "rgb(" + Math.round(196 + (220 - 196) * t) + "," + Math.round(57 + (175 - 57) * t) + "," + Math.round(57 + (66 - 57) * t) + ")",
+    };
+  }
+  const t = (n - 0.5) / 0.5;
+  return {
+    from: "rgb(" + Math.round(242 + (169 - 242) * t) + "," + Math.round(190 + (228 - 190) * t) + "," + Math.round(90 + (213 - 90) * t) + ")",
+    to: "rgb(" + Math.round(220 + (10 - 220) * t) + "," + Math.round(175 + (102 - 175) * t) + "," + Math.round(66 + (102 - 66) * t) + ")",
+  };
+}
+
+function levelLabel(normalized) {
+  if (normalized < 0.33) return "Low coherence";
+  if (normalized < 0.67) return "Medium coherence";
+  return "High coherence";
+}
+
 export class CoherenceGauge {
   constructor(container) {
     this.container = container;
@@ -16,6 +38,7 @@ export class CoherenceGauge {
     this.fill = null;
     this.valueEl = null;
     this.detailEl = null;
+    this.track = null;
     this.mount();
   }
 
@@ -26,6 +49,11 @@ export class CoherenceGauge {
 
     const track = document.createElement("div");
     track.className = "gauge-track";
+    track.setAttribute("role", "progressbar");
+    track.setAttribute("aria-label", "Coherence meter");
+    track.setAttribute("aria-valuemin", "0");
+    track.setAttribute("aria-valuemax", "100");
+    track.setAttribute("aria-valuenow", "50");
     const fill = document.createElement("div");
     fill.className = "gauge-fill";
     track.appendChild(fill);
@@ -45,6 +73,7 @@ export class CoherenceGauge {
     wrap.appendChild(meta);
     this.container.appendChild(wrap);
 
+    this.track = track;
     this.fill = fill;
     this.valueEl = valueEl;
     this.detailEl = detailEl;
@@ -53,24 +82,26 @@ export class CoherenceGauge {
 
   paint(score) {
     const clamped = clamp(score, -100, 100);
-    const percentage = ((clamped + 100) / 200) * 100;
+    const normalized = (clamped + 100) / 200;
+    const percentage = normalized * 100;
+    const colors = colorFromScale(normalized);
     if (this.fill) {
       this.fill.style.width = percentage.toFixed(2) + "%";
-      if (clamped >= 0) {
-        this.fill.style.background = "linear-gradient(90deg, #90e5c0 0%, #0a6 100%)";
-      } else {
-        this.fill.style.background = "linear-gradient(90deg, #f8a0a8 0%, #d23 100%)";
-      }
+      this.fill.style.background = "linear-gradient(90deg, " + colors.from + " 0%, " + colors.to + " 100%)";
     }
     if (this.valueEl) {
       this.valueEl.textContent = clamped.toFixed(1) + "%";
+    }
+    if (this.track) {
+      this.track.setAttribute("aria-valuenow", percentage.toFixed(1));
+      this.track.setAttribute("aria-valuetext", clamped.toFixed(1) + "%, " + levelLabel(normalized));
     }
   }
 
   setValue(nextValue, detailText) {
     const target = clamp(nextValue, -100, 100);
     const start = this.value;
-    const duration = 380;
+    const duration = 420;
     const started = performance.now();
     if (this.rafId) {
       cancelAnimationFrame(this.rafId);

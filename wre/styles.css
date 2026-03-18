@@ -211,6 +211,13 @@ body {
   gap: 0.65rem;
 }
 
+.lesson-stage-label {
+  margin: 0;
+  color: #42566f;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
 .lesson-card-grid {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -248,6 +255,17 @@ body {
 .question-text {
   margin: 0.2rem 0 0;
   font-size: 1rem;
+  font-weight: 600;
+}
+
+.answer-summary {
+  margin: 0;
+  border: 1px solid #d7e3f0;
+  background: #f6faff;
+  border-radius: 8px;
+  padding: 0.45rem 0.55rem;
+  color: #2f4c6c;
+  font-size: 0.86rem;
   font-weight: 600;
 }
 
@@ -318,6 +336,11 @@ body {
   cursor: not-allowed;
 }
 
+.lesson-step-controls {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .lesson-hint {
   margin: 0;
   color: var(--muted);
@@ -330,6 +353,15 @@ body {
   border: 1px solid #dbe3ee;
   border-radius: 10px;
   background: #ffffff;
+  touch-action: none;
+}
+
+.graph-pan-surface {
+  cursor: grab;
+}
+
+.graph-pan-surface:active {
+  cursor: grabbing;
 }
 
 .graph-edge-path {
@@ -348,9 +380,7 @@ body {
 }
 
 .graph-edge-path.is-changed {
-  stroke-width: 4.8px !important;
-  opacity: 1;
-  filter: drop-shadow(0 0 2px rgba(47, 125, 230, 0.25));
+  animation: edgePulse 600ms ease-out 1;
 }
 
 .graph-edge-hit {
@@ -360,6 +390,12 @@ body {
 
 .graph-edge-hit:focus-visible {
   stroke: rgba(47, 125, 230, 0.42) !important;
+}
+
+.graph-edge-path.is-focused {
+  stroke-width: 4.8px !important;
+  opacity: 1;
+  filter: drop-shadow(0 0 2px rgba(47, 125, 230, 0.32));
 }
 
 .graph-node-shape {
@@ -376,10 +412,26 @@ body {
 }
 
 .graph-node-label {
-  font-size: 11px;
+  font-size: 10.8px;
+  font-weight: 600;
   fill: #1f2a36;
   pointer-events: none;
   user-select: none;
+}
+
+@keyframes edgePulse {
+  0% {
+    opacity: 0.95;
+    filter: drop-shadow(0 0 0 rgba(47, 125, 230, 0));
+  }
+  50% {
+    opacity: 1;
+    filter: drop-shadow(0 0 3px rgba(47, 125, 230, 0.45));
+  }
+  100% {
+    opacity: 0.9;
+    filter: drop-shadow(0 0 0 rgba(47, 125, 230, 0));
+  }
 }
 
 .gauge-wrap {
@@ -454,6 +506,17 @@ body {
   border-radius: 10px;
   background: #ffffff;
   padding: 0.45rem 0.55rem;
+  cursor: pointer;
+}
+
+.edge-rank-item.is-active {
+  border-color: #7fa4cc;
+  background: #f3f8ff;
+}
+
+.edge-rank-item:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 .edge-rank-head {

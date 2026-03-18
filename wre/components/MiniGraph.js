@@ -52,12 +52,6 @@ function distributedY(index, count, top, height, bottom) {
   return top + (index / (count - 1)) * usable;
 }
 
-function truncateLabel(label, maxChars) {
-  const text = String(label || "").trim();
-  if (text.length <= maxChars) return text;
-  return text.slice(0, Math.max(0, maxChars - 1)).trimEnd() + "...";
-}
-
 function normalizeNodeType(node, focusCaseId) {
   const raw = String(node && node.type ? node.type : "").toLowerCase();
   if (raw === "case" || (node && node.id === focusCaseId)) return "case";
@@ -128,6 +122,31 @@ function pairKey(from, to) {
   const a = String(from);
   const b = String(to);
   return a < b ? a + "|" + b : b + "|" + a;
+}
+
+function wrapLabel(label, maxChars) {
+  const text = String(label || "").trim();
+  if (!text) return [""];
+
+  const words = text.split(/\s+/);
+  const lines = [];
+  let current = "";
+
+  words.forEach((word) => {
+    if (!current) {
+      current = word;
+      return;
+    }
+    if ((current + " " + word).length <= maxChars) {
+      current += " " + word;
+      return;
+    }
+    lines.push(current);
+    current = word;
+  });
+
+  if (current) lines.push(current);
+  return lines;
 }
 
 export function computeCoherence(nodeStates, edges) {
@@ -233,7 +252,7 @@ export function computeContributions(beforeStates, afterStates, edges) {
   };
 }
 
-export function deriveSubgraph(caseId, allEdges, depth) {
+export function deriveSubgraph(caseId, allEdges, depth, maxNodes) {
   const safeDepth = Math.max(1, Number(depth) || 1);
   const safeEdges = Array.isArray(allEdges) ? allEdges : [];
   const visited = new Set([String(caseId)]);
@@ -273,9 +292,17 @@ export function deriveSubgraph(caseId, allEdges, depth) {
     if (frontier.size === 0) break;
   }
 
+  const nodeOrder = Array.from(visited);
+  const limit = Number.isFinite(Number(maxNodes)) ? Math.max(1, Number(maxNodes)) : Number.POSITIVE_INFINITY;
+  const cappedNodeIds = limit >= nodeOrder.length ? nodeOrder : nodeOrder.slice(0, limit);
+  const cappedNodeSet = new Set(cappedNodeIds);
+  const cappedEdges = selectedEdges.filter(function (edge) {
+    return cappedNodeSet.has(String(edge.from)) && cappedNodeSet.has(String(edge.to));
+  });
+
   return {
-    nodeIds: Array.from(visited),
-    edges: selectedEdges,
+    nodeIds: cappedNodeIds,
+    edges: cappedEdges,
   };
 }
 
@@ -293,7 +320,19 @@ export class MiniGraph {
     this.onNodeToggle = null;
     this.onEdgeHover = null;
     this.svg = null;
+    this.defs = null;
+    this.viewport = null;
     this.positions = new Map();
+    this.edgePathById = new Map();
+    this.focusedEdgeIds = new Set();
+    this.zoomState = {
+      scale: 1,
+      tx: 0,
+      ty: 0,
+      panning: false,
+      lastPoint: null,
+    };
+    this.hasBoundZoom = false;
   }
 
   ensureSvg() {
@@ -305,8 +344,111 @@ export class MiniGraph {
     svg.setAttribute("aria-label", "Lesson coherence graph");
     this.container.innerHTML = "";
     this.container.appendChild(svg);
+
+    const defs = document.createElementNS(SVG_NS, "defs");
+    svg.appendChild(defs);
+    const viewport = document.createElementNS(SVG_NS, "g");
+    viewport.setAttribute("class", "graph-viewport");
+    svg.appendChild(viewport);
+
     this.svg = svg;
+    this.defs = defs;
+    this.viewport = viewport;
+    this.ensureDefs();
+    this.bindZoomPan();
+    this.applyViewportTransform();
     return svg;
+  }
+
+  bindZoomPan() {
+    if (!this.svg || this.hasBoundZoom) return;
+    this.hasBoundZoom = true;
+
+    this.svg.addEventListener("wheel", (event) => {
+      event.preventDefault();
+      const point = this.clientToSvgPoint(event.clientX, event.clientY);
+      const oldScale = this.zoomState.scale;
+      const factor = event.deltaY > 0 ? 0.92 : 1.08;
+      const newScale = clamp(oldScale * factor, 0.65, 2.6);
+      this.zoomState.tx = point.x - ((point.x - this.zoomState.tx) * newScale) / oldScale;
+      this.zoomState.ty = point.y - ((point.y - this.zoomState.ty) * newScale) / oldScale;
+      this.zoomState.scale = newScale;
+      this.applyViewportTransform();
+    });
+
+    this.svg.addEventListener("pointerdown", (event) => {
+      const target = event.target;
+      const panSurface = target && (target.classList && target.classList.contains("graph-pan-surface"));
+      if (!panSurface) return;
+      this.zoomState.panning = true;
+      this.zoomState.lastPoint = this.clientToSvgPoint(event.clientX, event.clientY);
+      this.svg.setPointerCapture(event.pointerId);
+    });
+
+    this.svg.addEventListener("pointermove", (event) => {
+      if (!this.zoomState.panning) return;
+      const nextPoint = this.clientToSvgPoint(event.clientX, event.clientY);
+      const last = this.zoomState.lastPoint;
+      if (!last) {
+        this.zoomState.lastPoint = nextPoint;
+        return;
+      }
+      this.zoomState.tx += nextPoint.x - last.x;
+      this.zoomState.ty += nextPoint.y - last.y;
+      this.zoomState.lastPoint = nextPoint;
+      this.applyViewportTransform();
+    });
+
+    const stopPan = (event) => {
+      if (!this.zoomState.panning) return;
+      this.zoomState.panning = false;
+      this.zoomState.lastPoint = null;
+      if (event && this.svg && this.svg.hasPointerCapture(event.pointerId)) {
+        this.svg.releasePointerCapture(event.pointerId);
+      }
+    };
+
+    this.svg.addEventListener("pointerup", stopPan);
+    this.svg.addEventListener("pointercancel", stopPan);
+    this.svg.addEventListener("dblclick", () => {
+      this.resetViewport();
+    });
+  }
+
+  clientToSvgPoint(clientX, clientY) {
+    if (!this.svg) return { x: 0, y: 0 };
+    const rect = this.svg.getBoundingClientRect();
+    const viewW = this.options.width;
+    const viewH = this.options.height;
+    const x = ((clientX - rect.left) / rect.width) * viewW;
+    const y = ((clientY - rect.top) / rect.height) * viewH;
+    return { x: x, y: y };
+  }
+
+  applyViewportTransform() {
+    if (!this.viewport) return;
+    const scale = this.zoomState.scale;
+    const tx = this.zoomState.tx;
+    const ty = this.zoomState.ty;
+    this.viewport.setAttribute(
+      "transform",
+      "matrix(" +
+        scale.toFixed(5) +
+        " 0 0 " +
+        scale.toFixed(5) +
+        " " +
+        tx.toFixed(3) +
+        " " +
+        ty.toFixed(3) +
+        ")"
+    );
+  }
+
+  resetViewport() {
+    this.zoomState.scale = 1;
+    this.zoomState.tx = 0;
+    this.zoomState.ty = 0;
+    this.applyViewportTransform();
   }
 
   seedNodePositions(nodes, focusCaseId) {
@@ -434,7 +576,6 @@ export class MiniGraph {
         const targetX = desiredXForType(node.type, width);
         const columnStrength = node.id === focusCaseId ? 0.1 : 0.06;
         const centerStrengthY = 0.003;
-
         node.fx += (targetX - node.x) * columnStrength;
         node.fy += (height * 0.5 - node.y) * centerStrengthY;
       });
@@ -515,8 +656,9 @@ export class MiniGraph {
     return curveMap;
   }
 
-  ensureDefs(svg) {
-    const defs = document.createElementNS(SVG_NS, "defs");
+  ensureDefs() {
+    if (!this.defs) return;
+    this.defs.textContent = "";
 
     const supportMarker = document.createElementNS(SVG_NS, "marker");
     supportMarker.setAttribute("id", "edge-arrow-support");
@@ -544,9 +686,17 @@ export class MiniGraph {
     conflictArrow.setAttribute("fill", CONFLICT_COLOR);
     conflictMarker.appendChild(conflictArrow);
 
-    defs.appendChild(supportMarker);
-    defs.appendChild(conflictMarker);
-    svg.appendChild(defs);
+    this.defs.appendChild(supportMarker);
+    this.defs.appendChild(conflictMarker);
+  }
+
+  setFocusedEdges(edgeIds) {
+    const ids = edgeIds instanceof Set ? edgeIds : new Set(Array.isArray(edgeIds) ? edgeIds : []);
+    this.focusedEdgeIds = ids;
+    this.edgePathById.forEach((pathEl, edgeIdText) => {
+      if (!pathEl) return;
+      pathEl.classList.toggle("is-focused", ids.has(edgeIdText));
+    });
   }
 
   render(config) {
@@ -555,6 +705,7 @@ export class MiniGraph {
     const edges = Array.isArray(config && config.edges) ? config.edges : [];
     const nodeStates = (config && config.nodeStates) || {};
     const changedEdgeIds = (config && config.changedEdgeIds) || new Set();
+    const focusedEdgeIds = (config && config.focusedEdgeIds) || new Set();
     const focusCaseId = config && config.focusCaseId ? String(config.focusCaseId) : "";
     this.onNodeToggle = config && typeof config.onNodeToggle === "function" ? config.onNodeToggle : null;
     this.onEdgeHover = config && typeof config.onEdgeHover === "function" ? config.onEdgeHover : null;
@@ -576,8 +727,17 @@ export class MiniGraph {
     const positions = this.runForceLayout(normalizedNodes, edges, focusCaseId);
     const curvatureMap = this.buildEdgeCurvatureMap(edges);
 
-    svg.textContent = "";
-    this.ensureDefs(svg);
+    if (this.viewport) this.viewport.textContent = "";
+    this.edgePathById = new Map();
+
+    const panSurface = document.createElementNS(SVG_NS, "rect");
+    panSurface.setAttribute("class", "graph-pan-surface");
+    panSurface.setAttribute("x", "0");
+    panSurface.setAttribute("y", "0");
+    panSurface.setAttribute("width", String(this.options.width));
+    panSurface.setAttribute("height", String(this.options.height));
+    panSurface.setAttribute("fill", "transparent");
+    if (this.viewport) this.viewport.appendChild(panSurface);
 
     edges.forEach(
       function (edge, index) {
@@ -585,7 +745,7 @@ export class MiniGraph {
         const toId = String(edge.to);
         const p1 = positions[fromId];
         const p2 = positions[toId];
-        if (!p1 || !p2) return;
+        if (!p1 || !p2 || !this.viewport) return;
 
         const relation = relationForEdge(edge);
         const thisEdgeId = edgeId(edge, index);
@@ -625,8 +785,14 @@ export class MiniGraph {
           " " +
           end.y.toFixed(2);
 
+        const classes =
+          "graph-edge-path" +
+          (changedEdgeIds.has(thisEdgeId) ? " is-changed" : "") +
+          (relation === "conflict" ? " is-conflict" : " is-support") +
+          (focusedEdgeIds.has(thisEdgeId) ? " is-focused" : "");
+
         const visiblePath = document.createElementNS(SVG_NS, "path");
-        visiblePath.setAttribute("class", "graph-edge-path" + (changedEdgeIds.has(thisEdgeId) ? " is-changed" : "") + (relation === "conflict" ? " is-conflict" : " is-support"));
+        visiblePath.setAttribute("class", classes);
         visiblePath.setAttribute("d", pathD);
         visiblePath.setAttribute("stroke", stroke);
         visiblePath.setAttribute("stroke-width", strokeWidth.toFixed(2));
@@ -676,15 +842,16 @@ export class MiniGraph {
         hitPath.addEventListener("focus", onHover);
         hitPath.addEventListener("blur", onBlur);
 
-        svg.appendChild(visiblePath);
-        svg.appendChild(hitPath);
+        this.viewport.appendChild(visiblePath);
+        this.viewport.appendChild(hitPath);
+        this.edgePathById.set(thisEdgeId, visiblePath);
       }.bind(this)
     );
 
     normalizedNodes.forEach(
       function (node) {
         const pos = positions[node.id];
-        if (!pos) return;
+        if (!pos || !this.viewport) return;
 
         const group = document.createElementNS(SVG_NS, "g");
         group.setAttribute("class", "graph-node");
@@ -726,12 +893,22 @@ export class MiniGraph {
         shape.setAttribute("stroke", stroke);
         shape.setAttribute("stroke-width", "1.5");
 
+        const lines = wrapLabel(node.label, node.type === "theory" ? 20 : 15);
+        const lineHeight = 10.5;
+        const startY = pos.y - ((lines.length - 1) * lineHeight) / 2 + 3.8;
         const label = document.createElementNS(SVG_NS, "text");
         label.setAttribute("class", "graph-node-label");
         label.setAttribute("x", pos.x.toFixed(2));
-        label.setAttribute("y", (pos.y + 3.5).toFixed(2));
+        label.setAttribute("y", startY.toFixed(2));
         label.setAttribute("text-anchor", "middle");
-        label.textContent = truncateLabel(node.label, node.type === "theory" ? 16 : 12);
+        label.setAttribute("font-size", lines.length > 2 ? "9.8" : "10.8");
+        lines.forEach((line, lineIndex) => {
+          const tspan = document.createElementNS(SVG_NS, "tspan");
+          tspan.setAttribute("x", pos.x.toFixed(2));
+          tspan.setAttribute("dy", lineIndex === 0 ? "0" : String(lineHeight));
+          tspan.textContent = line;
+          label.appendChild(tspan);
+        });
 
         const title = document.createElementNS(SVG_NS, "title");
         title.textContent = node.label + " (" + node.type + ", " + stateLabel(state) + ")";
@@ -749,8 +926,11 @@ export class MiniGraph {
           toggle();
         });
 
-        svg.appendChild(group);
+        this.viewport.appendChild(group);
       }.bind(this)
     );
+
+    this.setFocusedEdges(focusedEdgeIds);
+    this.applyViewportTransform();
   }
 }

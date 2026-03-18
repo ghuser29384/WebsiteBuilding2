@@ -49,8 +49,9 @@ function deltaClassName(delta) {
 }
 
 export class EdgeInspector {
-  constructor(container) {
+  constructor(container, options) {
     this.container = container;
+    this.onEdgeFocus = options && typeof options.onEdgeFocus === "function" ? options.onEdgeFocus : null;
   }
 
   render(payload) {
@@ -58,6 +59,7 @@ export class EdgeInspector {
     const topEdges = Array.isArray(payload && payload.topEdges) ? payload.topEdges : [];
     const nodeLookup = (payload && payload.nodeLookup) || {};
     const delta = Number(payload && payload.deltaScore);
+    const focusedEdgeId = String((payload && payload.focusedEdgeId) || (hoveredEdge && hoveredEdge.id) || "");
 
     const why =
       Number.isFinite(delta) && delta !== 0
@@ -111,8 +113,14 @@ export class EdgeInspector {
               const delta = numeric(edge.delta);
               const barWidth = Math.max(8, Math.round((Math.abs(delta) / (maxAbsDelta || 1)) * 100));
               const deltaClass = deltaClassName(delta);
+              const edgeItemId = String(edge.id || "");
+              const activeClass = edgeItemId && edgeItemId === focusedEdgeId ? " is-active" : "";
               return (
-                '<li class="edge-rank-item">' +
+                '<li class="edge-rank-item' +
+                activeClass +
+                '" data-edge-id="' +
+                escapeHtml(edgeItemId) +
+                '">' +
                 '<div class="edge-rank-head">' +
                 '<span class="edge-rank-badge">#' +
                 String(index + 1) +
@@ -167,5 +175,25 @@ export class EdgeInspector {
       listHtml +
       "</section>" +
       "</div>";
+
+    this.bindEdgeFocusEvents();
+  }
+
+  bindEdgeFocusEvents() {
+    if (!this.container || !this.onEdgeFocus) return;
+    const items = this.container.querySelectorAll("[data-edge-id]");
+    items.forEach((item) => {
+      const edgeId = String(item.getAttribute("data-edge-id") || "");
+      if (!edgeId) return;
+      const focus = () => this.onEdgeFocus(edgeId);
+      const blur = () => this.onEdgeFocus(null);
+      item.setAttribute("tabindex", "0");
+      item.setAttribute("role", "button");
+      item.setAttribute("aria-label", "Highlight edge " + edgeId);
+      item.addEventListener("mouseenter", focus);
+      item.addEventListener("mouseleave", blur);
+      item.addEventListener("focus", focus);
+      item.addEventListener("blur", blur);
+    });
   }
 }
