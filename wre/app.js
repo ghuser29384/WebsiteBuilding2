@@ -1,187 +1,136 @@
-/* Robust WRE lesson loader + simple coherence demo
-   - Normalizes lesson JSON with either 'interactions' or 'steps'
-   - Renders first judgment (question) found (supports 'options' or 'choices')
-   - Saves choice to localStorage
-   - Loads graph-edges.json (if available) and computes a simple coherence percent
-*/
+/* Robust WRE UI: lesson selector, schema normalization, coherence demo */
 (async function(){
-  const root = document.querySelector('.card') || document.getElementById('wre-root');
-  if(!root){ console.error('No .card or #wre-root found'); return; }
-
-  const intro = document.getElementById('wre-intro') || (()=>{
-    const p=document.createElement('p'); p.id='wre-intro'; root.appendChild(p); return p;
-  })();
-  const progressEl = document.getElementById('progress') || (()=>{
-    const d=document.createElement('div'); d.id='progress'; root.appendChild(d); return d;
-  })();
-
-  intro.textContent = 'Loading lesson...';
+  const root = document.getElementById('wre-root') || document.body;
+  const card = root.querySelector('.card') || (function(){const d=document.createElement('div'); d.className='card'; root.appendChild(d); return d; })();
+  card.innerHTML = '<h1>Reflective Equilibrium (WRE)</h1><div id="wre-main"></div>';
+  const main = document.getElementById('wre-main');
 
   function normalizeLesson(raw){
-    // Accept either { interactions: [...] } or { steps: [...] } formats.
     if(raw.interactions && Array.isArray(raw.interactions)) return raw;
     if(raw.steps && Array.isArray(raw.steps)){
       const interactions = raw.steps.map(s=>{
-        // Map common step types:
-        if(s.type === 'judgment' || s.type === 'question'){
-          return { id: s.id || s.case_id || ('q_'+Math.random().toString(36).slice(2,7)),
-                   type: 'question',
-                   prompt: s.prompt || s.text || s.prompt,
-                   options: s.choices || s.options || (s.choices ? s.choices : undefined) || (s.options ? s.options : undefined) };
-        }
-        if(s.type === 'case'){
-          return { id: s.case_id || s.id, type: 'case', caseId: s.case_id || s.id, text: s.text || s.description };
-        }
-        if(s.type === 'principle'){
-          return { id: s.principle_id || s.id, type:'principle', principleId: s.principle_id || s.id, text: s.text };
-        }
-        if(s.type === 'theory'){
-          return { id: s.theory_id || s.id, type:'theory', theoryId: s.theory_id || s.id, text: s.text };
-        }
-        if(s.type === 'coherence' || s.type === 'recompute'){
-          return { type: 'recompute' };
-        }
-        if(s.type === 'revision'){
-          return { type: 'revision', prompt: s.prompt || s.text };
-        }
-        return { ...s };
+        const t = (s.type||'').toLowerCase();
+        if(t==='judgment' || t==='question') return {id:s.id||null, type:'question', prompt:s.prompt||s.text, options:s.choices||s.options||[]};
+        if(t==='case') return {id:s.id||s.case_id, type:'case', caseId:s.case_id||s.id, text:s.text||s.description};
+        if(t==='principle') return {id:s.id, type:'principle', principleId:s.principle_id||s.id, text:s.text||s.explanation};
+        if(t==='recompute' || t==='coherence') return {type:'recompute'};
+        return {...s};
       });
       return {...raw, interactions};
     }
-    // fallback: wrap top-level as single interaction
-    return {...raw, interactions: []};
+    return {...raw, interactions: raw.interactions||[]};
+  }
+
+  function render(selector){
+    main.innerHTML = `
+      <div style="display:flex;gap:16px;align-items:flex-start;">
+        <div id="lesson-list" style="min-width:220px;max-width:260px"></div>
+        <div id="lesson-area" style="flex:1"></div>
+      </div>
+    `;
   }
 
   function computeCoherence(nodeStates, edges){
-    // nodeStates: { id -> -1|0|+1 }
-    // edges: [{from,to,weight}]
-    if(!edges || edges.length===0) return 100;
-    let satisfied = 0;
-    for(const e of edges){
-      const w = Number(e.weight) || 0;
-      const a = nodeStates[e.from] || 0;
-      const b = nodeStates[e.to] || 0;
-      if(w * a * b === 1) satisfied++;
-    }
-    return Math.round(100 * satisfied / edges.length);
+    if(!edges || !edges.length) return 100;
+    let satisfied=0;
+    edges.forEach(e=>{
+      const w = Number(e.weight)||0;
+      const a = nodeStates[e.from]||0;
+      const b = nodeStates[e.to]||0;
+      if(w*a*b===1) satisfied++;
+    });
+    return Math.round(100*satisfied/edges.length);
   }
 
+  render();
+
+  // load lesson index
+  let lessonFiles = [];
   try{
-    const r = await fetch('/data/lessons/lesson_trolley_1.json');
-    if(!r.ok) throw new Error('lesson fetch failed: '+r.status);
-    const rawLesson = await r.json();
-    const lesson = normalizeLesson(rawLesson);
-
-    // find a question/judgment interaction
-    const q = (lesson.interactions||[]).find(i => i.type === 'question' || i.type === 'judgment');
-    const caseNode = (lesson.interactions||[]).find(i => i.type === 'case') || null;
-
-    const titleEl = root.querySelector('h1') || (()=>{ const h=document.createElement('h1'); root.prepend(h); return h; })();
-    titleEl.textContent = lesson.title || lesson.id || 'WRE Lesson';
-
-    if(!q){
-      intro.textContent = 'No question found in this lesson.';
-      return;
-    }
-    // normalize options
-    const opts = q.options || q.choices || [];
-    if(!Array.isArray(opts) || opts.length===0){
-      intro.textContent = 'Question has no options to render.';
-      return;
-    }
-
-    // render prompt + options
-    intro.innerHTML = `<div class="prompt" style="margin-bottom:12px;"><strong>${q.prompt}</strong></div><div id="opts" style="display:flex;flex-wrap:wrap;gap:8px"></div><div id="coh" style="margin-top:12px;color:#333"></div>`;
-    const optsEl = document.getElementById('opts');
-    opts.forEach(opt=>{
-      const b = document.createElement('button');
-      b.className = 'btn';
-      b.type = 'button';
-      b.textContent = opt;
-      b.dataset.opt = opt;
-      b.style.minWidth = '80px';
-      optsEl.appendChild(b);
-    });
-
-    // attempt to load edges for a coherence demo (non-fatal)
-    let edges = [];
-    try{
-      const re = await fetch('/data/graph-edges.json');
-      if(re.ok) edges = await re.json();
-    }catch(_){ edges = []; }
-
-    // default node states: we'll set the case node to +1 for "Yes", -1 for "No"
-    // ASSUMPTION: any principle nodes connected to the case via edges will be treated as +1 (accepted) for the demo.
-    // (This is an explicit assumption to produce a demo coherence value.) [Epistemic status: Assumed]
-    function computeAndShow(caseId, answer){
-      const nodeStates = {};
-      nodeStates[caseId] = (answer === 'Yes' || answer === 'Yes' ) ? +1 : ((answer === 'No') ? -1 : 0);
-      // set principle nodes connected from this case to +1 for demo purposes
-      edges.forEach(e=>{
-        if(e.from === caseId){
-          nodeStates[e.to] = +1; // ASSUMPTION
-        }
-      });
-      const C = computeCoherence(nodeStates, edges);
-      const cohEl = document.getElementById('coh');
-      cohEl.textContent = `Demo coherence: ${C}% (computed from ${edges.length} edge(s))`;
-      // show a tiny inline SVG summary (case + first principle if present)
-      const svgId = 'wre-mini-graph';
-      if(document.getElementById(svgId)) document.getElementById(svgId).remove();
-      const svgwrap = document.createElement('div'); svgwrap.id = svgId; svgwrap.style.marginTop='8px';
-      const svgNS = 'http://www.w3.org/2000/svg';
-      const svg = document.createElementNS(svgNS,'svg'); svg.setAttribute('width','220'); svg.setAttribute('height','80');
-      // draw case node
-      const cx = 40, cy=40;
-      const caseState = nodeStates[caseId] || 0;
-      const caseColor = caseState===1? '#0a5f38' : caseState===-1? '#c53030' : '#999';
-      const c = document.createElementNS(svgNS,'circle'); c.setAttribute('cx',cx); c.setAttribute('cy',cy); c.setAttribute('r',18); c.setAttribute('fill',caseColor);
-      svg.appendChild(c);
-      const t1 = document.createElementNS(svgNS,'text'); t1.setAttribute('x',cx); t1.setAttribute('y',cy+4); t1.setAttribute('font-size','10'); t1.setAttribute('text-anchor','middle'); t1.setAttribute('fill','#fff'); t1.textContent = 'case';
-      svg.appendChild(t1);
-      // find first outgoing principle
-      const firstEdge = edges.find(e=>e.from===caseId);
-      if(firstEdge){
-        const tx = 170, ty = 40;
-        const pState = nodeStates[firstEdge.to] || 0;
-        const pColor = pState===1? '#0a5f38' : pState===-1? '#c53030' : '#999';
-        const p = document.createElementNS(svgNS,'circle'); p.setAttribute('cx',tx); p.setAttribute('cy',ty); p.setAttribute('r',18); p.setAttribute('fill',pColor);
-        svg.appendChild(p);
-        const t2 = document.createElementNS(svgNS,'text'); t2.setAttribute('x',tx); t2.setAttribute('y',ty+4); t2.setAttribute('font-size','10'); t2.setAttribute('text-anchor','middle'); t2.setAttribute('fill','#fff'); t2.textContent = firstEdge.to.split('_').join(' ').slice(0,10);
-        svg.appendChild(t2);
-        // edge line
-        const l = document.createElementNS(svgNS,'line'); l.setAttribute('x1',cx+18); l.setAttribute('y1',cy); l.setAttribute('x2',tx-18); l.setAttribute('y2',ty); l.setAttribute('stroke','#888'); l.setAttribute('stroke-width','2');
-        svg.appendChild(l);
-      }
-      svgwrap.appendChild(svg);
-      document.getElementById('coh').appendChild(svgwrap);
-    }
-
-    optsEl.addEventListener('click', (ev)=>{
-      const btn = ev.target.closest('button');
-      if(!btn) return;
-      const choice = btn.dataset.opt;
-      // save minimal state
-      const save = { lesson: lesson.id || lesson.title, choice, time: Date.now() };
-      localStorage.setItem('wre_demo_choice', JSON.stringify(save));
-      intro.innerHTML = `<p>Choice saved: <strong>${choice}</strong></p>`;
-      // compute coherence if there is a case node
-      const cId = caseNode ? (caseNode.caseId || caseNode.id) : (lesson.id || 'trolley_standard');
-      computeAndShow(cId, choice);
-    });
-
-    // if user already made a choice before, show it
-    try{
-      const prev = JSON.parse(localStorage.getItem('wre_demo_choice') || 'null');
-      if(prev && prev.lesson === (lesson.id || lesson.title) && prev.choice){
-        intro.innerHTML = `<p>Previous choice: <strong>${prev.choice}</strong></p>`;
-        const cId = caseNode ? (caseNode.caseId || caseNode.id) : (lesson.id || 'trolley_standard');
-        computeAndShow(cId, prev.choice);
-      }
-    }catch(e){ /* ignore parse errors */ }
-
-  }catch(err){
-    intro.textContent = 'Error loading lesson: ' + (err && err.message ? err.message : String(err));
-    console.error(err);
+    const idx = await fetch('/data/lessons/index.json').then(r=>r.json());
+    lessonFiles = idx;
+  }catch(e){
+    console.error('Cannot load lessons index',e);
+    const candidate = ['/data/lessons/lesson_trolley_1.json'];
+    lessonFiles = candidate;
   }
+
+  const lessonListEl = document.getElementById('lesson-list');
+  const lessonArea = document.getElementById('lesson-area');
+
+  async function loadAndShowLesson(path){
+    lessonArea.innerHTML = '<p>Loading lesson…</p>';
+    try{
+      const raw = await fetch(path).then(r=>r.json());
+      const lesson = normalizeLesson(raw);
+      const q = (lesson.interactions||[]).find(i=>i.type==='question');
+      const caseNode = (lesson.interactions||[]).find(i=>i.type==='case');
+      lessonArea.innerHTML = '<div id="lesson-card"></div>';
+      const lc = document.getElementById('lesson-card');
+      lc.innerHTML = `<h2>${lesson.title||lesson.id}</h2><div id="prompt"></div><div id="opts" style="margin-top:12px"></div><div id="coh" style="margin-top:10px;color:#333"></div>`;
+      if(!q){ document.getElementById('prompt').innerText='No question found.'; return; }
+      document.getElementById('prompt').innerHTML = '<strong>'+q.prompt+'</strong>';
+      const optsEl = document.getElementById('opts');
+      const opts = q.options||q.choices||[];
+      opts.forEach(o=>{
+        const b=document.createElement('button'); b.className='btn'; b.textContent=o; b.style.margin='6px'; b.onclick=()=>onChoice(o, lesson, caseNode); optsEl.appendChild(b);
+      });
+      // if existing choice, show it
+      try{ const prev=JSON.parse(localStorage.getItem('wre_demo_choice')||'null'); if(prev && prev.lesson===lesson.id){ document.getElementById('coh').innerText = 'Previous choice: '+prev.choice; } }catch(e){}
+    }catch(err){
+      lessonArea.innerHTML = '<p>Error loading lesson: '+err+'</p>';
+    }
+  }
+
+  async function onChoice(choice, lesson, caseNode){
+    // save
+    const state = {lesson: lesson.id||lesson.title, choice, at: Date.now()};
+    localStorage.setItem('wre_demo_choice', JSON.stringify(state));
+    document.getElementById('prompt').innerHTML = '<p>Saved: <strong>'+choice+'</strong></p>';
+    // compute coherence
+    let edges=[];
+    try{ edges = await fetch('/data/graph-edges.json').then(r=>r.json()); }catch(e){ edges=[]; }
+    const caseId = caseNode ? (caseNode.caseId||caseNode.id) : (lesson.id || 'case_1');
+    const nodeStates = {};
+    nodeStates[caseId] = (String(choice).toLowerCase().startsWith('y')?1:-1);
+    edges.forEach(e=>{ if(e.from===caseId) nodeStates[e.to]=1; });
+    const C = computeCoherence(nodeStates, edges);
+    document.getElementById('coh').innerText = 'Demo coherence: '+C+'%';
+    // simple inline svg show
+    const svgwrap = document.createElement('div'); svgwrap.style.marginTop='8px';
+    const svgNS='http://www.w3.org/2000/svg';
+    const svg=document.createElementNS(svgNS,'svg'); svg.setAttribute('width','260'); svg.setAttribute('height','80');
+    const cx=40,cy=40; const ccol = nodeStates[caseId]===1? '#0a5f38' : '#c53030';
+    const circ=document.createElementNS(svgNS,'circle'); circ.setAttribute('cx',cx); circ.setAttribute('cy',cy); circ.setAttribute('r',18); circ.setAttribute('fill',ccol); svg.appendChild(circ);
+    const t=document.createElementNS(svgNS,'text'); t.setAttribute('x',cx); t.setAttribute('y',cy+4); t.setAttribute('font-size','10'); t.setAttribute('text-anchor','middle'); t.setAttribute('fill','#fff'); t.textContent='case'; svg.appendChild(t);
+    const first = edges.find(e=>e.from===caseId);
+    if(first){
+      const px=200,py=40; const pcol = '#0a5f38';
+      const pc=document.createElementNS(svgNS,'circle'); pc.setAttribute('cx',px); pc.setAttribute('cy',py); pc.setAttribute('r',18); pc.setAttribute('fill',pcol); svg.appendChild(pc);
+      const pt=document.createElementNS(svgNS,'text'); pt.setAttribute('x',px); pt.setAttribute('y',py+4); pt.setAttribute('font-size','10'); pt.setAttribute('text-anchor','middle'); pt.setAttribute('fill','#fff'); pt.textContent = first.to.split('_').join(' ').slice(0,10); svg.appendChild(pt);
+      const line=document.createElementNS(svgNS,'line'); line.setAttribute('x1',cx+18); line.setAttribute('y1',cy); line.setAttribute('x2',px-18); line.setAttribute('y2',py); line.setAttribute('stroke','#888'); line.setAttribute('stroke-width','2'); svg.appendChild(line);
+    }
+    svgwrap.appendChild(svg);
+    const cohEl = document.getElementById('coh'); cohEl.appendChild(svgwrap);
+  }
+
+  // populate lesson list
+  lessonListEl.innerHTML = '<h3>Lessons</h3>';
+  const ul = document.createElement('div');
+  lessonFiles.forEach((p,i)=>{
+    const name = p.split('/').pop().replace('.json','');
+    const el = document.createElement('div');
+    el.style.padding='6px';
+    el.style.borderBottom='1px solid #eee';
+    el.innerHTML = `<a href="#" data-path="${p}">${name}</a>`;
+    el.querySelector('a').addEventListener('click', (ev)=>{
+      ev.preventDefault(); loadAndShowLesson(ev.currentTarget.dataset.path);
+    });
+    ul.appendChild(el);
+  });
+  lessonListEl.appendChild(ul);
+
+  // auto-load first lesson
+  if(lessonFiles.length) loadAndShowLesson(lessonFiles[0]);
+
 })();
