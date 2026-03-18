@@ -3,25 +3,56 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Learn WRE — Reflective Equilibrium</title>
-  <link rel="stylesheet" href="/wre/styles.css">
+  <title>Normativity WRE Lessons</title>
+  <link rel="stylesheet" href="/wre/styles.css" />
 </head>
 <body>
-  <header style="padding:12px;text-align:center;">
-    <a href="/" aria-label="Return to home">← normativity.org home</a>
+  <header class="wre-topbar">
+    <div class="wre-shell">
+      <a class="wre-home-link" href="/" aria-label="Return to home">← normativity.org</a>
+      <h1 class="wre-title">Wide Reflective Equilibrium Lessons</h1>
+      <div class="lesson-picker-wrap">
+        <label for="lessonPicker">Lesson</label>
+        <select id="lessonPicker" aria-label="Select lesson"></select>
+      </div>
+    </div>
   </header>
 
-  <main id="wre-root" style="display:flex;align-items:center;justify-content:center;min-height:70vh;">
-    <div class="card" role="region" aria-label="WRE lessons starter">
-      <h1>Reflective Equilibrium (WRE)</h1>
-      <p id="wre-intro">Welcome — lessons will appear here. Click <button id="start-btn" class="btn">Start sample lesson</button> to begin.</p>
-      <div id="progress" aria-hidden="true"></div>
-    </div>
-  </main>
+  <main class="wre-shell wre-main" id="wreApp">
+    <section class="progress-card">
+      <div class="progress-head">
+        <p id="progressLabel">Step 1 / 1</p>
+        <p id="progressTitle">Loading lesson...</p>
+      </div>
+      <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Lesson progress">
+        <span id="progressFill"></span>
+      </div>
+    </section>
 
-  <aside style="text-align:center;padding:16px;font-size:0.9rem;color:#666;">
-    <small>This is a lightweight WRE starter page (static, client-side).</small>
-  </aside>
+    <section class="workspace">
+      <div class="workspace-left">
+        <div id="lessonCardHost"></div>
+      </div>
+      <aside class="workspace-right">
+        <div class="graph-card">
+          <div class="graph-card-head">
+            <h2>Reasoning Graph</h2>
+            <button id="expandGraphBtn" class="btn btn-ghost" type="button">Expand graph</button>
+          </div>
+          <div id="graphHost"></div>
+        </div>
+        <div class="gauge-card">
+          <h2>Coherence</h2>
+          <div id="gaugeHost"></div>
+        </div>
+      </aside>
+    </section>
+
+    <section class="explanation-card">
+      <h2>Explanation</h2>
+      <div id="inspectorHost"></div>
+    </section>
+  </main>
 
   <script type="module" src="/wre/app.js"></script>
 </body>
