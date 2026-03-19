@@ -15,7 +15,8 @@
   <script src="conviction.js" defer></script>
 </head>
 <body>
-  <p id="wre-banner" style="margin:12px 0;padding:8px;background:#f7fdf6;border:1px solid #d6f0d8;border-radius:6px;text-align:center;"><a href="/wre/index.html" style="font-weight:600;color:#0a5f38;text-decoration:none;">Learn WRE — Reflective Equilibrium lessons</a></p>
+  <a class="skip-link" href="#top">Skip to main content</a>
+  <p id="wre-banner" class="wre-banner"><a href="/wre/index.html">Learn WRE — Reflective Equilibrium lessons</a></p>
   <div class="orb orb-a" aria-hidden="true"></div>
   <div class="orb orb-b" aria-hidden="true"></div>
 
@@ -23,7 +24,8 @@
     <div class="container header-inner">
       <a class="brand" href="#top">Normativity</a>
       <div class="header-tools">
-        <nav class="main-nav" aria-label="Primary">
+        <button id="navToggle" class="nav-toggle" type="button" aria-expanded="false" aria-controls="mainNav">Menu</button>
+        <nav id="mainNav" class="main-nav" aria-label="Primary">
           <a href="#featured-market-day">Featured Market</a>
           <a href="#progress">Progress</a>
           <a href="#comparison">Math vs Ethics</a>
@@ -152,7 +154,7 @@
             <p>If you care about the amount of goodness in the world: other people have the potential to live good lives.</p>
           </div>
           <div class="deliberation-ethics-block">
-            <h3>How does I spending time to think about those philosophical issues benefit the world? What further contributions could I make beyond that of philosophers, who think about those issues for a living?</h3>
+            <h3>How does spending time to think about those philosophical issues benefit the world? What further contributions could I make beyond that of philosophers, who think about those issues for a living?</h3>
             <p>
               If philosophers were overall more reliable than other researchers, what would we expect to see? Two things:
               (a) We'd expect to see philosophers making faster progress than others. (b) We'd expect to see more agreement in
@@ -178,7 +180,7 @@
             against background theories and relevant non-moral facts, and revises any part when conflict appears.
           </p>
           <p>
-            Reflective Equilibrium in its pure form is nearly impossibile for an individual, but almost possible for collective deliberation.
+            Reflective Equilibrium in its pure form is nearly impossible for an individual, but almost possible for collective deliberation.
           </p>
           <div class="deliberation-steps">
             <p><strong>1) Start with judgments:</strong> Use relatively confident case judgments as provisional fixed points.</p>
@@ -501,7 +503,7 @@
 
     <section id="studio" class="section reveal">
       <div class="section-head">
-        <p class="eyebrow">Dialogue Workspace</p>
+        <p class="eyebrow">Conversation Rooms</p>
         <h2>Match, Discuss, Update, Commit</h2>
       </div>
       <p id="gateBanner" class="gate-banner">Studio is locked until the pledge is signed.</p>
@@ -681,7 +683,7 @@
 
   <footer class="site-footer">
     <div class="container">
-      <p>Opnely and honestly reflect on moral beliefs; try our best to understand others' beliefs; try our best to act according to our considered beliefs.</p>
+      <p>Openly and honestly reflect on moral beliefs; try our best to understand others' beliefs; try our best to act according to our considered beliefs.</p>
     </div>
   </footer>
 </body>

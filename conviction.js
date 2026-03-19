@@ -514,6 +514,8 @@
   };
 
   const el = {
+    navToggle: document.getElementById("navToggle"),
+    mainNav: document.getElementById("mainNav"),
     pledgeForm: document.getElementById("pledgeForm"),
     pledgeChecks: document.querySelectorAll('#pledgeForm input[type="checkbox"]'),
     pledgeName: document.getElementById("pledgeName"),
@@ -646,6 +648,7 @@
     bindRevealAnimation();
     bindCountUpAnimation();
     bindScrollTriggeredAnimations();
+    bindNavigationControls();
     bindEvents();
     if (el.confidenceInput) {
       el.confidenceInput.value = "60";
@@ -661,6 +664,49 @@
     updateConfidenceText(el.postConfidenceInput, el.postConfidenceValue);
     updateThresholdState();
     render();
+  }
+
+  function bindNavigationControls() {
+    if (!el.navToggle || !el.mainNav) return;
+
+    function setOpen(nextOpen) {
+      const open = Boolean(nextOpen);
+      el.mainNav.classList.toggle("is-open", open);
+      el.navToggle.setAttribute("aria-expanded", open ? "true" : "false");
+      document.body.classList.toggle("nav-menu-open", open);
+    }
+
+    el.navToggle.addEventListener("click", function () {
+      const isOpen = el.mainNav.classList.contains("is-open");
+      setOpen(!isOpen);
+    });
+
+    el.mainNav.addEventListener("click", function (event) {
+      const link = event.target.closest("a");
+      if (!link) return;
+      setOpen(false);
+    });
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    });
+
+    if (typeof window.matchMedia === "function") {
+      const query = window.matchMedia("(min-width: 901px)");
+      const resetMenu = function (evt) {
+        if (evt.matches) {
+          setOpen(false);
+        }
+      };
+      if (typeof query.addEventListener === "function") {
+        query.addEventListener("change", resetMenu);
+      } else if (typeof query.addListener === "function") {
+        query.addListener(resetMenu);
+      }
+      resetMenu(query);
+    }
   }
 
   function bindScrollTriggeredAnimations() {
