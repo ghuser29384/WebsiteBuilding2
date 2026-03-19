@@ -7,6 +7,13 @@ function escapeHtml(value) {
     .replace(/'/g, "&#39;");
 }
 
+function isUnsureOption(value) {
+  const text = String(value || "")
+    .trim()
+    .toLowerCase();
+  return text === "unsure" || text === "not sure";
+}
+
 function stageTitle(stage) {
   if (stage === 0) return "Step 1: Make a considered judgment";
   if (stage === 1) return "Step 2: Revise and test coherence";
@@ -20,8 +27,15 @@ export class LessonCard {
   }
 
   render(payload) {
-    const options = Array.isArray(payload && payload.options) ? payload.options : [];
-    const selectedAnswer = payload && payload.selectedAnswer ? String(payload.selectedAnswer) : "";
+    const options = (Array.isArray(payload && payload.options) ? payload.options : [])
+      .map(function (option) {
+        return String(option || "").trim();
+      })
+      .filter(function (option) {
+        return option && !isUnsureOption(option);
+      });
+    const selectedAnswerRaw = payload && payload.selectedAnswer ? String(payload.selectedAnswer) : "";
+    const selectedAnswer = isUnsureOption(selectedAnswerRaw) ? "" : selectedAnswerRaw;
     const confidence = Number.isFinite(Number(payload && payload.confidence)) ? Number(payload.confidence) : 50;
     const interactionStage = Number.isFinite(Number(payload && payload.interactionStage)) ? Number(payload.interactionStage) : 0;
     const stage = Math.max(0, Math.min(2, interactionStage));

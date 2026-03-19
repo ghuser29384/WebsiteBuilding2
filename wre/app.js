@@ -6,6 +6,7 @@ import { LessonCard } from "/wre/components/LessonCard.js";
 const MAX_NODES_COLLAPSED = 12;
 const MAX_NODES_EXPANDED = 20;
 const CONFIDENCE_STORAGE_PREFIX = "wre:confidence:";
+const LEGACY_CHOICE_STORAGE_KEYS = ["choice", "wre:choice", "wre:answer", "wre:selectedAnswer"];
 
 const state = {
   lessonPaths: [],
@@ -121,6 +122,7 @@ async function loadLesson(path) {
   const lesson = normalizeLesson(raw, normalizedPath);
   state.currentLessonPath = normalizedPath;
   state.lesson = lesson;
+  clearLegacyUnsureChoiceStorage(lesson.id);
   state.selectedAnswer = "";
   state.confidence = loadStoredConfidence(lesson.id);
   state.revisionUsed = false;
@@ -251,8 +253,10 @@ async function ensureGraphData() {
 
 function handleAnswer(answer, confidence) {
   if (!state.lesson) return;
+  const normalizedAnswer = normalizeSelectedAnswer(answer, state.lesson.options);
+  if (!normalizedAnswer) return;
   const previousStates = cloneStates(state.nodeStates);
-  state.selectedAnswer = String(answer || "");
+  state.selectedAnswer = normalizedAnswer;
   state.confidence = clamp(Number(confidence), 0, 100);
   saveStoredConfidence(state.lesson.id, state.confidence);
   state.revisionUsed = false;
@@ -275,13 +279,13 @@ function handleConfidenceChange(nextConfidence) {
   if (state.lesson) {
     saveStoredConfidence(state.lesson.id, state.confidence);
   }
-  if (state.selectedAnswer) {
+  if (hasSelectedAnswer()) {
     renderLessonFlowOnly();
   }
 }
 
 function handleAutoRevision() {
-  if (!state.lesson || !state.selectedAnswer || state.interactionStage < 1 || state.revisionUsed) return;
+  if (!state.lesson || !hasSelectedAnswer() || state.interactionStage < 1 || state.revisionUsed) return;
   const targetId = state.recommendedRevisionId || firstPrincipleId();
   if (!targetId) return;
   const previousStates = cloneStates(state.nodeStates);
@@ -292,7 +296,7 @@ function handleAutoRevision() {
 
 function handleContinueStep() {
   if (state.interactionStage === 0) {
-    if (!state.selectedAnswer) return;
+    if (!hasSelectedAnswer()) return;
     state.interactionStage = 1;
     renderLessonFlowOnly();
     return;
@@ -311,14 +315,14 @@ function handleGraphNodeToggle(nodeId) {
   if (node.type === "principle" && state.interactionStage === 0) {
     return;
   }
-  if (state.selectedAnswer && node.type === "principle" && state.revisionUsed) {
+  if (hasSelectedAnswer() && node.type === "principle" && state.revisionUsed) {
     return;
   }
 
   const previousStates = cloneStates(state.nodeStates);
   state.nodeStates[id] = cycleState(state.nodeStates[id]);
 
-  if (state.selectedAnswer && node.type === "principle" && !state.revisionUsed) {
+  if (hasSelectedAnswer() && node.type === "principle" && !state.revisionUsed) {
     state.revisionUsed = true;
   }
 
@@ -462,7 +466,7 @@ function updateProgress() {
   if (!state.lesson) return;
   const total = Math.max(1, state.lesson.totalSteps);
   let current = Math.max(1, state.lesson.caseStep);
-  if (state.interactionStage === 0 && state.selectedAnswer) {
+  if (state.interactionStage === 0 && hasSelectedAnswer()) {
     current = Math.max(1, state.lesson.questionStep);
   } else if (state.interactionStage === 1) {
     current = Math.max(1, state.lesson.coherenceStep);
@@ -560,7 +564,7 @@ function revisionTargetLabel() {
 }
 
 function answerSummaryText() {
-  if (!state.selectedAnswer) return "";
+  if (!hasSelectedAnswer()) return "";
   return (
     "You answered " +
     String(state.selectedAnswer).toUpperCase() +
@@ -568,6 +572,11 @@ function answerSummaryText() {
     String(Math.round(state.confidence)) +
     "%)."
   );
+}
+
+function hasSelectedAnswer() {
+  if (!state.lesson) return false;
+  return Boolean(normalizeSelectedAnswer(state.selectedAnswer, state.lesson.options));
 }
 
 function findEdgePayloadById(edgeIdText) {
@@ -604,14 +613,13 @@ function normalizeLesson(raw, path) {
       };
     }
     if (type === "judgment" || type === "question") {
+      const normalizedOptions = sanitizeAnswerOptions(
+        Array.isArray(step.options) ? step.options : Array.isArray(step.choices) ? step.choices : ["Yes", "No"]
+      );
       return {
         type: "question",
         prompt: String(step.prompt || step.text || "Choose your judgment."),
-        options: Array.isArray(step.options)
-          ? step.options
-          : Array.isArray(step.choices)
-          ? step.choices
-          : ["Yes", "No", "Unsure"],
+        options: normalizedOptions.length > 0 ? normalizedOptions : ["Yes", "No"],
       };
     }
     if (type === "principle") {
@@ -668,8 +676,11 @@ function normalizeLesson(raw, path) {
   const caseTitle = caseId ? beautifyId(caseId) : "Case";
   const questionPrompt = (questionStep && questionStep.prompt) || "What is your judgment?";
   const options =
-    (questionStep && Array.isArray(questionStep.options) && questionStep.options.length > 0 && questionStep.options) ||
-    ["Yes", "No", "Unsure"];
+    (questionStep &&
+      Array.isArray(questionStep.options) &&
+      questionStep.options.length > 0 &&
+      sanitizeAnswerOptions(questionStep.options)) ||
+    ["Yes", "No"];
 
   const totalSteps = Math.max(1, steps.length);
   const questionIndex = Math.max(
@@ -713,7 +724,7 @@ function normalizeLesson(raw, path) {
 function inferCaseState(answer) {
   const text = String(answer || "").trim().toLowerCase();
   if (!text) return 0;
-  if (text.indexOf("unsure") >= 0 || text.indexOf("uncertain") >= 0) return 0;
+  if (isUnsureOption(text) || text.indexOf("uncertain") >= 0) return 0;
   if (text.indexOf("yes") >= 0 || text.indexOf("permissible") >= 0 || text.indexOf("true") >= 0 || text.indexOf("cooperate") >= 0) {
     return 1;
   }
@@ -782,6 +793,42 @@ function unique(values) {
   return out;
 }
 
+function sanitizeAnswerOptions(options) {
+  const source = Array.isArray(options) ? options : [];
+  const seen = new Set();
+  const sanitized = [];
+
+  source.forEach(function (option) {
+    const value = String(option || "").trim();
+    if (!value || isUnsureOption(value)) return;
+    const key = value.toLowerCase();
+    if (seen.has(key)) return;
+    seen.add(key);
+    sanitized.push(value);
+  });
+
+  return sanitized;
+}
+
+function normalizeSelectedAnswer(answer, allowedOptions) {
+  const value = String(answer || "").trim();
+  if (!value || isUnsureOption(value)) return "";
+  const normalizedAllowed = sanitizeAnswerOptions(allowedOptions);
+  if (normalizedAllowed.length === 0) return value;
+  return normalizedAllowed.some(function (option) {
+    return option.toLowerCase() === value.toLowerCase();
+  })
+    ? value
+    : "";
+}
+
+function isUnsureOption(value) {
+  const text = String(value || "")
+    .trim()
+    .toLowerCase();
+  return text === "unsure" || text === "not sure";
+}
+
 function firstSetValue(values) {
   if (!(values instanceof Set)) return "";
   const iterator = values.values();
@@ -807,6 +854,30 @@ function prettifyLessonPath(path) {
 
 function confidenceStorageKey(lessonId) {
   return CONFIDENCE_STORAGE_PREFIX + String(lessonId || "default");
+}
+
+function legacyChoiceStorageKeys(lessonId) {
+  const suffix = String(lessonId || "default");
+  return LEGACY_CHOICE_STORAGE_KEYS.concat([
+    "choice:" + suffix,
+    "wre:choice:" + suffix,
+    "wre:answer:" + suffix,
+    "wre:selectedAnswer:" + suffix,
+  ]);
+}
+
+function clearLegacyUnsureChoiceStorage(lessonId) {
+  try {
+    legacyChoiceStorageKeys(lessonId).forEach(function (key) {
+      const raw = window.localStorage.getItem(key);
+      if (!raw) return;
+      if (isUnsureOption(raw)) {
+        window.localStorage.removeItem(key);
+      }
+    });
+  } catch (error) {
+    // Ignore storage access failures.
+  }
 }
 
 function loadStoredConfidence(lessonId) {
