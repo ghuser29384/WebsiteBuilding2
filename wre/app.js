@@ -253,11 +253,11 @@ async function ensureGraphData() {
 
 function handleAnswer(answer, confidence) {
   if (!state.lesson) return;
-  const normalizedAnswer = normalizeSelectedAnswer(answer, state.lesson.options);
-  if (!normalizedAnswer) return;
+  const normalized = normalizeSubmittedAnswer(answer, confidence, state.lesson.options);
+  if (!normalized.answer) return;
   const previousStates = cloneStates(state.nodeStates);
-  state.selectedAnswer = normalizedAnswer;
-  state.confidence = clamp(Number(confidence), 0, 100);
+  state.selectedAnswer = normalized.answer;
+  state.confidence = normalized.confidence;
   saveStoredConfidence(state.lesson.id, state.confidence);
   state.revisionUsed = false;
 
@@ -275,11 +275,21 @@ function handleAnswer(answer, confidence) {
 }
 
 function handleConfidenceChange(nextConfidence) {
-  state.confidence = clamp(Number(nextConfidence), 0, 100);
+  if (hasSelectedAnswer()) {
+    const normalized = normalizeSubmittedAnswer(state.selectedAnswer, nextConfidence, state.lesson.options);
+    state.selectedAnswer = normalized.answer;
+    state.confidence = normalized.confidence;
+  } else {
+    state.confidence = clamp(Number(nextConfidence), 0, 100);
+  }
   if (state.lesson) {
     saveStoredConfidence(state.lesson.id, state.confidence);
   }
   if (hasSelectedAnswer()) {
+    const previousStates = cloneStates(state.nodeStates);
+    state.nodeStates[state.lesson.caseId] = inferCaseState(state.selectedAnswer);
+    recomputeAndRender(previousStates, true);
+  } else {
     renderLessonFlowOnly();
   }
 }
@@ -565,18 +575,76 @@ function revisionTargetLabel() {
 
 function answerSummaryText() {
   if (!hasSelectedAnswer()) return "";
-  return (
-    "You answered " +
-    String(state.selectedAnswer).toUpperCase() +
-    " (confidence: " +
-    String(Math.round(state.confidence)) +
-    "%)."
-  );
+  return String(state.selectedAnswer) + " (" + String(Math.round(state.confidence)) + "% confidence)";
 }
 
 function hasSelectedAnswer() {
   if (!state.lesson) return false;
   return Boolean(normalizeSelectedAnswer(state.selectedAnswer, state.lesson.options));
+}
+
+function normalizeAnswer(answer, confidence) {
+  let a = String(answer || "")
+    .trim()
+    .toLowerCase();
+  let c = Number(confidence);
+  if (!Number.isFinite(c)) c = 50;
+  c = clamp(c, 0, 100);
+
+  if (c < 50 && (a === "yes" || a === "no")) {
+    return {
+      answer: a === "yes" ? "no" : "yes",
+      confidence: 100 - c,
+    };
+  }
+
+  return { answer: a, confidence: c };
+}
+
+function normalizeSubmittedAnswer(answer, confidence, allowedOptions) {
+  const options = sanitizeAnswerOptions(allowedOptions);
+  const selected = normalizeSelectedAnswer(answer, options);
+  if (!selected) {
+    return { answer: "", confidence: canonicalizeConfidence(confidence) };
+  }
+
+  let normalizedConfidence = canonicalizeConfidence(confidence);
+  let normalizedAnswer = selected;
+
+  if (Number(confidence) < 50) {
+    const yesNo = normalizeAnswer(selected, confidence);
+    const selectedPolarity = inferCaseState(selected);
+    const targetPolarity = selectedPolarity === 1 || selectedPolarity === -1 ? -selectedPolarity : inferCaseState(yesNo.answer);
+    const opposite = findOppositeOption(selected, options, targetPolarity);
+    if (opposite) {
+      normalizedAnswer = opposite;
+    }
+    normalizedConfidence = yesNo.confidence;
+  }
+
+  return {
+    answer: normalizeSelectedAnswer(normalizedAnswer, options),
+    confidence: canonicalizeConfidence(normalizedConfidence),
+  };
+}
+
+function findOppositeOption(selectedAnswer, options, targetPolarity) {
+  const selected = String(selectedAnswer || "");
+  const source = Array.isArray(options) ? options : [];
+  if (source.length === 0) return "";
+  if (source.length === 1) return source[0];
+
+  if (targetPolarity === 1 || targetPolarity === -1) {
+    const byPolarity = source.find(function (option) {
+      return option !== selected && inferCaseState(option) === targetPolarity;
+    });
+    if (byPolarity) return byPolarity;
+  }
+
+  const fallback = source.find(function (option) {
+    return option !== selected;
+  });
+  return fallback || "";
 }
 
 function findEdgePayloadById(edgeIdText) {
@@ -856,6 +924,14 @@ function confidenceStorageKey(lessonId) {
   return CONFIDENCE_STORAGE_PREFIX + String(lessonId || "default");
 }
 
+function canonicalizeConfidence(value) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return 50;
+  const safe = clamp(parsed, 0, 100);
+  if (safe < 50) return 100 - safe;
+  return safe;
+}
+
 function legacyChoiceStorageKeys(lessonId) {
   const suffix = String(lessonId || "default");
   return LEGACY_CHOICE_STORAGE_KEYS.concat([
@@ -886,7 +962,11 @@ function loadStoredConfidence(lessonId) {
     const raw = window.localStorage.getItem(key);
     if (!raw) return 50;
     const parsed = Number(raw);
-    return clamp(parsed, 0, 100);
+    const normalized = canonicalizeConfidence(parsed);
+    if (normalized !== parsed) {
+      window.localStorage.setItem(key, String(normalized));
+    }
+    return normalized;
   } catch (error) {
     return 50;
   }
@@ -895,7 +975,7 @@ function loadStoredConfidence(lessonId) {
 function saveStoredConfidence(lessonId, confidence) {
   try {
     const key = confidenceStorageKey(lessonId);
-    window.localStorage.setItem(key, String(clamp(Number(confidence), 0, 100)));
+    window.localStorage.setItem(key, String(canonicalizeConfidence(confidence)));
   } catch (error) {
     // Ignore write failures (private mode / disabled storage).
   }
