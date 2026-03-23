@@ -184,6 +184,12 @@ a {
   background: rgba(255, 255, 255, 0.8);
 }
 
+.main-nav a.is-active {
+  color: #1f2d3d;
+  border-color: #c7d0db;
+  background: #f4f7fa;
+}
+
 main {
   padding: 2.35rem 0 4rem;
 }
@@ -2301,10 +2307,10 @@ html:not([data-theme]) .site-footer {
     gap: 0.34rem;
   }
 
-  .main-nav.is-open {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
+.main-nav.is-open {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
 
   .main-nav a {
     text-align: center;

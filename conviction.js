@@ -649,6 +649,7 @@
     bindCountUpAnimation();
     bindScrollTriggeredAnimations();
     bindNavigationControls();
+    bindActiveSectionHighlight();
     bindEvents();
     if (el.confidenceInput) {
       el.confidenceInput.value = "60";
@@ -673,6 +674,8 @@
       const open = Boolean(nextOpen);
       el.mainNav.classList.toggle("is-open", open);
       el.navToggle.setAttribute("aria-expanded", open ? "true" : "false");
+      el.navToggle.setAttribute("aria-label", open ? "Close main menu" : "Open main menu");
+      el.navToggle.textContent = open ? "Close" : "Menu";
       document.body.classList.toggle("nav-menu-open", open);
     }
 
@@ -693,6 +696,13 @@
       }
     });
 
+    document.addEventListener("click", function (event) {
+      if (!el.mainNav.classList.contains("is-open")) return;
+      const target = event.target;
+      if (el.mainNav.contains(target) || el.navToggle.contains(target)) return;
+      setOpen(false);
+    });
+
     if (typeof window.matchMedia === "function") {
       const query = window.matchMedia("(min-width: 901px)");
       const resetMenu = function (evt) {
@@ -707,6 +717,90 @@
       }
       resetMenu(query);
     }
+  }
+
+  function bindActiveSectionHighlight() {
+    const navLinks = Array.from(document.querySelectorAll('.main-nav a[href^="#"]'));
+    if (navLinks.length === 0) return;
+
+    const sectionTargets = navLinks
+      .map(function (link) {
+        const href = String(link.getAttribute("href") || "");
+        const id = href.replace(/^#/, "");
+        if (!id) return null;
+        const section = document.getElementById(id);
+        if (!section) return null;
+        return { id: id, link: link, section: section };
+      })
+      .filter(Boolean);
+
+    if (sectionTargets.length === 0) return;
+
+    function setActiveSection(activeId) {
+      sectionTargets.forEach(function (item) {
+        const isActive = item.id === activeId;
+        item.link.classList.toggle("is-active", isActive);
+        if (isActive) {
+          item.link.setAttribute("aria-current", "location");
+        } else {
+          item.link.removeAttribute("aria-current");
+        }
+      });
+    }
+
+    sectionTargets.forEach(function (item) {
+      item.link.addEventListener("click", function () {
+        setActiveSection(item.id);
+      });
+    });
+
+    if (window.location.hash) {
+      const hashed = window.location.hash.replace(/^#/, "");
+      if (sectionTargets.some(function (item) { return item.id === hashed; })) {
+        setActiveSection(hashed);
+      }
+    } else {
+      setActiveSection(sectionTargets[0].id);
+    }
+
+    if (!("IntersectionObserver" in window)) return;
+
+    const visibleRatios = new Map();
+    const observer = new IntersectionObserver(
+      function (entries) {
+        entries.forEach(function (entry) {
+          const id = entry.target.id;
+          if (!id) return;
+          if (!entry.isIntersecting) {
+            visibleRatios.set(id, 0);
+            return;
+          }
+          visibleRatios.set(id, entry.intersectionRatio);
+        });
+
+        let activeId = "";
+        let maxRatio = 0;
+        sectionTargets.forEach(function (item) {
+          const ratio = Number(visibleRatios.get(item.id) || 0);
+          if (ratio >= maxRatio) {
+            maxRatio = ratio;
+            activeId = item.id;
+          }
+        });
+
+        if (activeId) {
+          setActiveSection(activeId);
+        }
+      },
+      {
+        threshold: [0.2, 0.35, 0.5, 0.65],
+        rootMargin: "-18% 0px -56% 0px",
+      }
+    );
+
+    sectionTargets.forEach(function (item) {
+      observer.observe(item.section);
+    });
   }
 
   function bindScrollTriggeredAnimations() {
