@@ -61,6 +61,15 @@ a {
   color: inherit;
 }
 
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(46, 93, 136, 0.3);
+  outline-offset: 2px;
+}
+
 .container {
   width: min(1160px, calc(100% - 2.4rem));
   margin-inline: auto;

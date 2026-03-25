@@ -2,11 +2,9 @@
   "use strict";
 
   const STORAGE_KEY = "normativity-publications-v1";
-  const ACTIVE_USER_KEY = "normativity-publications-active-user-v1";
   const MAX_MODEL_SIZE = 4;
   const MAX_PASSAGE_SELECTION = 800;
 
-  const DEFAULT_USERS = ["henry", "maya", "sam", "lena", "amir"];
   const PROPOSITION_SETS = [
     {
       id: "overall-factory-farming",
@@ -71,14 +69,11 @@
   const authApi = window.NormativityAuth || null;
 
   let state = loadState();
-  let activeUser = loadActiveUser();
-  let feedMode = state.feedMode || "personal";
+  let activeUser = "";
+  let feedMode = state.feedMode || "all";
 
   const el = {
-    activeHandleInput: document.getElementById("activeHandleInput"),
-    setActiveUserBtn: document.getElementById("setActiveUserBtn"),
     activeUserBadge: document.getElementById("activeUserBadge"),
-    knownUsersList: document.getElementById("knownUsersList"),
 
     articleForm: document.getElementById("articleForm"),
     articleTitle: document.getElementById("articleTitle"),
@@ -86,6 +81,7 @@
     clearArticleBtn: document.getElementById("clearArticleBtn"),
     mentionPreview: document.getElementById("mentionPreview"),
     articleStatus: document.getElementById("articleStatus"),
+    composerAccessHint: document.getElementById("composerAccessHint"),
     propositionBoard: document.getElementById("propositionBoard"),
     articlePropositionPicker: document.getElementById("articlePropositionPicker"),
 
@@ -121,19 +117,13 @@
   init();
 
   function init() {
-    const authenticatedHandle = getAuthenticatedHandle();
-    if (authenticatedHandle) {
-      activeUser = authenticatedHandle;
-      saveActiveUser(activeUser);
+    syncActiveUserFromAuth();
+    if (activeUser) {
+      ensureUser(activeUser);
+    } else {
+      feedMode = "all";
+      state.feedMode = "all";
     }
-
-    ensureSeedUsers();
-    if (!activeUser) {
-      activeUser = DEFAULT_USERS[0];
-      saveActiveUser(activeUser);
-    }
-    ensureUser(activeUser);
-    enforceAuthenticatedIdentityUi();
 
     bindEvents();
     updateSyllogismPreview();
@@ -141,17 +131,6 @@
   }
 
   function bindEvents() {
-    if (el.setActiveUserBtn) {
-      el.setActiveUserBtn.addEventListener("click", onSetActiveUser);
-    }
-    if (el.activeHandleInput) {
-      el.activeHandleInput.addEventListener("keydown", function (event) {
-        if (event.key !== "Enter") return;
-        event.preventDefault();
-        onSetActiveUser();
-      });
-    }
-
     if (el.articleForm) {
       el.articleForm.addEventListener("submit", onPublishArticle);
     }
@@ -219,43 +198,15 @@
       el.insertSyllogismBtn.addEventListener("click", onInsertSyllogismInDraft);
     }
 
-    if (el.knownUsersList) {
-      el.knownUsersList.addEventListener("click", function (event) {
-        if (isIdentityLockedToAuth()) return;
-        const button = event.target.closest("button[data-user-handle]");
-        if (!button) return;
-        const handle = normalizeHandle(button.getAttribute("data-user-handle"));
-        if (!handle) return;
-        activeUser = handle;
-        saveActiveUser(activeUser);
-        ensureUser(activeUser);
-        renderAll();
-      });
-    }
-  }
-
-  function onSetActiveUser() {
-    if (isIdentityLockedToAuth()) {
-      setArticleStatus("Active username is tied to your signed-in account.", true);
-      return;
-    }
-    if (!el.activeHandleInput) return;
-    const next = normalizeHandle(el.activeHandleInput.value);
-    if (!next) {
-      setArticleStatus("Set a valid username (letters, numbers, underscore).", true);
-      return;
-    }
-    activeUser = next;
-    saveActiveUser(activeUser);
-    ensureUser(activeUser);
-    saveState();
-    setArticleStatus("Active user switched to @" + activeUser + ".", false);
-    renderAll();
   }
 
   function onPublishArticle(event) {
     event.preventDefault();
     syncActiveUserFromAuth();
+    if (!canEditContent()) {
+      setArticleStatus("Sign in to publish articles.", true);
+      return;
+    }
     ensureUser(activeUser);
 
     const title = (el.articleTitle && el.articleTitle.value ? el.articleTitle.value : "").trim();
@@ -323,6 +274,7 @@
     const button = event.target.closest("[data-feed-mode]");
     if (!button) return;
     const nextMode = String(button.getAttribute("data-feed-mode") || "");
+    if (nextMode === "personal" && !activeUser) return;
     if (!nextMode || nextMode === feedMode) return;
     feedMode = nextMode;
     state.feedMode = feedMode;
@@ -342,7 +294,7 @@
   function onPropositionBoardChange(event) {
     const row = event.target.closest("[data-prop-id]");
     if (!row) return;
-    if (!activeUser) return;
+    if (!canEditContent()) return;
 
     const propId = String(row.getAttribute("data-prop-id") || "");
     if (!propId) return;
@@ -400,6 +352,7 @@
   }
 
   function onArticleSelectionMouseUp(event) {
+    if (!canEditContent()) return;
     const body = event.target && event.target.closest ? event.target.closest(".article-body") : null;
     if (!body) return;
 
@@ -479,6 +432,10 @@
 
   function saveAnnotationFromEditor(articleId) {
     syncActiveUserFromAuth();
+    if (!canEditContent()) {
+      setArticleStatus("Sign in to comment on highlighted passages.", true);
+      return;
+    }
     if (!el.articleFeed) return;
     const editor = el.articleFeed.querySelector('[data-annotation-editor="' + cssEscape(articleId) + '"]');
     if (!editor) return;
@@ -606,6 +563,10 @@
   }
 
   function openReplyEditor(annotationId) {
+    if (!canEditContent()) {
+      setArticleStatus("Sign in to reply to comments.", true);
+      return;
+    }
     if (!el.articleFeed) return;
     const editor = el.articleFeed.querySelector('[data-reply-editor="' + cssEscape(annotationId) + '"]');
     if (!editor) return;
@@ -636,6 +597,10 @@
 
   function saveReplyFromEditor(annotationId) {
     syncActiveUserFromAuth();
+    if (!canEditContent()) {
+      setArticleStatus("Sign in to post replies.", true);
+      return;
+    }
     if (!el.articleFeed) return;
     const editor = el.articleFeed.querySelector('[data-reply-editor="' + cssEscape(annotationId) + '"]');
     if (!editor) return;
@@ -742,7 +707,7 @@
 
   function renderAll() {
     renderActiveUser();
-    renderKnownUsers();
+    renderComposerAccess();
     renderInbox();
     renderInsights();
     renderPropositionBoard();
@@ -753,47 +718,24 @@
 
   function renderActiveUser() {
     syncActiveUserFromAuth();
-    if (el.activeHandleInput) {
-      el.activeHandleInput.value = activeUser || "";
-    }
     if (el.activeUserBadge) {
-      el.activeUserBadge.textContent = activeUser ? "Active user: @" + activeUser : "No active user";
+      if (activeUser) {
+        el.activeUserBadge.innerHTML =
+          'Signed in as <strong>@' + escapeHtml(activeUser) + '</strong>. <a class="auth-link-inline" href="profile.html">Open profile</a>';
+      } else {
+        el.activeUserBadge.innerHTML =
+          'Browsing as guest. <a class="auth-link-inline" href="auth.html?mode=signin&next=%2Fpublication.html">Sign in</a> to publish and receive notifications.';
+      }
     }
-    enforceAuthenticatedIdentityUi();
-  }
-
-  function renderKnownUsers() {
-    if (!el.knownUsersList) return;
-    if (isIdentityLockedToAuth()) {
-      el.knownUsersList.innerHTML =
-        '<li><span class="user-pill"><button type="button" disabled>@' + escapeHtml(activeUser) + "</button></span></li>";
-      return;
-    }
-    const handles = Object.keys(state.users).sort();
-    if (handles.length === 0) {
-      el.knownUsersList.innerHTML = "<li class=\"hint\">No users yet.</li>";
-      return;
-    }
-
-    el.knownUsersList.innerHTML = "";
-    handles.forEach(function (handle) {
-      const item = document.createElement("li");
-      const pill = document.createElement("span");
-      pill.className = "user-pill";
-
-      const button = document.createElement("button");
-      button.type = "button";
-      button.setAttribute("data-user-handle", handle);
-      button.textContent = "@" + handle;
-
-      pill.appendChild(button);
-      item.appendChild(pill);
-      el.knownUsersList.appendChild(item);
-    });
   }
 
   function renderInbox() {
     if (!el.inboxList || !el.inboxCountBadge) return;
+    if (!activeUser) {
+      el.inboxCountBadge.textContent = "0";
+      el.inboxList.innerHTML = '<li class="hint">Sign in to view your inbox notifications.</li>';
+      return;
+    }
 
     const notifications = state.notifications.filter(function (item) {
       return item.to === activeUser;
@@ -852,6 +794,11 @@
 
   function renderFeed() {
     if (!el.articleFeed) return;
+    if (!activeUser && feedMode === "personal") {
+      feedMode = "all";
+      state.feedMode = "all";
+      saveState();
+    }
     const feedItems = buildFeedItems();
     updateFeedHint();
     updateFeedToggleState();
@@ -865,6 +812,7 @@
     }
 
     el.articleFeed.innerHTML = "";
+    const canInteract = Boolean(activeUser);
     feedItems.forEach(function (item) {
       const article = item.article;
       const relevance = item.relevance;
@@ -888,7 +836,44 @@
       const positionLine = renderArticlePositionLine(article, relevance, disagreements);
       const visibleAnnotations = getVisibleAnnotationsForArticle(article);
       const highlightedBody = buildAnnotatedArticleBody(article.body, visibleAnnotations);
-      const commentsHtml = renderPassageCommentThread(article, visibleAnnotations);
+      const commentsHtml = renderPassageCommentThread(article, visibleAnnotations, canInteract);
+      const annotationInstruction = canInteract
+        ? "Highlight a specific passage above, then post a targeted comment."
+        : "Browse comments below. Sign in to highlight passages and post targeted comments.";
+      const annotationEditorHtml = canInteract
+        ? '<section class="article-annotation-editor" data-annotation-editor="' +
+          escapeHtml(article.id) +
+          '" hidden>' +
+          '<p class="label-lite">Selected passage</p>' +
+          '<p class="annotation-selected-quote" data-annotation-selected="' +
+          escapeHtml(article.id) +
+          '"></p>' +
+          '<label class="annotation-label">Comment on this highlighted passage' +
+          '<textarea data-annotation-comment="' +
+          escapeHtml(article.id) +
+          '" rows="3" maxlength="2000" placeholder="Explain agreement, disagreement, or a request for clarification."></textarea>' +
+          "</label>" +
+          '<label class="annotation-label">Visibility' +
+          '<select data-annotation-visibility="' +
+          escapeHtml(article.id) +
+          '">' +
+          '<option value="public">Visible to everyone</option>' +
+          '<option value="author">Visible only to article author</option>' +
+          "</select>" +
+          "</label>" +
+          '<div class="annotation-action-row">' +
+          '<button type="button" class="btn btn-secondary" data-annotation-save="' +
+          escapeHtml(article.id) +
+          '">Post Passage Comment</button>' +
+          '<button type="button" class="btn btn-ghost" data-annotation-cancel="' +
+          escapeHtml(article.id) +
+          '">Cancel</button>' +
+          "</div>" +
+          '<p class="annotation-editor-status hint" data-annotation-status="' +
+          escapeHtml(article.id) +
+          '"></p>' +
+          "</section>"
+        : "";
 
       card.innerHTML =
         '<h3 class="article-title">' +
@@ -906,39 +891,10 @@
         highlightedBody +
         "</p>" +
         mentionLine +
-        '<p class="hint article-annotation-instruction">Highlight a specific passage above, then post a targeted comment.</p>' +
-        '<section class="article-annotation-editor" data-annotation-editor="' +
-        escapeHtml(article.id) +
-        '" hidden>' +
-        '<p class="label-lite">Selected passage</p>' +
-        '<p class="annotation-selected-quote" data-annotation-selected="' +
-        escapeHtml(article.id) +
-        '"></p>' +
-        '<label class="annotation-label">Comment on this highlighted passage' +
-        '<textarea data-annotation-comment="' +
-        escapeHtml(article.id) +
-        '" rows="3" maxlength="2000" placeholder="Explain agreement, disagreement, or a request for clarification."></textarea>' +
-        "</label>" +
-        '<label class="annotation-label">Visibility' +
-        '<select data-annotation-visibility="' +
-        escapeHtml(article.id) +
-        '">' +
-        '<option value="public">Visible to everyone</option>' +
-        '<option value="author">Visible only to article author</option>' +
-        "</select>" +
-        "</label>" +
-        '<div class="annotation-action-row">' +
-        '<button type="button" class="btn btn-secondary" data-annotation-save="' +
-        escapeHtml(article.id) +
-        '">Post Passage Comment</button>' +
-        '<button type="button" class="btn btn-ghost" data-annotation-cancel="' +
-        escapeHtml(article.id) +
-        '">Cancel</button>' +
-        "</div>" +
-        '<p class="annotation-editor-status hint" data-annotation-status="' +
-        escapeHtml(article.id) +
-        '"></p>' +
-        "</section>" +
+        '<p class="hint article-annotation-instruction">' +
+        escapeHtml(annotationInstruction) +
+        "</p>" +
+        annotationEditorHtml +
         commentsHtml;
 
       el.articleFeed.appendChild(card);
@@ -947,6 +903,10 @@
 
   function updateFeedHint() {
     if (!el.feedHint) return;
+    if (!activeUser) {
+      el.feedHint.textContent = "Browse all published articles. Sign in to personalize your feed and post comments.";
+      return;
+    }
     el.feedHint.textContent =
       feedMode === "personal"
         ? "Articles that argue against views you currently hold appear here, weighted by your confidence."
@@ -956,8 +916,12 @@
   function updateFeedToggleState() {
     const buttons = document.querySelectorAll("[data-feed-mode]");
     if (!buttons.length) return;
+    const allowPersonal = Boolean(activeUser);
     buttons.forEach(function (button) {
       const mode = String(button.getAttribute("data-feed-mode") || "");
+      const disabled = mode === "personal" && !allowPersonal;
+      button.disabled = disabled;
+      button.setAttribute("aria-disabled", disabled ? "true" : "false");
       if (mode === feedMode) {
         button.classList.add("is-active");
       } else {
@@ -969,7 +933,7 @@
   function renderPropositionBoard() {
     if (!el.propositionBoard) return;
     if (!activeUser) {
-      el.propositionBoard.innerHTML = '<p class="hint">Sign in or set an active username to save proposition views.</p>';
+      el.propositionBoard.innerHTML = '<p class="hint">Sign in to record your proposition views and confidence levels.</p>';
       return;
     }
 
@@ -1586,7 +1550,7 @@
       xLabels;
   }
 
-  function renderPassageCommentThread(article, annotations) {
+  function renderPassageCommentThread(article, annotations, canReply) {
     if (!annotations || annotations.length === 0) {
       return (
         '<section class="article-comments">' +
@@ -1629,6 +1593,40 @@
                 .join("") +
               "</ul>";
 
+        const replyComposerHtml = canReply
+          ? '<button type="button" class="btn btn-ghost" data-reply-start="' +
+            escapeHtml(annotation.id) +
+            '">Reply</button>' +
+            '<div class="annotation-reply-editor" data-reply-editor="' +
+            escapeHtml(annotation.id) +
+            '" hidden>' +
+            '<label class="annotation-label">Reply' +
+            '<textarea rows="2" maxlength="1200" data-reply-input="' +
+            escapeHtml(annotation.id) +
+            '" placeholder="Write a reply to this comment."></textarea>' +
+            "</label>" +
+            '<label class="annotation-label">Visibility' +
+            '<select data-reply-visibility="' +
+            escapeHtml(annotation.id) +
+            '">' +
+            '<option value="public">Visible to everyone</option>' +
+            '<option value="author">Visible only to article author</option>' +
+            "</select>" +
+            "</label>" +
+            '<div class="annotation-action-row">' +
+            '<button type="button" class="btn btn-secondary" data-reply-save="' +
+            escapeHtml(annotation.id) +
+            '">Post Reply</button>' +
+            '<button type="button" class="btn btn-ghost" data-reply-cancel="' +
+            escapeHtml(annotation.id) +
+            '">Cancel</button>' +
+            "</div>" +
+            '<p class="annotation-editor-status hint" data-reply-status="' +
+            escapeHtml(annotation.id) +
+            '"></p>' +
+            "</div>"
+          : '<p class="hint annotation-signin-note">Sign in to reply to comments.</p>';
+
         return (
           '<li class="article-comment-item">' +
           '<p class="annotation-quote">"' +
@@ -1647,37 +1645,7 @@
           "</span>" +
           "</p>" +
           '<div class="annotation-reply-wrap">' +
-          '<button type="button" class="btn btn-ghost" data-reply-start="' +
-          escapeHtml(annotation.id) +
-          '">Reply</button>' +
-          '<div class="annotation-reply-editor" data-reply-editor="' +
-          escapeHtml(annotation.id) +
-          '" hidden>' +
-          '<label class="annotation-label">Reply' +
-          '<textarea rows="2" maxlength="1200" data-reply-input="' +
-          escapeHtml(annotation.id) +
-          '" placeholder="Write a reply to this comment."></textarea>' +
-          "</label>" +
-          '<label class="annotation-label">Visibility' +
-          '<select data-reply-visibility="' +
-          escapeHtml(annotation.id) +
-          '">' +
-          '<option value="public">Visible to everyone</option>' +
-          '<option value="author">Visible only to article author</option>' +
-          "</select>" +
-          "</label>" +
-          '<div class="annotation-action-row">' +
-          '<button type="button" class="btn btn-secondary" data-reply-save="' +
-          escapeHtml(annotation.id) +
-          '">Post Reply</button>' +
-          '<button type="button" class="btn btn-ghost" data-reply-cancel="' +
-          escapeHtml(annotation.id) +
-          '">Cancel</button>' +
-          "</div>" +
-          '<p class="annotation-editor-status hint" data-reply-status="' +
-          escapeHtml(annotation.id) +
-          '"></p>' +
-          "</div>" +
+          replyComposerHtml +
           repliesHtml +
           "</div>" +
           "</li>"
@@ -2014,12 +1982,6 @@
       .filter(Boolean);
   }
 
-  function ensureSeedUsers() {
-    DEFAULT_USERS.forEach(function (handle) {
-      ensureUser(handle);
-    });
-  }
-
   function ensureUser(handle) {
     const normalized = normalizeHandle(handle);
     if (!normalized) return;
@@ -2048,7 +2010,7 @@
           annotations: [],
           annotationReplies: [],
           propositionViews: {},
-          feedMode: "personal",
+          feedMode: "all",
         };
       }
       const parsed = JSON.parse(raw);
@@ -2060,7 +2022,7 @@
         annotationReplies: Array.isArray(parsed && parsed.annotationReplies) ? parsed.annotationReplies : [],
         propositionViews:
           parsed && parsed.propositionViews && typeof parsed.propositionViews === "object" ? parsed.propositionViews : {},
-        feedMode: parsed && typeof parsed.feedMode === "string" ? parsed.feedMode : "personal",
+        feedMode: parsed && typeof parsed.feedMode === "string" ? parsed.feedMode : "all",
       };
     } catch (_error) {
       return {
@@ -2070,22 +2032,13 @@
         annotations: [],
         annotationReplies: [],
         propositionViews: {},
-        feedMode: "personal",
+        feedMode: "all",
       };
     }
   }
 
   function saveState() {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  }
-
-  function loadActiveUser() {
-    const raw = localStorage.getItem(ACTIVE_USER_KEY);
-    return normalizeHandle(raw);
-  }
-
-  function saveActiveUser(handle) {
-    localStorage.setItem(ACTIVE_USER_KEY, normalizeHandle(handle));
   }
 
   function makeId(prefix) {
@@ -2174,34 +2127,45 @@
     return normalizeHandle(user.handle);
   }
 
-  function isIdentityLockedToAuth() {
-    return Boolean(getAuthenticatedHandle());
-  }
-
   function syncActiveUserFromAuth() {
     const authHandle = getAuthenticatedHandle();
-    if (!authHandle) return;
-    if (authHandle === activeUser) return;
-    activeUser = authHandle;
-    ensureUser(activeUser);
-    saveActiveUser(activeUser);
-  }
-
-  function enforceAuthenticatedIdentityUi() {
-    if (!el.activeHandleInput || !el.setActiveUserBtn) return;
-    const authHandle = getAuthenticatedHandle();
     if (!authHandle) {
-      el.activeHandleInput.disabled = false;
-      el.setActiveUserBtn.disabled = false;
+      activeUser = "";
       return;
     }
+    activeUser = authHandle;
+    ensureUser(activeUser);
+  }
 
-    el.activeHandleInput.disabled = true;
-    el.setActiveUserBtn.disabled = true;
-    el.activeHandleInput.value = authHandle;
-    if (el.activeUserBadge) {
-      el.activeUserBadge.textContent = "Signed-in identity: @" + authHandle;
+  function renderComposerAccess() {
+    if (!el.articleForm) return;
+    const editable = Boolean(activeUser);
+    el.articleForm.classList.toggle("is-readonly", !editable);
+
+    const controls = el.articleForm.querySelectorAll("input, textarea, select, button");
+    controls.forEach(function (control) {
+      control.disabled = !editable;
+    });
+
+    if (el.composerAccessHint) {
+      if (editable) {
+        el.composerAccessHint.hidden = true;
+        el.composerAccessHint.textContent = "";
+      } else {
+        el.composerAccessHint.hidden = false;
+        el.composerAccessHint.textContent = "Browsing mode: sign in to write and publish articles.";
+      }
     }
+  }
+
+  function canEditContent() {
+    const authHandle = getAuthenticatedHandle();
+    if (!authHandle) return false;
+    if (activeUser !== authHandle) {
+      activeUser = authHandle;
+      ensureUser(activeUser);
+    }
+    return true;
   }
 
   function trimPreview(text, maxLength) {

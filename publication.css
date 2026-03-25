@@ -329,6 +329,10 @@
   gap: 0.45rem;
 }
 
+.publication-form.is-readonly {
+  opacity: 0.64;
+}
+
 .publication-form label,
 .publication-form-row label,
 .syllogism-terms-grid label {
@@ -351,6 +355,19 @@
   color: #203145;
   font: inherit;
   padding: 0.5rem 0.58rem;
+}
+
+.publication-form input:disabled,
+.publication-form textarea:disabled,
+.publication-form select:disabled,
+.publication-form button:disabled {
+  cursor: not-allowed;
+  background: #f3f6fa;
+  color: #61748a;
+}
+
+.composer-access-hint {
+  margin-top: 0.25rem;
 }
 
 .publication-form textarea {
@@ -784,6 +801,10 @@
 }
 
 .annotation-replies-empty {
+  margin: 0;
+}
+
+.annotation-signin-note {
   margin: 0;
 }
 

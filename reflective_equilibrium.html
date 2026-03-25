@@ -33,6 +33,37 @@
       font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
     }
 
+    .skip-link {
+      position: fixed;
+      top: 8px;
+      left: 8px;
+      z-index: 1000;
+      background: #ffffff;
+      color: #1f2d3d;
+      border: 1px solid #c6cfd9;
+      border-radius: 8px;
+      padding: 6px 9px;
+      text-decoration: none;
+      font-size: 0.84rem;
+      font-weight: 700;
+      transform: translateY(-140%);
+      transition: transform 0.2s ease;
+    }
+
+    .skip-link:focus-visible {
+      transform: translateY(0);
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
     #app {
       height: 100%;
       display: grid;
@@ -178,7 +209,8 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
 </head>
 <body>
-  <div id="app"></div>
+  <a class="skip-link" href="#app">Skip to main content</a>
+  <main id="app" tabindex="-1"></main>
   <section id="wre-assistant-section" aria-label="WRE Assistant">
     <div id="wre-root"></div>
   </section>

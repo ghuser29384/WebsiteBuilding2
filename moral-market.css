@@ -56,9 +56,39 @@ a {
   color: inherit;
 }
 
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid rgba(47, 107, 255, 0.28);
+  outline-offset: 2px;
+}
+
 .container {
   width: min(1240px, calc(100% - 2.5rem));
   margin-inline: auto;
+}
+
+.skip-link {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 1000;
+  background: #ffffff;
+  color: #2d3d58;
+  border: 1px solid #c8d7ff;
+  border-radius: 8px;
+  padding: 0.36rem 0.56rem;
+  text-decoration: none;
+  font-size: 0.84rem;
+  font-weight: 700;
+  transform: translateY(-140%);
+  transition: transform 0.2s ease;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
 }
 
 .site-header {

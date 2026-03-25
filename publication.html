@@ -16,6 +16,7 @@
   <script src="publication.js" defer></script>
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
   <header class="site-header">
     <div class="container header-inner">
       <a class="brand" href="index.html">Normativity</a>
@@ -31,7 +32,7 @@
     </div>
   </header>
 
-  <main class="container publication-main">
+  <main id="main-content" class="container publication-main" tabindex="-1">
     <section class="panel publication-hero">
       <p class="eyebrow">Publication Workspace</p>
       <h1>Write Articles, Mention Others, And Track Deliberative Replies</h1>
@@ -87,19 +88,10 @@
       <div class="publication-left-stack">
         <article class="panel publication-card">
           <div class="publication-card-head">
-            <h2>Author Session</h2>
-            <p class="hint">Switch active user to simulate multi-user publication and inbox delivery.</p>
-          </div>
-          <div class="publication-form-row">
-            <label for="activeHandleInput">Active username</label>
-            <input id="activeHandleInput" type="text" maxlength="24" placeholder="e.g., Jasmine">
-            <button id="setActiveUserBtn" type="button" class="btn btn-secondary">Set Active User</button>
+            <h2>Publication Identity</h2>
+            <p class="hint">Signed-in users can publish, comment, and receive inbox notifications. Signed-out visitors can browse articles.</p>
           </div>
           <div id="activeUserBadge" class="active-user-badge" aria-live="polite"></div>
-          <div class="known-users-wrap">
-            <p class="label-lite">Known users</p>
-            <ul id="knownUsersList" class="known-users-list"></ul>
-          </div>
         </article>
 
         <article class="panel publication-card">
@@ -117,6 +109,7 @@
           <div class="publication-card-head">
             <h2>Write Article</h2>
             <p class="hint">Mentions are recognized as <code>@username</code>.</p>
+            <p id="composerAccessHint" class="hint composer-access-hint" hidden></p>
           </div>
           <form id="articleForm" class="publication-form" novalidate>
             <label for="articleTitle">Title</label>
@@ -240,7 +233,7 @@
             <h2>Inbox</h2>
             <span id="inboxCountBadge" class="inbox-count">0</span>
           </div>
-          <p class="hint">Users receive inbox alerts when another author mentions <code>@their_username</code>.</p>
+          <p class="hint">Signed-in users receive inbox alerts when another author mentions <code>@their_username</code>.</p>
           <ul id="inboxList" class="inbox-list" aria-live="polite"></ul>
         </article>
 
@@ -251,7 +244,7 @@
           <ul class="rules-list">
             <li>A mention like <code>@maya</code> creates a notification for user <code>maya</code>.</li>
             <li>Newly mentioned usernames are automatically added as users.</li>
-            <li>Inbox is per active user and stored locally in this browser.</li>
+            <li>Inbox is tied to the signed-in account and stored locally in this browser.</li>
           </ul>
         </article>
       </aside>
@@ -261,10 +254,10 @@
       <div class="publication-card-head">
         <h2>Publication Feed</h2>
         <div class="feed-toggle" role="tablist" aria-label="Article feed filters">
-          <button type="button" data-feed-mode="personal" class="is-active">Your Feed</button>
-          <button type="button" data-feed-mode="all">All Articles</button>
+          <button type="button" data-feed-mode="personal">Your Feed</button>
+          <button type="button" data-feed-mode="all" class="is-active">All Articles</button>
         </div>
-        <p id="feedHint" class="hint">Articles that argue against views you currently hold appear in your feed, weighted by your confidence.</p>
+        <p id="feedHint" class="hint">Browse all published articles. Sign in to personalize your feed and post comments.</p>
       </div>
       <div id="articleFeed" class="article-feed" aria-live="polite"></div>
     </section>
