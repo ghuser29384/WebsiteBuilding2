@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Wide Reflective Equilibrium lesson loop: case, intuition, principle test, evidence check, and next-case recommendation.">
+  <title>WRE Module | Normativity</title>
+  <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="stylesheet" href="auth.css">
+  <link rel="stylesheet" href="wre-module.css">
+  <script src="auth.js" defer></script>
+  <script src="wre-module.js" defer></script>
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="index.html">Normativity</a>
+      <div class="header-tools">
+        <nav class="main-nav" aria-label="Primary">
+          <a href="index.html">Home</a>
+          <a href="wre/index.html">WRE Lessons</a>
+          <a href="reflective_equilibrium.html">RE Lab</a>
+          <a href="wre-module.html" aria-current="page">WRE Module</a>
+          <a href="wre-assistant.html">WRE Assistant</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content" class="container wre-module-main" tabindex="-1">
+    <section class="wre-module-hero panel">
+      <p class="eyebrow">Wide Reflective Equilibrium</p>
+      <h1>Case Loop Module</h1>
+      <p>
+        Each round asks five questions: your current principle, your considered intuition in a case,
+        your principle-implied verdict, whether intuition is evidence against your principle, and your updated principle.
+        Then the module recommends the next case that is commonly treated as pressure against your updated principle.
+      </p>
+    </section>
+
+    <section class="wre-module-grid">
+      <article class="panel case-panel">
+        <div class="case-head">
+          <h2 id="caseTitle">Case</h2>
+          <label for="casePicker">Choose case</label>
+          <select id="casePicker" aria-label="Choose case"></select>
+        </div>
+        <p id="caseSummary" class="case-summary"></p>
+        <div class="case-actions">
+          <h3>Actions</h3>
+          <p id="caseActionA"></p>
+          <p id="caseActionB"></p>
+        </div>
+        <p id="commonIntuition" class="hint"></p>
+      </article>
+
+      <article class="panel question-panel">
+        <div class="question-head">
+          <h2 id="questionTitle">Question</h2>
+          <p id="questionProgress" class="hint">Question 1 of 5</p>
+        </div>
+        <form id="questionForm" class="question-form" novalidate>
+          <fieldset>
+            <legend id="questionLegend"></legend>
+            <div id="questionOptions" class="question-options"></div>
+          </fieldset>
+
+          <section id="reflectionTimerWrap" class="reflection-timer" hidden aria-live="polite">
+            <p><strong>2-minute reflection clock:</strong> <span id="reflectionTime">02:00</span></p>
+            <div class="reflection-actions">
+              <button id="timerToggleBtn" type="button" class="btn btn-ghost">Start timer</button>
+              <button id="timerDoneBtn" type="button" class="btn btn-secondary">I am ready to answer now</button>
+            </div>
+          </section>
+
+          <p id="questionStatus" class="status-line" role="status" aria-live="polite"></p>
+          <div class="question-actions">
+            <button id="backQuestionBtn" type="button" class="btn btn-ghost">Back</button>
+            <button id="nextQuestionBtn" type="submit" class="btn btn-primary">Next</button>
+          </div>
+        </form>
+      </article>
+    </section>
+
+    <section id="roundSummaryPanel" class="panel round-summary" hidden>
+      <div class="summary-head">
+        <h2>Round Summary</h2>
+        <p id="summaryCaseTitle" class="hint"></p>
+      </div>
+      <div id="summaryRows" class="summary-rows"></div>
+
+      <article id="recommendationCard" class="recommendation-card"></article>
+      <div class="summary-actions">
+        <button id="startRecommendedBtn" type="button" class="btn btn-primary">Start Recommended Case</button>
+        <button id="startCurrentBtn" type="button" class="btn btn-secondary">Repeat This Case</button>
+      </div>
+    </section>
+
+    <section class="panel history-panel">
+      <h2>Completed Rounds</h2>
+      <ul id="roundHistoryList" class="history-list"></ul>
+    </section>
+  </main>
+</body>
+</html>
