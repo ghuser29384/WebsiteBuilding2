@@ -1176,7 +1176,7 @@
       saveState();
       renderMatching();
       renderSessionPartner();
-      setSessionStatus("Participant selected. Start your conversation and log the outcome.");
+      setSessionStatus("Participant selected. Start your dialogue and log the outcome.");
     });
 
     el.ledgerList.addEventListener("click", function (event) {
@@ -1259,7 +1259,7 @@
   function onConvictionSubmit(event) {
     event.preventDefault();
     if (!state.pledge.signed) {
-      formStatus.conviction = "Sign the pledge first to create conversation rooms.";
+      formStatus.conviction = "Sign the pledge first to create dialogues.";
       renderMatching();
       return;
     }
@@ -1327,7 +1327,7 @@
     state.convictions.unshift(conviction);
     state.activeConvictionId = conviction.id;
     state.selectedCounterpartId = null;
-    formStatus.conviction = "Conversation room created. Collect reservations to generate matches.";
+    formStatus.conviction = "Dialogue created. Collect reservations to generate matches.";
     saveState();
 
     resetConvictionForm();
@@ -1346,7 +1346,7 @@
     }
     const activeConviction = getActiveConviction();
     if (!activeConviction) {
-      formStatus.reservation = "Select a conversation room first.";
+      formStatus.reservation = "Select a dialogue first.";
       renderMatching();
       return;
     }
@@ -1418,7 +1418,7 @@
 
     const conviction = getConvictionById(pendingReservationSignup.convictionId);
     if (!conviction) {
-      setAttendancePolicyStatus("This conversation room is no longer available. Please reselect a room.", true);
+      setAttendancePolicyStatus("This dialogue is no longer available. Please reselect one.", true);
       return;
     }
 
@@ -1477,7 +1477,7 @@
     }
     const activeConviction = getActiveConviction();
     if (!activeConviction) {
-      formStatus.invite = "Select a conversation room first.";
+      formStatus.invite = "Select a dialogue first.";
       renderMatching();
       return;
     }
@@ -1527,11 +1527,11 @@
     }
     const activeConviction = getActiveConviction();
     if (!activeConviction) {
-      setSessionStatus("Create and select a conversation room first.");
+      setSessionStatus("Create and select a dialogue first.");
       return;
     }
     if (!state.selectedCounterpartId) {
-      setSessionStatus("Select a participant before logging the conversation.");
+      setSessionStatus("Select a participant before logging the dialogue.");
       return;
     }
     const selectedCounterpart = getSelectedCounterpart();
@@ -1602,9 +1602,9 @@
         status: "pending",
         createdAt: new Date().toISOString(),
       });
-      setSessionStatus("Conversation logged. You crossed 50%, so this action is now in your ledger.");
+      setSessionStatus("Dialogue logged. You crossed 50%, so this action is now in your ledger.");
     } else {
-      setSessionStatus("Conversation logged. Confidence is at or below 50%, so no mandatory action entry was created.");
+      setSessionStatus("Dialogue logged. Confidence is at or below 50%, so no mandatory action entry was created.");
     }
 
     saveState();
@@ -4230,7 +4230,7 @@
     if (state.convictions.length === 0) {
       const empty = document.createElement("li");
       empty.className = "mini-summary";
-      empty.textContent = "No conversation rooms yet. Create one to start matching.";
+      empty.textContent = "No dialogues yet. Create one to start matching.";
       el.convictionList.appendChild(empty);
       return;
     }
@@ -4292,7 +4292,7 @@
 
     if (!activeConviction) {
       currentMatches = [];
-      el.activeConvictionSummary.textContent = "No active conversation room selected yet.";
+      el.activeConvictionSummary.textContent = "No active dialogue selected yet.";
       el.counterpartList.innerHTML = "";
       if (el.reservationList) {
         el.reservationList.innerHTML = "";
@@ -4522,7 +4522,7 @@
     if (state.ledger.length === 0) {
       const empty = document.createElement("article");
       empty.className = "mini-summary";
-      empty.textContent = "No action commitments yet. Once post-conversation confidence goes above 50%, entries appear here.";
+      empty.textContent = "No action commitments yet. Once post-dialogue confidence goes above 50%, entries appear here.";
       el.ledgerList.appendChild(empty);
       return;
     }

@@ -111,14 +111,14 @@
     }
     if (dom.profileSubtitle) {
       dom.profileSubtitle.textContent =
-        "Sign in to view your saved conversations, articles, and pledges. Browsing is available without an account.";
+        "Sign in to view your saved dialogues, articles, and pledges. Browsing is available without an account.";
     }
     if (dom.profileMetrics) {
       dom.profileMetrics.innerHTML = "";
     }
 
-    renderList(dom.profileConversations, ["Sign in to view your saved conversations."]);
-    renderList(dom.profileRoomsCreated, ["Sign in to view your conversation rooms."]);
+    renderList(dom.profileConversations, ["Sign in to view your saved dialogues."]);
+    renderList(dom.profileRoomsCreated, ["Sign in to view your dialogues."]);
     renderList(dom.profileRoomsReserved, ["Sign in to view your reservations."]);
     renderList(dom.profileArticles, ["Sign in to view your published articles."]);
     renderList(dom.profileNotifications, ["Sign in to view notifications and replies."]);
@@ -245,7 +245,7 @@
       if (!conviction) return;
       var implication = String(conviction.implication || "").trim();
       if (!implication) return;
-      addSuggestion("I will execute this implication from my dialogue outcome: " + truncate(implication, 110), "Conversation outcomes");
+      addSuggestion("I will execute this implication from my dialogue outcome: " + truncate(implication, 110), "Dialogue outcomes");
     });
 
     if (suggestions.length === 0) {
@@ -293,7 +293,7 @@
 
     if (dom.profileMetrics) {
       dom.profileMetrics.innerHTML =
-        '<article class="profile-metric"><p class="label">Conversations</p><p class="value">' +
+        '<article class="profile-metric"><p class="label">Dialogues</p><p class="value">' +
         sessions.length +
         "</p></article>" +
         '<article class="profile-metric"><p class="label">Articles</p><p class="value">' +
