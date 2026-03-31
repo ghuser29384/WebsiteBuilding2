@@ -1751,6 +1751,76 @@ input[type="range"] {
   border-top: 1px solid var(--line);
 }
 
+body.attendance-modal-open {
+  overflow: hidden;
+}
+
+.attendance-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+}
+
+.attendance-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(19, 28, 41, 0.44);
+}
+
+.attendance-modal-dialog {
+  position: relative;
+  width: min(760px, 100%);
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: #ffffff;
+  box-shadow: 0 22px 52px rgba(24, 36, 53, 0.24);
+  padding: 1rem;
+}
+
+.attendance-close-btn {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #3b4c62;
+  font-size: 1.55rem;
+  line-height: 1;
+  padding: 0.1rem 0.35rem;
+}
+
+.attendance-close-btn:hover,
+.attendance-close-btn:focus-visible {
+  border-color: var(--line);
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.attendance-policy-copy {
+  border: 1px solid #d6dee9;
+  border-radius: var(--radius-sm);
+  background: #f5f9ff;
+  padding: 0.66rem;
+  color: #324e70;
+}
+
+.attendance-policy-status {
+  min-height: 1.2rem;
+  margin-bottom: 0.3rem;
+}
+
+.attendance-policy-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.44rem;
+  flex-wrap: wrap;
+}
+
 .subhead-row {
   display: flex;
   align-items: baseline;

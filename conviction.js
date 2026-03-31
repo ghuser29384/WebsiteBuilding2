@@ -504,6 +504,7 @@
 
   let state = loadState();
   let currentMatches = [];
+  let pendingReservationSignup = null;
   const chartZoomStateByEl = new WeakMap();
   let reflectiveEquilibriumAnimationStarted = false;
   const featuredMarketUiState = {
@@ -549,6 +550,12 @@
     reservationReasonInput: document.getElementById("reservationReasonInput"),
     reservationAvailability: document.getElementById("reservationAvailability"),
     reservationStatus: document.getElementById("reservationStatus"),
+    attendancePolicyModal: document.getElementById("attendancePolicyModal"),
+    attendancePolicyCloseBtn: document.getElementById("attendancePolicyCloseBtn"),
+    attendancePolicyCancelBtn: document.getElementById("attendancePolicyCancelBtn"),
+    attendancePolicyConfirmBtn: document.getElementById("attendancePolicyConfirmBtn"),
+    attendancePolicyInput: document.getElementById("attendancePolicyInput"),
+    attendancePolicyStatus: document.getElementById("attendancePolicyStatus"),
     reservationList: document.getElementById("reservationList"),
     inviteForm: document.getElementById("inviteForm"),
     inviteNameInput: document.getElementById("inviteNameInput"),
@@ -1059,6 +1066,32 @@
     if (el.reservationForm) {
       el.reservationForm.addEventListener("submit", onReservationSubmit);
     }
+    if (el.attendancePolicyCloseBtn) {
+      el.attendancePolicyCloseBtn.addEventListener("click", closeAttendancePolicyModal);
+    }
+    if (el.attendancePolicyCancelBtn) {
+      el.attendancePolicyCancelBtn.addEventListener("click", closeAttendancePolicyModal);
+    }
+    if (el.attendancePolicyConfirmBtn) {
+      el.attendancePolicyConfirmBtn.addEventListener("click", onConfirmReservationWithAttendancePolicy);
+    }
+    if (el.attendancePolicyInput) {
+      el.attendancePolicyInput.addEventListener("keydown", function (event) {
+        if (event.key !== "Enter") return;
+        event.preventDefault();
+        onConfirmReservationWithAttendancePolicy();
+      });
+      el.attendancePolicyInput.addEventListener("input", function () {
+        setAttendancePolicyStatus("");
+      });
+    }
+    if (el.attendancePolicyModal) {
+      el.attendancePolicyModal.addEventListener("click", function (event) {
+        const closer = event.target.closest("[data-attendance-close]");
+        if (!closer) return;
+        closeAttendancePolicyModal();
+      });
+    }
     if (el.inviteForm) {
       el.inviteForm.addEventListener("submit", onInviteSubmit);
     }
@@ -1074,6 +1107,12 @@
     el.postConfidenceInput.addEventListener("input", function () {
       updateConfidenceText(el.postConfidenceInput, el.postConfidenceValue);
       updateThresholdState();
+    });
+
+    document.addEventListener("keydown", function (event) {
+      if (event.key !== "Escape") return;
+      if (!isAttendancePolicyModalOpen()) return;
+      closeAttendancePolicyModal();
     });
 
     if (el.featuredRangeButtons && el.featuredRangeButtons.length > 0) {
@@ -1312,6 +1351,22 @@
       return;
     }
 
+    const validation = buildReservationSubmission(activeConviction);
+    if (!validation.ok) {
+      formStatus.reservation = validation.error;
+      renderMatching();
+      return;
+    }
+
+    pendingReservationSignup = validation.payload;
+    openAttendancePolicyModal();
+  }
+
+  function buildReservationSubmission(activeConviction) {
+    if (!el.reservationForm) {
+      return { ok: false, error: "Reservation form is unavailable." };
+    }
+
     const formData = new FormData(el.reservationForm);
     const name = String(formData.get("reservationName") || "").trim();
     const belief = String(formData.get("reservationBelief") || "true");
@@ -1320,46 +1375,97 @@
     const availability = getSelectedAvailability(el.reservationAvailability);
 
     if (!name) {
-      formStatus.reservation = "Add a username to reserve the room.";
-      renderMatching();
-      return;
+      return { ok: false, error: "Add a username to reserve the room." };
     }
     if (!reason) {
-      formStatus.reservation = "Add your reasons for the confidence level.";
-      renderMatching();
-      return;
+      return { ok: false, error: "Add your reasons for the confidence level." };
     }
     if (countSentences(reason) > 10) {
-      formStatus.reservation = "Keep the reasons to ten sentences or fewer.";
-      renderMatching();
-      return;
+      return { ok: false, error: "Keep the reasons to ten sentences or fewer." };
     }
     if (!availability.length) {
-      formStatus.reservation = "Select at least one availability slot.";
-      renderMatching();
+      return { ok: false, error: "Select at least one availability slot." };
+    }
+
+    return {
+      ok: true,
+      payload: {
+        convictionId: activeConviction.id,
+        reservation: {
+          id: uid("rs"),
+          name: name,
+          belief: belief === "false" ? "false" : "true",
+          confidence: confidence,
+          reason: reason,
+          availability: availability,
+          createdAt: new Date().toISOString(),
+        },
+      },
+    };
+  }
+
+  function onConfirmReservationWithAttendancePolicy() {
+    if (!pendingReservationSignup) {
+      closeAttendancePolicyModal();
       return;
     }
 
-    const reservation = {
-      id: uid("rs"),
-      name: name,
-      belief: belief === "false" ? "false" : "true",
-      confidence: confidence,
-      reason: reason,
-      availability: availability,
-      createdAt: new Date().toISOString(),
-    };
-
-    if (!Array.isArray(activeConviction.reservations)) {
-      activeConviction.reservations = [];
+    const acknowledgment = String(el.attendancePolicyInput && el.attendancePolicyInput.value ? el.attendancePolicyInput.value : "").trim();
+    if (acknowledgment !== "I understand") {
+      setAttendancePolicyStatus('Type exactly "I understand" to complete signup.', true);
+      return;
     }
-    activeConviction.reservations.unshift(reservation);
-    activeConviction.updatedAt = new Date().toISOString();
+
+    const conviction = getConvictionById(pendingReservationSignup.convictionId);
+    if (!conviction) {
+      setAttendancePolicyStatus("This conversation room is no longer available. Please reselect a room.", true);
+      return;
+    }
+
+    if (!Array.isArray(conviction.reservations)) {
+      conviction.reservations = [];
+    }
+    conviction.reservations.unshift(pendingReservationSignup.reservation);
+    conviction.updatedAt = new Date().toISOString();
+
     formStatus.reservation = "Reservation added. Matches will update automatically.";
     saveState();
-
     resetReservationForm();
+    closeAttendancePolicyModal();
     renderMatching();
+  }
+
+  function openAttendancePolicyModal() {
+    if (!el.attendancePolicyModal) return;
+    el.attendancePolicyModal.hidden = false;
+    document.body.classList.add("attendance-modal-open");
+    if (el.attendancePolicyInput) {
+      el.attendancePolicyInput.value = "";
+      el.attendancePolicyInput.focus();
+    }
+    setAttendancePolicyStatus("");
+  }
+
+  function closeAttendancePolicyModal() {
+    pendingReservationSignup = null;
+    if (!el.attendancePolicyModal) return;
+    el.attendancePolicyModal.hidden = true;
+    document.body.classList.remove("attendance-modal-open");
+    if (el.attendancePolicyInput) {
+      el.attendancePolicyInput.value = "";
+    }
+    setAttendancePolicyStatus("");
+  }
+
+  function isAttendancePolicyModalOpen() {
+    if (!el.attendancePolicyModal) return false;
+    return !el.attendancePolicyModal.hidden;
+  }
+
+  function setAttendancePolicyStatus(text, isError) {
+    if (!el.attendancePolicyStatus) return;
+    el.attendancePolicyStatus.textContent = text || "";
+    el.attendancePolicyStatus.style.color = isError ? "#8f2236" : "#5e6f83";
   }
 
   function onInviteSubmit(event) {
@@ -4523,6 +4629,15 @@
     return (
       state.convictions.find(function (item) {
         return item.id === state.activeConvictionId;
+      }) || null
+    );
+  }
+
+  function getConvictionById(convictionId) {
+    if (!convictionId) return null;
+    return (
+      state.convictions.find(function (item) {
+        return item.id === convictionId;
       }) || null
     );
   }

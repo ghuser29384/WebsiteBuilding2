@@ -583,6 +583,39 @@
               <button class="btn btn-secondary" type="submit">Reserve A Seat</button>
             </form>
 
+            <div id="attendancePolicyModal" class="attendance-modal" hidden>
+              <div class="attendance-modal-backdrop" data-attendance-close="true"></div>
+              <div
+                class="attendance-modal-dialog"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="attendancePolicyTitle"
+                aria-describedby="attendancePolicyDescription"
+              >
+                <button id="attendancePolicyCloseBtn" class="attendance-close-btn" type="button" aria-label="Close attendance policy prompt">×</button>
+                <h4 id="attendancePolicyTitle">Attendance Policy</h4>
+                <p id="attendancePolicyDescription" class="attendance-policy-copy">
+                  If you will not be able to attend the session, please unregister in advance to free up the spot for another person.
+                </p>
+                <label class="field-row" for="attendancePolicyInput">
+                  Please type "I understand" to sign up for this session.
+                  <input
+                    id="attendancePolicyInput"
+                    name="attendancePolicyInput"
+                    type="text"
+                    autocomplete="off"
+                    spellcheck="false"
+                    placeholder="I understand"
+                  >
+                </label>
+                <p id="attendancePolicyStatus" class="status-line attendance-policy-status" role="status" aria-live="polite"></p>
+                <div class="attendance-policy-actions">
+                  <button id="attendancePolicyCancelBtn" class="btn btn-ghost" type="button">Cancel</button>
+                  <button id="attendancePolicyConfirmBtn" class="btn btn-primary" type="button">Complete Sign Up</button>
+                </div>
+              </div>
+            </div>
+
             <div class="subhead-row">
               <h4>Current Reservations</h4>
               <p class="hint">Opposing beliefs and overlapping times drive matching.</p>
