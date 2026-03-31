@@ -249,6 +249,30 @@ p {
   gap: 0.42rem;
 }
 
+.confidence-wrap {
+  margin-top: 0.55rem;
+  border: 1px solid #d8e1eb;
+  border-radius: 10px;
+  background: #f8fbff;
+  padding: 0.48rem 0.56rem;
+}
+
+.confidence-wrap label {
+  display: block;
+  margin: 0 0 0.28rem;
+  color: #2e4a69;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.confidence-wrap strong {
+  color: #2f5c87;
+}
+
+.confidence-row input[type="range"] {
+  width: 100%;
+}
+
 .choice-option {
   border: 1px solid #d4dee9;
   border-radius: 10px;

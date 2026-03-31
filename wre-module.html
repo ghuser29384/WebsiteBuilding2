@@ -66,6 +66,22 @@
             <div id="questionOptions" class="question-options"></div>
           </fieldset>
 
+          <section class="confidence-wrap" aria-label="Confidence in selected answer">
+            <label for="confidenceSlider">Confidence in this answer: <strong id="confidenceValue">63%</strong></label>
+            <div class="confidence-row">
+              <input
+                id="confidenceSlider"
+                type="range"
+                min="1"
+                max="100"
+                step="1"
+                value="63"
+                aria-describedby="confidenceHint"
+              >
+            </div>
+            <p id="confidenceHint" class="hint">Record your credence in the option you selected.</p>
+          </section>
+
           <section id="reflectionTimerWrap" class="reflection-timer" hidden aria-live="polite">
             <p><strong>2-minute reflection clock:</strong> <span id="reflectionTime">02:00</span></p>
             <div class="reflection-actions">
