@@ -194,6 +194,58 @@
       display: inline-block;
     }
 
+    /* Home-style alignment (Forethought-like) */
+    :root {
+      --bg: #efefea;
+      --panel: #f7f7f4;
+      --line: #dfe2de;
+      --ink: #2f2d2b;
+      --ink-soft: #5d615f;
+      --accent: #2f3d53;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--ink);
+    }
+
+    #ui-panel,
+    #canvas-wrap,
+    .ui-section {
+      background: var(--panel);
+      border-color: var(--line);
+    }
+
+    .ui-title,
+    .ui-section h2 {
+      font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Garamond, serif;
+      font-weight: 500;
+      color: var(--ink);
+    }
+
+    .ui-sub,
+    .small,
+    .status {
+      color: var(--ink-soft);
+    }
+
+    button {
+      border-radius: 8px;
+      border-color: var(--line);
+      color: #4d5350;
+      font-weight: 600;
+    }
+
+    button:hover {
+      background: #f3f3f0;
+    }
+
+    .blurb {
+      background: #f3f3f0;
+      border-color: #d2d8d3;
+      color: #4e5350;
+    }
+
     @media (max-width: 1180px) {
       #app {
         grid-template-columns: 1fr;

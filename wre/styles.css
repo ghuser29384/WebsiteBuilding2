@@ -705,3 +705,88 @@ textarea:focus-visible {
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* Home-style alignment (Forethought-like) */
+:root {
+  --home-bg: #efefea;
+  --home-surface: #f7f7f4;
+  --home-line: #dfe2de;
+  --home-line-strong: #d2d8d3;
+  --home-ink: #2f2d2b;
+  --home-muted: #5d615f;
+  --home-accent: #2f3d53;
+  --home-accent-hover: #263247;
+}
+
+body {
+  background: var(--home-bg);
+  color: var(--home-ink);
+}
+
+.wre-topbar {
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom-color: #e6e8e2;
+}
+
+.wre-title,
+.graph-card-head h2,
+.gauge-card h2,
+.explanation-card h2,
+.lesson-card h2 {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Garamond, serif;
+  font-weight: 500;
+  color: var(--home-ink);
+}
+
+.wre-home-link {
+  color: #4d5350;
+}
+
+.progress-card,
+.graph-card,
+.gauge-card,
+.explanation-card,
+.lesson-card,
+.lesson-case,
+.answer-summary,
+.inspect-hover,
+.inspect-list,
+.edge-rank-item {
+  background: var(--home-surface);
+  border-color: var(--home-line);
+  box-shadow: none;
+}
+
+#progressLabel,
+#progressTitle,
+.lesson-stage-label,
+.label-lite,
+.gauge-detail,
+.empty-note {
+  color: var(--home-muted);
+}
+
+#progressFill {
+  background: linear-gradient(90deg, #6f7f95 0%, #2f3d53 100%);
+}
+
+.btn {
+  border-radius: 8px;
+  border-color: var(--home-line-strong);
+  color: #4b5150;
+  font-weight: 600;
+}
+
+.btn:hover {
+  background: #f5f5f2;
+}
+
+.btn-primary {
+  border-color: var(--home-accent);
+  background: var(--home-accent);
+  color: #ffffff;
+}
+
+.btn-primary:hover {
+  background: var(--home-accent-hover);
+}

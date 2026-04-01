@@ -920,3 +920,94 @@
   border-left-color: #9caec3;
   color: #4b5d73;
 }
+
+/* Home-style alignment (Forethought-like) */
+:root {
+  --home-bg: #efefea;
+  --home-surface: #f7f7f4;
+  --home-line: #dfe2de;
+  --home-line-strong: #d2d8d3;
+  --home-ink: #2f2d2b;
+  --home-muted: #5d615f;
+  --home-accent: #2f3d53;
+}
+
+body {
+  background: var(--home-bg);
+  color: var(--home-ink);
+}
+
+h1,
+h2,
+h3,
+h4,
+.publication-card-head h2,
+.publication-hero h1 {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Garamond, serif;
+  font-weight: 500;
+  color: var(--home-ink);
+}
+
+.publication-hero {
+  background: var(--home-surface);
+  border-color: var(--home-line);
+}
+
+.publication-lead,
+.hint,
+.prop-note,
+.market-sub,
+.article-comment-meta,
+.publication-card p {
+  color: var(--home-muted);
+}
+
+.panel,
+.publication-card,
+.prop-group,
+.prop-picker-group,
+.insight-card,
+.article-comment-item,
+.annotation-reply-editor,
+.annotation-reply-item {
+  background: var(--home-surface);
+  border-color: var(--home-line);
+  box-shadow: none;
+}
+
+.prop-overall,
+.prop-picker-group,
+.insight-card {
+  background: #f3f4f1;
+}
+
+.prop-copy .prop-title,
+.insight-card-value {
+  color: #384353;
+}
+
+.feed-toggle button {
+  border-color: var(--home-line-strong);
+  border-radius: 8px;
+  color: #4d5350;
+  font-weight: 600;
+}
+
+.feed-toggle button.is-active {
+  background: var(--home-accent);
+  border-color: var(--home-accent);
+  color: #ffffff;
+}
+
+.article-prop-tag {
+  background: #eeefed;
+  color: #4a5259;
+}
+
+.article-relevance {
+  color: #3f5550;
+}
+
+.article-disagreement {
+  color: #7a3e4b;
+}

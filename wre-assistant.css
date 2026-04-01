@@ -636,3 +636,92 @@ button.ghost:hover {
   background: #f5f8fe;
   border-color: #c9d5e4;
 }
+
+/* Home-style alignment (Forethought-like) */
+:root {
+  --home-bg: #efefea;
+  --home-surface: #f7f7f4;
+  --home-line: #dfe2de;
+  --home-line-strong: #d2d8d3;
+  --home-ink: #2f2d2b;
+  --home-muted: #5d615f;
+  --home-accent: #2f3d53;
+  --home-accent-hover: #263247;
+}
+
+body {
+  background: var(--home-bg);
+  color: var(--home-ink);
+}
+
+.wre-topbar {
+  border-bottom-color: #e6e8e2;
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.wre-brand {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Garamond, serif;
+  font-weight: 500;
+  color: var(--home-ink);
+}
+
+h1,
+h2,
+h3 {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Garamond, serif;
+  font-weight: 500;
+  color: var(--home-ink);
+}
+
+.wre-nav a {
+  border-radius: 8px;
+  color: #4d5350;
+  font-weight: 500;
+}
+
+.wre-nav a:hover,
+.wre-nav a:focus-visible,
+.wre-nav a[aria-current="page"] {
+  border-color: var(--home-line-strong);
+  background: #f5f5f2;
+  color: var(--home-ink);
+}
+
+.wre-hero,
+.wre-panel,
+.wre-workspace-board,
+.wre-list li,
+.wre-step-guidance {
+  background: var(--home-surface);
+  border-color: var(--home-line);
+  box-shadow: none;
+}
+
+.wre-label,
+.wre-panel p,
+.wre-metrics p,
+.wre-narrative {
+  color: var(--home-muted);
+}
+
+button {
+  border-radius: 8px;
+  background: var(--home-accent);
+  border-color: var(--home-accent);
+}
+
+button:hover {
+  background: var(--home-accent-hover);
+  border-color: var(--home-accent-hover);
+}
+
+button.ghost {
+  background: #ffffff;
+  border-color: var(--home-line-strong);
+  color: #4b5150;
+}
+
+button.ghost:hover {
+  background: #f5f5f2;
+  border-color: #c7cdc8;
+}

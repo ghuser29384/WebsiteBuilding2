@@ -555,3 +555,117 @@ textarea:focus-visible {
 .svg-link {
   stroke: #1f4dd8;
 }
+
+/* Home-style alignment (Forethought-like) */
+:root {
+  --home-bg: #efefea;
+  --home-surface: #f7f7f4;
+  --home-line: #dfe2de;
+  --home-line-strong: #d2d8d3;
+  --home-ink: #2f2d2b;
+  --home-muted: #5d615f;
+  --home-accent: #2f3d53;
+}
+
+body {
+  background: var(--home-bg);
+  color: var(--home-ink);
+}
+
+h1,
+h2,
+h3,
+h4,
+.normative-hero h1,
+.explainer-panel h2 {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Garamond, serif;
+  font-weight: 500;
+  color: var(--home-ink);
+}
+
+.normative-lead,
+.normative-main p,
+.svg-node-sub,
+.svg-note {
+  color: var(--home-muted);
+}
+
+.normative-hero,
+.panel,
+.comparison-card-mini,
+.diagram-card,
+.strategy-row,
+.mind-card,
+.protocol-card,
+.guardrail-tool,
+.guardrail-result,
+.normative-toc {
+  background: var(--home-surface);
+  border-color: var(--home-line);
+  box-shadow: none;
+}
+
+.normative-source-strip a {
+  border-color: var(--home-line-strong);
+  background: #f1f2ef;
+  color: #4b5150;
+  border-radius: 8px;
+}
+
+.normative-source-strip a:hover,
+.normative-source-strip a:focus-visible {
+  background: #ebece9;
+  border-color: #c5cbc6;
+  color: #37424a;
+}
+
+.normative-toc a {
+  color: #4d5350;
+}
+
+.normative-toc a:hover,
+.normative-toc a:focus-visible {
+  color: #2f3d53;
+}
+
+.theory-filter-btn {
+  border-color: var(--home-line-strong);
+  border-radius: 8px;
+  color: #4d5350;
+  font-weight: 600;
+}
+
+.theory-filter-btn.is-active {
+  background: var(--home-accent);
+  border-color: var(--home-accent);
+}
+
+.theory-table th {
+  background: #f1f2ef;
+  color: #434949;
+}
+
+.theory-table th,
+.theory-table td,
+.theory-table {
+  border-color: var(--home-line);
+}
+
+.svg-link {
+  stroke: #ff5f35;
+}
+
+.svg-node {
+  fill: #f3f3f0;
+  stroke: #ced4d0;
+}
+
+.svg-primary {
+  fill: #f1f2ef;
+  stroke: #cfd4cf;
+}
+
+.svg-secondary {
+  fill: #f5f6f3;
+  stroke: #d5dbd6;
+}

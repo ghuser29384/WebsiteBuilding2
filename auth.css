@@ -392,3 +392,133 @@ body {
 .profile-metric .value {
   color: #1d3557;
 }
+
+/* Home-style alignment (Forethought-like) */
+:root {
+  --home-bg: #efefea;
+  --home-surface: #f7f7f4;
+  --home-line: #dfe2de;
+  --home-line-strong: #d2d8d3;
+  --home-ink: #2f2d2b;
+  --home-muted: #5d615f;
+  --home-accent: #2f3d53;
+  --home-accent-hover: #263247;
+}
+
+body,
+.auth-shell {
+  background: var(--home-bg);
+  color: var(--home-ink);
+}
+
+.site-header {
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom-color: #e6e8e2;
+}
+
+.brand {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Garamond, serif;
+  font-weight: 500;
+  color: var(--home-ink);
+}
+
+h1,
+h2,
+h3,
+h4,
+.auth-title,
+.profile-card h3 {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Garamond, serif;
+  font-weight: 500;
+  color: var(--home-ink);
+}
+
+.main-nav a {
+  border-radius: 8px;
+  font-weight: 500;
+  color: #4d5350;
+}
+
+.main-nav a:hover,
+.main-nav a:focus-visible,
+.main-nav a[aria-current="page"] {
+  background: #f5f5f2;
+  border-color: var(--home-line-strong);
+  color: var(--home-ink);
+}
+
+.auth-link,
+.auth-signout {
+  border-color: var(--home-line-strong);
+  border-radius: 8px;
+  color: #4f5552;
+  font-weight: 600;
+}
+
+.auth-link-strong {
+  color: var(--home-accent);
+  border-color: var(--home-accent);
+}
+
+.auth-chip {
+  background: #f1f2ef;
+  border-color: var(--home-line);
+  color: #4d5351;
+}
+
+.auth-card,
+.auth-panel,
+.profile-card,
+.profile-metric,
+.auth-commitment {
+  background: var(--home-surface);
+  border-color: var(--home-line);
+  box-shadow: none;
+}
+
+.auth-tab-btn {
+  border-color: var(--home-line-strong);
+  border-radius: 8px;
+  color: #4d5350;
+  font-weight: 600;
+}
+
+.auth-tab-btn.active {
+  border-color: var(--home-accent);
+  background: #eef1f7;
+  color: var(--home-accent);
+}
+
+.auth-field,
+.auth-subtitle,
+.profile-metric .label {
+  color: var(--home-muted);
+}
+
+.auth-field input {
+  border-color: var(--home-line-strong);
+  border-radius: 8px;
+}
+
+.auth-btn {
+  border-color: var(--home-accent);
+  background: var(--home-accent);
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.auth-btn:hover,
+.auth-btn:focus-visible {
+  background: var(--home-accent-hover);
+  border-color: var(--home-accent-hover);
+}
+
+.auth-btn.ghost {
+  background: #ffffff;
+  color: var(--home-accent);
+  border-color: var(--home-line-strong);
+}
+
+.profile-metric .value {
+  color: #334458;
+}

@@ -519,3 +519,94 @@ p {
 .btn-secondary:focus-visible:not(:disabled) {
   background: #f5f8fe;
 }
+
+/* Home-style alignment (Forethought-like) */
+:root {
+  --home-bg: #efefea;
+  --home-surface: #f7f7f4;
+  --home-line: #dfe2de;
+  --home-line-strong: #d2d8d3;
+  --home-ink: #2f2d2b;
+  --home-muted: #5d615f;
+  --home-accent: #2f3d53;
+  --home-accent-hover: #263247;
+}
+
+body {
+  background: var(--home-bg);
+  color: var(--home-ink);
+}
+
+.site-header {
+  border-bottom-color: #e6e8e2;
+}
+
+.brand {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Garamond, serif;
+  font-weight: 500;
+  color: var(--home-ink);
+}
+
+h1,
+h2,
+h3 {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Garamond, serif;
+  font-weight: 500;
+  color: var(--home-ink);
+}
+
+.main-nav a {
+  border-radius: 8px;
+  color: #4d5350;
+  font-weight: 500;
+}
+
+.main-nav a:hover,
+.main-nav a:focus-visible,
+.main-nav a[aria-current="page"] {
+  background: #f5f5f2;
+  border-color: var(--home-line-strong);
+  color: var(--home-ink);
+}
+
+.panel,
+.summary-row,
+.recommendation-card,
+.case-actions,
+.confidence-wrap,
+.reflection-timer,
+.choice-option {
+  border-color: var(--home-line);
+  background: var(--home-surface);
+  box-shadow: none;
+}
+
+.hint,
+.status-line,
+.case-summary,
+.choice-option p {
+  color: var(--home-muted);
+}
+
+.btn {
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.btn-primary {
+  background: var(--home-accent);
+  border-color: var(--home-accent);
+}
+
+.btn-primary:hover:not(:disabled),
+.btn-primary:focus-visible:not(:disabled) {
+  background: var(--home-accent-hover);
+  border-color: var(--home-accent-hover);
+}
+
+.btn-secondary,
+.btn-ghost {
+  background: #ffffff;
+  border-color: var(--home-line-strong);
+  color: #4b5150;
+}
