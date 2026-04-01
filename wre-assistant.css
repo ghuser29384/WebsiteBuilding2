@@ -573,3 +573,66 @@ button.ghost:hover {
     font-size: 0.72rem;
   }
 }
+
+/* Forethought-inspired visual alignment */
+:root {
+  --line: #dfe6ee;
+  --ink: #1b2432;
+  --ink-soft: #556173;
+  --support: #1f7a54;
+  --conflict: #a24b5b;
+  --neutral: #7f8ca1;
+  --judgment-bg: #f3f7ff;
+  --principle-bg: #f3faf5;
+  --theory-bg: #f8f8fc;
+}
+
+.wre-topbar {
+  border-bottom-color: #e5ebf2;
+}
+
+.wre-nav a {
+  border-radius: 8px;
+  color: #4f5b6b;
+  font-weight: 500;
+}
+
+.wre-nav a:hover,
+.wre-nav a:focus-visible,
+.wre-nav a[aria-current="page"] {
+  border-color: #d8e1ec;
+  background: #f6f9ff;
+  color: #1d3557;
+}
+
+.wre-hero,
+.wre-panel,
+.wre-workspace-board,
+.wre-list li,
+.wre-step-guidance {
+  border-color: #dfe6ee;
+  box-shadow: 0 3px 12px rgba(27, 36, 50, 0.05);
+}
+
+button {
+  border-color: #1d3557;
+  background: #1d3557;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+button:hover {
+  background: #172b46;
+  border-color: #172b46;
+}
+
+button.ghost {
+  border-color: #d3dde8;
+  background: #ffffff;
+  color: #334861;
+}
+
+button.ghost:hover {
+  background: #f5f8fe;
+  border-color: #c9d5e4;
+}

@@ -451,3 +451,71 @@ p {
     margin-left: 0;
   }
 }
+
+/* Forethought-inspired minimal polish */
+:root {
+  --line: #dfe6ee;
+  --line-strong: #ccd5e1;
+  --ink: #1b2432;
+  --ink-soft: #556173;
+  --primary: #1d3557;
+  --primary-soft: #f7f9fc;
+  --ok: #1f7a54;
+  --warn: #a24b5b;
+}
+
+.site-header {
+  border-bottom-color: #e5ebf2;
+}
+
+.main-nav a {
+  border-radius: 8px;
+  font-weight: 500;
+  color: #4f5b6b;
+}
+
+.main-nav a:hover,
+.main-nav a:focus-visible,
+.main-nav a[aria-current="page"] {
+  background: #f6f9ff;
+  border-color: #d8e1ec;
+  color: #1d3557;
+}
+
+.panel,
+.summary-row,
+.recommendation-card,
+.case-actions,
+.confidence-wrap,
+.reflection-timer,
+.choice-option {
+  border-color: #dfe6ee;
+  box-shadow: 0 3px 12px rgba(27, 36, 50, 0.05);
+}
+
+.btn {
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.btn-primary {
+  background: #1d3557;
+  border-color: #1d3557;
+}
+
+.btn-primary:hover:not(:disabled),
+.btn-primary:focus-visible:not(:disabled) {
+  background: #172b46;
+  border-color: #172b46;
+}
+
+.btn-secondary {
+  background: #ffffff;
+  border-color: #d3dde8;
+  color: #1d3557;
+}
+
+.btn-secondary:hover:not(:disabled),
+.btn-secondary:focus-visible:not(:disabled) {
+  background: #f5f8fe;
+}

@@ -2044,22 +2044,22 @@ body.attendance-modal-open {
   transition-delay: var(--reveal-delay, 0s);
 }
 
-/* Professional editorial refresh inspired by Pew Research. */
+/* Forethought-inspired minimalist editorial theme. */
 html[data-theme="light"],
 html:not([data-theme]) {
   --bg: #ffffff;
   --surface: #ffffff;
-  --surface-soft: #f7f8fa;
-  --ink: #1f2d3d;
-  --ink-soft: #5d6a79;
-  --line: #d8dfe7;
-  --line-strong: #c6cfd9;
-  --accent: #8f2236;
-  --accent-soft: #f7f1f3;
-  --signal: #8f2236;
-  --ok: #24694a;
-  --shadow-sm: 0 5px 14px rgba(15, 23, 42, 0.06);
-  --shadow-md: 0 12px 28px rgba(15, 23, 42, 0.08);
+  --surface-soft: #f7f9fc;
+  --ink: #1b2432;
+  --ink-soft: #556173;
+  --line: #dfe6ee;
+  --line-strong: #ccd5e1;
+  --accent: #1f4dd8;
+  --accent-soft: #edf3ff;
+  --signal: #1f4dd8;
+  --ok: #1f7a54;
+  --shadow-sm: 0 3px 12px rgba(27, 36, 50, 0.05);
+  --shadow-md: 0 10px 24px rgba(27, 36, 50, 0.07);
 }
 
 html[data-theme="light"] body,
@@ -2079,37 +2079,38 @@ html:not([data-theme]) h3,
 html:not([data-theme]) h4 {
   font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
   font-weight: 500;
-  color: #172536;
+  color: #162132;
 }
 
 html[data-theme="light"] .site-header,
 html:not([data-theme]) .site-header {
-  backdrop-filter: none;
-  background: #ffffff;
-  border-bottom: 1px solid #dbe2ea;
+  backdrop-filter: blur(4px);
+  background: rgba(255, 255, 255, 0.96);
+  border-bottom: 1px solid #e5ebf2;
 }
 
 html[data-theme="light"] .main-nav a,
 html:not([data-theme]) .main-nav a {
-  font-size: 0.85rem;
+  font-size: 0.86rem;
   letter-spacing: 0.01em;
-  border-radius: 4px;
-  color: #556273;
+  border-radius: 8px;
+  color: #4f5b6b;
+  font-weight: 500;
 }
 
 html[data-theme="light"] .main-nav a:hover,
 html[data-theme="light"] .main-nav a:focus-visible,
 html:not([data-theme]) .main-nav a:hover,
 html:not([data-theme]) .main-nav a:focus-visible {
-  color: #1f2d3d;
-  border-color: #d2dbe5;
-  background: #f4f7fa;
+  color: #1b2432;
+  border-color: #d8e1ec;
+  background: #f6f9ff;
 }
 
 html[data-theme="light"] .eyebrow,
 html:not([data-theme]) .eyebrow {
-  color: #8f2236;
-  letter-spacing: 0.11em;
+  color: #1f4dd8;
+  letter-spacing: 0.1em;
 }
 
 html[data-theme="light"] .hero-main,
@@ -2137,7 +2138,7 @@ html:not([data-theme]) .counterpart-card,
 html:not([data-theme]) .conviction-item,
 html:not([data-theme]) .ledger-item {
   background: #ffffff !important;
-  border-color: #d8dfe7 !important;
+  border-color: #dfe6ee !important;
   box-shadow: var(--shadow-sm);
 }
 
@@ -2160,9 +2161,7 @@ html:not([data-theme]) .comparison-ethics {
 
 html[data-theme="light"] .featured-market-showcase,
 html:not([data-theme]) .featured-market-showcase {
-  background:
-    radial-gradient(96% 78% at 100% 0%, rgba(60, 115, 210, 0.08), transparent 72%),
-    #fffefb !important;
+  background: #ffffff !important;
 }
 
 html[data-theme="light"] .formula-panel,
@@ -2177,49 +2176,50 @@ html:not([data-theme]) .mini-summary,
 html:not([data-theme]) .score-pill,
 html:not([data-theme]) .chip,
 html:not([data-theme]) .progress-long-caption {
-  background: #f7f8fa;
-  border-color: #d8dfe7;
+  background: #f7f9fc;
+  border-color: #dfe6ee;
   color: #4f5c6b;
 }
 
 html[data-theme="light"] .btn,
 html:not([data-theme]) .btn {
-  border-radius: 4px;
+  border-radius: 10px;
   box-shadow: none;
+  font-weight: 600;
 }
 
 html[data-theme="light"] .btn-primary,
 html:not([data-theme]) .btn-primary {
   color: #ffffff;
-  border-color: #8f2236;
-  background: #8f2236;
+  border-color: #1d3557;
+  background: #1d3557;
 }
 
 html[data-theme="light"] .btn-primary:hover,
 html[data-theme="light"] .btn-primary:focus-visible,
 html:not([data-theme]) .btn-primary:hover,
 html:not([data-theme]) .btn-primary:focus-visible {
-  background: #7a1d2f;
+  background: #172b46;
 }
 
 html[data-theme="light"] .btn-secondary,
 html:not([data-theme]) .btn-secondary {
-  color: #ffffff;
-  border-color: #223246;
-  background: #223246;
+  color: #1d3557;
+  border-color: #c7d3e2;
+  background: #ffffff;
 }
 
 html[data-theme="light"] .btn-secondary:hover,
 html[data-theme="light"] .btn-secondary:focus-visible,
 html:not([data-theme]) .btn-secondary:hover,
 html:not([data-theme]) .btn-secondary:focus-visible {
-  background: #1b293a;
+  background: #f5f8fe;
 }
 
 html[data-theme="light"] .btn-ghost,
 html:not([data-theme]) .btn-ghost {
-  color: #223246;
-  border-color: #c7d0db;
+  color: #32445f;
+  border-color: #d3dde8;
   background: #ffffff;
 }
 
@@ -2254,13 +2254,13 @@ html[data-theme="light"] .field-row select,
 html:not([data-theme]) .field-row input,
 html:not([data-theme]) .field-row textarea,
 html:not([data-theme]) .field-row select {
-  border-color: #c8d1dc;
+  border-color: #d3dbe7;
   background: #ffffff;
 }
 
 html[data-theme="light"] input[type="range"],
 html:not([data-theme]) input[type="range"] {
-  accent-color: #223246;
+  accent-color: #1f4dd8;
 }
 
 html[data-theme="light"] .deliberation-chart,
@@ -2269,7 +2269,7 @@ html[data-theme="light"] .comparison-chart,
 html:not([data-theme]) .deliberation-chart,
 html:not([data-theme]) .progress-chart,
 html:not([data-theme]) .comparison-chart {
-  border-color: #d8dfe7;
+  border-color: #dfe6ee;
   background: #ffffff;
 }
 
@@ -2299,17 +2299,41 @@ html:not([data-theme]) .del-inspect-label {
 
 html[data-theme="light"] .del-consensus-path,
 html:not([data-theme]) .del-consensus-path {
-  stroke: #223246;
+  stroke: #1d3557;
 }
 
 html[data-theme="light"] .del-truth,
 html:not([data-theme]) .del-truth {
-  stroke: rgba(143, 34, 54, 0.7);
+  stroke: rgba(31, 77, 216, 0.65);
 }
 
 html[data-theme="light"] .site-footer,
 html:not([data-theme]) .site-footer {
-  border-top: 1px solid #dde3ea;
+  border-top: 1px solid #e4eaf1;
+}
+
+html[data-theme="light"] .featured-market-chart,
+html:not([data-theme]) .featured-market-chart {
+  border-color: #dfe6ee;
+  background: #ffffff;
+}
+
+html[data-theme="light"] .featured-market-chip,
+html:not([data-theme]) .featured-market-chip {
+  border-color: #d6deea;
+  background: #f7f9fc;
+  color: #42516a;
+}
+
+html[data-theme="light"] .featured-range-controls button.is-active,
+html:not([data-theme]) .featured-range-controls button.is-active {
+  background: #1d3557;
+  border-color: #1d3557;
+}
+
+html[data-theme="light"] .normative-inline-dotted,
+html:not([data-theme]) .normative-inline-dotted {
+  border-bottom-color: #a2adbb;
 }
 
 @media (max-width: 1060px) {

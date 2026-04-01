@@ -476,3 +476,82 @@ textarea:focus-visible {
     font-size: 0.74rem;
   }
 }
+
+/* Forethought-inspired normative explainer styling */
+.normative-hero {
+  background: #ffffff;
+}
+
+.normative-source-strip a {
+  border-color: #d7e0ea;
+  background: #f7f9fc;
+  color: #3e4f67;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.normative-source-strip a:hover,
+.normative-source-strip a:focus-visible {
+  border-color: #c7d2e0;
+  background: #eef3fb;
+}
+
+.normative-toc a {
+  color: #3e4f67;
+}
+
+.normative-toc a:hover,
+.normative-toc a:focus-visible {
+  color: #1d3557;
+}
+
+.comparison-card-mini,
+.diagram-card,
+.strategy-row,
+.mind-card,
+.protocol-card,
+.guardrail-tool,
+.guardrail-result {
+  border-color: #dfe6ee;
+  background: #f7f9fc;
+  box-shadow: 0 3px 12px rgba(27, 36, 50, 0.05);
+}
+
+.theory-filter-btn.is-active {
+  background: #1d3557;
+  border-color: #1d3557;
+}
+
+.theory-table th {
+  background: #f1f5fb;
+  color: #31455e;
+}
+
+.theory-table th,
+.theory-table td,
+.theory-table {
+  border-color: #dfe6ee;
+}
+
+.normative-svg {
+  border-color: #dfe6ee;
+}
+
+.svg-node {
+  fill: #f3f6fb;
+  stroke: #c8d3e2;
+}
+
+.svg-primary {
+  fill: #edf3ff;
+  stroke: #b9c9e2;
+}
+
+.svg-secondary {
+  fill: #f7f9fc;
+  stroke: #ccd6e4;
+}
+
+.svg-link {
+  stroke: #1f4dd8;
+}
