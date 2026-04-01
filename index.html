@@ -11,8 +11,9 @@
   <link rel="stylesheet" href="auth.css">
   <script src="auth.js" defer></script>
   <script src="conviction.js" defer></script>
+  <script src="parfit-graphics.js" defer></script>
 </head>
-<body>
+<body class="forethought-page">
   <a class="skip-link" href="#main-content">Skip to main content</a>
   <p id="wre-banner" class="wre-banner"><a href="/wre/index.html">Learn WRE — Reflective Equilibrium lessons</a></p>
   <div class="orb orb-a" aria-hidden="true"></div>
@@ -24,18 +25,13 @@
       <div class="header-tools">
         <button id="navToggle" class="nav-toggle" type="button" aria-expanded="false" aria-controls="mainNav" aria-label="Open main menu">Menu</button>
         <nav id="mainNav" class="main-nav" aria-label="Primary">
-          <a href="#featured-market-day">Featured Markets</a>
-          <a href="#progress">Progress</a>
-          <a href="#comparison">Math vs Ethics</a>
-          <a href="#re-lab">RE Lab</a>
-          <a href="wre-module.html">WRE Module</a>
-          <a href="publication.html">Publications</a>
-          <a href="#rule">Rule</a>
-          <a href="#matching">Matching</a>
-          <a href="#pledge">Pledge</a>
+          <a href="#featured-market-day">Research</a>
+          <a href="#deliberation">About</a>
           <a href="#studio">Dialogues</a>
-          <a href="#ledger">Action Ledger</a>
-          <a href="moral-market.html">Normativity Market</a>
+          <a href="publication.html">Publications</a>
+          <a href="moral-market.html">Markets</a>
+          <a href="#pledge">Pledge</a>
+          <a class="nav-pill" href="#footerNewsletter">Newsletter</a>
           <a href="profile.html">Profile</a>
         </nav>
       </div>
@@ -43,6 +39,129 @@
   </header>
 
   <main id="main-content" class="container" tabindex="-1">
+    <section class="section reveal forethought-intro-section" aria-label="Normativity Editorial Intro">
+      <div class="forethought-intro-inner container">
+        <article class="forethought-intro-card">
+          <p class="eyebrow">Research</p>
+          <h1>How should we navigate explosive normative progress?</h1>
+          <p>
+            Moral and technological change can accelerate faster than institutions update.
+            Better collective reasoning helps us identify harmful practices earlier.
+          </p>
+          <p>
+            Normativity is a public nonprofit project for structured disagreement, confidence updates,
+            and accountable action.
+          </p>
+        </article>
+        <svg class="forethought-intro-lines" viewBox="0 0 860 500" role="img" aria-label="Decorative trend lines">
+          <g fill="none" stroke="#ff5f35" stroke-width="2.5">
+            <path d="M20 470 L610 390 L700 140 L840 -10" />
+            <path d="M20 470 L625 375 L720 60 L840 -40" />
+            <path d="M20 470 L640 360 L735 15 L840 -60" />
+            <path d="M20 470 L655 342 L755 -20 L840 -70" />
+            <path d="M20 470 L670 326 L770 -52 L840 -82" />
+          </g>
+        </svg>
+      </div>
+    </section>
+
+    <section id="parfit-mountain" class="section reveal parfit-section" aria-labelledby="parfitTitle">
+      <div class="parfit-head">
+        <p class="eyebrow">Parfit Analogy</p>
+        <h2 id="parfitTitle">Competing ethical theories can climb toward the same summit from different sides.</h2>
+        <p class="parfit-lede">
+          As Derek Parfit suggested, routes differ, intermediate judgments diverge, and local views conflict. Yet sustained reflection can reveal convergence on deeper truths.
+        </p>
+      </div>
+
+      <div class="parfit-grid">
+        <article class="parfit-copy panel">
+          <h3>Mountain View</h3>
+          <p>
+            Each line is a theory-family trajectory. Motion shows inquiry over time: revising cases, principles, and background commitments while climbing.
+          </p>
+          <ul class="parfit-list">
+            <li>Different starting points: welfare, duty, virtue, contract, relation.</li>
+            <li>Distinct local routes: disagreements persist for long stretches.</li>
+            <li>Shared summit pressure: broader coherence pulls views upward.</li>
+          </ul>
+        </article>
+
+        <article class="parfit-graphic-card" aria-label="Animated mountain with multiple ethical routes to one summit">
+          <svg id="parfitMountainGraphic" viewBox="0 0 900 520" role="img" aria-label="Ethical theories climbing one mountain from different sides">
+            <defs>
+              <linearGradient id="parfitSlopeFade" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#f4f4ef" />
+                <stop offset="100%" stop-color="#ecece6" />
+              </linearGradient>
+            </defs>
+            <rect x="0" y="0" width="900" height="520" fill="url(#parfitSlopeFade)"></rect>
+            <path class="parfit-mountain-outline" d="M40 468 Q220 220 450 78 Q680 220 860 468"></path>
+            <path class="parfit-ridge" d="M160 378 Q280 248 450 78 Q620 248 740 378"></path>
+
+            <path id="route-conseq" data-route="consequentialist" class="parfit-route-line" d="M72 472 C160 430 256 355 340 260 C382 214 420 156 450 78"></path>
+            <path id="route-deon" data-route="deontological" class="parfit-route-line" d="M112 456 C172 390 232 330 306 276 C364 232 412 166 450 78"></path>
+            <path id="route-virtue" data-route="virtue" class="parfit-route-line" d="M225 466 C274 430 318 378 352 324 C384 274 420 188 450 78"></path>
+            <path id="route-contract" data-route="contractualist" class="parfit-route-line" d="M816 472 C748 418 686 350 620 270 C560 196 508 128 450 78"></path>
+            <path id="route-relational" data-route="relational" class="parfit-route-line" d="M764 452 C706 398 642 340 594 286 C534 222 496 154 450 78"></path>
+            <path id="route-hybrid" data-route="hybrid" class="parfit-route-line" d="M674 462 C622 414 578 364 544 314 C510 262 486 182 450 78"></path>
+
+            <circle class="parfit-summit-core" cx="450" cy="78" r="6"></circle>
+            <circle data-summit-pulse class="parfit-summit-pulse" cx="450" cy="78" r="10"></circle>
+
+            <circle class="parfit-climber-dot" data-climber="consequentialist-a" r="5"></circle>
+            <circle class="parfit-climber-dot ghost" data-climber="consequentialist-b" r="4"></circle>
+            <circle class="parfit-climber-dot" data-climber="deontological-a" r="5"></circle>
+            <circle class="parfit-climber-dot ghost" data-climber="deontological-b" r="4"></circle>
+            <circle class="parfit-climber-dot" data-climber="virtue-a" r="5"></circle>
+            <circle class="parfit-climber-dot ghost" data-climber="virtue-b" r="4"></circle>
+            <circle class="parfit-climber-dot" data-climber="contractualist-a" r="5"></circle>
+            <circle class="parfit-climber-dot ghost" data-climber="contractualist-b" r="4"></circle>
+            <circle class="parfit-climber-dot" data-climber="relational-a" r="5"></circle>
+            <circle class="parfit-climber-dot ghost" data-climber="relational-b" r="4"></circle>
+            <circle class="parfit-climber-dot" data-climber="hybrid-a" r="5"></circle>
+            <circle class="parfit-climber-dot ghost" data-climber="hybrid-b" r="4"></circle>
+
+            <text class="parfit-graphic-label" x="52" y="492">Consequentialist</text>
+            <text class="parfit-graphic-label" x="88" y="438">Deontological</text>
+            <text class="parfit-graphic-label" x="214" y="498">Virtue</text>
+            <text class="parfit-graphic-label" x="646" y="500">Hybrid</text>
+            <text class="parfit-graphic-label" x="724" y="438">Relational</text>
+            <text class="parfit-graphic-label" x="700" y="492">Contractualist</text>
+            <text class="parfit-summit-label" x="468" y="86">Shared summit</text>
+          </svg>
+        </article>
+      </div>
+
+      <article class="parfit-graphic-card parfit-secondary-graphic" aria-label="Animated convergence lattice graphic">
+        <svg id="parfitLatticeGraphic" viewBox="0 0 1180 360" role="img" aria-label="Theories diverge locally then converge under reflective pressure">
+          <rect x="0" y="0" width="1180" height="360" fill="#efefea"></rect>
+          <g class="parfit-lattice-grid">
+            <path d="M120 48H1060"></path>
+            <path d="M120 138H1060"></path>
+            <path d="M120 228H1060"></path>
+            <path d="M120 318H1060"></path>
+            <path d="M120 48V318"></path>
+            <path d="M433 48V318"></path>
+            <path d="M746 48V318"></path>
+            <path d="M1060 48V318"></path>
+          </g>
+          <path id="lattice-a" data-lattice-route class="parfit-lattice-line" d="M120 318 L433 318 L746 318 L1060 48"></path>
+          <path id="lattice-b" data-lattice-route class="parfit-lattice-line" d="M120 228 L433 228 L746 138 L1060 48"></path>
+          <path id="lattice-c" data-lattice-route class="parfit-lattice-line" d="M120 138 L433 228 L746 228 L1060 48"></path>
+          <path id="lattice-d" data-lattice-route class="parfit-lattice-line" d="M120 48 L433 138 L746 228 L1060 48"></path>
+          <path id="lattice-e" data-lattice-route class="parfit-lattice-line" d="M120 48 L433 48 L746 138 L1060 48"></path>
+          <circle class="parfit-lattice-node" data-lattice-dot="a" r="4"></circle>
+          <circle class="parfit-lattice-node" data-lattice-dot="b" r="4"></circle>
+          <circle class="parfit-lattice-node" data-lattice-dot="c" r="4"></circle>
+          <circle class="parfit-lattice-node" data-lattice-dot="d" r="4"></circle>
+          <circle class="parfit-lattice-node" data-lattice-dot="e" r="4"></circle>
+          <text class="parfit-lattice-label" x="120" y="344">Divergent local judgments</text>
+          <text class="parfit-lattice-label" x="898" y="344">Convergence under reflection</text>
+        </svg>
+      </article>
+    </section>
+
     <section id="featured-market-day" class="section reveal">
       <div class="section-head featured-market-section-head">
         <p class="eyebrow">Featured Markets</p>
@@ -726,9 +845,30 @@
     </section>
   </main>
 
-  <footer class="site-footer">
-    <div class="container">
-      <p>Openly and honestly reflect on moral beliefs; try our best to understand others' beliefs; try our best to act according to our considered beliefs.</p>
+  <footer class="site-footer forethought-footer">
+    <div class="container forethought-footer-grid">
+      <div class="forethought-footer-main">
+        <a class="brand footer-brand" href="#main-content">Normativity</a>
+        <a class="forethought-podcast-link" href="publication.html">Listen to our podcast ↗</a>
+        <form id="footerNewsletter" class="forethought-newsletter" action="#" method="get">
+          <label for="newsletterEmail">Email</label>
+          <div class="forethought-newsletter-row">
+            <input id="newsletterEmail" name="email" type="email" autocomplete="email" placeholder="Email">
+            <button class="btn btn-ghost" type="submit">Subscribe ↗</button>
+          </div>
+          <p>By subscribing you agree to our publication norms. Unsubscribe anytime.</p>
+        </form>
+        <p class="forethought-footer-note">Openly and honestly reflect on moral beliefs; try our best to understand others' beliefs; try our best to act according to our considered beliefs.</p>
+      </div>
+      <nav class="forethought-footer-nav" aria-label="Footer navigation">
+        <a href="#featured-market-day">Research</a>
+        <a href="#deliberation">About</a>
+        <a href="#studio">Dialogues</a>
+        <a href="#pledge">Pledge</a>
+        <a href="publication.html">Publications</a>
+        <a href="moral-market.html">Markets</a>
+        <a href="profile.html">Profile</a>
+      </nav>
     </div>
   </footer>
 </body>

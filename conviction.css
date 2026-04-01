@@ -2499,3 +2499,538 @@ html:not([data-theme]) .normative-inline-dotted {
     transform: translateY(0);
   }
 }
+
+/* Forethought-style homepage structure */
+.forethought-page .brand {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Garamond, serif;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: #2f2d2b;
+}
+
+.forethought-page .site-header {
+  border-bottom: 1px solid #e7e8e3 !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+}
+
+.forethought-page .wre-banner {
+  display: none;
+}
+
+.forethought-page .main-nav {
+  gap: 0.22rem;
+}
+
+.forethought-page .main-nav a {
+  border: 1px solid transparent;
+  border-radius: 8px;
+  color: #444846 !important;
+  font-size: 0.82rem !important;
+  font-weight: 500 !important;
+  padding: 0.36rem 0.56rem;
+}
+
+.forethought-page .main-nav a:hover,
+.forethought-page .main-nav a:focus-visible {
+  background: #f6f6f3 !important;
+  border-color: #e1e4de !important;
+  color: #2f2d2b !important;
+}
+
+.forethought-page .main-nav a.nav-pill {
+  border-color: #d6dbd6 !important;
+  background: #fbfbfa;
+}
+
+.forethought-intro-section {
+  position: relative;
+  left: 50%;
+  width: 100vw;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  margin-top: 0.75rem;
+  background: #efefea;
+  border-top: 1px solid #e1e2dc;
+  border-bottom: 1px solid #e1e2dc;
+  overflow: hidden;
+}
+
+.forethought-intro-section::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(145, 150, 152, 0.22) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(145, 150, 152, 0.22) 1px, transparent 1px);
+  background-size: 52px 52px;
+  pointer-events: none;
+}
+
+.forethought-intro-inner {
+  position: relative;
+  min-height: 680px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  padding: 6.2rem 0 3.8rem;
+}
+
+.forethought-intro-card {
+  position: relative;
+  z-index: 2;
+  width: min(820px, calc(100% - 2rem));
+  background: #f7f7f5;
+  border: 1px solid #e3e4df;
+  padding: 2.55rem 3rem 2.2rem;
+  margin-left: clamp(0rem, 4vw, 2rem);
+}
+
+.forethought-intro-card h1 {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Garamond, serif;
+  font-weight: 500;
+  font-size: clamp(2.2rem, 4.8vw, 4.05rem);
+  line-height: 1.06;
+  letter-spacing: 0.005em;
+  margin-bottom: 1.1rem;
+  color: #2f2d2b;
+}
+
+.forethought-intro-card p {
+  color: #3f4343;
+  font-size: clamp(1.02rem, 1.35vw, 1.3rem);
+  max-width: 39ch;
+}
+
+.forethought-intro-lines {
+  position: absolute;
+  right: clamp(-180px, -6vw, -20px);
+  bottom: 0;
+  width: clamp(560px, 60vw, 960px);
+  height: auto;
+  z-index: 1;
+  opacity: 0.95;
+}
+
+.forethought-page #deliberation.section {
+  background: #f3f3f0;
+  border: 1px solid #e3e4df;
+  padding: 1.25rem;
+}
+
+.forethought-page #deliberation .section-head h2,
+.forethought-page #featured-market-day .section-head h2,
+.forethought-page .section h2 {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Garamond, serif;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: #2f2d2b;
+}
+
+.forethought-page .panel {
+  border-color: #dfe2e3 !important;
+  box-shadow: none !important;
+  background: #fbfbfa !important;
+}
+
+.forethought-page .btn {
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+}
+
+.forethought-page .btn-primary {
+  background: #2f3d53 !important;
+  border-color: #2f3d53 !important;
+}
+
+.forethought-page .btn-primary:hover,
+.forethought-page .btn-primary:focus-visible {
+  background: #263247 !important;
+}
+
+.forethought-page .btn-secondary,
+.forethought-page .btn-ghost {
+  background: #ffffff !important;
+  color: #3f474f !important;
+  border-color: #d3d9e0 !important;
+}
+
+.forethought-footer {
+  background: #ecece8;
+  border-top: 1px solid #e0e2dc !important;
+  margin-top: 2.4rem;
+  padding: 2.5rem 0 3rem !important;
+}
+
+.forethought-footer-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(220px, 0.8fr);
+  gap: 1.4rem;
+  align-items: start;
+}
+
+.forethought-footer-main {
+  display: grid;
+  gap: 1.05rem;
+}
+
+.forethought-footer .footer-brand {
+  justify-self: start;
+}
+
+.forethought-podcast-link {
+  text-decoration: none;
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Garamond, serif;
+  font-size: clamp(1.8rem, 3.2vw, 3rem);
+  color: #2f2d2b;
+}
+
+.forethought-podcast-link:hover,
+.forethought-podcast-link:focus-visible {
+  text-decoration: underline;
+}
+
+.forethought-newsletter {
+  max-width: 760px;
+}
+
+.forethought-newsletter label {
+  display: block;
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Garamond, serif;
+  font-size: clamp(2.05rem, 3.5vw, 3.4rem);
+  color: #70716f;
+}
+
+.forethought-newsletter-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.6rem;
+  align-items: center;
+  border-bottom: 1px solid #8a8c8b;
+  padding-bottom: 0.3rem;
+}
+
+.forethought-newsletter-row input {
+  border: 0;
+  background: transparent;
+  padding: 0.2rem 0;
+  font-size: 1.15rem;
+  color: #2f2d2b;
+}
+
+.forethought-newsletter-row input:focus-visible {
+  outline: none;
+}
+
+.forethought-newsletter p {
+  margin-top: 0.55rem;
+  color: #7a7b7b;
+  font-size: 0.8rem;
+}
+
+.forethought-footer-note {
+  margin: 0;
+  color: #555e67;
+  font-size: 0.95rem;
+}
+
+.forethought-footer-nav {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.forethought-footer-nav a {
+  text-decoration: none;
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Garamond, serif;
+  font-size: clamp(1.55rem, 2.7vw, 3rem);
+  line-height: 1.08;
+  color: #2f2d2b;
+}
+
+.forethought-footer-nav a:hover,
+.forethought-footer-nav a:focus-visible {
+  text-decoration: underline;
+}
+
+@media (max-width: 1100px) {
+  .forethought-intro-inner {
+    min-height: 560px;
+    padding-top: 4.8rem;
+  }
+
+  .forethought-intro-card {
+    padding: 1.6rem 1.75rem 1.45rem;
+  }
+
+  .forethought-intro-lines {
+    width: clamp(460px, 76vw, 780px);
+    right: -220px;
+  }
+}
+
+@media (max-width: 860px) {
+  .forethought-intro-inner {
+    min-height: 0;
+    padding: 2.6rem 0 2rem;
+  }
+
+  .forethought-intro-card {
+    width: calc(100% - 1rem);
+    margin-inline: 0.5rem;
+  }
+
+  .forethought-intro-lines {
+    position: relative;
+    right: auto;
+    width: calc(100% - 1rem);
+    margin: 1rem auto 0;
+    display: block;
+  }
+
+  .forethought-footer-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .forethought-newsletter-row {
+    grid-template-columns: 1fr;
+    gap: 0.45rem;
+  }
+
+  .forethought-footer-nav a {
+    font-size: clamp(1.3rem, 7vw, 2.2rem);
+  }
+}
+
+/* Parfit mountain + convergence graphics */
+.parfit-section {
+  margin-top: 2.2rem;
+}
+
+.parfit-head {
+  margin-bottom: 0.9rem;
+}
+
+.parfit-head h2 {
+  max-width: 32ch;
+}
+
+.parfit-lede {
+  margin: 0;
+  max-width: 70ch;
+  color: #4e565f;
+}
+
+.parfit-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.44fr) minmax(0, 0.56fr);
+  gap: 0.9rem;
+  align-items: stretch;
+}
+
+.parfit-copy {
+  background: #f4f4f1 !important;
+  display: grid;
+  gap: 0.5rem;
+  align-content: start;
+}
+
+.parfit-copy h3 {
+  margin: 0;
+  font-size: 1.3rem;
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Garamond, serif;
+  color: #2f2d2b;
+}
+
+.parfit-copy p {
+  margin: 0;
+  color: #4b535d;
+}
+
+.parfit-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: #3f464f;
+  display: grid;
+  gap: 0.34rem;
+}
+
+.parfit-graphic-card {
+  position: relative;
+  border: 1px solid #e0e2dd;
+  background: #efefea;
+  overflow: hidden;
+}
+
+.parfit-graphic-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(149, 152, 152, 0.2) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(149, 152, 152, 0.2) 1px, transparent 1px);
+  background-size: 52px 52px;
+}
+
+#parfitMountainGraphic,
+#parfitLatticeGraphic {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: auto;
+  z-index: 1;
+}
+
+.parfit-mountain-outline {
+  fill: none;
+  stroke: #8e918f;
+  stroke-width: 2;
+}
+
+.parfit-ridge {
+  fill: none;
+  stroke: #a0a29f;
+  stroke-width: 1.6;
+}
+
+.parfit-route-line {
+  fill: none;
+  stroke: #ff5f35;
+  stroke-width: 2.4;
+  opacity: 0.95;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 13 12;
+  animation: parfitRouteFlow 8s linear infinite;
+}
+
+#route-conseq { animation-duration: 7.2s; }
+#route-deon { animation-duration: 8.6s; }
+#route-virtue { animation-duration: 9.4s; }
+#route-contract { animation-duration: 8.1s; }
+#route-relational { animation-duration: 9.1s; }
+#route-hybrid { animation-duration: 7.8s; }
+
+.parfit-summit-core {
+  fill: #ff5f35;
+}
+
+.parfit-summit-pulse {
+  fill: none;
+  stroke: rgba(255, 95, 53, 0.58);
+  stroke-width: 1.8;
+}
+
+.parfit-climber-dot {
+  fill: #ff5f35;
+  stroke: #f8f6f3;
+  stroke-width: 1.6;
+}
+
+.parfit-climber-dot.ghost {
+  fill: #2f2d2b;
+  opacity: 0.5;
+}
+
+.parfit-graphic-label {
+  fill: #595f65;
+  font-size: 16px;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 500;
+}
+
+.parfit-summit-label {
+  fill: #2f2d2b;
+  font-size: 15px;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 600;
+}
+
+.parfit-secondary-graphic {
+  margin-top: 0.9rem;
+}
+
+.parfit-lattice-grid path {
+  fill: none;
+  stroke: #9a9e9c;
+  stroke-width: 1.4;
+}
+
+.parfit-lattice-line {
+  fill: none;
+  stroke: #ff5f35;
+  stroke-width: 2.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 14 10;
+  animation: parfitLatticeFlow 9s linear infinite;
+}
+
+#lattice-a { animation-duration: 7.4s; }
+#lattice-b { animation-duration: 8.2s; }
+#lattice-c { animation-duration: 8.9s; }
+#lattice-d { animation-duration: 10.1s; }
+#lattice-e { animation-duration: 9.5s; }
+
+.parfit-lattice-node {
+  fill: #ff5f35;
+  stroke: #f8f6f3;
+  stroke-width: 1.4;
+}
+
+.parfit-lattice-label {
+  fill: #5a6166;
+  font-size: 16px;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 500;
+}
+
+.parfit-graphic-card.is-paused .parfit-route-line,
+.parfit-graphic-card.is-paused .parfit-lattice-line {
+  animation-play-state: paused;
+}
+
+@keyframes parfitRouteFlow {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -180;
+  }
+}
+
+@keyframes parfitLatticeFlow {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -220;
+  }
+}
+
+@media (max-width: 1040px) {
+  .parfit-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .parfit-copy h3 {
+    font-size: 1.15rem;
+  }
+
+  .parfit-lattice-label,
+  .parfit-graphic-label {
+    font-size: 12px;
+  }
+
+  .parfit-summit-label {
+    font-size: 12px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .parfit-route-line,
+  .parfit-lattice-line {
+    animation: none !important;
+  }
+}
