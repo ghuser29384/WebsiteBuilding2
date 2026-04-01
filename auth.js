@@ -307,7 +307,13 @@
     if (signOutBtn) {
       signOutBtn.addEventListener("click", function () {
         signOut();
-        window.location.assign("auth.html?mode=signin");
+        var currentPath = window.location.pathname || "";
+        var page = currentPath.split("/").pop() || "";
+        if (page === "auth.html") {
+          window.location.assign("index.html");
+          return;
+        }
+        window.location.reload();
       });
     }
   }

@@ -191,6 +191,11 @@
           <p class="hint re-source-note">
             Animation informed by SEP (<em>Reflective Equilibrium</em>), Rawls, Daniels, Scanlon, and recent directed reflective equilibrium work.
           </p>
+          <div class="button-row">
+            <a class="btn btn-ghost" href="normative-issues.html#deliberation-protocol">
+              Open SEP Deliberation Protocol
+            </a>
+          </div>
         </article>
 
         <article class="panel deliberation-stage">
@@ -537,7 +542,7 @@
               </label>
               <div class="availability-block">
                 <p class="field-label">Your availability (select any half-hour slot in the next 30 days)</p>
-                <div id="roomAvailability" class="availability-grid" role="group" aria-label="Room creator availability"></div>
+                <div id="roomAvailability" class="availability-grid" role="group" aria-label="Dialogue creator availability"></div>
               </div>
               <p id="convictionStatus" class="hint"></p>
               <button class="btn btn-secondary" type="submit">Create Dialogue</button>
@@ -553,12 +558,13 @@
           <article class="panel">
             <h3>Reserve and Match</h3>
             <p class="hint">Reservations require an opposing belief, a confidence score, reasons, and overlapping time slots.</p>
-            <div id="activeConvictionSummary" class="mini-summary">No active conviction selected yet.</div>
+            <div id="activeConvictionSummary" class="mini-summary">No active dialogue selected yet.</div>
 
             <form id="reservationForm" class="compact-form">
               <label class="field-row" for="reservationNameInput">
                 Participant username
                 <input id="reservationNameInput" name="reservationName" type="text" placeholder="e.g., jasmine" required>
+                <span class="hint">If signed in, this auto-fills with your username.</span>
               </label>
               <label class="field-row" for="reservationBeliefInput">
                 Belief about the proposition
@@ -623,7 +629,7 @@
             <ul id="reservationList" class="stack-list reservation-list"></ul>
 
             <h4>Suggested Matches</h4>
-            <p id="matchRationale" class="hint">Select a room to generate suggested matches.</p>
+            <p id="matchRationale" class="hint">Select a dialogue to generate suggested matches.</p>
             <div id="counterpartList" class="counterpart-list"></div>
 
             <div class="invite-block">
@@ -633,6 +639,10 @@
                   Username to invite
                   <input id="inviteNameInput" name="inviteName" type="text" placeholder="e.g., jasper" required>
                 </label>
+                <div class="availability-block">
+                  <p class="field-label">Your proposed availability (select any half-hour slot in the next 30 days)</p>
+                  <div id="inviteAvailability" class="availability-grid" role="group" aria-label="Invite availability"></div>
+                </div>
                 <p id="inviteStatus" class="hint"></p>
                 <button class="btn btn-ghost" type="submit">Send Invite</button>
               </form>

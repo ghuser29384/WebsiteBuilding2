@@ -131,7 +131,7 @@
     var handle = normalizeHandle(user && user.handle);
 
     var dialogueState = readFromLocalStorage(
-      [auth.scopedStorageKey(STORAGE_KEYS.dialogue), STORAGE_KEYS.dialogue],
+      [auth.scopedStorageKey(STORAGE_KEYS.dialogue)],
       {
         pledge: { signed: false, name: "", role: "", focus: "", firstAction: "", signedAt: "" },
         pledgeRegistry: [],
@@ -142,7 +142,7 @@
     );
 
     var marketState = readFromLocalStorage(
-      [auth.scopedStorageKey(STORAGE_KEYS.market), auth.scopedStorageKey(STORAGE_KEYS.marketLegacy), STORAGE_KEYS.market, STORAGE_KEYS.marketLegacy],
+      [auth.scopedStorageKey(STORAGE_KEYS.market), auth.scopedStorageKey(STORAGE_KEYS.marketLegacy)],
       {
         positions: [],
         activity: [],
@@ -158,7 +158,7 @@
       annotationReplies: [],
     });
 
-    var wreState = readFromLocalStorage([auth.scopedStorageKey(STORAGE_KEYS.wre), STORAGE_KEYS.wre], {
+    var wreState = readFromLocalStorage([auth.scopedStorageKey(STORAGE_KEYS.wre)], {
       judgments: [],
       principles: [],
       theories: [],
@@ -276,6 +276,7 @@
   function renderProfile(data) {
     var user = data.user;
     var handle = normalizeHandle(user && user.handle);
+    var userId = String((user && user.id) || "");
 
     if (dom.profileTitle) {
       dom.profileTitle.textContent = "@" + user.handle + " · Profile";
@@ -327,7 +328,8 @@
     (Array.isArray(data.dialogueState.convictions) ? data.dialogueState.convictions : []).forEach(function (conviction) {
       var reservations = Array.isArray(conviction.reservations) ? conviction.reservations : [];
       reservations.forEach(function (reservation) {
-        if (normalizeHandle(reservation.name) !== handle) return;
+        var reservationUserId = String((reservation && reservation.userId) || "");
+        if (!userId || !reservationUserId || reservationUserId !== userId) return;
         var belief = reservation.belief === "false" ? "not true" : "true";
         var availability = formatAvailabilitySummary(reservation.availability);
         var reservedAt = reservation.createdAt ? " • reserved " + formatDate(reservation.createdAt) : "";
