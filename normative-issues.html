@@ -12,10 +12,11 @@
   <link rel="stylesheet" href="conviction.css">
   <link rel="stylesheet" href="auth.css">
   <link rel="stylesheet" href="normative-issues.css">
+  <link rel="stylesheet" href="theme.css">
   <script src="auth.js" defer></script>
   <script src="normative-issues.js" defer></script>
 </head>
-<body>
+<body class="forethought-site">
   <a class="skip-link" href="#main-content">Skip to main content</a>
   <header class="site-header">
     <div class="container header-inner">
@@ -44,7 +45,8 @@
         It combines entries on <strong>normativity/metaethics</strong>, <strong>morality definition</strong>,
         <strong>moral reasoning and epistemology</strong>, and <strong>major normative theories</strong>.
         The goal is conceptual precision: what counts as a normative issue, where moral issues fit, and how different
-        theories and methods can be compared responsibly.
+        theories and methods can be compared responsibly. This synthesis was refreshed after reviewing the full SEP cluster
+        that includes moral theory, disagreement, skepticism, and thought-experiment methodology.
       </p>
       <div class="normative-source-strip" role="list" aria-label="Primary source entries">
         <a role="listitem" href="https://plato.stanford.edu/entries/normativity-metaethics/" target="_blank" rel="noopener">
@@ -52,6 +54,9 @@
         </a>
         <a role="listitem" href="https://plato.stanford.edu/entries/morality-definition/" target="_blank" rel="noopener">
           SEP: The Definition of Morality
+        </a>
+        <a role="listitem" href="https://plato.stanford.edu/entries/moral-theory/" target="_blank" rel="noopener">
+          SEP: Moral Theory
         </a>
         <a role="listitem" href="https://plato.stanford.edu/entries/reflective-equilibrium/" target="_blank" rel="noopener">
           SEP: Reflective Equilibrium
@@ -64,6 +69,36 @@
         </a>
         <a role="listitem" href="https://plato.stanford.edu/entries/reasoning-moral/" target="_blank" rel="noopener">
           SEP: Moral Reasoning
+        </a>
+        <a role="listitem" href="https://plato.stanford.edu/entries/moral-dilemmas/" target="_blank" rel="noopener">
+          SEP: Moral Dilemmas
+        </a>
+        <a role="listitem" href="https://plato.stanford.edu/entries/skepticism-moral/" target="_blank" rel="noopener">
+          SEP: Moral Skepticism
+        </a>
+        <a role="listitem" href="https://plato.stanford.edu/entries/moral-realism/" target="_blank" rel="noopener">
+          SEP: Moral Realism
+        </a>
+        <a role="listitem" href="https://plato.stanford.edu/entries/moral-cognitivism/" target="_blank" rel="noopener">
+          SEP: Moral Cognitivism vs Non-Cognitivism
+        </a>
+        <a role="listitem" href="https://plato.stanford.edu/entries/consequentialism/" target="_blank" rel="noopener">
+          SEP: Consequentialism
+        </a>
+        <a role="listitem" href="https://plato.stanford.edu/entries/consequentialism-rule/" target="_blank" rel="noopener">
+          SEP: Rule Consequentialism
+        </a>
+        <a role="listitem" href="https://plato.stanford.edu/entries/ethics-deontological/" target="_blank" rel="noopener">
+          SEP: Deontological Ethics
+        </a>
+        <a role="listitem" href="https://plato.stanford.edu/entries/ethics-virtue/" target="_blank" rel="noopener">
+          SEP: Virtue Ethics
+        </a>
+        <a role="listitem" href="https://plato.stanford.edu/entries/intuitionism-ethics/" target="_blank" rel="noopener">
+          SEP: Intuitionism in Ethics
+        </a>
+        <a role="listitem" href="https://plato.stanford.edu/entries/thought-experiment/" target="_blank" rel="noopener">
+          SEP: Thought Experiments
         </a>
       </div>
     </section>
@@ -81,6 +116,7 @@
           <li><a href="#relations">Relations Between Theories</a></li>
           <li><a href="#deliberation-protocol">SEP Deliberation Protocol</a></li>
           <li><a href="#epistemic-guardrails">Epistemic Guardrails Tool</a></li>
+          <li><a href="#disagreement-triage">Disagreement Triage Tool</a></li>
           <li><a href="#references">References + Notes</a></li>
         </ol>
       </aside>
@@ -738,8 +774,81 @@
           </div>
         </section>
 
+        <section id="disagreement-triage" class="panel explainer-panel">
+          <h2>10. Disagreement Triage (SEP: Moral Disagreement, Moral Epistemology, Moral Skepticism)</h2>
+          <p>
+            SEP disagreement work emphasizes that not all disagreement has the same evidential force. The update you should make
+            depends on structure: whether the other party is an epistemic peer, whether you rely on largely independent evidence,
+            and whether the clash is at the level of cases, principles, background theory, or metaethical semantics.
+          </p>
+          <div class="triage-grid">
+            <article class="triage-card">
+              <h3>1. Peer Symmetry</h3>
+              <p>If the opposing side looks similarly informed and careful, conciliation pressure is stronger.</p>
+            </article>
+            <article class="triage-card">
+              <h3>2. Evidence Independence</h3>
+              <p>Independent evidential routes add pressure; shared evidence with different weighting may call for narrower revision.</p>
+            </article>
+            <article class="triage-card">
+              <h3>3. Disagreement Level</h3>
+              <p>Case-level conflict, principle-level conflict, and background-theory conflict require different revision strategies.</p>
+            </article>
+            <article class="triage-card">
+              <h3>4. Skeptical Escalation</h3>
+              <p>Persistent high-level disagreement can justify confidence reduction without forcing full moral skepticism.</p>
+            </article>
+          </div>
+
+          <div class="triage-tool" role="group" aria-label="Disagreement triage planner">
+            <label class="field-row" for="triagePeer">
+              How symmetric is the disagreement?
+              <select id="triagePeer">
+                <option value="high">High peer symmetry (similarly informed and careful)</option>
+                <option value="medium" selected>Mixed symmetry</option>
+                <option value="low">Low symmetry (major expertise or evidence asymmetry)</option>
+              </select>
+            </label>
+
+            <label class="field-row" for="triageIndependence">
+              How independent are your evidential routes?
+              <select id="triageIndependence">
+                <option value="high">Mostly independent routes</option>
+                <option value="medium" selected>Partly shared, partly independent</option>
+                <option value="low">Largely shared evidence base</option>
+              </select>
+            </label>
+
+            <label class="field-row" for="triageLevel">
+              Where is the main disagreement located?
+              <select id="triageLevel">
+                <option value="case">Case-level judgment</option>
+                <option value="principle" selected>General principle</option>
+                <option value="background">Background theory</option>
+                <option value="semantic">Metaethical/semantic framework</option>
+              </select>
+            </label>
+
+            <label class="field-row" for="triageStakes">
+              Potential practical harm if your current view is wrong
+              <select id="triageStakes">
+                <option value="high">High</option>
+                <option value="medium" selected>Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </label>
+
+            <button id="triageEvaluateBtn" type="button" class="btn btn-secondary">Generate triage plan</button>
+          </div>
+
+          <div id="triageResult" class="triage-result" role="status" aria-live="polite">
+            <h3>Triage recommendation</h3>
+            <p>Set the parameters and click “Generate triage plan.”</p>
+          </div>
+        </section>
+
         <section id="references" class="panel explainer-panel">
-          <h2>10. References and How This Page Uses Them</h2>
+          <h2>11. References and How This Page Uses Them</h2>
           <p>
             This page is a structured synthesis. It does not attempt to settle the debates; it maps the conceptual terrain so users
             can track disagreements at the right level (definition, semantics, ontology, grounding, or epistemology).
@@ -758,6 +867,12 @@
                 The Definition of Morality
               </a>
               (substantive revision January 28, 2025).
+            </li>
+            <li>
+              Stanford Encyclopedia of Philosophy,
+              <a href="https://plato.stanford.edu/entries/moral-theory/" target="_blank" rel="noopener">
+                Moral Theory
+              </a>.
             </li>
             <li>
               Stanford Encyclopedia of Philosophy,
@@ -847,6 +962,10 @@
           <p class="hint">
             Interpretation note: labels such as “tendency” or “often” reflect comparative summaries drawn from the entries,
             not claims that every version of a theory has exactly those commitments.
+          </p>
+          <p class="hint">
+            Review note: this page’s conceptual map was refreshed on April 2, 2026 after cross-reading the full SEP cluster
+            used by the WRE lessons and market prompts.
           </p>
         </section>
       </div>

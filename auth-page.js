@@ -13,7 +13,11 @@
     signinPassword: document.getElementById("signinPassword"),
     signinAcceptTerms: document.getElementById("signinAcceptTerms"),
     signinBtn: document.getElementById("signinBtn"),
+    signupDisplayName: document.getElementById("signupDisplayName"),
     signupHandle: document.getElementById("signupHandle"),
+    signupBio: document.getElementById("signupBio"),
+    signupAvatarPreview: document.getElementById("signupAvatarPreview"),
+    signupAvatarBtn: document.getElementById("signupAvatarBtn"),
     signupEmail: document.getElementById("signupEmail"),
     signupPassword: document.getElementById("signupPassword"),
     signupPasswordConfirm: document.getElementById("signupPasswordConfirm"),
@@ -69,6 +73,10 @@
 
   function activateMode(mode) {
     var useSignup = mode === "signup";
+    if (document.body) {
+      document.body.classList.toggle("auth-signup-mode", useSignup);
+      document.body.classList.toggle("auth-signin-mode", !useSignup);
+    }
     if (dom.signinPanel) dom.signinPanel.classList.toggle("active", !useSignup);
     if (dom.signupPanel) dom.signupPanel.classList.toggle("active", useSignup);
     if (dom.signinTab) dom.signinTab.classList.toggle("active", !useSignup);
@@ -105,8 +113,14 @@
   }
 
   function onSignUp() {
+    var displayName = dom.signupDisplayName && dom.signupDisplayName.value ? String(dom.signupDisplayName.value).trim() : "";
     var password = dom.signupPassword && dom.signupPassword.value ? String(dom.signupPassword.value) : "";
     var passwordConfirm = dom.signupPasswordConfirm && dom.signupPasswordConfirm.value ? String(dom.signupPasswordConfirm.value) : "";
+
+    if (displayName.length < 2) {
+      setStatus("Name must be at least 2 characters.", true);
+      return;
+    }
 
     if (password !== passwordConfirm) {
       setStatus("Passwords do not match.", true);
@@ -114,7 +128,9 @@
     }
 
     var payload = {
+      displayName: displayName,
       handle: dom.signupHandle && dom.signupHandle.value,
+      bio: dom.signupBio && dom.signupBio.value,
       email: dom.signupEmail && dom.signupEmail.value,
       password: password,
       acceptedTerms: Boolean(dom.signupAcceptTerms && dom.signupAcceptTerms.checked),
@@ -148,6 +164,12 @@
       dom.signupBtn.addEventListener("click", onSignUp);
     }
 
+    if (dom.signupAvatarBtn) {
+      dom.signupAvatarBtn.addEventListener("click", function () {
+        setStatus("Profile photo upload is coming soon.", false);
+      });
+    }
+
     if (dom.signinPassword) {
       dom.signinPassword.addEventListener("keydown", function (event) {
         if (event.key !== "Enter") return;
@@ -163,6 +185,22 @@
         onSignUp();
       });
     }
+
+    if (dom.signupHandle) {
+      dom.signupHandle.addEventListener("input", updateSignupAvatarPreview);
+    }
+    if (dom.signupDisplayName) {
+      dom.signupDisplayName.addEventListener("input", updateSignupAvatarPreview);
+    }
+  }
+
+  function updateSignupAvatarPreview() {
+    if (!dom.signupAvatarPreview) return;
+    var rawName = dom.signupDisplayName && dom.signupDisplayName.value ? String(dom.signupDisplayName.value).trim() : "";
+    var rawHandle = dom.signupHandle && dom.signupHandle.value ? String(dom.signupHandle.value).trim() : "";
+    var fallback = rawName || rawHandle || "Normativity";
+    var initial = fallback.charAt(0).toUpperCase();
+    dom.signupAvatarPreview.textContent = initial;
   }
 
   document.addEventListener("DOMContentLoaded", function () {
@@ -173,6 +211,7 @@
     var mode = parseModeFromUrl();
     activateMode(mode);
     bindEvents();
+    updateSignupAvatarPreview();
 
     var currentUser = auth.getCurrentUser();
     if (currentUser && mode !== "agreement") {

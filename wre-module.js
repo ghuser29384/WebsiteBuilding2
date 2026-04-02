@@ -9,22 +9,30 @@
       id: "act_utilitarianism",
       label: "Act Utilitarianism",
       description: "Each of us should do whatever is expected to make the outcome best.",
+      sepTitle: "Consequentialism",
+      sepUrl: "https://plato.stanford.edu/entries/consequentialism/",
     },
     {
       id: "rule_utilitarianism",
       label: "Rule Utilitarianism",
       description: "Each of us should act on the principles whose acceptance would make things go best.",
+      sepTitle: "Rule Consequentialism",
+      sepUrl: "https://plato.stanford.edu/entries/consequentialism-rule/",
     },
     {
       id: "kantian_ethics",
       label: "Kantian Ethics",
       description: "Each of us should act on the principles whose universal acceptance everyone could rationally will.",
+      sepTitle: "Deontological Ethics",
+      sepUrl: "https://plato.stanford.edu/entries/ethics-deontological/",
     },
     {
       id: "scanlon_contractualism",
       label: "Scanlon's Contractualism",
       description:
         "An act is wrong if and only if, and because, such acts are disallowed by some principle that no one could reasonably reject.",
+      sepTitle: "Deontological Ethics",
+      sepUrl: "https://plato.stanford.edu/entries/ethics-deontological/",
     },
   ];
 
@@ -44,6 +52,8 @@
         kantian_ethics: "B",
         scanlon_contractualism: "B",
       },
+      sepTitle: "Moral Theory",
+      sepUrl: "https://plato.stanford.edu/entries/moral-theory/",
     },
     {
       id: "framing_innocent_case",
@@ -60,6 +70,8 @@
         kantian_ethics: "B",
         scanlon_contractualism: "B",
       },
+      sepTitle: "Moral Dilemmas",
+      sepUrl: "https://plato.stanford.edu/entries/moral-dilemmas/",
     },
     {
       id: "murderer_at_door_case",
@@ -76,6 +88,8 @@
         kantian_ethics: "B",
         scanlon_contractualism: "A",
       },
+      sepTitle: "Deontological Ethics",
+      sepUrl: "https://plato.stanford.edu/entries/ethics-deontological/",
     },
     {
       id: "promise_vs_rescue_case",
@@ -92,6 +106,8 @@
         kantian_ethics: "B",
         scanlon_contractualism: "A",
       },
+      sepTitle: "Moral Dilemmas",
+      sepUrl: "https://plato.stanford.edu/entries/moral-dilemmas/",
     },
     {
       id: "property_emergency_case",
@@ -108,6 +124,8 @@
         kantian_ethics: "B",
         scanlon_contractualism: "A",
       },
+      sepTitle: "Deontological Ethics",
+      sepUrl: "https://plato.stanford.edu/entries/ethics-deontological/",
     },
     {
       id: "numbers_rescue_case",
@@ -124,6 +142,8 @@
         kantian_ethics: "B",
         scanlon_contractualism: "B",
       },
+      sepTitle: "Consequentialism",
+      sepUrl: "https://plato.stanford.edu/entries/consequentialism/",
     },
   ];
 
@@ -149,6 +169,8 @@
     caseActionA: document.getElementById("caseActionA"),
     caseActionB: document.getElementById("caseActionB"),
     commonIntuition: document.getElementById("commonIntuition"),
+    caseSepLine: document.getElementById("caseSepLine"),
+    principleSepLine: document.getElementById("principleSepLine"),
     questionTitle: document.getElementById("questionTitle"),
     questionProgress: document.getElementById("questionProgress"),
     questionForm: document.getElementById("questionForm"),
@@ -267,6 +289,7 @@
       const intuitionAction = lessonCase.commonIntuition === "A" ? lessonCase.actionA : lessonCase.actionB;
       el.commonIntuition.textContent = "Common intuition typically favors: " + intuitionAction;
     }
+    renderSepAnchors();
   }
 
   function getQuestionModel(step) {
@@ -381,6 +404,7 @@
     }
 
     renderReflectionTimer();
+    renderSepAnchors();
     renderSummary();
     persistState();
   }
@@ -542,6 +566,27 @@
     const principleText = q3 === "A" ? lessonCase.actionA : lessonCase.actionB;
     const impliedText = implied === "A" ? lessonCase.actionA : lessonCase.actionB;
     const evidenceText = q4 === "yes" ? "Yes" : "No";
+    const methodGuidance = buildSepMethodGuidance({
+      q2: q2,
+      q3: q3,
+      evidenceAnswer: q4,
+      evidenceConfidence: q4c,
+      principleConfidence: q5c,
+    });
+    const sepRoundDiagnostic = buildRoundSepDiagnostics({
+      caseId: lessonCase.id,
+      q1: q1,
+      q2: q2,
+      q3: q3,
+      q4: q4,
+      q5: q5,
+      q1Confidence: q1c,
+      q2Confidence: q2c,
+      q3Confidence: q3c,
+      q4Confidence: q4c,
+      q5Confidence: q5c,
+      modelImplied: implied,
+    });
 
     const summaryRows = [
       { label: "Q1 principle", value: getPrincipleLabel(q1) + " (" + q1c + "%)" },
@@ -595,6 +640,54 @@
       "</p>" +
       "<p><strong>Common intuition often favors:</strong> " +
       escapeHtml(commonActionText) +
+      "</p>" +
+      '<div class="method-guidance-box">' +
+      "<h4>" +
+      escapeHtml(methodGuidance.title) +
+      "</h4>" +
+      "<ul>" +
+      methodGuidance.points
+        .map(function (point) {
+          return "<li>" + escapeHtml(point) + "</li>";
+        })
+        .join("") +
+      "</ul></div>" +
+      '<div class="sep-round-diagnostics">' +
+      "<h4>" +
+      escapeHtml(sepRoundDiagnostic.title) +
+      "</h4>" +
+      '<div class="sep-round-row"><strong>Current move:</strong> ' +
+      escapeHtml(sepRoundDiagnostic.moveLabel) +
+      "</div>" +
+      '<div class="sep-round-row"><strong>Disagreement stance:</strong> ' +
+      escapeHtml(sepRoundDiagnostic.disagreementLabel) +
+      "</div>" +
+      '<div class="sep-round-row"><strong>Confidence policy:</strong> ' +
+      escapeHtml(sepRoundDiagnostic.confidenceLabel) +
+      "</div>" +
+      '<p class="hint sep-round-note">' +
+      escapeHtml(sepRoundDiagnostic.note) +
+      "</p>" +
+      "<ul>" +
+      sepRoundDiagnostic.actions
+        .map(function (item) {
+          return "<li>" + escapeHtml(item) + "</li>";
+        })
+        .join("") +
+      "</ul>" +
+      '<p class="hint"><strong>Method anchors:</strong> ' +
+      sepRoundDiagnostic.links
+        .map(function (link) {
+          return buildSepLink(link.url, link.title);
+        })
+        .join(" · ") +
+      "</p>" +
+      "</div>" +
+      "<p class=\"hint\"><strong>SEP case anchor:</strong> " +
+      buildSepLink(recommendedCase.sepUrl, recommendedCase.sepTitle || "Relevant SEP entry") +
+      "</p>" +
+      "<p class=\"hint\"><strong>SEP principle anchor:</strong> " +
+      buildSepLink(getPrincipleSepUrl(principleId), getPrincipleSepTitle(principleId)) +
       "</p>";
   }
 
@@ -678,6 +771,128 @@
     return bestCase.id;
   }
 
+  function buildSepMethodGuidance(params) {
+    const payload = params || {};
+    const tensionHigh = payload.q2 && payload.q3 && payload.q2 !== payload.q3;
+    const evidenceYes = payload.evidenceAnswer === "yes";
+    const evidenceConfidence = clamp(Number(payload.evidenceConfidence), 1, 100);
+    const principleConfidence = clamp(Number(payload.principleConfidence), 1, 100);
+
+    if (evidenceYes && evidenceConfidence >= 65) {
+      return {
+        title: "Method guidance: active revision cycle",
+        points: [
+          "Treat this case as real defeasible evidence against your current principle ranking.",
+          "Run at least one alternative principle family on the same case set before finalizing.",
+          "Lower confidence temporarily unless the counterevidence is answered at principle level.",
+        ],
+      };
+    }
+
+    if (!evidenceYes && tensionHigh && principleConfidence >= 70) {
+      return {
+        title: "Method guidance: disagreement pressure without immediate concession",
+        points: [
+          "You can remain provisionally steadfast, but document why intuition is not decisive here.",
+          "Check whether disagreement is at case, principle, or background-theory level.",
+          "Schedule one follow-up pressure test to avoid overfitting your favored principle.",
+        ],
+      };
+    }
+
+    return {
+      title: "Method guidance: continue calibrated equilibration",
+      points: [
+        "Keep iterating between case judgments, principles, and background assumptions.",
+        "Use confidence updates rather than all-or-nothing reversals after each case.",
+        "Track unresolved tensions explicitly; coherence gain is fit-improvement, not proof of truth.",
+      ],
+    };
+  }
+
+  function buildRoundSepDiagnostics(payload) {
+    const input = payload || {};
+    const q1 = String(input.q1 || "");
+    const q2 = String(input.q2 || "");
+    const q3 = String(input.q3 || "");
+    const q4 = String(input.q4 || "");
+    const q5 = String(input.q5 || "");
+    const modelImplied = String(input.modelImplied || "");
+    const q1c = clamp(Number(input.q1Confidence), 1, 100);
+    const q4c = clamp(Number(input.q4Confidence), 1, 100);
+    const q5c = clamp(Number(input.q5Confidence), 1, 100);
+
+    const principleShift = Boolean(q1 && q5 && q1 !== q5);
+    const intuitionPrincipleTension = Boolean(q2 && q3 && q2 !== q3);
+    const intuitionModelTension = Boolean(q2 && modelImplied && q2 !== modelImplied);
+    const evidenceAccepted = q4 === "yes";
+    const confidenceDelta = q5c - q1c;
+
+    let moveLabel = "Narrow reflective-equilibrium pass";
+    if ((principleShift && evidenceAccepted) || (principleShift && intuitionPrincipleTension)) {
+      moveLabel = "Wide reflective-equilibrium move";
+    } else if (principleShift) {
+      moveLabel = "Cross-principle revision move";
+    }
+
+    let disagreementLabel = "Calibrated update";
+    if (!evidenceAccepted && intuitionPrincipleTension && q5c >= 75) {
+      disagreementLabel = "Steadfast with audit obligation";
+    } else if (evidenceAccepted && q4c >= 60) {
+      disagreementLabel = "Conciliation-leaning";
+    }
+
+    let confidenceLabel = "Hold current confidence with monitoring";
+    if (evidenceAccepted && confidenceDelta >= 8) {
+      confidenceLabel = "Reduce confidence until cross-case support recovers";
+    } else if (evidenceAccepted && confidenceDelta <= -8) {
+      confidenceLabel = "Lower confidence update already applied";
+    } else if (!evidenceAccepted && intuitionModelTension && q5c >= 80) {
+      confidenceLabel = "High confidence under tension: require an explicit defeater check";
+    }
+
+    const actions = [];
+    if (intuitionPrincipleTension) {
+      actions.push("Run one nearby case variant to test whether your intuition tracks a stable principle or a framing effect.");
+    } else {
+      actions.push("Run one contrast case anyway; alignment in one case can still mask overfitting.");
+    }
+    if (intuitionModelTension) {
+      actions.push("Record whether conflict is at case-judgment, principle, or background-theory level before revising further.");
+    } else {
+      actions.push("Document why this case supports your principle family and what would count as disconfirming evidence.");
+    }
+    actions.push("Treat coherence as defeasible support, not decisive proof.");
+
+    return {
+      title: "SEP diagnostic: this round",
+      moveLabel: moveLabel,
+      disagreementLabel: disagreementLabel,
+      confidenceLabel: confidenceLabel,
+      note:
+        "Daniels-style WRE iterates between considered judgments, principles, and background assumptions while tracking disagreement pressure.",
+      actions: actions,
+      links: [
+        {
+          title: "Reflective Equilibrium",
+          url: "https://plato.stanford.edu/entries/reflective-equilibrium/",
+        },
+        {
+          title: "Moral Disagreement",
+          url: "https://plato.stanford.edu/entries/disagreement-moral/",
+        },
+        {
+          title: "Moral Epistemology",
+          url: "https://plato.stanford.edu/entries/moral-epistemology/",
+        },
+        {
+          title: "Moral Reasoning",
+          url: "https://plato.stanford.edu/entries/reasoning-moral/",
+        },
+      ],
+    };
+  }
+
   function startRound(caseId) {
     const lessonCase = getCaseById(caseId);
     if (!lessonCase) return;
@@ -733,11 +948,61 @@
     return getCaseById(state.currentCaseId);
   }
 
-  function getPrincipleLabel(principleId) {
-    const found = PRINCIPLES.find(function (principle) {
+  function getPrincipleById(principleId) {
+    return PRINCIPLES.find(function (principle) {
       return principle.id === principleId;
-    });
+    }) || null;
+  }
+
+  function getPrincipleLabel(principleId) {
+    const found = getPrincipleById(principleId);
     return found ? found.label : "No selection";
+  }
+
+  function getPrincipleSepTitle(principleId) {
+    const found = getPrincipleById(principleId);
+    return found ? found.sepTitle : "Related SEP entry";
+  }
+
+  function getPrincipleSepUrl(principleId) {
+    const found = getPrincipleById(principleId);
+    return found ? found.sepUrl : "";
+  }
+
+  function renderSepAnchors() {
+    if (!el.caseSepLine || !el.principleSepLine) return;
+    const lessonCase = getCurrentCase();
+    const liveSelected = state.step === 1 ? String(getSelectedChoiceValue() || "") : "";
+    const principleId = String(liveSelected || state.answers.q1 || "");
+    const principleLabel = getPrincipleLabel(principleId);
+    if (lessonCase && lessonCase.sepUrl) {
+      el.caseSepLine.innerHTML =
+        "<strong>SEP case source:</strong> " + buildSepLink(lessonCase.sepUrl, lessonCase.sepTitle || "Relevant SEP entry");
+    } else {
+      el.caseSepLine.textContent = "SEP case source: not available for this scenario.";
+    }
+
+    if (principleId && getPrincipleSepUrl(principleId)) {
+      el.principleSepLine.innerHTML =
+        "<strong>SEP principle source (" +
+        escapeHtml(principleLabel) +
+        "):</strong> " +
+        buildSepLink(getPrincipleSepUrl(principleId), getPrincipleSepTitle(principleId));
+      return;
+    }
+
+    el.principleSepLine.textContent = "Select a principle in Question 1 to display its SEP source.";
+  }
+
+  function buildSepLink(url, title) {
+    if (!url) return escapeHtml(title || "SEP");
+    return (
+      '<a class="sep-link-inline" href="' +
+      escapeHtml(url) +
+      '" target="_blank" rel="noopener">' +
+      escapeHtml(title || "SEP") +
+      "</a>"
+    );
   }
 
   function makeId(prefix) {

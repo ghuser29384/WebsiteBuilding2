@@ -38,7 +38,7 @@
     start: {
       title: "Start Deliberation",
       description:
-        "Begin by clarifying which judgments you currently trust most, and which principles/theories are candidates for organizing them.",
+        "Begin by clarifying which judgments you currently trust most, and which principles/theories are candidates for organizing them (SEP: Reflective Equilibrium).",
       questions: [
         "Which of your current judgments feel most stable and least likely to change?",
         "Which principle currently seems to explain the most judgments?",
@@ -47,7 +47,7 @@
     identify: {
       title: "Identify Conflicts",
       description:
-        "Locate explicit or inferred tensions across judgments, principles, and theories before making revisions.",
+        "Locate explicit or inferred tensions across judgments, principles, and theories before making revisions (SEP: Moral Disagreement).",
       questions: [
         "Which judgment seems most inconsistent with your current principles?",
         "Which background theory appears to generate pressure against your favored principle?",
@@ -56,7 +56,7 @@
     suggest: {
       title: "Suggest Revisions",
       description:
-        "Generate candidate revisions and test whether they reduce unresolved tensions without collapsing explanatory coverage.",
+        "Generate candidate revisions and test whether they reduce unresolved tensions without collapsing explanatory coverage (SEP: Moral Epistemology).",
       questions: [
         "Which principle might justifiably be narrowed or qualified?",
         "Which judgment might need confidence adjustment given your background theories?",
@@ -65,7 +65,7 @@
     rationale: {
       title: "Record Rationale",
       description:
-        "Document why you accepted certain revisions and rejected alternatives.",
+        "Document why you accepted certain revisions and rejected alternatives, including which SEP-style pressure tests were decisive.",
       questions: [
         "What change did you make, and what was your strongest reason?",
         "What competing revision did you reject, and why?",
@@ -74,7 +74,7 @@
     summary: {
       title: "Coherence Summary",
       description:
-        "Review remaining tensions and decide where another cycle of mutual adjustment is most needed.",
+        "Review remaining tensions and decide where another cycle of mutual adjustment is most needed; disagreement alone is pressure, not automatic defeat.",
       questions: [
         "Which unresolved tension remains most philosophically significant?",
         "What additional evidence or conceptual clarification would reduce it?",

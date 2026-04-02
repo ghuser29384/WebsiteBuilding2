@@ -20,6 +20,32 @@ function stageTitle(stage) {
   return "Step 3: Reflection";
 }
 
+function citationLinks(items, emptyLabel) {
+  const source = Array.isArray(items) ? items : [];
+  if (source.length === 0) {
+    return '<li class="lesson-source-empty">' + escapeHtml(emptyLabel || "No source listed.") + "</li>";
+  }
+  return source
+    .map(function (item) {
+      const label = String(item.label || item.title || "SEP source");
+      const url = String(item.url || "");
+      const title = String(item.title || "SEP");
+      if (!url) {
+        return '<li><span class="lesson-source-label">' + escapeHtml(label) + "</span></li>";
+      }
+      return (
+        '<li><span class="lesson-source-label">' +
+        escapeHtml(label) +
+        '</span>: <a class="lesson-source-link" href="' +
+        escapeHtml(url) +
+        '" target="_blank" rel="noopener noreferrer">' +
+        escapeHtml(title) +
+        "</a></li>"
+      );
+    })
+    .join("");
+}
+
 export class LessonCard {
   constructor(container, handlers) {
     this.container = container;
@@ -42,6 +68,8 @@ export class LessonCard {
     const answerSummary = String((payload && payload.answerSummary) || "").trim();
     const revisionUsed = Boolean(payload && payload.revisionUsed);
     const revisionTargetLabel = String((payload && payload.revisionTargetLabel) || "a connected principle");
+    const sourceContext = payload && payload.sourceContext ? payload.sourceContext : null;
+    const sepDiagnostic = payload && payload.sepDiagnostic ? payload.sepDiagnostic : null;
 
     const answersHtml = options
       .map(function (option) {
@@ -103,6 +131,102 @@ export class LessonCard {
       '<p class="lesson-hint">Compare your initial judgment with the revised network and explanation panel.</p>' +
       "</section>";
 
+    const sourceHtml = sourceContext
+      ? '<section class="lesson-sources" aria-label="SEP sources for this lesson">' +
+        '<p class="label-lite">SEP anchors</p>' +
+        '<div class="lesson-source-grid">' +
+        '<div><p class="lesson-source-head">Case</p><ul>' +
+        citationLinks(
+          sourceContext.caseCitation
+            ? [
+                {
+                  label: payload && payload.caseTitle ? payload.caseTitle : "Case",
+                  title: sourceContext.caseCitation.title,
+                  url: sourceContext.caseCitation.url,
+                },
+              ]
+            : [],
+          "No case source loaded."
+        ) +
+        "</ul></div>" +
+        '<div><p class="lesson-source-head">Principles</p><ul>' +
+        citationLinks(sourceContext.principleCitations, "No principle nodes in this lesson.") +
+        "</ul></div>" +
+        '<div><p class="lesson-source-head">Theories</p><ul>' +
+        citationLinks(sourceContext.theoryCitations, "No theory nodes in this lesson.") +
+        "</ul></div>" +
+        "</div>" +
+        '<p class="lesson-source-method"><strong>Method links:</strong> ' +
+        (Array.isArray(sourceContext.methodLinks)
+          ? sourceContext.methodLinks
+              .map(function (item) {
+                const label = String(item.label || item.title || "SEP");
+                const url = String(item.url || "");
+                if (!url) return escapeHtml(label);
+                return (
+                  '<a class="lesson-source-link" href="' +
+                  escapeHtml(url) +
+                  '" target="_blank" rel="noopener noreferrer">' +
+                  escapeHtml(label) +
+                  "</a>"
+                );
+              })
+              .join(" · ")
+          : "") +
+        "</p>" +
+        '<p class="lesson-source-caveat">' +
+        escapeHtml(String(sourceContext.caveat || "")) +
+        "</p>" +
+        "</section>"
+      : "";
+
+    const diagnosticHtml = sepDiagnostic
+      ? '<section class="lesson-diagnostic" aria-label="SEP diagnostic for this round">' +
+        '<p class="label-lite">SEP Diagnostic</p>' +
+        '<div class="lesson-diagnostic-grid">' +
+        '<p><strong>Scope:</strong> ' +
+        escapeHtml(String(sepDiagnostic.scopeLabel || "")) +
+        "</p>" +
+        '<p><strong>Tension locus:</strong> ' +
+        escapeHtml(String(sepDiagnostic.tensionLabel || "")) +
+        "</p>" +
+        '<p><strong>Update stance:</strong> ' +
+        escapeHtml(String(sepDiagnostic.stanceLabel || "")) +
+        "</p>" +
+        "</div>" +
+        '<p class="lesson-diagnostic-note">' +
+        escapeHtml(String(sepDiagnostic.confidenceAdvice || "")) +
+        "</p>" +
+        '<ul class="lesson-diagnostic-list">' +
+        (Array.isArray(sepDiagnostic.points)
+          ? sepDiagnostic.points
+              .map(function (point) {
+                return "<li>" + escapeHtml(String(point || "")) + "</li>";
+              })
+              .join("")
+          : "") +
+        "</ul>" +
+        '<p class="lesson-diagnostic-links">' +
+        (Array.isArray(sepDiagnostic.links)
+          ? sepDiagnostic.links
+              .map(function (link) {
+                const url = String(link && link.url ? link.url : "");
+                const label = String(link && link.label ? link.label : "SEP");
+                if (!url) return escapeHtml(label);
+                return (
+                  '<a class="lesson-source-link" href="' +
+                  escapeHtml(url) +
+                  '" target="_blank" rel="noopener noreferrer">' +
+                  escapeHtml(label) +
+                  "</a>"
+                );
+              })
+              .join(" · ")
+          : "") +
+        "</p>" +
+        "</section>"
+      : "";
+
     this.container.innerHTML =
       '<article class="lesson-card">' +
       "<h2>" +
@@ -128,7 +252,9 @@ export class LessonCard {
       escapeHtml(payload && payload.prompt ? payload.prompt : "No prompt in this lesson.") +
       "</p>" +
       "</section>" +
+      sourceHtml +
       (answerSummary ? '<p class="answer-summary">' + escapeHtml(answerSummary) + "</p>" : "") +
+      diagnosticHtml +
       "</div>" +
       '<div class="lesson-card-col lesson-card-col-interact">' +
       (stage === 0 ? stageZeroHtml : "") +

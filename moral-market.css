@@ -196,6 +196,23 @@ h1 {
   max-width: 72ch;
 }
 
+.sep-market-note {
+  margin-top: -0.1rem;
+  margin-bottom: 0.78rem;
+}
+
+.sep-market-note a {
+  color: #2f3d53;
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(47, 61, 83, 0.45);
+}
+
+.sep-market-note a:hover,
+.sep-market-note a:focus-visible {
+  color: #ff5f35;
+  border-bottom-color: rgba(255, 95, 53, 0.65);
+}
+
 .hero-pills {
   margin-top: 0.88rem;
   display: flex;

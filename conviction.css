@@ -3146,3 +3146,81 @@ html:not([data-theme]) .normative-inline-dotted {
     animation: none !important;
   }
 }
+
+.sep-foundations-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.9rem;
+}
+
+.sep-foundation-card {
+  display: grid;
+  gap: 0.5rem;
+  align-content: start;
+  background: #f4f4f1 !important;
+}
+
+.sep-foundation-card h3 {
+  margin: 0;
+  font-size: 1.24rem;
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Garamond, serif;
+  color: #2f2d2b;
+}
+
+.sep-link-list {
+  margin: 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.28rem;
+}
+
+.sep-link-list a {
+  color: #2f3d53;
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(47, 61, 83, 0.45);
+}
+
+.sep-link-list a:hover,
+.sep-link-list a:focus-visible {
+  color: #ff5f35;
+  border-bottom-color: rgba(255, 95, 53, 0.65);
+}
+
+.sep-protocol-links p {
+  margin: 0;
+  color: #4f5552;
+}
+
+.sep-protocol-links a,
+.sep-dialogue-hint a {
+  color: #2f3d53;
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(47, 61, 83, 0.45);
+}
+
+.formula-panel .hint a {
+  color: #2f3d53;
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(47, 61, 83, 0.45);
+}
+
+.sep-protocol-links a:hover,
+.sep-protocol-links a:focus-visible,
+.sep-dialogue-hint a:hover,
+.sep-dialogue-hint a:focus-visible,
+.formula-panel .hint a:hover,
+.formula-panel .hint a:focus-visible {
+  color: #ff5f35;
+  border-bottom-color: rgba(255, 95, 53, 0.65);
+}
+
+.sep-dialogue-hint {
+  margin: -0.28rem 0 0.45rem;
+  color: #5d615f;
+}
+
+@media (max-width: 1040px) {
+  .sep-foundations-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -522,3 +522,266 @@ h4,
 .profile-metric .value {
   color: #334458;
 }
+
+/* Sign-up onboarding style (dark reference layout) */
+body.auth-page {
+  --signup-bg: #0b0f15;
+  --signup-surface: #0f141c;
+  --signup-panel: #111722;
+  --signup-border: #2a3240;
+  --signup-text: #e7e9ee;
+  --signup-muted: #8d95a3;
+  --signup-accent: #ff6400;
+  --signup-accent-hover: #ff7a24;
+}
+
+body.auth-page.auth-signup-mode,
+body.auth-page.auth-signup-mode .auth-shell {
+  background: radial-gradient(circle at 18% -4%, #182131 0%, #0c1118 45%, #090d13 100%);
+  color: var(--signup-text);
+}
+
+body.auth-page.auth-signup-mode .auth-card {
+  width: min(920px, 100%);
+  border: 1px solid #1e2532;
+  background: linear-gradient(180deg, rgba(19, 25, 36, 0.96) 0%, rgba(13, 18, 26, 0.98) 100%);
+  border-radius: 20px;
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.45);
+  gap: 1.2rem;
+  padding: 1.2rem 1.2rem 1.35rem;
+}
+
+body.auth-page.auth-signup-mode .auth-title,
+body.auth-page.auth-signup-mode .auth-subtitle {
+  display: none;
+}
+
+body.auth-page.auth-signup-mode .auth-tabs {
+  justify-content: center;
+  gap: 0.45rem;
+}
+
+body.auth-page.auth-signup-mode .auth-tab-btn {
+  border: 1px solid var(--signup-border);
+  background: #0d141f;
+  color: #9aa3b3;
+  border-radius: 10px;
+  padding: 0.45rem 1.1rem;
+}
+
+body.auth-page.auth-signup-mode .auth-tab-btn.active {
+  background: #162132;
+  border-color: #33415a;
+  color: #ecf0f8;
+}
+
+body.auth-page.auth-signup-mode .auth-panel {
+  border: 1px solid #1f2735;
+  background: var(--signup-panel);
+  border-radius: 18px;
+  padding: 1.1rem;
+}
+
+body.auth-page.auth-signup-mode #signupPanel.auth-panel.active {
+  gap: 0.85rem;
+}
+
+body.auth-page.auth-signup-mode .signup-onboarding {
+  text-align: center;
+  display: grid;
+  gap: 0.62rem;
+  margin-bottom: 0.2rem;
+}
+
+body.auth-page.auth-signup-mode .signup-onboarding-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 14px;
+  margin: 0 auto;
+  border: 1px solid #6f3f24;
+  background: #4f240f;
+  display: grid;
+  place-items: center;
+}
+
+body.auth-page.auth-signup-mode .signup-onboarding-icon span {
+  width: 24px;
+  height: 24px;
+  position: relative;
+  display: block;
+}
+
+body.auth-page.auth-signup-mode .signup-onboarding-icon span::before,
+body.auth-page.auth-signup-mode .signup-onboarding-icon span::after {
+  content: "";
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  background: var(--signup-accent);
+}
+
+body.auth-page.auth-signup-mode .signup-onboarding-icon span::before {
+  top: 4px;
+  height: 4px;
+}
+
+body.auth-page.auth-signup-mode .signup-onboarding-icon span::after {
+  top: 12px;
+  height: 4px;
+  box-shadow: 0 8px 0 var(--signup-accent);
+}
+
+body.auth-page.auth-signup-mode .signup-onboarding-title {
+  margin: 0.2rem 0 0;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: clamp(1.65rem, 3vw, 2.65rem);
+  font-weight: 700;
+  line-height: 1.15;
+  color: #edf1f8;
+}
+
+body.auth-page.auth-signup-mode .signup-onboarding-subtitle {
+  margin: 0;
+  color: var(--signup-muted);
+  font-size: clamp(1rem, 1.5vw, 1.25rem);
+}
+
+body.auth-page.auth-signup-mode .signup-avatar-wrap {
+  margin: 0.2rem auto 0.3rem;
+  width: 160px;
+  height: 160px;
+  position: relative;
+}
+
+body.auth-page.auth-signup-mode .signup-avatar {
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  border: 2px solid #2e394c;
+  background: radial-gradient(circle at 24% 20%, #88a4ef 0%, #32271a 55%, #ec7f42 74%, #f4b033 100%);
+  color: #f6f7f9;
+  font-size: 3rem;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+  text-transform: uppercase;
+}
+
+body.auth-page.auth-signup-mode .signup-avatar-edit {
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  border: 1px solid #2b3444;
+  background: #0f141b;
+  color: #f1f3f6;
+  position: absolute;
+  right: -6px;
+  bottom: 2px;
+  display: grid;
+  place-items: center;
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+body.auth-page.auth-signup-mode .field-required {
+  color: #ff6464;
+}
+
+body.auth-page.auth-signup-mode .auth-field {
+  color: #d9dee8;
+  font-weight: 600;
+  font-size: 0.93rem;
+  gap: 0.34rem;
+}
+
+body.auth-page.auth-signup-mode .auth-field input,
+body.auth-page.auth-signup-mode .auth-field textarea {
+  border: 1px solid var(--signup-border);
+  background: #0c1118;
+  color: #edf0f5;
+  border-radius: 12px;
+  padding: 0.8rem 0.95rem;
+}
+
+body.auth-page.auth-signup-mode .auth-field textarea {
+  min-height: 124px;
+  resize: vertical;
+  font: inherit;
+}
+
+body.auth-page.auth-signup-mode .auth-field input::placeholder,
+body.auth-page.auth-signup-mode .auth-field textarea::placeholder {
+  color: #6f7785;
+}
+
+body.auth-page.auth-signup-mode .auth-checkbox {
+  color: #b5bdca;
+}
+
+body.auth-page.auth-signup-mode .auth-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.72rem;
+}
+
+body.auth-page.auth-signup-mode .auth-btn {
+  width: 100%;
+  border-radius: 14px;
+  border-color: var(--signup-accent);
+  background: var(--signup-accent);
+  color: #ffffff;
+  padding: 0.82rem 1rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+body.auth-page.auth-signup-mode .auth-btn:hover,
+body.auth-page.auth-signup-mode .auth-btn:focus-visible {
+  border-color: var(--signup-accent-hover);
+  background: var(--signup-accent-hover);
+}
+
+body.auth-page.auth-signup-mode .auth-btn.ghost {
+  border-color: var(--signup-border);
+  background: #0e141e;
+  color: #aeb7c6;
+}
+
+body.auth-page.auth-signup-mode .auth-status {
+  color: #ffb38d;
+}
+
+body.auth-page.auth-signup-mode .auth-commitment {
+  border: 1px solid #293244;
+  background: #0e1521;
+}
+
+body.auth-page.auth-signup-mode .auth-commitment h3 {
+  color: #dde3ef;
+}
+
+body.auth-page.auth-signup-mode .auth-commitment pre {
+  color: #aeb7c6;
+}
+
+@media (max-width: 720px) {
+  body.auth-page.auth-signup-mode .auth-shell {
+    padding: 0.65rem;
+  }
+
+  body.auth-page.auth-signup-mode .auth-card {
+    border-radius: 16px;
+    padding: 0.88rem;
+  }
+
+  body.auth-page.auth-signup-mode .signup-avatar-wrap {
+    width: 132px;
+    height: 132px;
+  }
+
+  body.auth-page.auth-signup-mode .signup-avatar-edit {
+    width: 46px;
+    height: 46px;
+    font-size: 1.15rem;
+  }
+}

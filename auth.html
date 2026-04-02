@@ -7,10 +7,11 @@
   <title>Sign In | Normativity</title>
   <link rel="icon" type="image/png" href="assets/favicon.png">
   <link rel="stylesheet" href="auth.css">
+  <link rel="stylesheet" href="theme.css">
   <script src="auth.js" defer></script>
   <script src="auth-page.js" defer></script>
 </head>
-<body>
+<body class="auth-page forethought-site">
   <a class="skip-link" href="#main-content">Skip to main content</a>
   <main id="main-content" class="auth-shell" tabindex="-1">
     <section class="auth-card" aria-label="Account access">
@@ -44,9 +45,28 @@
       </section>
 
       <section id="signupPanel" class="auth-panel" role="tabpanel" aria-labelledby="signupTab">
+        <section class="signup-onboarding" aria-label="Profile setup">
+          <div class="signup-onboarding-icon" aria-hidden="true">
+            <span></span>
+          </div>
+          <h2 class="signup-onboarding-title">Tell us about yourself</h2>
+          <p class="signup-onboarding-subtitle">Add your name, a profile picture, and a bit more about who you are.</p>
+          <div class="signup-avatar-wrap">
+            <div id="signupAvatarPreview" class="signup-avatar" aria-hidden="true">N</div>
+            <button id="signupAvatarBtn" class="signup-avatar-edit" type="button" aria-label="Edit profile picture (coming soon)">✎</button>
+          </div>
+        </section>
+        <label class="auth-field" for="signupDisplayName">
+          Name <span class="field-required" aria-hidden="true">*</span>
+          <input id="signupDisplayName" type="text" autocomplete="name" maxlength="80" placeholder="Ellen Sun">
+        </label>
         <label class="auth-field" for="signupHandle">
           Username
-          <input id="signupHandle" type="text" autocomplete="nickname" placeholder="letters, numbers, underscore">
+          <input id="signupHandle" type="text" autocomplete="nickname" placeholder="jasmine">
+        </label>
+        <label class="auth-field" for="signupBio">
+          Bio
+          <textarea id="signupBio" rows="4" maxlength="400" placeholder="Say something about yourself..."></textarea>
         </label>
         <label class="auth-field" for="signupEmail">
           Email
@@ -65,7 +85,7 @@
           I agree to the Normativity commitment.
         </label>
         <div class="auth-actions">
-          <button id="signupBtn" class="auth-btn" type="button">Create account</button>
+          <button id="signupBtn" class="auth-btn" type="button">Continue</button>
           <a class="auth-btn ghost" href="index.html">Back home</a>
         </div>
       </section>

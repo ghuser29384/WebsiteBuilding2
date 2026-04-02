@@ -437,6 +437,8 @@ function renderLessonCard() {
     answerSummary: answerSummaryText(),
     revisionUsed: state.revisionUsed,
     revisionTargetLabel: revisionTargetLabel(),
+    sourceContext: buildLessonSourceContext(),
+    sepDiagnostic: buildSepDiagnosticReport(),
   });
 }
 
@@ -576,6 +578,182 @@ function revisionTargetLabel() {
 function answerSummaryText() {
   if (!hasSelectedAnswer()) return "";
   return String(state.selectedAnswer) + " (" + String(Math.round(state.confidence)) + "% confidence)";
+}
+
+function buildLessonSourceContext() {
+  if (!state.lesson || !state.graphData) return null;
+  const caseEntry = state.graphData.casesById && state.graphData.casesById[state.lesson.caseId];
+  const caseCitation = caseEntry && caseEntry.sep_citation
+    ? {
+        title: String(caseEntry.sep_citation.title || "SEP source"),
+        url: String(caseEntry.sep_citation.url || ""),
+      }
+    : null;
+
+  const principleCitations = (state.lesson.principleIds || [])
+    .map(function (id) {
+      const entry = state.graphData.principlesById && state.graphData.principlesById[id];
+      if (!entry || !entry.sep_citation || !entry.sep_citation.url) return null;
+      return {
+        id: String(id),
+        label: String(entry.name || beautifyId(id)),
+        title: String(entry.sep_citation.title || "SEP source"),
+        url: String(entry.sep_citation.url || ""),
+      };
+    })
+    .filter(Boolean);
+
+  const theoryCitations = (state.lesson.theoryIds || [])
+    .map(function (id) {
+      const entry = state.graphData.theoriesById && state.graphData.theoriesById[id];
+      if (!entry || !entry.sep_citation || !entry.sep_citation.url) return null;
+      return {
+        id: String(id),
+        label: String(entry.name || beautifyId(id)),
+        title: String(entry.sep_citation.title || "SEP source"),
+        url: String(entry.sep_citation.url || ""),
+      };
+    })
+    .filter(Boolean);
+
+  return {
+    caseCitation: caseCitation,
+    principleCitations: principleCitations,
+    theoryCitations: theoryCitations,
+    methodLinks: [
+      {
+        label: "Reflective Equilibrium",
+        title: "Reflective Equilibrium",
+        url: "https://plato.stanford.edu/entries/reflective-equilibrium/",
+      },
+      {
+        label: "Moral Epistemology",
+        title: "Moral Epistemology",
+        url: "https://plato.stanford.edu/entries/moral-epistemology/",
+      },
+      {
+        label: "Moral Disagreement",
+        title: "Moral Disagreement",
+        url: "https://plato.stanford.edu/entries/disagreement-moral/",
+      },
+    ],
+    caveat:
+      "SEP caution: higher coherence means better fit among current commitments; it does not by itself prove moral truth.",
+  };
+}
+
+function buildSepDiagnosticReport() {
+  if (!state.lesson || !state.graphData || !hasSelectedAnswer()) return null;
+
+  const activeUnsatisfied = state.coherence.perEdge.filter(function (edge) {
+    if (edge.satisfied) return false;
+    const fromState = normalizeState(state.nodeStates[edge.from]);
+    const toState = normalizeState(state.nodeStates[edge.to]);
+    return fromState !== 0 && toState !== 0;
+  });
+
+  const counts = {
+    case: 0,
+    principle: 0,
+    theory: 0,
+  };
+
+  activeUnsatisfied.forEach(function (edge) {
+    const fromNode = state.subgraph.nodeLookup[String(edge.from)];
+    const toNode = state.subgraph.nodeLookup[String(edge.to)];
+    const fromType = fromNode ? fromNode.type : "";
+    const toType = toNode ? toNode.type : "";
+    if (fromType === "theory" || toType === "theory") {
+      counts.theory += 1;
+      return;
+    }
+    if (String(edge.from) === state.lesson.caseId || String(edge.to) === state.lesson.caseId || fromType === "case" || toType === "case") {
+      counts.case += 1;
+      return;
+    }
+    counts.principle += 1;
+  });
+
+  let tensionLabel = "No active unresolved tension";
+  if (counts.case > 0 && counts.theory > 0) {
+    tensionLabel = "Mixed case and background-theory tension";
+  } else if (counts.theory > 0) {
+    tensionLabel = "Background-theory tension";
+  } else if (counts.case > 0) {
+    tensionLabel = "Case-principle tension";
+  } else if (counts.principle > 0) {
+    tensionLabel = "Principle-level tension";
+  }
+
+  const hasTheoryNode = state.subgraph.nodes.some(function (node) {
+    return node.type === "theory";
+  });
+  const theoryStateActive = state.subgraph.nodes.some(function (node) {
+    return node.type === "theory" && normalizeState(state.nodeStates[node.id]) !== 0;
+  });
+
+  let scopeLabel = "Narrow RE pass";
+  if (hasTheoryNode && theoryStateActive) {
+    scopeLabel = "Wide RE pass";
+  } else if (hasTheoryNode) {
+    scopeLabel = "Narrow RE pass (wide links available)";
+  }
+
+  const confidence = canonicalizeConfidence(state.confidence);
+  const contradictionLoad = activeUnsatisfied.length;
+  let stanceLabel = "Calibration mode";
+  let confidenceAdvice = "Keep confidence provisional while tracking unresolved tensions.";
+  if (contradictionLoad === 0 && state.coherence.score >= 35) {
+    stanceLabel = "Provisional stability";
+    confidenceAdvice = "You may hold steady, but continue stress-testing with counter-cases.";
+  } else if (confidence >= 80) {
+    stanceLabel = "Steadfast-with-audit";
+    confidenceAdvice = "High confidence under unresolved conflict: run at least one explicit peer-disagreement audit.";
+  } else if (confidence >= 65) {
+    stanceLabel = "Conciliation-leaning";
+    confidenceAdvice = "Moderate confidence plus disagreement: reduce confidence slightly or add counterevidence checks.";
+  }
+
+  const points = [];
+  if (counts.case > 0) {
+    points.push("Re-check your considered judgment under Rawls' confidence and epistemic constraints before changing theory.");
+  }
+  if (counts.theory > 0) {
+    points.push("Test independence: avoid reusing the same judgment to justify both principle and background theory.");
+  }
+  if (counts.principle > 0 || (counts.case === 0 && counts.theory === 0)) {
+    points.push("Use analogical case comparison (casuistry) to see whether the current principle generalizes cleanly.");
+  }
+  if (points.length < 3) {
+    points.push("Treat disagreement as information about reliability, not automatic refutation.");
+  }
+  points.push("Coherence gain tracks fit among commitments, not proof of moral truth.");
+
+  return {
+    scopeLabel: scopeLabel,
+    tensionLabel: tensionLabel,
+    stanceLabel: stanceLabel,
+    confidenceAdvice: confidenceAdvice,
+    points: points.slice(0, 4),
+    links: [
+      {
+        label: "Reflective Equilibrium",
+        url: "https://plato.stanford.edu/entries/reflective-equilibrium/",
+      },
+      {
+        label: "Moral Disagreement",
+        url: "https://plato.stanford.edu/entries/disagreement-moral/",
+      },
+      {
+        label: "Moral Reasoning",
+        url: "https://plato.stanford.edu/entries/reasoning-moral/",
+      },
+      {
+        label: "Moral Epistemology",
+        url: "https://plato.stanford.edu/entries/moral-epistemology/",
+      },
+    ],
+  };
 }
 
 function hasSelectedAnswer() {

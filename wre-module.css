@@ -225,6 +225,31 @@ p {
   font-size: 0.84rem;
 }
 
+.hint a,
+.sep-link-inline {
+  color: var(--primary);
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(47, 92, 135, 0.5);
+}
+
+.hint a:hover,
+.hint a:focus-visible,
+.sep-link-inline:hover,
+.sep-link-inline:focus-visible {
+  color: #ff5f35;
+  border-bottom-color: rgba(255, 95, 53, 0.7);
+}
+
+.case-sep-links {
+  margin-top: 0.5rem;
+  border-top: 1px solid var(--line);
+  padding-top: 0.44rem;
+}
+
+.case-sep-links p {
+  margin: 0.18rem 0;
+}
+
 .question-head {
   display: flex;
   justify-content: space-between;
@@ -414,6 +439,61 @@ p {
   margin-bottom: 0;
 }
 
+.method-guidance-box {
+  margin: 0.5rem 0;
+  border: 1px solid #d2dbea;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0.5rem 0.56rem;
+}
+
+.method-guidance-box h4 {
+  margin: 0 0 0.2rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #2e4b68;
+}
+
+.method-guidance-box ul {
+  margin: 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.18rem;
+}
+
+.sep-round-diagnostics {
+  margin: 0.5rem 0;
+  border: 1px solid #d3ddeb;
+  border-radius: 10px;
+  background: #ffffff;
+  padding: 0.5rem 0.56rem;
+  display: grid;
+  gap: 0.24rem;
+}
+
+.sep-round-diagnostics h4 {
+  margin: 0 0 0.16rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #2e4b68;
+}
+
+.sep-round-row {
+  font-size: 0.84rem;
+  color: #3a5674;
+}
+
+.sep-round-note {
+  margin: 0.1rem 0 0.2rem !important;
+}
+
+.sep-round-diagnostics ul {
+  margin: 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.16rem;
+}
+
 .summary-actions {
   margin-top: 0.56rem;
   display: flex;
@@ -575,7 +655,8 @@ h3 {
 .case-actions,
 .confidence-wrap,
 .reflection-timer,
-.choice-option {
+.choice-option,
+.sep-round-diagnostics {
   border-color: var(--home-line);
   background: var(--home-surface);
   box-shadow: none;

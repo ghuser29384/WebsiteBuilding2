@@ -7,7 +7,7 @@
       "title": "Consequentialism",
       "url": "https://plato.stanford.edu/entries/consequentialism/",
       "quote": "an act is morally right if and only if that act maximizes the good",
-      "accessed": "2026-03-14"
+      "accessed": "2026-04-02"
     }
   },
   {
@@ -18,7 +18,7 @@
       "title": "Rule Consequentialism",
       "url": "https://plato.stanford.edu/entries/consequentialism-rule/",
       "quote": "rules are to be selected solely in terms of their consequences",
-      "accessed": "2026-03-14"
+      "accessed": "2026-04-02"
     }
   },
   {
@@ -29,7 +29,7 @@
       "title": "Moral Theory",
       "url": "https://plato.stanford.edu/entries/moral-theory/",
       "quote": "We intuitively believe that it is worse to kill someone than to simply let the person die",
-      "accessed": "2026-03-14"
+      "accessed": "2026-04-02"
     }
   },
   {
@@ -40,7 +40,7 @@
       "title": "Moral Dilemmas",
       "url": "https://plato.stanford.edu/entries/moral-dilemmas/",
       "quote": "it would be wrong to repay certain debts—for example, to return a borrowed weapon to a friend who is not in his right mind",
-      "accessed": "2026-03-14"
+      "accessed": "2026-04-02"
     }
   },
   {
@@ -51,7 +51,7 @@
       "title": "Moral Dilemmas",
       "url": "https://plato.stanford.edu/entries/moral-dilemmas/",
       "quote": "protecting others from harm is the norm that takes priority",
-      "accessed": "2026-03-14"
+      "accessed": "2026-04-02"
     }
   },
   {
@@ -62,7 +62,7 @@
       "title": "Deontological Ethics",
       "url": "https://plato.stanford.edu/entries/ethics-deontological/",
       "quote": "",
-      "accessed": "2026-03-14"
+      "accessed": "2026-04-02"
     }
   },
   {
@@ -73,7 +73,7 @@
       "title": "Deontological Ethics",
       "url": "https://plato.stanford.edu/entries/ethics-deontological/",
       "quote": "",
-      "accessed": "2026-03-14"
+      "accessed": "2026-04-02"
     }
   },
   {
@@ -84,7 +84,7 @@
       "title": "Virtue Ethics",
       "url": "https://plato.stanford.edu/entries/ethics-virtue/",
       "quote": "emphasizes the virtues, or moral character",
-      "accessed": "2026-03-14"
+      "accessed": "2026-04-02"
     }
   },
   {
@@ -95,7 +95,7 @@
       "title": "Consequentialism",
       "url": "https://plato.stanford.edu/entries/consequentialism/",
       "quote": "",
-      "accessed": "2026-03-14"
+      "accessed": "2026-04-02"
     }
   },
   {
@@ -106,7 +106,7 @@
       "title": "Moral Reasoning",
       "url": "https://plato.stanford.edu/entries/reasoning-moral/",
       "quote": "",
-      "accessed": "2026-03-14"
+      "accessed": "2026-04-02"
     }
   },
   {
@@ -117,7 +117,40 @@
       "title": "Moral Disagreement",
       "url": "https://plato.stanford.edu/entries/disagreement-moral/",
       "quote": "",
-      "accessed": "2026-03-14"
+      "accessed": "2026-04-02"
+    }
+  },
+  {
+    "id": "universalizability",
+    "name": "Universalizability",
+    "definition": "A proposed maxim should be acceptable as a universal law for rational agents.",
+    "sep_citation": {
+      "title": "Deontological Ethics",
+      "url": "https://plato.stanford.edu/entries/ethics-deontological/",
+      "quote": "",
+      "accessed": "2026-04-02"
+    }
+  },
+  {
+    "id": "reasonable_rejectability",
+    "name": "Reasonable Rejectability Constraint",
+    "definition": "A moral principle is defective if affected persons could reasonably reject it as a common standard.",
+    "sep_citation": {
+      "title": "Deontological Ethics",
+      "url": "https://plato.stanford.edu/entries/ethics-deontological/",
+      "quote": "",
+      "accessed": "2026-04-02"
+    }
+  },
+  {
+    "id": "epistemic_humility_under_disagreement",
+    "name": "Epistemic Humility Under Disagreement",
+    "definition": "When serious informed disagreement persists, confidence should be pressure-tested rather than treated as self-certifying.",
+    "sep_citation": {
+      "title": "Moral Disagreement",
+      "url": "https://plato.stanford.edu/entries/disagreement-moral/",
+      "quote": "",
+      "accessed": "2026-04-02"
     }
   }
 ]

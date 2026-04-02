@@ -8,16 +8,16 @@
   <script src="auth.js"></script>
   <style>
     :root {
-      --bg: #f7f8fb;
-      --panel: #ffffff;
-      --line: #d6dbe6;
-      --ink: #1e2735;
-      --ink-soft: #5a6778;
-      --blue: #0072b2;
-      --green: #009e73;
-      --orange: #e69f00;
+      --bg: var(--home-bg);
+      --panel: var(--home-surface);
+      --line: var(--home-line);
+      --ink: var(--home-ink);
+      --ink-soft: var(--home-muted);
+      --blue: var(--home-accent);
+      --green: var(--ok);
+      --orange: var(--signal);
       --violet: #6b5b95;
-      --error: #b44557;
+      --error: var(--conflict);
     }
 
     * {
@@ -258,9 +258,10 @@
     }
   </style>
   <link rel="stylesheet" href="wre-assistant.css">
+  <link rel="stylesheet" href="theme.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
 </head>
-<body>
+<body class="forethought-site">
   <a class="skip-link" href="#app">Skip to main content</a>
   <main id="app" tabindex="-1"></main>
   <section id="wre-assistant-section" aria-label="WRE Assistant">

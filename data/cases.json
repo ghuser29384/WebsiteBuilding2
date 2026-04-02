@@ -7,7 +7,7 @@
       "title": "Moral Theory",
       "url": "https://plato.stanford.edu/entries/moral-theory/",
       "quote": "In the Trolley Problem, a person can divert a trolley heading for five to a track where it will kill one",
-      "accessed": "2026-03-14"
+      "accessed": "2026-04-02"
     }
   },
   {
@@ -18,7 +18,7 @@
       "title": "Moral Theory",
       "url": "https://plato.stanford.edu/entries/moral-theory/",
       "quote": "In the Transplant Case, a surgeon can save five failing patients by killing one healthy patient and transplanting his organs",
-      "accessed": "2026-03-14"
+      "accessed": "2026-04-02"
     }
   },
   {
@@ -29,7 +29,7 @@
       "title": "Thought Experiment",
       "url": "https://plato.stanford.edu/entries/thought-experiment/",
       "quote": "",
-      "accessed": "2026-03-14"
+      "accessed": "2026-04-02"
     }
   },
   {
@@ -40,7 +40,7 @@
       "title": "Thought Experiment",
       "url": "https://plato.stanford.edu/entries/thought-experiment/",
       "quote": "",
-      "accessed": "2026-03-14"
+      "accessed": "2026-04-02"
     }
   },
   {
@@ -51,7 +51,7 @@
       "title": "Moral Dilemmas",
       "url": "https://plato.stanford.edu/entries/moral-dilemmas/",
       "quote": "it would be wrong to repay certain debts—for example, to return a borrowed weapon to a friend who is not in his right mind",
-      "accessed": "2026-03-14"
+      "accessed": "2026-04-02"
     }
   },
   {
@@ -62,7 +62,29 @@
       "title": "Thought Experiment",
       "url": "https://plato.stanford.edu/entries/thought-experiment/",
       "quote": "",
-      "accessed": "2026-03-14"
+      "accessed": "2026-04-02"
+    }
+  },
+  {
+    "id": "murderer_at_door_case",
+    "title": "Murderer at the Door",
+    "description": "A murderer asks for the location of a potential victim. Telling the truth risks death; lying can protect life.",
+    "sep_citation": {
+      "title": "Deontological Ethics",
+      "url": "https://plato.stanford.edu/entries/ethics-deontological/",
+      "quote": "",
+      "accessed": "2026-04-02"
+    }
+  },
+  {
+    "id": "numbers_rescue_case",
+    "title": "Numbers Rescue Case",
+    "description": "You can save either one person or five from equivalent serious harm, but not both.",
+    "sep_citation": {
+      "title": "Consequentialism",
+      "url": "https://plato.stanford.edu/entries/consequentialism/",
+      "quote": "",
+      "accessed": "2026-04-02"
     }
   }
 ]

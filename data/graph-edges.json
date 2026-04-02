@@ -214,5 +214,133 @@
     "relation": "support",
     "basis": "Fairness aligns with principles no one could reasonably reject.",
     "source": "https://plato.stanford.edu/entries/ethics-deontological/"
+  },
+  {
+    "from": "thought_experiments",
+    "to": "reflective_equilibrium",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Test cases are commonly used to pressure principles and trigger revisions.",
+    "source": "https://plato.stanford.edu/entries/reflective-equilibrium/"
+  },
+  {
+    "from": "moral_disagreement",
+    "to": "reflective_equilibrium",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Persistent disagreement is evidence pressure in iterative moral revision.",
+    "source": "https://plato.stanford.edu/entries/disagreement-moral/"
+  },
+  {
+    "from": "moral_skepticism",
+    "to": "moral_realism",
+    "weight": -1,
+    "relation": "conflict",
+    "basis": "Skeptical arguments challenge claims to robust moral knowledge or truth.",
+    "source": "https://plato.stanford.edu/entries/skepticism-moral/"
+  },
+  {
+    "from": "ethical_intuitionism",
+    "to": "moral_epistemology",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Intuitionism offers one account of how basic moral knowledge is possible.",
+    "source": "https://plato.stanford.edu/entries/intuitionism-ethics/"
+  },
+  {
+    "from": "moral_realism",
+    "to": "moral_cognitivism",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Realist views are typically cognitivist about moral claims.",
+    "source": "https://plato.stanford.edu/entries/moral-realism/"
+  },
+  {
+    "from": "noncognitivism",
+    "to": "moral_cognitivism",
+    "weight": -1,
+    "relation": "conflict",
+    "basis": "Non-cognitivism denies that moral claims are truth-apt beliefs.",
+    "source": "https://plato.stanford.edu/entries/moral-cognitivism/"
+  },
+  {
+    "from": "error_theory",
+    "to": "moral_realism",
+    "weight": -1,
+    "relation": "conflict",
+    "basis": "Error theory denies that moral claims are in fact true.",
+    "source": "https://plato.stanford.edu/entries/moral-realism/"
+  },
+  {
+    "from": "moral_disagreement",
+    "to": "moral_skepticism",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Persistent disagreement is commonly used in skeptical argument.",
+    "source": "https://plato.stanford.edu/entries/disagreement-moral/"
+  },
+  {
+    "from": "universalizability",
+    "to": "kantian_ethics",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Kantian approaches test maxims by universalizability.",
+    "source": "https://plato.stanford.edu/entries/ethics-deontological/"
+  },
+  {
+    "from": "reasonable_rejectability",
+    "to": "contractualism",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Contractualism evaluates principles by reasonable rejectability.",
+    "source": "https://plato.stanford.edu/entries/ethics-deontological/"
+  },
+  {
+    "from": "reasonable_rejectability",
+    "to": "moral_constructivism",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Constructivist approaches tie normativity to justified procedures of endorsement.",
+    "source": "https://plato.stanford.edu/entries/normativity-metaethics/"
+  },
+  {
+    "from": "epistemic_humility_under_disagreement",
+    "to": "moral_epistemology",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Disagreement can rationally constrain confidence.",
+    "source": "https://plato.stanford.edu/entries/moral-epistemology/"
+  },
+  {
+    "from": "murderer_at_door_case",
+    "to": "universalizability",
+    "weight": -1,
+    "relation": "conflict",
+    "basis": "The case pressures strict formulations of truth-telling duties.",
+    "source": "https://plato.stanford.edu/entries/ethics-deontological/"
+  },
+  {
+    "from": "murderer_at_door_case",
+    "to": "protect_from_harm",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Many judge preventing grave harm as weightier in this context.",
+    "source": "https://plato.stanford.edu/entries/moral-dilemmas/"
+  },
+  {
+    "from": "numbers_rescue_case",
+    "to": "maximize_welfare",
+    "weight": 1,
+    "relation": "support",
+    "basis": "Saving the greater number tracks welfare-maximizing reasoning.",
+    "source": "https://plato.stanford.edu/entries/consequentialism/"
+  },
+  {
+    "from": "numbers_rescue_case",
+    "to": "do_not_kill",
+    "weight": -1,
+    "relation": "conflict",
+    "basis": "Some rescue choices pressure side-constraint interpretations.",
+    "source": "https://plato.stanford.edu/entries/moral-theory/"
   }
 ]

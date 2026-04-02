@@ -5,6 +5,7 @@
     initTheoryFilters();
     initStrategyMeters();
     initGuardrailTool();
+    initDisagreementTriage();
   });
 
   function initTheoryFilters() {
@@ -156,6 +157,93 @@
 
     syncConfidenceLabel();
     evaluateGuardrail();
+  }
+
+  function initDisagreementTriage() {
+    const peerSelect = document.getElementById("triagePeer");
+    const independenceSelect = document.getElementById("triageIndependence");
+    const levelSelect = document.getElementById("triageLevel");
+    const stakesSelect = document.getElementById("triageStakes");
+    const evaluateBtn = document.getElementById("triageEvaluateBtn");
+    const result = document.getElementById("triageResult");
+
+    if (!peerSelect || !independenceSelect || !levelSelect || !stakesSelect || !evaluateBtn || !result) {
+      return;
+    }
+
+    function evaluateTriage() {
+      const peer = String(peerSelect.value || "medium");
+      const independence = String(independenceSelect.value || "medium");
+      const level = String(levelSelect.value || "principle");
+      const stakes = String(stakesSelect.value || "medium");
+
+      const peerScore = peer === "high" ? 30 : peer === "medium" ? 18 : 8;
+      const independenceScore = independence === "high" ? 24 : independence === "medium" ? 14 : 6;
+      const levelScore = level === "semantic" ? 24 : level === "background" ? 18 : level === "principle" ? 12 : 8;
+      const stakesScore = stakes === "high" ? 20 : stakes === "medium" ? 12 : 5;
+      const pressure = Math.max(0, Math.min(100, peerScore + independenceScore + levelScore + stakesScore));
+
+      let title = "Moderate revision pressure";
+      let cssClass = "state-balanced";
+      let lead =
+        "Run one targeted revision cycle, lower confidence slightly, and separate case-level from theory-level disagreement.";
+      let confidenceShift = "Suggested confidence adjustment: −5 to −10 points.";
+      let steps = [
+        "Classify the disagreement source explicitly before revising your principle.",
+        "Test one rival principle on the same cases and compare explanatory losses.",
+        "Record what evidence would reverse your current ranking.",
+      ];
+
+      if (pressure >= 70) {
+        title = "High conciliation pressure";
+        cssClass = "state-caution";
+        lead =
+          "Current structure supports stronger conciliation: treat your current verdict as provisional and prioritize background-theory and semantic diagnostics.";
+        confidenceShift = "Suggested confidence adjustment: −10 to −20 points.";
+        steps = [
+          "Temporarily bracket your favored principle and evaluate two alternatives in parallel.",
+          "Add at least one disagreement source from a different evidence pipeline.",
+          "Delay action on high-stakes conclusions until one full re-equilibration cycle is complete.",
+        ];
+      } else if (pressure <= 35) {
+        title = "Limited update pressure";
+        cssClass = "state-confident";
+        lead =
+          "Disagreement currently gives weaker defeat pressure; retain your view while continuing adversarial checks against strong objections.";
+        confidenceShift = "Suggested confidence adjustment: 0 to −5 points.";
+        steps = [
+          "Preserve your current principle ranking but keep a live objection log.",
+          "Re-test on one hard case that historically challenges your view.",
+          "Schedule periodic review when new arguments or evidence appear.",
+        ];
+      }
+
+      result.classList.remove("state-caution", "state-balanced", "state-confident");
+      result.classList.add(cssClass);
+      result.innerHTML =
+        "<h3>" +
+        escapeHtml(title) +
+        "</h3>" +
+        "<p><strong>Disagreement pressure score:</strong> " +
+        escapeHtml(String(pressure)) +
+        "/100</p>" +
+        "<p><strong>" +
+        escapeHtml(confidenceShift) +
+        "</strong></p>" +
+        "<p>" +
+        escapeHtml(lead) +
+        "</p>" +
+        "<ul>" +
+        steps
+          .map(function (step) {
+            return "<li>" + escapeHtml(step) + "</li>";
+          })
+          .join("") +
+        "</ul>";
+    }
+
+    evaluateBtn.addEventListener("click", evaluateTriage);
+    evaluateTriage();
   }
 
   function clamp(value, min, max) {

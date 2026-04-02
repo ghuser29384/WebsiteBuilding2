@@ -45,6 +45,103 @@
   const AVAILABILITY_SLOTS_PER_DAY = Math.round((24 * 60) / AVAILABILITY_SLOT_MINUTES);
   const AVAILABILITY_SLOT_COUNT = AVAILABILITY_DAYS * AVAILABILITY_SLOTS_PER_DAY;
 
+  const SEP_MATCH_WEIGHTS = {
+    confidenceProximity: 0.55,
+    overlap: 0.2,
+    disagreementDepth: 0.15,
+    reasonQuality: 0.1,
+  };
+
+  const DISAGREEMENT_LEVEL_KEYWORDS = {
+    case: [
+      "case",
+      "example",
+      "scenario",
+      "trolley",
+      "transplant",
+      "instance",
+      "particular",
+      "in this case",
+      "this action",
+    ],
+    principle: [
+      "principle",
+      "duty",
+      "rights",
+      "autonomy",
+      "utility",
+      "contract",
+      "virtue",
+      "rule",
+      "maximize",
+      "obligation",
+      "permissible",
+      "wrong",
+      "justice",
+    ],
+    background: [
+      "agency",
+      "free will",
+      "causation",
+      "responsibility",
+      "moral realism",
+      "moral anti-realism",
+      "non-cognitivism",
+      "error theory",
+      "human nature",
+      "psychology",
+      "institutions",
+      "culture",
+      "epistemic",
+      "evidence",
+    ],
+  };
+
+  const LEXICAL_STOPWORDS = new Set([
+    "the",
+    "and",
+    "that",
+    "this",
+    "with",
+    "from",
+    "have",
+    "has",
+    "were",
+    "will",
+    "would",
+    "into",
+    "about",
+    "because",
+    "there",
+    "their",
+    "they",
+    "them",
+    "what",
+    "when",
+    "where",
+    "which",
+    "should",
+    "could",
+    "your",
+    "you",
+    "our",
+    "not",
+    "true",
+    "false",
+    "is",
+    "are",
+    "be",
+    "to",
+    "of",
+    "in",
+    "on",
+    "for",
+    "as",
+    "it",
+    "a",
+    "an",
+  ]);
+
   const MATCH_WEIGHTS = {
     challenge: { disagreement: 0.6, topicFit: 0.2, frameworkDiversity: 0.1, reliability: 0.1 },
     balanced: { disagreement: 0.45, topicFit: 0.3, frameworkDiversity: 0.15, reliability: 0.1 },
@@ -1283,6 +1380,12 @@
 
     if (!claim) {
       formStatus.conviction = "Enter a truth-apt proposition before creating a dialogue.";
+      renderMatching();
+      return;
+    }
+    const truthAptCheck = validateTruthAptProposition(claim);
+    if (!truthAptCheck.ok) {
+      formStatus.conviction = truthAptCheck.error;
       renderMatching();
       return;
     }
@@ -4421,7 +4524,7 @@
     }
 
     el.matchRationale.textContent =
-      "Matches are suggested when beliefs oppose, time slots overlap, and confidence differences are smallest.";
+      "Matches require opposite beliefs and overlapping slots, then prioritize smallest confidence gap. SEP tie-breakers rank disagreement depth and reason quality.";
 
     el.counterpartList.innerHTML = "";
     currentMatches.forEach(function (match, index) {
@@ -4439,7 +4542,7 @@
 
       const score = document.createElement("span");
       score.className = "score-pill";
-      score.textContent = "Δ " + match.confidenceGap + " pts";
+      score.textContent = "Δ " + match.confidenceGap + " pts | Fit " + match.matchScore + "/100";
 
       head.appendChild(title);
       head.appendChild(score);
@@ -4449,14 +4552,35 @@
       meta.appendChild(chip("Belief: " + (match.belief === "false" ? "False" : "True"), "chip"));
       meta.appendChild(chip("Confidence: " + match.confidence + "%", "chip"));
       meta.appendChild(chip("Shared slots: " + match.sharedSlots.length, "chip"));
+      meta.appendChild(chip("Dispute level: " + match.depthSummary, "chip"));
 
       const reason = document.createElement("p");
       reason.className = "hint";
       reason.textContent = truncateText(match.reason, 160);
 
+      const metrics = document.createElement("div");
+      metrics.className = "score-grid";
+      metrics.innerHTML =
+        "<span>Confidence proximity: " +
+        match.metrics.confidenceProximity +
+        "/100</span>" +
+        "<span>Overlap quality: " +
+        match.metrics.overlap +
+        "/100</span>" +
+        "<span>Depth bridge: " +
+        match.metrics.disagreementDepth +
+        "/100</span>" +
+        "<span>Reason clarity: " +
+        match.metrics.reasonQuality +
+        "/100</span>";
+
       const slots = document.createElement("p");
       slots.className = "hint";
       slots.textContent = "Overlap: " + formatSlotList(match.sharedSlots, 3, activeConviction.slotCatalog);
+
+      const explanation = document.createElement("p");
+      explanation.className = "hint";
+      explanation.textContent = "Why this ranking: " + match.rationale;
 
       const button = document.createElement("button");
       button.type = "button";
@@ -4467,7 +4591,9 @@
       card.appendChild(head);
       card.appendChild(meta);
       card.appendChild(reason);
+      card.appendChild(metrics);
       card.appendChild(slots);
+      card.appendChild(explanation);
       card.appendChild(button);
       el.counterpartList.appendChild(card);
     });
@@ -4565,7 +4691,11 @@
       (chosen.belief === "false" ? "False" : "True") +
       " | Confidence: " +
       chosen.confidence +
-      "% | Shared slots: " +
+      "% | Match fit: " +
+      (Number.isFinite(Number(chosen.matchScore)) ? Math.round(Number(chosen.matchScore)) : 0) +
+      "/100 | Depth: " +
+      escapeHtml(chosen.depthSummary || "case-level") +
+      " | Shared slots: " +
       (Array.isArray(chosen.sharedSlots) ? chosen.sharedSlots.length : 0);
   }
 
@@ -4635,9 +4765,14 @@
   }
 
   function buildMatches(conviction) {
+    // Hard constraints (opposed belief + shared availability) stay unchanged.
+    // SEP-informed tie-breakers then rank by disagreement depth and reason quality.
     const creatorSlots = new Set(Array.isArray(conviction.availability) ? conviction.availability : []);
     const reservations = Array.isArray(conviction.reservations) ? conviction.reservations : [];
     const creatorBelief = conviction.creatorBelief === "false" ? "false" : "true";
+    const creatorProfile = analyzeReasonProfile(conviction.creatorReason || "");
+    const creatorAssumptionLexicon = buildAssumptionLexicon(conviction.assumptions || []);
+    const creatorConfidence = clamp(Number(conviction.confidence), 1, 100);
 
     return reservations
       .map(function (reservation) {
@@ -4648,6 +4783,22 @@
         });
         if (!opposed || sharedSlots.length === 0) return null;
         const confidenceGap = Math.abs(Number(conviction.confidence) - Number(reservation.confidence));
+        const reservationProfile = analyzeReasonProfile(reservation.reason || "");
+        const overlapScore = computeOverlapScore(sharedSlots.length, creatorSlots.size);
+        const confidenceProximity = clamp(1 - confidenceGap / 100, 0, 1);
+        const disagreementDepth = computeDisagreementDepthScore(creatorProfile, reservationProfile);
+        const assumptionEngagement = computeAssumptionEngagementScore(reservation.reason || "", creatorAssumptionLexicon);
+        const reasonQuality = clamp((reservationProfile.quality + assumptionEngagement) / 2, 0, 1);
+        const weightedScore =
+          SEP_MATCH_WEIGHTS.confidenceProximity * confidenceProximity +
+          SEP_MATCH_WEIGHTS.overlap * overlapScore +
+          SEP_MATCH_WEIGHTS.disagreementDepth * disagreementDepth +
+          SEP_MATCH_WEIGHTS.reasonQuality * reasonQuality;
+
+        const confidenceDistanceFromNeutral = Math.abs(clamp(Number(reservation.confidence), 1, 100) - 50);
+        const creatorDistanceFromNeutral = Math.abs(creatorConfidence - 50);
+        const peerSymmetryScore = clamp(1 - Math.abs(confidenceDistanceFromNeutral - creatorDistanceFromNeutral) / 100, 0, 1);
+        const finalScore = clamp((weightedScore * 0.9) + (peerSymmetryScore * 0.1), 0, 1);
 
         return {
           id: reservation.id,
@@ -4657,12 +4808,32 @@
           reason: reservation.reason || "",
           sharedSlots: sharedSlots,
           confidenceGap: confidenceGap,
+          matchScore: Math.round(finalScore * 100),
+          depthSummary: summarizeDisagreementLevel(reservationProfile),
+          rationale: buildMatchRationale({
+            confidenceGap: confidenceGap,
+            overlapScore: overlapScore,
+            disagreementDepth: disagreementDepth,
+            reasonQuality: reasonQuality,
+            assumptionEngagement: assumptionEngagement,
+            creatorProfile: creatorProfile,
+            reservationProfile: reservationProfile,
+          }),
+          metrics: {
+            confidenceProximity: Math.round(confidenceProximity * 100),
+            overlap: Math.round(overlapScore * 100),
+            disagreementDepth: Math.round(disagreementDepth * 100),
+            reasonQuality: Math.round(reasonQuality * 100),
+          },
         };
       })
       .filter(Boolean)
       .sort(function (a, b) {
         if (a.confidenceGap !== b.confidenceGap) {
           return a.confidenceGap - b.confidenceGap;
+        }
+        if (a.matchScore !== b.matchScore) {
+          return b.matchScore - a.matchScore;
         }
         return b.sharedSlots.length - a.sharedSlots.length;
       })
@@ -4844,6 +5015,39 @@
     return parts.length;
   }
 
+  function validateTruthAptProposition(text) {
+    const claim = String(text || "").trim();
+    if (!claim) {
+      return { ok: false, error: "Enter a truth-apt proposition before creating a dialogue." };
+    }
+
+    if (/\?$/.test(claim) || /^(who|what|when|where|why|how)\b/i.test(claim)) {
+      return {
+        ok: false,
+        error: "Use a declarative proposition that can be true or false, not a question.",
+      };
+    }
+
+    const words = claim.split(/\s+/).filter(Boolean);
+    if (claim.length < 12 || words.length < 4) {
+      return {
+        ok: false,
+        error: "Make the proposition more specific so it can be evaluated as true or not true.",
+      };
+    }
+
+    const hasPredicate = /\b(is|are|was|were|be|being|should|ought|must|wrong|right|permissible|impermissible|required|forbidden|just|unjust|better|worse|encourage|encourages|cause|causes|reduce|reduces|increase|increases|violate|violates|harm|harms|matter|matters|require|requires|permit|permits|prohibit|prohibits)\b/i.test(claim);
+    if (!hasPredicate) {
+      return {
+        ok: false,
+        error:
+          "Write the claim in a truth-apt format (for example: 'X is morally wrong' or 'X is morally permissible').",
+      };
+    }
+
+    return { ok: true };
+  }
+
   function inferTopic(text) {
     const source = String(text || "").toLowerCase();
     let bestTopic = "general";
@@ -4888,6 +5092,140 @@
       return "Bridge mode prioritizes reliable, constructive disagreement over raw polarization.";
     }
     return "Balanced mode mixes disagreement, topical overlap, and reliability.";
+  }
+
+  function analyzeReasonProfile(text) {
+    const source = String(text || "").toLowerCase();
+    const tokens = source.match(/[a-z0-9']+/g) || [];
+    const sentenceCount = countSentences(source);
+    const keywordCounts = {
+      case: countKeywordHits(source, DISAGREEMENT_LEVEL_KEYWORDS.case),
+      principle: countKeywordHits(source, DISAGREEMENT_LEVEL_KEYWORDS.principle),
+      background: countKeywordHits(source, DISAGREEMENT_LEVEL_KEYWORDS.background),
+    };
+    const coveredLevels = Object.keys(keywordCounts).filter(function (level) {
+      return keywordCounts[level] > 0;
+    });
+    const dominantLevel = coveredLevels.length
+      ? coveredLevels.sort(function (a, b) {
+          return keywordCounts[b] - keywordCounts[a];
+        })[0]
+      : "case";
+
+    const sentenceScore = clamp(Math.min(sentenceCount, 5) / 5, 0, 1);
+    const tokenScore = clamp(Math.min(tokens.length, 55) / 55, 0, 1);
+    const levelCoverageScore = clamp(coveredLevels.length / 3, 0, 1);
+    const quality = clamp((sentenceScore * 0.35) + (tokenScore * 0.4) + (levelCoverageScore * 0.25), 0, 1);
+
+    return {
+      sentenceCount: sentenceCount,
+      tokenCount: tokens.length,
+      keywordCounts: keywordCounts,
+      coveredLevels: coveredLevels,
+      dominantLevel: dominantLevel,
+      quality: quality,
+    };
+  }
+
+  function countKeywordHits(source, keywords) {
+    const text = String(source || "").toLowerCase();
+    const list = Array.isArray(keywords) ? keywords : [];
+    return list.reduce(function (count, keyword) {
+      return count + (text.includes(String(keyword).toLowerCase()) ? 1 : 0);
+    }, 0);
+  }
+
+  function computeOverlapScore(sharedSlotCount, creatorSlotCount) {
+    const shared = Math.max(0, Number(sharedSlotCount) || 0);
+    const total = Math.max(1, Number(creatorSlotCount) || 1);
+    return clamp(shared / Math.min(total, 12), 0, 1);
+  }
+
+  function computeDisagreementDepthScore(creatorProfile, reservationProfile) {
+    const creator = creatorProfile || analyzeReasonProfile("");
+    const participant = reservationProfile || analyzeReasonProfile("");
+    const creatorLevels = new Set(creator.coveredLevels || []);
+    const participantLevels = new Set(participant.coveredLevels || []);
+    const sharedLevels = Array.from(participantLevels).filter(function (level) {
+      return creatorLevels.has(level);
+    });
+    const hasBackground = participantLevels.has("background");
+    const hasPrinciple = participantLevels.has("principle");
+    const levelBreadth = clamp((participantLevels.size || 0) / 3, 0, 1);
+    const complement = creator.dominantLevel !== participant.dominantLevel ? 1 : 0.5;
+    const sharedSignal = sharedLevels.length > 0 ? 1 : 0.55;
+    const backgroundBonus = hasBackground ? 1 : hasPrinciple ? 0.7 : 0.45;
+    return clamp((levelBreadth * 0.35) + (complement * 0.25) + (sharedSignal * 0.2) + (backgroundBonus * 0.2), 0, 1);
+  }
+
+  function buildAssumptionLexicon(assumptions) {
+    const lines = Array.isArray(assumptions) ? assumptions : [];
+    const lexicon = new Set();
+    lines.forEach(function (line) {
+      const tokens = String(line || "")
+        .toLowerCase()
+        .match(/[a-z0-9']+/g) || [];
+      tokens.forEach(function (token) {
+        if (token.length < 4) return;
+        if (LEXICAL_STOPWORDS.has(token)) return;
+        lexicon.add(token);
+      });
+    });
+    return lexicon;
+  }
+
+  function computeAssumptionEngagementScore(reasonText, assumptionLexicon) {
+    const lexicon = assumptionLexicon instanceof Set ? assumptionLexicon : new Set();
+    if (lexicon.size === 0) return 0.5;
+    const tokens = String(reasonText || "")
+      .toLowerCase()
+      .match(/[a-z0-9']+/g) || [];
+    let hits = 0;
+    tokens.forEach(function (token) {
+      if (lexicon.has(token)) hits += 1;
+    });
+    return clamp(hits / Math.min(6, lexicon.size), 0, 1);
+  }
+
+  function summarizeDisagreementLevel(profile) {
+    const item = profile || analyzeReasonProfile("");
+    if (item.coveredLevels && item.coveredLevels.length >= 3) return "Case + principle + background";
+    if (item.coveredLevels && item.coveredLevels.length === 2) {
+      return item.coveredLevels.join(" + ");
+    }
+    if (item.coveredLevels && item.coveredLevels.length === 1) {
+      return item.coveredLevels[0];
+    }
+    return "case-level";
+  }
+
+  function buildMatchRationale(input) {
+    const payload = input || {};
+    const confidenceGap = Math.round(Number(payload.confidenceGap) || 0);
+    const overlapScore = Math.round(clamp(Number(payload.overlapScore) || 0, 0, 1) * 100);
+    const depthScore = Math.round(clamp(Number(payload.disagreementDepth) || 0, 0, 1) * 100);
+    const reasonScore = Math.round(clamp(Number(payload.reasonQuality) || 0, 0, 1) * 100);
+    const assumptionScore = Math.round(clamp(Number(payload.assumptionEngagement) || 0, 0, 1) * 100);
+    const creatorLevel = payload.creatorProfile && payload.creatorProfile.dominantLevel ? payload.creatorProfile.dominantLevel : "case";
+    const reservationLevel =
+      payload.reservationProfile && payload.reservationProfile.dominantLevel ? payload.reservationProfile.dominantLevel : "case";
+    return (
+      "confidence gap " +
+      confidenceGap +
+      " pts; overlap quality " +
+      overlapScore +
+      "/100; disagreement-depth bridge " +
+      depthScore +
+      "/100 (" +
+      creatorLevel +
+      " vs " +
+      reservationLevel +
+      "); reason clarity " +
+      reasonScore +
+      "/100; assumption engagement " +
+      assumptionScore +
+      "/100."
+    );
   }
 
   function setSessionStatus(text) {

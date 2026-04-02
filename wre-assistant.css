@@ -170,6 +170,47 @@ body {
   font-size: 0.92rem;
 }
 
+.wre-sep-panel {
+  background: #f4f4f1;
+}
+
+.wre-sep-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.wre-sep-grid article {
+  border: 1px solid #dfe2de;
+  border-radius: 10px;
+  background: #f7f7f4;
+  padding: 0.58rem;
+}
+
+.wre-sep-grid h3 {
+  margin: 0 0 0.2rem;
+  font-size: 1rem;
+}
+
+.wre-sep-grid ul {
+  margin: 0;
+  padding-left: 1rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+.wre-sep-grid a {
+  color: #2f3d53;
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(47, 61, 83, 0.45);
+}
+
+.wre-sep-grid a:hover,
+.wre-sep-grid a:focus-visible {
+  color: #ff5f35;
+  border-bottom-color: rgba(255, 95, 53, 0.65);
+}
+
 .wre-label {
   display: block;
   margin: 0 0 0.35rem;
@@ -539,6 +580,10 @@ button.ghost:hover {
 
 @media (max-width: 1080px) {
   .wre-input-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .wre-sep-grid {
     grid-template-columns: 1fr;
   }
 

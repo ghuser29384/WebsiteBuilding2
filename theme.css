@@ -1,0 +1,601 @@
+/*
+  Normativity global visual system.
+  Loaded last on each page to keep the entire site aligned with the
+  Forethought-inspired editorial style used on the home page.
+*/
+:root {
+  --nm-bg: #efefea;
+  --nm-surface: #f7f7f4;
+  --nm-surface-soft: #f1f2ef;
+  --nm-line: #dfe2de;
+  --nm-line-strong: #d2d8d3;
+  --nm-ink: #2f2d2b;
+  --nm-muted: #5d615f;
+  --nm-primary: #2f3d53;
+  --nm-primary-hover: #263247;
+  --nm-signal: #ff5f35;
+  --nm-success: #2d7a56;
+  --nm-danger: #b14d5d;
+  --nm-danger-soft: #f8eeef;
+  --nm-success-soft: #edf6f1;
+  --nm-radius-sm: 8px;
+  --nm-radius-md: 12px;
+  --nm-radius-lg: 16px;
+}
+
+:root {
+  --bg: var(--nm-bg);
+  --surface: var(--nm-surface);
+  --surface-soft: var(--nm-surface-soft);
+  --panel: var(--nm-surface);
+  --line: var(--nm-line);
+  --line-strong: var(--nm-line-strong);
+  --ink: var(--nm-ink);
+  --ink-soft: var(--nm-muted);
+  --text: var(--nm-ink);
+  --muted: var(--nm-muted);
+  --primary: var(--nm-primary);
+  --primary-soft: #eef1f7;
+  --accent: var(--nm-primary);
+  --signal: var(--nm-signal);
+  --ok: var(--nm-success);
+  --warn: var(--nm-danger);
+  --warning: var(--nm-danger);
+  --support: var(--nm-success);
+  --conflict: var(--nm-danger);
+  --neutral: #6a706d;
+  --yes-soft: var(--nm-success-soft);
+  --no-soft: var(--nm-danger-soft);
+  --judgment-bg: #eef1f7;
+  --principle-bg: #eff4ee;
+  --theory-bg: #f7f2e9;
+
+  --ft-bg: var(--nm-bg);
+  --ft-ink: var(--nm-ink);
+  --ft-line: var(--nm-line);
+  --ft-line-strong: var(--nm-line-strong);
+  --ft-primary: var(--nm-primary);
+  --ft-primary-hover: var(--nm-primary-hover);
+  --ft-surface-soft: var(--nm-surface-soft);
+
+  --home-bg: var(--nm-bg);
+  --home-surface: var(--nm-surface);
+  --home-line: var(--nm-line);
+  --home-line-strong: var(--nm-line-strong);
+  --home-ink: var(--nm-ink);
+  --home-muted: var(--nm-muted);
+  --home-accent: var(--nm-primary);
+  --home-accent-hover: var(--nm-primary-hover);
+}
+
+html,
+body {
+  background: var(--nm-bg);
+  color: var(--nm-ink);
+}
+
+body,
+button,
+input,
+textarea,
+select {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.brand,
+.wre-title,
+.auth-title,
+.signup-onboarding-title,
+.forethought-podcast-link,
+.forethought-footer-nav a {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Garamond, serif;
+  color: var(--nm-ink);
+  font-weight: 500;
+}
+
+p,
+li,
+label,
+.hint,
+.lead,
+.subtitle,
+.auth-subtitle,
+.wre-label,
+.empty-note {
+  color: var(--nm-muted);
+}
+
+a {
+  color: var(--nm-primary);
+}
+
+a:hover,
+a:focus-visible {
+  color: var(--nm-signal);
+}
+
+.site-header,
+.wre-topbar,
+.wre-topbar-inner {
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom: 1px solid var(--nm-line);
+  backdrop-filter: saturate(120%) blur(4px);
+}
+
+.main-nav a,
+.top-nav a,
+.wre-nav a {
+  border: 1px solid transparent;
+  border-radius: var(--nm-radius-sm);
+  color: #4d5350;
+  font-weight: 500;
+}
+
+.main-nav a:hover,
+.main-nav a:focus-visible,
+.main-nav a[aria-current="page"],
+.top-nav a:hover,
+.top-nav a:focus-visible,
+.top-nav a[aria-current="page"],
+.wre-nav a:hover,
+.wre-nav a:focus-visible,
+.wre-nav a[aria-current="page"] {
+  border-color: var(--nm-line-strong);
+  background: #f5f5f2;
+  color: var(--nm-ink);
+}
+
+.panel,
+.card,
+.auth-card,
+.auth-panel,
+.profile-card,
+.profile-metric,
+.publication-card,
+.market-card,
+.ticket,
+.choice-item,
+.feed-item,
+.positions-item,
+.market-detail-main,
+.detail-context-block,
+.detail-activity-block,
+.detail-overview-card,
+.detail-outcome-card,
+.detail-theory-item,
+.normative-hero,
+.comparison-card-mini,
+.diagram-card,
+.strategy-row,
+.mind-card,
+.protocol-card,
+.guardrail-tool,
+.guardrail-result,
+.normative-toc,
+.wre-hero,
+.wre-panel,
+.wre-workspace-board,
+.summary-row,
+.recommendation-card,
+.case-actions,
+.confidence-wrap,
+.reflection-timer,
+.choice-option,
+.progress-card,
+.graph-card,
+.gauge-card,
+.explanation-card,
+.lesson-card,
+.lesson-case,
+.answer-summary,
+.inspect-hover,
+.inspect-list,
+.edge-rank-item {
+  background: var(--nm-surface);
+  border-color: var(--nm-line);
+  box-shadow: none;
+}
+
+.auth-chip,
+.hero-pills span,
+.chip-filter,
+.category-tag,
+.multi-pill,
+.choice-share,
+.detail-share,
+.article-prop-tag,
+.normative-source-strip a {
+  background: var(--nm-surface-soft);
+  border-color: var(--nm-line-strong);
+  color: #4b5150;
+}
+
+button,
+.btn,
+.auth-btn {
+  border-radius: var(--nm-radius-sm);
+  font-weight: 600;
+}
+
+.btn-primary,
+.auth-btn:not(.ghost),
+button[type="submit"] {
+  border-color: var(--nm-primary);
+  background: var(--nm-primary);
+  color: #ffffff;
+}
+
+.btn-primary:hover,
+.btn-primary:focus-visible,
+.auth-btn:not(.ghost):hover,
+.auth-btn:not(.ghost):focus-visible,
+button[type="submit"]:hover,
+button[type="submit"]:focus-visible {
+  border-color: var(--nm-primary-hover);
+  background: var(--nm-primary-hover);
+}
+
+.btn-secondary,
+.btn-ghost,
+.auth-btn.ghost {
+  background: #ffffff;
+  border-color: var(--nm-line-strong);
+  color: #4b5150;
+}
+
+input,
+textarea,
+select,
+.auth-field input,
+.auth-field textarea,
+.auth-field select,
+.search-wrap input {
+  border: 1px solid var(--nm-line-strong);
+  border-radius: var(--nm-radius-sm);
+  background: #ffffff;
+  color: var(--nm-ink);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: #8a8f8d;
+}
+
+hr,
+.divider,
+.soft-divider {
+  border-color: var(--nm-line);
+}
+
+.bg-orb {
+  display: none !important;
+}
+
+/* Keep the sign-up screen in the same visual language as the rest of the site. */
+body.auth-page.auth-signup-mode,
+body.auth-page.auth-signup-mode .auth-shell {
+  background: var(--nm-bg);
+  color: var(--nm-ink);
+}
+
+body.auth-page.auth-signup-mode .auth-card {
+  border-color: var(--nm-line);
+  border-radius: var(--nm-radius-lg);
+  background: var(--nm-surface);
+  box-shadow: none;
+}
+
+body.auth-page.auth-signup-mode .auth-panel {
+  border-color: var(--nm-line);
+  background: var(--nm-surface);
+}
+
+body.auth-page.auth-signup-mode .auth-tab-btn {
+  border-color: var(--nm-line-strong);
+  background: #ffffff;
+  color: #4d5350;
+}
+
+body.auth-page.auth-signup-mode .auth-tab-btn.active {
+  border-color: var(--nm-primary);
+  background: #eef1f7;
+  color: var(--nm-primary);
+}
+
+body.auth-page.auth-signup-mode .signup-onboarding-icon {
+  border-color: #d5966b;
+  background: #a85d34;
+}
+
+body.auth-page.auth-signup-mode .signup-onboarding-icon span::before,
+body.auth-page.auth-signup-mode .signup-onboarding-icon span::after {
+  background: #fff7f1;
+  box-shadow: none;
+}
+
+body.auth-page.auth-signup-mode .signup-onboarding-subtitle,
+body.auth-page.auth-signup-mode .auth-checkbox {
+  color: var(--nm-muted);
+}
+
+body.auth-page.auth-signup-mode .signup-avatar {
+  border-color: var(--nm-line-strong);
+  background: radial-gradient(circle at 24% 20%, #e6e9f9 0%, #cab39b 56%, #e89d64 78%, #f1b145 100%);
+  color: #ffffff;
+}
+
+body.auth-page.auth-signup-mode .signup-avatar-edit {
+  border-color: var(--nm-line-strong);
+  background: #ffffff;
+  color: var(--nm-primary);
+}
+
+body.auth-page.auth-signup-mode .auth-field,
+body.auth-page.auth-signup-mode .auth-status,
+body.auth-page.auth-signup-mode .auth-commitment h3,
+body.auth-page.auth-signup-mode .auth-commitment pre {
+  color: var(--nm-muted);
+}
+
+body.auth-page.auth-signup-mode .auth-field input,
+body.auth-page.auth-signup-mode .auth-field textarea {
+  border-color: var(--nm-line-strong);
+  background: #ffffff;
+  color: var(--nm-ink);
+}
+
+body.auth-page.auth-signup-mode .auth-commitment {
+  border-color: var(--nm-line);
+  background: var(--nm-surface-soft);
+}
+
+/*
+  Forethought-style visual unification layer.
+  Applied to pages that set body.forethought-site.
+*/
+body.forethought-site {
+  --nm-bg: #efefea;
+  --nm-surface: #f7f7f4;
+  --nm-surface-soft: #f1f2ef;
+  --nm-line: #dfe2de;
+  --nm-line-strong: #d2d8d3;
+  --nm-ink: #2f2d2b;
+  --nm-muted: #5d615f;
+  --nm-primary: #2f3d53;
+  --nm-primary-hover: #263247;
+  --nm-signal: #ff5f35;
+  --nm-success: #2d7a56;
+  --nm-danger: #b14d5d;
+  background-color: var(--nm-bg);
+  background-image:
+    linear-gradient(rgba(145, 150, 152, 0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(145, 150, 152, 0.18) 1px, transparent 1px);
+  background-size: 52px 52px;
+}
+
+body.forethought-site main,
+body.forethought-site .publication-main,
+body.forethought-site .profile-main,
+body.forethought-site .wre-page,
+body.forethought-site .wre-main,
+body.forethought-site .wre-module-main {
+  position: relative;
+  z-index: 1;
+}
+
+body.forethought-site .site-header,
+body.forethought-site .wre-topbar,
+body.forethought-site .wre-topbar-inner {
+  background: rgba(255, 255, 255, 0.93);
+  border-bottom: 1px solid var(--nm-line);
+  backdrop-filter: saturate(130%) blur(5px);
+}
+
+body.forethought-site .brand,
+body.forethought-site .wre-brand,
+body.forethought-site .wre-title,
+body.forethought-site .auth-title,
+body.forethought-site h1,
+body.forethought-site h2,
+body.forethought-site h3,
+body.forethought-site h4 {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Garamond, serif;
+  font-weight: 500;
+  color: var(--nm-ink);
+  letter-spacing: 0.003em;
+}
+
+body.forethought-site .section-head {
+  border-left: 2px solid var(--nm-signal);
+  padding-left: 0.85rem;
+  margin-bottom: 0.95rem;
+}
+
+body.forethought-site .section-head .eyebrow {
+  color: #cc5a3f;
+}
+
+body.forethought-site p,
+body.forethought-site li,
+body.forethought-site label,
+body.forethought-site .hint,
+body.forethought-site .subtitle,
+body.forethought-site .lead {
+  color: var(--nm-muted);
+}
+
+body.forethought-site a {
+  color: var(--nm-primary);
+}
+
+body.forethought-site a:hover,
+body.forethought-site a:focus-visible {
+  color: var(--nm-signal);
+}
+
+body.forethought-site .panel,
+body.forethought-site .card,
+body.forethought-site .auth-card,
+body.forethought-site .auth-panel,
+body.forethought-site .profile-card,
+body.forethought-site .profile-metric,
+body.forethought-site .publication-card,
+body.forethought-site .market-card,
+body.forethought-site .wre-hero,
+body.forethought-site .wre-panel,
+body.forethought-site .wre-workspace-board,
+body.forethought-site .progress-card,
+body.forethought-site .graph-card,
+body.forethought-site .gauge-card,
+body.forethought-site .explanation-card,
+body.forethought-site .lesson-card,
+body.forethought-site .lesson-case,
+body.forethought-site .answer-summary,
+body.forethought-site .inspect-hover,
+body.forethought-site .inspect-list,
+body.forethought-site .edge-rank-item,
+body.forethought-site .recommendation-card,
+body.forethought-site .summary-row,
+body.forethought-site .case-actions,
+body.forethought-site .confidence-wrap,
+body.forethought-site .reflection-timer,
+body.forethought-site .choice-option {
+  background: var(--nm-surface);
+  border: 1px solid var(--nm-line);
+  box-shadow: none;
+}
+
+body.forethought-site .panel:hover,
+body.forethought-site .card:hover,
+body.forethought-site .publication-card:hover,
+body.forethought-site .market-card:hover,
+body.forethought-site .profile-card:hover {
+  border-color: var(--nm-line-strong);
+}
+
+body.forethought-site .main-nav a,
+body.forethought-site .top-nav a,
+body.forethought-site .wre-nav a {
+  color: #4d5350;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  font-weight: 500;
+}
+
+body.forethought-site .main-nav a:hover,
+body.forethought-site .main-nav a:focus-visible,
+body.forethought-site .main-nav a[aria-current="page"],
+body.forethought-site .top-nav a:hover,
+body.forethought-site .top-nav a:focus-visible,
+body.forethought-site .top-nav a[aria-current="page"],
+body.forethought-site .wre-nav a:hover,
+body.forethought-site .wre-nav a:focus-visible,
+body.forethought-site .wre-nav a[aria-current="page"] {
+  border-color: var(--nm-line-strong);
+  background: #f5f5f2;
+  color: var(--nm-ink);
+}
+
+body.forethought-site .btn,
+body.forethought-site .auth-btn,
+body.forethought-site button {
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+body.forethought-site .btn-primary,
+body.forethought-site .auth-btn:not(.ghost),
+body.forethought-site button[type="submit"] {
+  background: var(--nm-primary);
+  border-color: var(--nm-primary);
+  color: #ffffff;
+}
+
+body.forethought-site .btn-primary:hover,
+body.forethought-site .btn-primary:focus-visible,
+body.forethought-site .auth-btn:not(.ghost):hover,
+body.forethought-site .auth-btn:not(.ghost):focus-visible,
+body.forethought-site button[type="submit"]:hover,
+body.forethought-site button[type="submit"]:focus-visible {
+  background: var(--nm-primary-hover);
+  border-color: var(--nm-primary-hover);
+}
+
+body.forethought-site .btn-secondary,
+body.forethought-site .btn-ghost,
+body.forethought-site .auth-btn.ghost {
+  background: #ffffff;
+  border-color: var(--nm-line-strong);
+  color: #4b5150;
+}
+
+body.forethought-site .featured-market-chart,
+body.forethought-site #featuredMarketChart,
+body.forethought-site #deliberationChart,
+body.forethought-site #progressChart,
+body.forethought-site #mathProgressChart,
+body.forethought-site #ethicsProgressChart,
+body.forethought-site #insightsTrendChart,
+body.forethought-site #marketDetailChart,
+body.forethought-site .mini-graph-svg {
+  border: 1px solid var(--nm-line);
+  border-radius: 12px;
+  background-color: #f5f5f2;
+  background-image:
+    linear-gradient(rgba(149, 152, 152, 0.18) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(149, 152, 152, 0.18) 1px, transparent 1px);
+  background-size: 52px 52px;
+}
+
+body.forethought-site .forethought-intro-lines path,
+body.forethought-site .parfit-route-line,
+body.forethought-site .parfit-lattice-line {
+  stroke: var(--nm-signal);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+body.forethought-site .forethought-intro-lines path {
+  stroke-dasharray: 14 10;
+  animation: forethoughtLineSweep 12s linear infinite;
+}
+
+body.forethought-site .forethought-intro-lines path:nth-child(2) { animation-duration: 13.5s; }
+body.forethought-site .forethought-intro-lines path:nth-child(3) { animation-duration: 11.2s; }
+body.forethought-site .forethought-intro-lines path:nth-child(4) { animation-duration: 14.6s; }
+body.forethought-site .forethought-intro-lines path:nth-child(5) { animation-duration: 10.4s; }
+
+body.forethought-site .layout-cluster,
+body.forethought-site .sep-foundation-card,
+body.forethought-site .wre-sep-grid article {
+  background: #f4f4f1;
+  border-color: var(--nm-line);
+}
+
+@keyframes forethoughtLineSweep {
+  from {
+    stroke-dashoffset: 0;
+  }
+  to {
+    stroke-dashoffset: -240;
+  }
+}
+
+@media (max-width: 860px) {
+  body.forethought-site .section-head {
+    padding-left: 0.65rem;
+    margin-bottom: 0.8rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.forethought-site .forethought-intro-lines path {
+    animation: none !important;
+  }
+}

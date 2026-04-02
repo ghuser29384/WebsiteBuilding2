@@ -111,11 +111,16 @@
   }
 
   function signUp(payload) {
+    var displayName = String(payload && payload.displayName ? payload.displayName : "").trim().slice(0, 80);
     var handle = normalizeHandle(payload && payload.handle);
+    var bio = String(payload && payload.bio ? payload.bio : "").trim().slice(0, 400);
     var email = normalizeEmail(payload && payload.email);
     var password = String(payload && payload.password ? payload.password : "");
     var acceptedTerms = Boolean(payload && payload.acceptedTerms);
 
+    if (!displayName || displayName.length < 2) {
+      return { ok: false, error: "Name must be at least 2 characters." };
+    }
     if (!handle || handle.length < 2) {
       return { ok: false, error: "Username must be at least 2 characters (letters, numbers, underscore)." };
     }
@@ -147,7 +152,9 @@
     var now = new Date().toISOString();
     var user = {
       id: uid("user"),
+      displayName: displayName,
       handle: handle,
+      bio: bio,
       email: email,
       passwordHash: passwordHash(password),
       acceptedTerms: true,

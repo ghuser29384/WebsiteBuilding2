@@ -137,7 +137,8 @@ textarea:focus-visible {
 .graph-card,
 .gauge-card,
 .explanation-card,
-.lesson-card {
+.lesson-card,
+.sep-method-card {
   border: 1px solid var(--line);
   background: var(--surface);
   border-radius: var(--radius);
@@ -182,6 +183,35 @@ textarea:focus-visible {
   border-radius: inherit;
   transition: width 300ms ease;
   background: linear-gradient(90deg, #5ca6ff 0%, #2f5c87 100%);
+}
+
+.sep-method-card p {
+  margin: 0;
+}
+
+.sep-method-title {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+  font-weight: 700;
+  margin-bottom: 0.3rem !important;
+}
+
+.sep-method-links {
+  margin-top: 0.34rem !important;
+}
+
+.sep-method-links a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(47, 92, 135, 0.45);
+}
+
+.sep-method-links a:hover,
+.sep-method-links a:focus-visible {
+  color: #ff5f35;
+  border-bottom-color: rgba(255, 95, 53, 0.6);
 }
 
 .workspace {
@@ -311,6 +341,111 @@ textarea:focus-visible {
   color: #2f4c6c;
   font-size: 0.86rem;
   font-weight: 600;
+}
+
+.lesson-sources {
+  border: 1px solid #d8e0e8;
+  border-radius: 10px;
+  background: #f5f5f2;
+  padding: 0.48rem 0.56rem;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.lesson-source-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.lesson-source-grid p,
+.lesson-source-grid ul,
+.lesson-source-grid li,
+.lesson-source-method,
+.lesson-source-caveat {
+  margin: 0;
+}
+
+.lesson-source-grid ul {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 0.22rem;
+}
+
+.lesson-source-head {
+  font-size: 0.74rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #5d615f;
+  margin-bottom: 0.15rem;
+}
+
+.lesson-source-label,
+.lesson-source-grid li {
+  font-size: 0.78rem;
+  color: #4e5351;
+}
+
+.lesson-source-link {
+  color: #2f3d53;
+  text-decoration: none;
+  border-bottom: 1px dotted rgba(47, 61, 83, 0.45);
+}
+
+.lesson-source-link:hover,
+.lesson-source-link:focus-visible {
+  color: #ff5f35;
+  border-bottom-color: rgba(255, 95, 53, 0.65);
+}
+
+.lesson-source-method {
+  font-size: 0.79rem;
+  color: #4f5553;
+}
+
+.lesson-source-caveat {
+  font-size: 0.79rem;
+  color: #5a605d;
+}
+
+.lesson-diagnostic {
+  border: 1px solid #d9e3ee;
+  border-radius: 10px;
+  background: #f8fbff;
+  padding: 0.5rem 0.58rem;
+  display: grid;
+  gap: 0.34rem;
+}
+
+.lesson-diagnostic-grid {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.lesson-diagnostic-grid p,
+.lesson-diagnostic-note,
+.lesson-diagnostic-list,
+.lesson-diagnostic-links {
+  margin: 0;
+}
+
+.lesson-diagnostic-note {
+  color: #425a74;
+  font-size: 0.82rem;
+}
+
+.lesson-diagnostic-list {
+  padding-left: 1rem;
+  color: #41576f;
+  font-size: 0.82rem;
+  display: grid;
+  gap: 0.14rem;
+}
+
+.lesson-diagnostic-links {
+  font-size: 0.78rem;
 }
 
 .answer-row {
@@ -704,6 +839,10 @@ textarea:focus-visible {
   .answer-row {
     grid-template-columns: minmax(0, 1fr);
   }
+
+  .lesson-source-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* Home-style alignment (Forethought-like) */
@@ -748,6 +887,7 @@ body {
 .explanation-card,
 .lesson-card,
 .lesson-case,
+.lesson-diagnostic,
 .answer-summary,
 .inspect-hover,
 .inspect-list,
