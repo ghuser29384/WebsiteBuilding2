@@ -683,10 +683,10 @@
         .join(" · ") +
       "</p>" +
       "</div>" +
-      "<p class=\"hint\"><strong>SEP case anchor:</strong> " +
-      buildSepLink(recommendedCase.sepUrl, recommendedCase.sepTitle || "Relevant SEP entry") +
+      "<p class=\"hint\"><strong>case anchor:</strong> " +
+      buildSepLink(recommendedCase.sepUrl, recommendedCase.sepTitle || "relevant reference entry") +
       "</p>" +
-      "<p class=\"hint\"><strong>SEP principle anchor:</strong> " +
+      "<p class=\"hint\"><strong>principle anchor:</strong> " +
       buildSepLink(getPrincipleSepUrl(principleId), getPrincipleSepTitle(principleId)) +
       "</p>";
   }
@@ -865,7 +865,7 @@
     actions.push("Treat coherence as defeasible support, not decisive proof.");
 
     return {
-      title: "SEP diagnostic: this round",
+      title: "Round diagnostic: this round",
       moveLabel: moveLabel,
       disagreementLabel: disagreementLabel,
       confidenceLabel: confidenceLabel,
@@ -961,7 +961,7 @@
 
   function getPrincipleSepTitle(principleId) {
     const found = getPrincipleById(principleId);
-    return found ? found.sepTitle : "Related SEP entry";
+    return found ? found.sepTitle : "Related reference entry";
   }
 
   function getPrincipleSepUrl(principleId) {
@@ -977,30 +977,30 @@
     const principleLabel = getPrincipleLabel(principleId);
     if (lessonCase && lessonCase.sepUrl) {
       el.caseSepLine.innerHTML =
-        "<strong>SEP case source:</strong> " + buildSepLink(lessonCase.sepUrl, lessonCase.sepTitle || "Relevant SEP entry");
+        "<strong>case source:</strong> " + buildSepLink(lessonCase.sepUrl, lessonCase.sepTitle || "relevant reference entry");
     } else {
-      el.caseSepLine.textContent = "SEP case source: not available for this scenario.";
+      el.caseSepLine.textContent = "case source: not available for this scenario.";
     }
 
     if (principleId && getPrincipleSepUrl(principleId)) {
       el.principleSepLine.innerHTML =
-        "<strong>SEP principle source (" +
+        "<strong>principle source (" +
         escapeHtml(principleLabel) +
         "):</strong> " +
         buildSepLink(getPrincipleSepUrl(principleId), getPrincipleSepTitle(principleId));
       return;
     }
 
-    el.principleSepLine.textContent = "Select a principle in Question 1 to display its SEP source.";
+    el.principleSepLine.textContent = "Select a principle in Question 1 to display its source.";
   }
 
   function buildSepLink(url, title) {
-    if (!url) return escapeHtml(title || "SEP");
+    if (!url) return escapeHtml(title || "Reference");
     return (
       '<a class="sep-link-inline" href="' +
       escapeHtml(url) +
       '" target="_blank" rel="noopener">' +
-      escapeHtml(title || "SEP") +
+      escapeHtml(title || "Reference") +
       "</a>"
     );
   }

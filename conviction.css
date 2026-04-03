@@ -478,6 +478,38 @@ textarea:focus-visible {
   gap: 0.86rem;
 }
 
+.re-lab-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.4fr) minmax(0, 0.6fr);
+  gap: 0.86rem;
+  align-items: stretch;
+}
+
+.re-lab-copy {
+  display: grid;
+  align-content: start;
+  gap: 0.68rem;
+}
+
+.re-lab-copy .btn {
+  justify-self: start;
+}
+
+.re-lab-frame-card {
+  padding: 0;
+  overflow: hidden;
+  min-height: 760px;
+}
+
+.re-lab-frame {
+  display: block;
+  width: 100%;
+  height: min(78vh, 900px);
+  min-height: 760px;
+  border: 0;
+  background: #ffffff;
+}
+
 .deliberation-copy {
   background:
     linear-gradient(180deg, #fffdfa 0%, #f6efe2 100%),
@@ -1762,16 +1794,23 @@ body.attendance-modal-open {
   display: grid;
   place-items: center;
   padding: 1rem;
+  pointer-events: auto;
+}
+
+.attendance-modal[hidden] {
+  display: none !important;
 }
 
 .attendance-modal-backdrop {
   position: absolute;
   inset: 0;
   background: rgba(19, 28, 41, 0.44);
+  z-index: 0;
 }
 
 .attendance-modal-dialog {
   position: relative;
+  z-index: 1;
   width: min(760px, 100%);
   max-height: calc(100vh - 2rem);
   overflow: auto;
@@ -2349,6 +2388,10 @@ html:not([data-theme]) .normative-inline-dotted {
     grid-template-columns: 1fr;
   }
 
+  .re-lab-grid {
+    grid-template-columns: 1fr;
+  }
+
   .explainer-grid {
     grid-template-columns: 1fr;
   }
@@ -2371,6 +2414,15 @@ html:not([data-theme]) .normative-inline-dotted {
 
   .studio-grid {
     grid-template-columns: 1fr;
+  }
+
+  .re-lab-frame-card {
+    min-height: 640px;
+  }
+
+  .re-lab-frame {
+    min-height: 640px;
+    height: 70vh;
   }
 }
 

@@ -112,7 +112,7 @@
         stateClass = "state-caution";
         title = "Revision pressure is high";
         lead =
-          "Given tension and disagreement, SEP-style method favors revising the weakest node (judgment, principle, or background view) before increasing confidence.";
+          "Given tension and disagreement, this method favors revising the weakest node (judgment, principle, or background view) before increasing confidence.";
         steps = [
           "Lower confidence temporarily and treat your verdict as underdetermined.",
           "Revise whichever element is least supported: case judgment, general principle, or background assumption.",

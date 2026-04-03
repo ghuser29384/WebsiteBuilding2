@@ -151,7 +151,7 @@
             "Deprivation account: murder is seriously wrong because it removes the victim's valuable future experiences, projects, relationships, and goods they otherwise would have had.",
           sources: [
             {
-              label: "SEP - Death (Deprivation Account)",
+              label: "Reference - Death (Deprivation Account)",
               url: "https://plato.stanford.edu/entries/death/#DeprAcco",
             },
             {
@@ -170,7 +170,7 @@
             "Consequentialist account: murder is wrong when it predictably makes outcomes worse overall, including severe suffering, grief, fear, social instability, and foreclosed welfare.",
           sources: [
             {
-              label: "SEP - Consequentialism",
+              label: "Reference - Consequentialism",
               url: "https://plato.stanford.edu/entries/consequentialism/",
             },
             {
@@ -189,7 +189,7 @@
             "Kantian account: murder is wrong because it annihilates the conditions for autonomous agency and treats a rational person as a mere object rather than an end in themselves.",
           sources: [
             {
-              label: "SEP - Kant's Moral Philosophy",
+              label: "Reference - Kant's Moral Philosophy",
               url: "https://plato.stanford.edu/entries/kant-moral/",
             },
             {
@@ -208,7 +208,7 @@
             "Rights-based account: murder is wrong because it infringes a stringent claim-right not to be killed, independent of whether aggregate outcomes would otherwise improve.",
           sources: [
             {
-              label: "SEP - Rights",
+              label: "Reference - Rights",
               url: "https://plato.stanford.edu/entries/rights/",
             },
             {
@@ -227,7 +227,7 @@
             "Virtue-ethical account: murder is wrong because it expresses and entrenches grave defects of character such as cruelty, injustice, callousness, and disregard for practical wisdom.",
           sources: [
             {
-              label: "SEP - Virtue Ethics",
+              label: "Reference - Virtue Ethics",
               url: "https://plato.stanford.edu/entries/ethics-virtue/",
             },
             {

@@ -127,7 +127,7 @@ Replace `VectorStoreAdapter` with a production implementation:
 - PGVector
 
 Suggested ingestion flow:
-1. Canonical source collection (SEP entries, policy docs, internal memos).
+1. Canonical source collection (reference entries, policy docs, internal memos).
 2. Chunking strategy (`maxChars` + overlap based on paragraph boundaries).
 3. Metadata tagging (`source`, `year`, `author`, `topic`).
 4. Embedding + upsert into namespace (per tenant/session/domain).

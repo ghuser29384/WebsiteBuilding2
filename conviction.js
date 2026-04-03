@@ -45,7 +45,7 @@
   const AVAILABILITY_SLOTS_PER_DAY = Math.round((24 * 60) / AVAILABILITY_SLOT_MINUTES);
   const AVAILABILITY_SLOT_COUNT = AVAILABILITY_DAYS * AVAILABILITY_SLOTS_PER_DAY;
 
-  const SEP_MATCH_WEIGHTS = {
+  const MATCH_WEIGHTS = {
     confidenceProximity: 0.55,
     overlap: 0.2,
     disagreementDepth: 0.15,
@@ -142,7 +142,7 @@
     "an",
   ]);
 
-  const MATCH_WEIGHTS = {
+  const MATCH_STYLE_WEIGHTS = {
     challenge: { disagreement: 0.6, topicFit: 0.2, frameworkDiversity: 0.1, reliability: 0.1 },
     balanced: { disagreement: 0.45, topicFit: 0.3, frameworkDiversity: 0.15, reliability: 0.1 },
     bridge: { disagreement: 0.3, topicFit: 0.3, frameworkDiversity: 0.15, reliability: 0.25 },
@@ -378,16 +378,16 @@
   const DELIBERATION_REFERENCE_LEVEL = 18;
   const DELIBERATION_HISTORY_LIMIT = 16;
   const DELIBERATION_PARTICIPANTS = [
-    { id: "dl-consequentialist", name: "Consequentialist theories", color: "#b96845", reliability: 0.86, belief: 21 },
-    { id: "dl-deontological", name: "Deontological theories", color: "#4f84ad", reliability: 0.84, belief: 16 },
-    { id: "dl-contractualist", name: "Contractualist theories", color: "#6e78bb", reliability: 0.8, belief: 12 },
-    { id: "dl-virtue-based", name: "Virtue-based theories", color: "#8a6cb8", reliability: 0.78, belief: 11 },
-    { id: "dl-relational", name: "Relational theories", color: "#39986d", reliability: 0.8, belief: 10 },
-    { id: "dl-proceduralist", name: "Proceduralist theories", color: "#bb7c3d", reliability: 0.76, belief: 9 },
-    { id: "dl-hybrid", name: "Hybrid theories", color: "#d27877", reliability: 0.74, belief: 8 },
-    { id: "dl-particularist", name: "Particularist theories", color: "#6f8f4a", reliability: 0.72, belief: 6 },
-    { id: "dl-error", name: "Error theories", color: "#8a7b67", reliability: 0.71, belief: 4 },
-    { id: "dl-noncognitivist", name: "Non-cognitivist theories", color: "#3c6b7d", reliability: 0.73, belief: 3 },
+    { id: "dl-consequentialist", name: "Consequentialist theories", color: "#c86f4d", reliability: 0.86, belief: 21 },
+    { id: "dl-deontological", name: "Deontological theories", color: "#4f6f8f", reliability: 0.84, belief: 16 },
+    { id: "dl-contractualist", name: "Contractualist theories", color: "#6e6a93", reliability: 0.8, belief: 12 },
+    { id: "dl-virtue-based", name: "Virtue-based theories", color: "#8a6c7c", reliability: 0.78, belief: 11 },
+    { id: "dl-relational", name: "Relational theories", color: "#4f7f68", reliability: 0.8, belief: 10 },
+    { id: "dl-proceduralist", name: "Proceduralist theories", color: "#a5794a", reliability: 0.76, belief: 9 },
+    { id: "dl-hybrid", name: "Hybrid theories", color: "#b87c67", reliability: 0.74, belief: 8 },
+    { id: "dl-particularist", name: "Particularist theories", color: "#7d8450", reliability: 0.72, belief: 6 },
+    { id: "dl-error", name: "Error theories", color: "#8a7a66", reliability: 0.71, belief: 4 },
+    { id: "dl-noncognitivist", name: "Non-cognitivist theories", color: "#456a79", reliability: 0.73, belief: 3 },
   ];
   const DELIBERATION_LEAD_SHARE_ANCHORS = [
     { round: 1, share: 21 },
@@ -453,39 +453,39 @@
       key: "judgments",
       label: "Considered judgments",
       note: "Relatively confident case-level judgments that anchor revision.",
-      color: "#8f2236",
+      color: "#b44f61",
     },
     {
       key: "principles",
       label: "Candidate principles",
       note: "General principles proposed to organize those judgments.",
-      color: "#375f97",
+      color: "#4e6886",
     },
     {
       key: "background",
       label: "Background theories",
       note: "Empirical beliefs and broader theories used in wide equilibrium.",
-      color: "#2a7754",
+      color: "#4d7b66",
     },
     {
       key: "revisions",
       label: "Mutual revision",
       note: "Any element can be revised when conflict appears.",
-      color: "#a06f2f",
+      color: "#9b7446",
     },
     {
       key: "equilibrium",
       label: "Provisional fit",
       note: "A more coherent package, still open to future challenge.",
-      color: "#1f2d3d",
+      color: "#29313b",
     },
   ];
   const REFLECTIVE_EQUILIBRIUM_NODE_LAYOUT = [
-    { key: "judgments", label: ["Considered", "judgments"], x: 124, y: 82, color: "#8f2236", surface: "#f7ecef" },
-    { key: "principles", label: ["Candidate", "principles"], x: 360, y: 58, color: "#375f97", surface: "#edf2fa" },
-    { key: "background", label: ["Background", "theories"], x: 594, y: 86, color: "#2a7754", surface: "#edf7f2" },
-    { key: "revisions", label: ["Mutual", "revisions"], x: 208, y: 218, color: "#a06f2f", surface: "#f8f1e7" },
-    { key: "equilibrium", label: ["Provisional", "coherence"], x: 512, y: 220, color: "#1f2d3d", surface: "#eef1f4" },
+    { key: "judgments", label: ["Considered", "judgments"], x: 124, y: 82, color: "#b44f61", surface: "#f5ecef" },
+    { key: "principles", label: ["Candidate", "principles"], x: 360, y: 58, color: "#4e6886", surface: "#eef1f5" },
+    { key: "background", label: ["Background", "theories"], x: 594, y: 86, color: "#4d7b66", surface: "#edf3ef" },
+    { key: "revisions", label: ["Mutual", "revisions"], x: 208, y: 218, color: "#9b7446", surface: "#f5f0e8" },
+    { key: "equilibrium", label: ["Provisional", "coherence"], x: 512, y: 220, color: "#29313b", surface: "#eff0f1" },
   ];
   const REFLECTIVE_EQUILIBRIUM_LINKS = [
     { from: "judgments", to: "principles", bend: -28 },
@@ -584,6 +584,347 @@
   ];
   const REFLECTIVE_EQUILIBRIUM_STAGE_ROUNDS = [1, 4, 14, 60, 250, 1100, 5000, 20000, 60000, 100000];
 
+  const SEEDED_DIALOGUE_ROOMS = [
+    {
+      claim: "It is morally impermissible to kill one healthy patient to harvest organs for five patients.",
+      confidence: 79,
+      reason:
+        "This violates a strong constraint against using a person merely as a means, even when outcomes look better in aggregate.",
+      assumptions: ["Persons have stringent rights against intentional killing.", "Aggregate welfare does not always override side constraints."],
+    },
+    {
+      claim: "In the standard trolley case, diverting the trolley to kill one instead of five is morally permissible.",
+      confidence: 68,
+      reason:
+        "When harm is unavoidable, minimizing deaths appears morally relevant if no one is used as a tool.",
+      assumptions: ["Outcome differences can matter morally.", "Doing and allowing distinctions are not always decisive."],
+    },
+    {
+      claim: "In the footbridge trolley variant, pushing a person to stop the trolley is morally impermissible.",
+      confidence: 81,
+      reason:
+        "Directly instrumentalizing a person for others' benefit is a serious moral wrong even under pressure.",
+      assumptions: ["Using persons merely as means is typically impermissible.", "Personal force can change the moral structure of a case."],
+    },
+    {
+      claim: "Deliberately breaking a serious promise for small personal convenience is morally wrong.",
+      confidence: 85,
+      reason: "Promise-keeping sustains trust, and trivial gains rarely justify violating it.",
+      assumptions: ["Promises create moral obligations.", "Trust is a significant social good."],
+    },
+    {
+      claim: "Agents are often morally required to prevent severe harm when the personal cost is small.",
+      confidence: 76,
+      reason:
+        "Cost-effective rescue obligations seem strong when modest sacrifice can avert major suffering.",
+      assumptions: ["Preventing severe suffering has high moral priority.", "Personal cost is morally relevant but not always overriding."],
+    },
+    {
+      claim: "Buying factory-farmed meat is morally wrong because it supports severe suffering.",
+      confidence: 74,
+      reason: "Consumer demand contributes to systems that inflict large, avoidable harms on sentient beings.",
+      assumptions: ["Animal suffering is morally significant.", "Market participation can generate responsibility."],
+    },
+    {
+      claim: "Consumers are morally required to account for supply-chain exploitation when purchasing clothing.",
+      confidence: 69,
+      reason:
+        "Ignoring predictable exploitation while benefiting from it appears morally negligent.",
+      assumptions: ["Complicity can ground moral duties.", "Labor exploitation is a serious moral harm."],
+    },
+    {
+      claim: "High-income individuals have a significant duty to donate to highly cost-effective global health interventions.",
+      confidence: 71,
+      reason:
+        "Small reductions in luxury spending can save or improve many lives at low personal cost.",
+      assumptions: ["Distance does not erase moral relevance.", "Opportunity costs matter for moral choice."],
+    },
+    {
+      claim: "States are morally permitted to tax carbon emissions to reduce expected climate harms.",
+      confidence: 73,
+      reason: "Emission pricing can internalize harms and reduce predictable collective damage.",
+      assumptions: ["Collective harms can justify coordinated policy constraints.", "Future harms carry moral weight."],
+    },
+    {
+      claim: "Governments are morally required to phase out the highest-emission energy systems through a just transition.",
+      confidence: 67,
+      reason:
+        "Unmitigated emissions impose serious risks, while fairness requires protecting workers and vulnerable communities during transition.",
+      assumptions: ["Intergenerational harms matter morally.", "Justice constraints apply to climate policy design."],
+    },
+    {
+      claim: "Retributive punishment without deterrence or rehabilitation benefit is morally unjustified.",
+      confidence: 62,
+      reason:
+        "Inflicting suffering for its own sake is hard to justify absent clear protective or restorative value.",
+      assumptions: ["Punishment requires positive moral purpose.", "State coercion needs strong justification."],
+    },
+    {
+      claim: "The death penalty is morally impermissible because of irreversibility and error risk.",
+      confidence: 77,
+      reason: "A fallible system should avoid irreversible punishments that can kill innocent people.",
+      assumptions: ["Irreversible harms warrant exceptionally strong constraints.", "Legal systems are nontrivially error-prone."],
+    },
+    {
+      claim: "Solitary confinement beyond short emergency use is morally impermissible.",
+      confidence: 72,
+      reason:
+        "Extended isolation predictably causes severe psychological harm disproportionate to legitimate penal aims.",
+      assumptions: ["Cruel treatment is morally wrong.", "Penal policy should minimize avoidable severe harms."],
+    },
+    {
+      claim: "Respecting bodily autonomy is a strong moral reason against coercive medical interventions.",
+      confidence: 78,
+      reason: "Control over one’s body is central to agency and dignity.",
+      assumptions: ["Autonomy has substantial moral weight.", "Medical benefits do not automatically override consent."],
+    },
+    {
+      claim: "Abortion is morally permissible in at least many early-pregnancy cases.",
+      confidence: 65,
+      reason:
+        "Early cases can involve strong autonomy claims and contested fetal moral status.",
+      assumptions: ["Bodily autonomy is morally significant.", "Moral status can vary by developmental stage."],
+    },
+    {
+      claim: "Physician-assisted dying can be morally permissible under strict safeguards for consent and prognosis.",
+      confidence: 61,
+      reason:
+        "When suffering is extreme and voluntary choice is informed and stable, assistance may respect agency and reduce needless harm.",
+      assumptions: ["Autonomy and relief of severe suffering both matter morally.", "Safeguards can reduce abuse risk."],
+    },
+    {
+      claim: "Deliberately creating misinformation that predictably causes serious harm is morally wrong.",
+      confidence: 84,
+      reason:
+        "Intentional deception that foreseeably injures others violates both welfare and trust-based duties.",
+      assumptions: ["Truthfulness has moral importance.", "Foreseeable harmful consequences matter."],
+    },
+    {
+      claim: "Deplatforming speech that directly incites violence can be morally permissible.",
+      confidence: 64,
+      reason: "Preventing imminent severe harm can justify constrained limits in exceptional contexts.",
+      assumptions: ["Rights can have limits under high-risk conditions.", "Imminence and severity are morally relevant thresholds."],
+    },
+    {
+      claim: "Privacy violations by mass surveillance are presumptively morally wrong.",
+      confidence: 75,
+      reason: "Indiscriminate surveillance undermines autonomy, trust, and protections against abuse.",
+      assumptions: ["Privacy is a basic moral interest.", "Power concentration increases abuse risk."],
+    },
+    {
+      claim: "Deploying high-risk AI systems without robust safety testing is morally impermissible.",
+      confidence: 80,
+      reason:
+        "Unvetted deployment can impose large harms on non-consenting populations.",
+      assumptions: ["Risk imposition requires strong justification.", "Developers have duties of due care."],
+    },
+    {
+      claim: "States may be morally required to regulate frontier AI when catastrophic risk is substantial.",
+      confidence: 70,
+      reason:
+        "Collective governance can be justified when private incentives underweight systemic tail risks.",
+      assumptions: ["Catastrophic-risk reduction is a legitimate moral priority.", "Public institutions can coordinate risk controls."],
+    },
+    {
+      claim: "Moral disagreement among informed peers is evidence that one should reduce confidence.",
+      confidence: 72,
+      reason:
+        "Persistent peer disagreement provides defeasible evidence that one’s evidence processing may be incomplete.",
+      assumptions: ["Epistemic humility is a moral and epistemic virtue.", "Peerhood is sometimes genuine in ethics."],
+    },
+    {
+      claim: "Considered moral intuitions provide defeasible evidence in ethical reasoning.",
+      confidence: 66,
+      reason:
+        "Stable considered judgments can be informative while remaining open to revision.",
+      assumptions: ["Seemings can carry some evidential weight.", "Defeasible evidence can still matter."],
+    },
+    {
+      claim: "Reflective equilibrium is a better method for moral inquiry than rigid one-principle reasoning.",
+      confidence: 74,
+      reason:
+        "Mutual adjustment among judgments, principles, and background theories better handles conflict and revision.",
+      assumptions: ["No single principle captures all considered cases without refinement.", "Methodological pluralism improves reliability."],
+    },
+    {
+      claim: "If a principle and strong considered judgments systematically conflict, the principle is probably false or incomplete.",
+      confidence: 69,
+      reason:
+        "Persistent mismatch across many cases indicates explanatory failure or missing qualifications.",
+      assumptions: ["Systematic fit is an important theoretical virtue.", "Strong considered judgments are nontrivial data points."],
+    },
+    {
+      claim: "Moral reasons apply to all affected persons and are not limited to compatriots.",
+      confidence: 77,
+      reason: "Arbitrary membership boundaries rarely justify ignoring equal harms elsewhere.",
+      assumptions: ["Impartiality has substantial force.", "Equal suffering warrants equal concern absent defeaters."],
+    },
+    {
+      claim: "Partiality toward family is morally permissible within limits set by impartial duties.",
+      confidence: 71,
+      reason:
+        "Special obligations can coexist with broader duties when partiality does not impose serious unjust harms on others.",
+      assumptions: ["Special relationships can generate moral reasons.", "Impartial constraints still apply."],
+    },
+    {
+      claim: "Exploiting workers’ vulnerability for avoidable gain is morally wrong even when formally legal.",
+      confidence: 79,
+      reason: "Legality does not erase unfair advantage-taking that predictably harms basic interests.",
+      assumptions: ["Legal permissibility and moral permissibility can diverge.", "Exploitation is a distinct moral wrong."],
+    },
+    {
+      claim: "Creating institutions that predictably humiliate people is morally impermissible.",
+      confidence: 73,
+      reason: "Humiliation undermines dignity and civic equality in ways institutions should avoid.",
+      assumptions: ["Dignity has institutional relevance.", "Predictable degradation is a serious social harm."],
+    },
+    {
+      claim: "Structural injustice can create duties of repair even for agents who did not directly cause the original harm.",
+      confidence: 65,
+      reason:
+        "Benefiting from and sustaining unjust structures can ground forward-looking responsibilities.",
+      assumptions: ["Responsibility can be distributed across institutions.", "Remedial duties are not only fault-based."],
+    },
+    {
+      claim: "Future people matter morally just as present people matter.",
+      confidence: 82,
+      reason: "Temporal location alone does not seem to reduce the value of persons’ welfare.",
+      assumptions: ["Moral considerability is not time-indexed.", "Future welfare can be morally weighty now."],
+    },
+    {
+      claim: "Imposing severe existential risk on future generations for modest present benefit is morally wrong.",
+      confidence: 78,
+      reason:
+        "Small current gains rarely justify exposing vast numbers of future people to catastrophic downside.",
+      assumptions: ["Expected-value reasoning is morally relevant under extreme stakes.", "Future lives have substantial value."],
+    },
+    {
+      claim: "Wild-animal suffering is a morally relevant consideration in long-term policy.",
+      confidence: 58,
+      reason:
+        "Large-scale suffering among sentient beings can matter even when responsibility pathways are complex.",
+      assumptions: ["Sentience grounds moral relevance.", "Policy can influence indirect welfare trajectories."],
+    },
+    {
+      claim: "Non-human animals with rich sentience have significant moral status.",
+      confidence: 83,
+      reason:
+        "Capacity for pain, pleasure, and social attachment appears sufficient for substantial moral consideration.",
+      assumptions: ["Sentience is a key basis for moral status.", "Species membership alone is morally weak."],
+    },
+    {
+      claim: "Causing extreme pain to animals for minor culinary pleasure is morally impermissible.",
+      confidence: 82,
+      reason: "Severe suffering for trivial benefit fails plausible proportionality standards.",
+      assumptions: ["Proportionality is a moral constraint.", "Animal pain is morally weighty."],
+    },
+    {
+      claim: "Moral realism is more plausible than global moral error theory.",
+      confidence: 56,
+      reason:
+        "Ordinary moral practice and argument seem better explained if at least some moral claims are truth-apt and sometimes true.",
+      assumptions: ["Moral discourse aims at truth in a substantive sense.", "Error theory faces explanatory burdens."],
+    },
+    {
+      claim: "Non-cognitivism cannot fully explain persistent moral argument about truth and evidence.",
+      confidence: 55,
+      reason:
+        "Moral disagreement frequently exhibits inferential and evidential structure hard to reduce to attitude expression alone.",
+      assumptions: ["Truth-aptness features in moral practice.", "Inferential relations in ethics are substantive."],
+    },
+    {
+      claim: "Moral claims can be objectively true even when cultures disagree.",
+      confidence: 63,
+      reason:
+        "Disagreement does not by itself entail lack of objective fact, as seen in many other domains.",
+      assumptions: ["Disagreement underdetermines anti-realism.", "Cross-cultural variance can coexist with objective standards."],
+    },
+    {
+      claim: "Virtues like honesty and courage are indispensable to reliable moral deliberation.",
+      confidence: 76,
+      reason:
+        "Deliberation quality depends on stable character traits that support truth-tracking and fair engagement.",
+      assumptions: ["Epistemic and moral virtues can overlap.", "Character affects reasoning reliability."],
+    },
+    {
+      claim: "Acting from good character has independent moral value beyond consequences alone.",
+      confidence: 64,
+      reason:
+        "Motives and dispositions appear morally significant even when outcomes are matched.",
+      assumptions: ["Agent-centered evaluation is legitimate.", "Moral assessment is not purely outcome-based."],
+    },
+    {
+      claim: "No one should be treated merely as a means to others' ends.",
+      confidence: 80,
+      reason:
+        "Using persons instrumentally without regard to their agency violates a central moral constraint.",
+      assumptions: ["Persons possess dignity tied to rational agency.", "Means-end constraints can be side constraints."],
+    },
+    {
+      claim: "Principles that no one could reasonably reject are strong candidates for justified morality.",
+      confidence: 62,
+      reason:
+        "Reasonable rejectability captures reciprocity and public justifiability in plural societies.",
+      assumptions: ["Public justification is morally important.", "Reasonableness can constrain principle choice."],
+    },
+    {
+      claim: "Rules that would be disastrous if generally accepted are morally suspect even when locally beneficial.",
+      confidence: 67,
+      reason:
+        "Rule-level evaluation can identify unstable exceptions that undermine cooperative moral systems.",
+      assumptions: ["General acceptance effects are morally relevant.", "Local payoff does not always track moral permissibility."],
+    },
+    {
+      claim: "Choosing an action with a greater than 50% chance of being morally wrong is itself morally risky and usually impermissible.",
+      confidence: 74,
+      reason:
+        "When uncertainty is substantial, risk-averse moral decision rules can better avoid serious wrongdoing.",
+      assumptions: ["Moral uncertainty should influence action choice.", "Wrongdoing risk can itself be a moral cost."],
+    },
+    {
+      claim: "Public policy should prioritize reducing the worst expected suffering, not only increasing average welfare.",
+      confidence: 68,
+      reason:
+        "Distribution-sensitive approaches better protect those facing severe downside risk.",
+      assumptions: ["Distribution matters morally.", "Expected suffering reduction can outweigh average gains."],
+    },
+    {
+      claim: "It is morally wrong to free-ride on collective sacrifices that protect vulnerable people.",
+      confidence: 73,
+      reason:
+        "Unfairly taking benefits while refusing reciprocal burdens undermines cooperative justice.",
+      assumptions: ["Reciprocity has moral force.", "Fairness constraints apply to collective-action systems."],
+    },
+    {
+      claim: "Moral responsibility can remain under partial causal determinism when agency capacities are intact.",
+      confidence: 59,
+      reason:
+        "Practical responsibility practices can survive if deliberative control and responsiveness remain.",
+      assumptions: ["Compatibilist responsibility may be coherent.", "Agency can be graded rather than all-or-nothing."],
+    },
+    {
+      claim: "Reparative duties for past atrocities can persist across generations through institutions.",
+      confidence: 66,
+      reason:
+        "Institutional continuity and ongoing benefit-harm patterns can ground intergenerational obligations.",
+      assumptions: ["Institutional responsibility can persist over time.", "Historical injustice can create present duties."],
+    },
+    {
+      claim: "Epistemic humility is morally required when stakes are high and evidence is uncertain.",
+      confidence: 81,
+      reason:
+        "High-stakes uncertainty calls for caution, openness to revision, and less dogmatic enforcement.",
+      assumptions: ["Overconfidence can cause moral harm.", "Uncertainty should regulate belief and action."],
+    },
+    {
+      claim: "Participating in good-faith dialogue with opponents is often a moral duty in democratic societies.",
+      confidence: 72,
+      reason:
+        "Shared institutions rely on reciprocal justification and respectful contestation of public reasons.",
+      assumptions: ["Democratic legitimacy depends on public reasoning norms.", "Good-faith engagement can improve collective decisions."],
+    },
+  ];
+
   const formStatus = {
     conviction: null,
     session: null,
@@ -603,6 +944,7 @@
   let state = loadState();
   let currentMatches = [];
   let pendingReservationSignup = null;
+  let attendancePolicyReturnFocusEl = null;
   const chartZoomStateByEl = new WeakMap();
   let reflectiveEquilibriumAnimationStarted = false;
   const featuredMarketUiState = {
@@ -755,6 +1097,7 @@
     bindScrollTriggeredAnimations();
     bindNavigationControls();
     bindActiveSectionHighlight();
+    mountAttendancePolicyModalRoot();
     bindEvents();
     if (el.confidenceInput) {
       el.confidenceInput.value = "60";
@@ -1463,18 +1806,29 @@
       return;
     }
 
-    const validation = buildReservationSubmission(activeConviction);
+    const selectedAvailability = getSelectedAvailability(el.reservationAvailability);
+    if (!selectedAvailability.length) {
+      formStatus.reservation = "Select at least one availability slot.";
+      renderMatching();
+      return;
+    }
+
+    const validation = buildReservationSubmission(activeConviction, selectedAvailability);
     if (!validation.ok) {
       formStatus.reservation = validation.error;
       renderMatching();
       return;
     }
 
+    attendancePolicyReturnFocusEl =
+      event && event.submitter && typeof event.submitter.focus === "function"
+        ? event.submitter
+        : (el.reservationForm && el.reservationForm.querySelector('button[type="submit"]')) || null;
     pendingReservationSignup = validation.payload;
-    openAttendancePolicyModal();
+    openAttendancePolicyModal(validation.payload);
   }
 
-  function buildReservationSubmission(activeConviction) {
+  function buildReservationSubmission(activeConviction, selectedAvailability) {
     if (!el.reservationForm) {
       return { ok: false, error: "Reservation form is unavailable." };
     }
@@ -1490,7 +1844,9 @@
     const belief = String(formData.get("reservationBelief") || "true");
     const confidence = clamp(Number(formData.get("reservationConfidence")), 1, 100);
     const reason = String(formData.get("reservationReason") || "").trim();
-    const availability = getSelectedAvailability(el.reservationAvailability);
+    const availability = Array.isArray(selectedAvailability)
+      ? selectedAvailability.slice()
+      : getSelectedAvailability(el.reservationAvailability);
 
     if (!name) {
       return { ok: false, error: "Add a username to reserve the dialogue." };
@@ -1569,18 +1925,40 @@
     renderMatching();
   }
 
-  function openAttendancePolicyModal() {
+  function openAttendancePolicyModal(signUpPayload) {
     if (!el.attendancePolicyModal) return;
+    const payload = signUpPayload || pendingReservationSignup;
+    const slotCount =
+      payload && payload.reservation && Array.isArray(payload.reservation.availability)
+        ? payload.reservation.availability.length
+        : 0;
+    if (slotCount < 1) {
+      pendingReservationSignup = null;
+      formStatus.reservation = "Select at least one availability slot before sign-up.";
+      renderMatching();
+      return;
+    }
     el.attendancePolicyModal.hidden = false;
     document.body.classList.add("attendance-modal-open");
     if (el.attendancePolicyInput) {
       el.attendancePolicyInput.value = "";
-      el.attendancePolicyInput.focus();
+      el.attendancePolicyInput.disabled = false;
+      el.attendancePolicyInput.readOnly = false;
+      window.requestAnimationFrame(function () {
+        if (!isAttendancePolicyModalOpen()) return;
+        try {
+          el.attendancePolicyInput.focus({ preventScroll: true });
+        } catch (_error) {
+          el.attendancePolicyInput.focus();
+        }
+      });
     }
     setAttendancePolicyStatus("");
   }
 
   function closeAttendancePolicyModal() {
+    const focusTarget = attendancePolicyReturnFocusEl;
+    attendancePolicyReturnFocusEl = null;
     pendingReservationSignup = null;
     if (!el.attendancePolicyModal) return;
     el.attendancePolicyModal.hidden = true;
@@ -1589,6 +1967,9 @@
       el.attendancePolicyInput.value = "";
     }
     setAttendancePolicyStatus("");
+    if (focusTarget && typeof focusTarget.focus === "function") {
+      focusTarget.focus();
+    }
   }
 
   function isAttendancePolicyModalOpen() {
@@ -1599,7 +1980,13 @@
   function setAttendancePolicyStatus(text, isError) {
     if (!el.attendancePolicyStatus) return;
     el.attendancePolicyStatus.textContent = text || "";
-    el.attendancePolicyStatus.style.color = isError ? "#8f2236" : "#5e6f83";
+    el.attendancePolicyStatus.style.color = isError ? "#ab4758" : "#5f615b";
+  }
+
+  function mountAttendancePolicyModalRoot() {
+    if (!el.attendancePolicyModal || !document.body) return;
+    if (el.attendancePolicyModal.parentElement === document.body) return;
+    document.body.appendChild(el.attendancePolicyModal);
   }
 
   function syncReservationIdentityField() {
@@ -1866,7 +2253,7 @@
           ? ' | <a class="sep-link" href="' +
             escapeHtml(featured.sepUrl) +
             '" target="_blank" rel="noopener noreferrer">' +
-            escapeHtml(featured.sepTitle || "SEP reference") +
+            escapeHtml(featured.sepTitle || "reference") +
             "</a>"
           : "");
     }
@@ -1934,7 +2321,7 @@
         link.href = row.market.sepUrl;
         link.target = "_blank";
         link.rel = "noopener noreferrer";
-        link.textContent = row.market.sepTitle || "SEP reference";
+        link.textContent = row.market.sepTitle || "reference";
         item.appendChild(link);
       }
       el.featuredTopMarkets.appendChild(item);
@@ -4524,7 +4911,7 @@
     }
 
     el.matchRationale.textContent =
-      "Matches require opposite beliefs and overlapping slots, then prioritize smallest confidence gap. SEP tie-breakers rank disagreement depth and reason quality.";
+      "Matches require opposite beliefs and overlapping slots, then prioritize smallest confidence gap. Method tie-breakers rank disagreement depth and reason quality.";
 
     el.counterpartList.innerHTML = "";
     currentMatches.forEach(function (match, index) {
@@ -4766,7 +5153,7 @@
 
   function buildMatches(conviction) {
     // Hard constraints (opposed belief + shared availability) stay unchanged.
-    // SEP-informed tie-breakers then rank by disagreement depth and reason quality.
+    // Method-informed tie-breakers then rank by disagreement depth and reason quality.
     const creatorSlots = new Set(Array.isArray(conviction.availability) ? conviction.availability : []);
     const reservations = Array.isArray(conviction.reservations) ? conviction.reservations : [];
     const creatorBelief = conviction.creatorBelief === "false" ? "false" : "true";
@@ -4790,10 +5177,10 @@
         const assumptionEngagement = computeAssumptionEngagementScore(reservation.reason || "", creatorAssumptionLexicon);
         const reasonQuality = clamp((reservationProfile.quality + assumptionEngagement) / 2, 0, 1);
         const weightedScore =
-          SEP_MATCH_WEIGHTS.confidenceProximity * confidenceProximity +
-          SEP_MATCH_WEIGHTS.overlap * overlapScore +
-          SEP_MATCH_WEIGHTS.disagreementDepth * disagreementDepth +
-          SEP_MATCH_WEIGHTS.reasonQuality * reasonQuality;
+          MATCH_WEIGHTS.confidenceProximity * confidenceProximity +
+          MATCH_WEIGHTS.overlap * overlapScore +
+          MATCH_WEIGHTS.disagreementDepth * disagreementDepth +
+          MATCH_WEIGHTS.reasonQuality * reasonQuality;
 
         const confidenceDistanceFromNeutral = Math.abs(clamp(Number(reservation.confidence), 1, 100) - 50);
         const creatorDistanceFromNeutral = Math.abs(creatorConfidence - 50);
@@ -5233,6 +5620,7 @@
   }
 
   function createDefaultState() {
+    const seededConvictions = mergeSeededDialogueRooms([]);
     return {
       pledge: {
         signed: false,
@@ -5243,12 +5631,62 @@
         signedAt: "",
       },
       pledgeRegistry: [],
-      convictions: [],
-      activeConvictionId: null,
+      convictions: seededConvictions,
+      activeConvictionId: seededConvictions.length ? seededConvictions[0].id : null,
       selectedCounterpartId: null,
       sessions: [],
       ledger: [],
     };
+  }
+
+  function buildSeedDialogueRooms() {
+    if (!Array.isArray(SEEDED_DIALOGUE_ROOMS) || SEEDED_DIALOGUE_ROOMS.length === 0) return [];
+    const slotCount = Array.isArray(availabilitySlots) ? availabilitySlots.length : 0;
+    if (!slotCount) return [];
+    const nowMs = Date.now();
+    return SEEDED_DIALOGUE_ROOMS.map(function (seed, index) {
+      const base = (index * 37) % slotCount;
+      const availabilityIndices = [base, base + 11, base + 47, base + 121].map(function (value) {
+        return value % slotCount;
+      });
+      const availability = Array.from(
+        new Set(
+          availabilityIndices.map(function (slotIndex) {
+            return availabilitySlots[slotIndex].id;
+          })
+        )
+      );
+      const createdAt = new Date(nowMs - index * 4 * 3600000).toISOString();
+      return {
+        id: "seed-room-" + String(index + 1).padStart(2, "0"),
+        claim: String(seed.claim || ""),
+        creatorBelief: "true",
+        creatorUserId: "seed-curated",
+        creatorHandle: "curated",
+        confidence: clamp(Number(seed.confidence || 65), 51, 99),
+        assumptions: Array.isArray(seed.assumptions) ? seed.assumptions.slice(0, 4) : [],
+        creatorReason: String(seed.reason || ""),
+        availability: availability,
+        slotCatalog: availabilitySlots,
+        reservations: [],
+        invites: [],
+        createdAt: createdAt,
+        updatedAt: createdAt,
+      };
+    });
+  }
+
+  function mergeSeededDialogueRooms(existingConvictions) {
+    const existing = Array.isArray(existingConvictions) ? existingConvictions.slice() : [];
+    const existingIds = new Set(
+      existing.map(function (item) {
+        return String(item && item.id ? item.id : "");
+      })
+    );
+    const seeded = buildSeedDialogueRooms().filter(function (item) {
+      return !existingIds.has(String(item.id || ""));
+    });
+    return seeded.concat(existing);
   }
 
   function loadState() {
@@ -5318,6 +5756,15 @@
           firstAction: loaded.pledge.firstAction || "",
           signedAt: loaded.pledge.signedAt || new Date().toISOString(),
         });
+      }
+      loaded.convictions = mergeSeededDialogueRooms(loaded.convictions);
+      const activeExists =
+        loaded.activeConvictionId &&
+        loaded.convictions.some(function (item) {
+          return String(item.id) === String(loaded.activeConvictionId);
+        });
+      if (!activeExists) {
+        loaded.activeConvictionId = loaded.convictions.length ? loaded.convictions[0].id : null;
       }
       return loaded;
     } catch (error) {

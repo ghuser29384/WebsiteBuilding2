@@ -585,7 +585,7 @@ function buildLessonSourceContext() {
   const caseEntry = state.graphData.casesById && state.graphData.casesById[state.lesson.caseId];
   const caseCitation = caseEntry && caseEntry.sep_citation
     ? {
-        title: String(caseEntry.sep_citation.title || "SEP source"),
+        title: String(caseEntry.sep_citation.title || "reference source"),
         url: String(caseEntry.sep_citation.url || ""),
       }
     : null;
@@ -597,7 +597,7 @@ function buildLessonSourceContext() {
       return {
         id: String(id),
         label: String(entry.name || beautifyId(id)),
-        title: String(entry.sep_citation.title || "SEP source"),
+        title: String(entry.sep_citation.title || "reference source"),
         url: String(entry.sep_citation.url || ""),
       };
     })
@@ -610,7 +610,7 @@ function buildLessonSourceContext() {
       return {
         id: String(id),
         label: String(entry.name || beautifyId(id)),
-        title: String(entry.sep_citation.title || "SEP source"),
+        title: String(entry.sep_citation.title || "reference source"),
         url: String(entry.sep_citation.url || ""),
       };
     })
@@ -638,7 +638,7 @@ function buildLessonSourceContext() {
       },
     ],
     caveat:
-      "SEP caution: higher coherence means better fit among current commitments; it does not by itself prove moral truth.",
+      "Caution: higher coherence means better fit among current commitments; it does not by itself prove moral truth.",
   };
 }
 

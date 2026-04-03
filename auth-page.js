@@ -67,7 +67,7 @@
 
   function setStatus(text, isError) {
     if (!dom.authStatus) return;
-    dom.authStatus.style.color = isError ? "#8f2236" : "#2c567f";
+    dom.authStatus.style.color = isError ? "#ab4758" : "#5f615b";
     dom.authStatus.textContent = text;
   }
 

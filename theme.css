@@ -563,7 +563,7 @@ body.forethought-site .parfit-lattice-line {
 
 body.forethought-site .forethought-intro-lines path {
   stroke-dasharray: 14 10;
-  animation: forethoughtLineSweep 12s linear infinite;
+  animation: forethoughtLineSweep 12s linear 1 forwards;
 }
 
 body.forethought-site .forethought-intro-lines path:nth-child(2) { animation-duration: 13.5s; }
@@ -597,5 +597,522 @@ body.forethought-site .wre-sep-grid article {
 @media (prefers-reduced-motion: reduce) {
   body.forethought-site .forethought-intro-lines path {
     animation: none !important;
+  }
+}
+
+/*
+  Global consistency pass:
+  unify typography + secondary color surfaces/text across all pages/components.
+*/
+body.forethought-site {
+  --nm-font-sans: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  --nm-font-display: "Iowan Old Style", "Palatino Linotype", Palatino, Garamond, serif;
+  --nm-secondary-bg: #f2f4f1;
+  --nm-secondary-bg-hover: #e7ebe6;
+  --nm-secondary-border: #cbd3cc;
+  --nm-secondary-text: #4f5754;
+}
+
+body.forethought-site,
+body.forethought-site button,
+body.forethought-site input,
+body.forethought-site textarea,
+body.forethought-site select,
+body.forethought-site option {
+  font-family: var(--nm-font-sans);
+}
+
+body.forethought-site h1,
+body.forethought-site h2,
+body.forethought-site h3,
+body.forethought-site h4,
+body.forethought-site h5,
+body.forethought-site h6,
+body.forethought-site .brand,
+body.forethought-site .wre-title,
+body.forethought-site .auth-title,
+body.forethought-site .signup-onboarding-title,
+body.forethought-site .forethought-podcast-link,
+body.forethought-site .forethought-footer-nav a,
+body.forethought-site .layout-cluster h3 {
+  font-family: var(--nm-font-display);
+}
+
+body.forethought-site .hint,
+body.forethought-site .status-line,
+body.forethought-site .metric-label,
+body.forethought-site .field-label,
+body.forethought-site .auth-subtitle,
+body.forethought-site .subtitle,
+body.forethought-site .empty-note,
+body.forethought-site .counterpart-meta .chip,
+body.forethought-site .score-grid span,
+body.forethought-site .pledge-registry-meta,
+body.forethought-site .featured-top-market-stats {
+  color: var(--nm-muted) !important;
+}
+
+body.forethought-site .btn-secondary,
+body.forethought-site .btn-ghost,
+body.forethought-site .auth-btn.ghost,
+body.forethought-site .auth-chip,
+body.forethought-site .hero-pills span,
+body.forethought-site .chip,
+body.forethought-site .chip-filter,
+body.forethought-site .category-tag,
+body.forethought-site .multi-pill,
+body.forethought-site .choice-share,
+body.forethought-site .detail-share,
+body.forethought-site .article-prop-tag,
+body.forethought-site .normative-source-strip a,
+body.forethought-site .featured-market-chip,
+body.forethought-site .featured-top-button,
+body.forethought-site .featured-range-controls button,
+body.forethought-site .score-pill,
+body.forethought-site .attendance-policy-copy {
+  background: var(--nm-secondary-bg) !important;
+  border-color: var(--nm-secondary-border) !important;
+  color: var(--nm-secondary-text) !important;
+}
+
+body.forethought-site .btn-secondary:hover,
+body.forethought-site .btn-secondary:focus-visible,
+body.forethought-site .btn-ghost:hover,
+body.forethought-site .btn-ghost:focus-visible,
+body.forethought-site .auth-btn.ghost:hover,
+body.forethought-site .auth-btn.ghost:focus-visible,
+body.forethought-site .featured-top-button:hover,
+body.forethought-site .featured-top-button:focus-visible,
+body.forethought-site .featured-range-controls button:hover,
+body.forethought-site .featured-range-controls button:focus-visible {
+  background: var(--nm-secondary-bg-hover) !important;
+  border-color: var(--nm-secondary-border) !important;
+  color: var(--nm-ink) !important;
+}
+
+body.forethought-site .field-row input,
+body.forethought-site .field-row textarea,
+body.forethought-site .field-row select,
+body.forethought-site .auth-field input,
+body.forethought-site .auth-field textarea,
+body.forethought-site .auth-field select,
+body.forethought-site .search-wrap input,
+body.forethought-site .attendance-modal-dialog input,
+body.forethought-site .attendance-modal-dialog textarea,
+body.forethought-site .attendance-modal-dialog select {
+  border-color: var(--nm-secondary-border) !important;
+  color: var(--nm-ink) !important;
+}
+
+body.forethought-site .field-row input::placeholder,
+body.forethought-site .field-row textarea::placeholder,
+body.forethought-site .auth-field input::placeholder,
+body.forethought-site .auth-field textarea::placeholder,
+body.forethought-site .attendance-modal-dialog input::placeholder {
+  color: #8b918d !important;
+}
+
+body.forethought-site .featured-range-controls button.is-active {
+  background: var(--nm-primary) !important;
+  border-color: var(--nm-primary) !important;
+  color: #ffffff !important;
+}
+
+/*
+  Forethought-inspired visual refresh (site-wide):
+  - cleaner editorial navigation rhythm
+  - unified panel/card surfaces
+  - consistent typography hierarchy
+  - coherent chart + graphic treatment
+*/
+body.forethought-site {
+  --nm-bg: #ffffff;
+  --nm-surface: #f6f5f0;
+  --nm-surface-soft: #efeee8;
+  --nm-line: #d5d3c9;
+  --nm-line-strong: #c3c1b8;
+  --nm-ink: #2a2826;
+  --nm-muted: #5f615b;
+  --nm-primary: #222a33;
+  --nm-primary-hover: #141a21;
+  --nm-signal: #ff6235;
+  --nm-success: #2e7555;
+  --nm-danger: #ab4758;
+  background: var(--nm-bg);
+  color: var(--nm-ink);
+}
+
+body.forethought-site::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: 0.16;
+  background-image:
+    linear-gradient(rgba(130, 132, 127, 0.3) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(130, 132, 127, 0.3) 1px, transparent 1px);
+  background-size: 52px 52px;
+}
+
+body.forethought-site .container,
+body.forethought-site main,
+body.forethought-site footer,
+body.forethought-site .site-header,
+body.forethought-site .wre-topbar {
+  position: relative;
+  z-index: 1;
+}
+
+body.forethought-site .site-header,
+body.forethought-site .wre-topbar,
+body.forethought-site .wre-topbar-inner {
+  border-bottom: 1px solid var(--nm-line);
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: saturate(120%) blur(4px);
+}
+
+body.forethought-site .header-inner {
+  min-height: 82px;
+}
+
+body.forethought-site h1,
+body.forethought-site h2,
+body.forethought-site h3,
+body.forethought-site h4,
+body.forethought-site h5,
+body.forethought-site h6,
+body.forethought-site .brand,
+body.forethought-site .wre-brand,
+body.forethought-site .wre-title,
+body.forethought-site .auth-title,
+body.forethought-site .forethought-podcast-link,
+body.forethought-site .forethought-footer-nav a {
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Garamond, serif;
+  font-weight: 500;
+  letter-spacing: -0.003em;
+  color: var(--nm-ink);
+}
+
+body.forethought-site p,
+body.forethought-site li,
+body.forethought-site label,
+body.forethought-site .hint,
+body.forethought-site .lead,
+body.forethought-site .subtitle,
+body.forethought-site .auth-subtitle {
+  color: var(--nm-muted);
+}
+
+body.forethought-site .section-head {
+  border-left: 2px solid var(--nm-signal);
+  padding-left: 0.92rem;
+  margin-bottom: 1.1rem;
+}
+
+body.forethought-site .section-head .eyebrow,
+body.forethought-site .eyebrow {
+  color: #d66545;
+  letter-spacing: 0.14em;
+}
+
+body.forethought-site .section-head h2 {
+  font-size: clamp(1.8rem, 3.45vw, 3rem);
+  line-height: 1.08;
+}
+
+body.forethought-site main#main-content {
+  padding-top: 2.4rem;
+}
+
+body.forethought-site .panel,
+body.forethought-site .card,
+body.forethought-site .hero-main,
+body.forethought-site .hero-card,
+body.forethought-site .auth-card,
+body.forethought-site .auth-panel,
+body.forethought-site .profile-card,
+body.forethought-site .profile-metric,
+body.forethought-site .publication-card,
+body.forethought-site .market-card,
+body.forethought-site .ticket,
+body.forethought-site .detail-overview-card,
+body.forethought-site .detail-outcome-card,
+body.forethought-site .detail-theory-item,
+body.forethought-site .detail-context-block,
+body.forethought-site .detail-activity-block,
+body.forethought-site .wre-hero,
+body.forethought-site .wre-panel,
+body.forethought-site .wre-workspace-board,
+body.forethought-site .wre-module-hero,
+body.forethought-site .summary-row,
+body.forethought-site .recommendation-card,
+body.forethought-site .case-actions,
+body.forethought-site .confidence-wrap,
+body.forethought-site .reflection-timer,
+body.forethought-site .choice-option,
+body.forethought-site .prop-group,
+body.forethought-site .prop-overall,
+body.forethought-site .prop-picker-group,
+body.forethought-site .comparison-card-mini,
+body.forethought-site .diagram-card,
+body.forethought-site .normative-hero,
+body.forethought-site .normative-toc,
+body.forethought-site .guardrail-tool,
+body.forethought-site .guardrail-result {
+  background: var(--nm-surface);
+  border: 1px solid var(--nm-line);
+  box-shadow: none;
+  border-radius: 14px;
+}
+
+body.forethought-site .publication-hero,
+body.forethought-site .wre-hero,
+body.forethought-site .wre-module-hero,
+body.forethought-site .normative-hero,
+body.forethought-site .forethought-intro-card {
+  position: relative;
+  overflow: hidden;
+}
+
+body.forethought-site .publication-hero::after,
+body.forethought-site .wre-hero::after,
+body.forethought-site .wre-module-hero::after,
+body.forethought-site .normative-hero::after,
+body.forethought-site .forethought-intro-card::after {
+  content: "";
+  position: absolute;
+  left: 56%;
+  right: -18%;
+  bottom: -38%;
+  height: 60%;
+  pointer-events: none;
+  opacity: 0.2;
+  transform: skewY(-14deg);
+  background:
+    repeating-linear-gradient(
+      100deg,
+      rgba(255, 98, 53, 0.48) 0 2px,
+      transparent 2px 24px
+    );
+}
+
+body.forethought-site .main-nav a,
+body.forethought-site .top-nav a,
+body.forethought-site .wre-nav a {
+  color: #4f524d;
+  font-weight: 500;
+}
+
+@media (min-width: 940px) {
+  body.forethought-site .main-nav,
+  body.forethought-site .top-nav,
+  body.forethought-site .wre-nav {
+    gap: 1.2rem;
+  }
+
+  body.forethought-site .main-nav a:not(.nav-pill),
+  body.forethought-site .top-nav a,
+  body.forethought-site .wre-nav a {
+    position: relative;
+    padding: 0.2rem 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    color: #4b4f4a;
+    font-size: 1.02rem;
+  }
+
+  body.forethought-site .main-nav a:not(.nav-pill)::after,
+  body.forethought-site .top-nav a::after,
+  body.forethought-site .wre-nav a::after {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: -0.4rem;
+    height: 1px;
+    background: var(--nm-signal);
+    transform: scaleX(0);
+    transform-origin: 50% 50%;
+    transition: transform 0.2s ease;
+  }
+
+  body.forethought-site .main-nav a:not(.nav-pill):hover::after,
+  body.forethought-site .main-nav a:not(.nav-pill):focus-visible::after,
+  body.forethought-site .main-nav a:not(.nav-pill)[aria-current="page"]::after,
+  body.forethought-site .top-nav a:hover::after,
+  body.forethought-site .top-nav a:focus-visible::after,
+  body.forethought-site .top-nav a[aria-current="page"]::after,
+  body.forethought-site .wre-nav a:hover::after,
+  body.forethought-site .wre-nav a:focus-visible::after,
+  body.forethought-site .wre-nav a[aria-current="page"]::after {
+    transform: scaleX(1);
+  }
+
+  body.forethought-site .main-nav a:not(.nav-pill):hover,
+  body.forethought-site .main-nav a:not(.nav-pill):focus-visible,
+  body.forethought-site .main-nav a:not(.nav-pill)[aria-current="page"],
+  body.forethought-site .top-nav a:hover,
+  body.forethought-site .top-nav a:focus-visible,
+  body.forethought-site .top-nav a[aria-current="page"],
+  body.forethought-site .wre-nav a:hover,
+  body.forethought-site .wre-nav a:focus-visible,
+  body.forethought-site .wre-nav a[aria-current="page"] {
+    color: var(--nm-ink) !important;
+  }
+}
+
+body.forethought-site .main-nav a.nav-pill {
+  border: 1px solid var(--nm-line-strong) !important;
+  border-radius: 14px !important;
+  padding: 0.55rem 0.86rem !important;
+  background: #f3f2ec !important;
+  color: #434741 !important;
+}
+
+body.forethought-site .main-nav a.nav-pill:hover,
+body.forethought-site .main-nav a.nav-pill:focus-visible {
+  background: #ecebe4 !important;
+  border-color: #b9b7ad !important;
+  color: var(--nm-ink) !important;
+}
+
+body.forethought-site .btn,
+body.forethought-site .auth-btn,
+body.forethought-site button {
+  border-radius: 10px;
+  font-weight: 600;
+  letter-spacing: 0.004em;
+}
+
+body.forethought-site .btn-primary,
+body.forethought-site .auth-btn:not(.ghost),
+body.forethought-site button[type="submit"] {
+  background: var(--nm-primary);
+  border-color: var(--nm-primary);
+  color: #ffffff;
+}
+
+body.forethought-site .btn-primary:hover,
+body.forethought-site .btn-primary:focus-visible,
+body.forethought-site .auth-btn:not(.ghost):hover,
+body.forethought-site .auth-btn:not(.ghost):focus-visible,
+body.forethought-site button[type="submit"]:hover,
+body.forethought-site button[type="submit"]:focus-visible {
+  background: var(--nm-primary-hover);
+  border-color: var(--nm-primary-hover);
+}
+
+body.forethought-site .btn-secondary,
+body.forethought-site .btn-ghost,
+body.forethought-site .auth-btn.ghost {
+  background: var(--nm-surface-soft);
+  border-color: var(--nm-line-strong);
+  color: #494d48;
+}
+
+body.forethought-site .btn-secondary:hover,
+body.forethought-site .btn-secondary:focus-visible,
+body.forethought-site .btn-ghost:hover,
+body.forethought-site .btn-ghost:focus-visible,
+body.forethought-site .auth-btn.ghost:hover,
+body.forethought-site .auth-btn.ghost:focus-visible {
+  background: #e8e7e0;
+  border-color: #b7b5ac;
+  color: var(--nm-ink);
+}
+
+body.forethought-site input,
+body.forethought-site textarea,
+body.forethought-site select {
+  background: #ffffff;
+  border: 1px solid var(--nm-line-strong);
+  color: var(--nm-ink);
+}
+
+body.forethought-site input::placeholder,
+body.forethought-site textarea::placeholder {
+  color: #8d9088;
+}
+
+body.forethought-site .featured-market-chart,
+body.forethought-site #featuredMarketChart,
+body.forethought-site #deliberationChart,
+body.forethought-site #progressChart,
+body.forethought-site #mathProgressChart,
+body.forethought-site #ethicsProgressChart,
+body.forethought-site #insightsTrendChart,
+body.forethought-site #detailTrendChart,
+body.forethought-site .comparison-chart,
+body.forethought-site .progress-chart,
+body.forethought-site .deliberation-chart,
+body.forethought-site .mini-graph-svg {
+  background-color: #f8f7f2;
+  background-image:
+    linear-gradient(rgba(143, 145, 139, 0.24) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(143, 145, 139, 0.24) 1px, transparent 1px);
+  background-size: 48px 48px;
+  border: 1px solid var(--nm-line);
+  border-radius: 12px;
+}
+
+body.forethought-site .prop-copy .prop-title,
+body.forethought-site .prop-picker-title,
+body.forethought-site .market-title,
+body.forethought-site .detail-question,
+body.forethought-site .profile-metric .value,
+body.forethought-site .stat-value {
+  color: var(--nm-ink) !important;
+}
+
+body.forethought-site .market-label,
+body.forethought-site .market-sub,
+body.forethought-site .prop-note,
+body.forethought-site .insights-filter-label,
+body.forethought-site .trend-meta,
+body.forethought-site .comparison-note,
+body.forethought-site .profile-metric .label {
+  color: var(--nm-muted) !important;
+}
+
+body.forethought-site .article-prop-tag,
+body.forethought-site .hero-pills span,
+body.forethought-site .chip-filter,
+body.forethought-site .category-tag,
+body.forethought-site .multi-pill,
+body.forethought-site .choice-share,
+body.forethought-site .detail-share,
+body.forethought-site .normative-source-strip a {
+  background: var(--nm-surface-soft) !important;
+  border-color: var(--nm-line-strong) !important;
+  color: #4f534e !important;
+}
+
+body.forethought-site .forethought-footer,
+body.forethought-site .site-footer {
+  background: #eeede8;
+  border-top: 1px solid var(--nm-line);
+}
+
+@media (max-width: 900px) {
+  body.forethought-site::before {
+    opacity: 0.12;
+    background-size: 40px 40px;
+  }
+
+  body.forethought-site .section-head h2 {
+    font-size: clamp(1.5rem, 6vw, 2.15rem);
+  }
+
+  body.forethought-site .publication-hero::after,
+  body.forethought-site .wre-hero::after,
+  body.forethought-site .wre-module-hero::after,
+  body.forethought-site .normative-hero::after,
+  body.forethought-site .forethought-intro-card::after {
+    left: 40%;
+    right: -30%;
+    bottom: -42%;
+    opacity: 0.16;
   }
 }

@@ -27,9 +27,9 @@ function citationLinks(items, emptyLabel) {
   }
   return source
     .map(function (item) {
-      const label = String(item.label || item.title || "SEP source");
+      const label = String(item.label || item.title || "reference source");
       const url = String(item.url || "");
-      const title = String(item.title || "SEP");
+      const title = String(item.title || "Reference");
       if (!url) {
         return '<li><span class="lesson-source-label">' + escapeHtml(label) + "</span></li>";
       }
@@ -132,8 +132,8 @@ export class LessonCard {
       "</section>";
 
     const sourceHtml = sourceContext
-      ? '<section class="lesson-sources" aria-label="SEP sources for this lesson">' +
-        '<p class="label-lite">SEP anchors</p>' +
+      ? '<section class="lesson-sources" aria-label="reference sources for this lesson">' +
+        '<p class="label-lite">Reference anchors</p>' +
         '<div class="lesson-source-grid">' +
         '<div><p class="lesson-source-head">Case</p><ul>' +
         citationLinks(
@@ -160,7 +160,7 @@ export class LessonCard {
         (Array.isArray(sourceContext.methodLinks)
           ? sourceContext.methodLinks
               .map(function (item) {
-                const label = String(item.label || item.title || "SEP");
+                const label = String(item.label || item.title || "Reference");
                 const url = String(item.url || "");
                 if (!url) return escapeHtml(label);
                 return (
@@ -181,8 +181,8 @@ export class LessonCard {
       : "";
 
     const diagnosticHtml = sepDiagnostic
-      ? '<section class="lesson-diagnostic" aria-label="SEP diagnostic for this round">' +
-        '<p class="label-lite">SEP Diagnostic</p>' +
+      ? '<section class="lesson-diagnostic" aria-label="Round diagnostic for this round">' +
+        '<p class="label-lite">Round Diagnostic</p>' +
         '<div class="lesson-diagnostic-grid">' +
         '<p><strong>Scope:</strong> ' +
         escapeHtml(String(sepDiagnostic.scopeLabel || "")) +
@@ -211,7 +211,7 @@ export class LessonCard {
           ? sepDiagnostic.links
               .map(function (link) {
                 const url = String(link && link.url ? link.url : "");
-                const label = String(link && link.label ? link.label : "SEP");
+                const label = String(link && link.label ? link.label : "Reference");
                 if (!url) return escapeHtml(label);
                 return (
                   '<a class="lesson-source-link" href="' +

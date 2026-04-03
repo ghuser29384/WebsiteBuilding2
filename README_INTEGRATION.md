@@ -136,7 +136,7 @@ Suggestion generator proposes minimal changes and ranks by predicted score delta
 ## 5) Literature mapping
 
 The page and engine are operationalized approximations of WRE concepts:
-- SEP overview of reflective equilibrium: https://plato.stanford.edu/entries/reflective-equilibrium/
+- Reflective equilibrium overview: https://plato.stanford.edu/entries/reflective-equilibrium/
 - Daniels on wide reflective equilibrium and justification structure: https://www.cambridge.org/core/books/abs/cambridge-companion-to-rawls/reflective-equilibrium-and-archimedean-points/7CDE1B3F7456A34DA2D9C7CF3420D6F4
 - Beisbart et al. formalization work (directed/computational RE): https://doi.org/10.3998/ergo.1152
 - Baumberger & Brun on understanding/explanation and epistemic payoffs: https://doi.org/10.1007/s11229-020-02556-9

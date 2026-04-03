@@ -38,7 +38,7 @@
     start: {
       title: "Start Deliberation",
       description:
-        "Begin by clarifying which judgments you currently trust most, and which principles/theories are candidates for organizing them (SEP: Reflective Equilibrium).",
+        "Begin by clarifying which judgments you currently trust most, and which principles/theories are candidates for organizing them (Reflective Equilibrium).",
       questions: [
         "Which of your current judgments feel most stable and least likely to change?",
         "Which principle currently seems to explain the most judgments?",
@@ -47,7 +47,7 @@
     identify: {
       title: "Identify Conflicts",
       description:
-        "Locate explicit or inferred tensions across judgments, principles, and theories before making revisions (SEP: Moral Disagreement).",
+        "Locate explicit or inferred tensions across judgments, principles, and theories before making revisions (Moral Disagreement).",
       questions: [
         "Which judgment seems most inconsistent with your current principles?",
         "Which background theory appears to generate pressure against your favored principle?",
@@ -56,7 +56,7 @@
     suggest: {
       title: "Suggest Revisions",
       description:
-        "Generate candidate revisions and test whether they reduce unresolved tensions without collapsing explanatory coverage (SEP: Moral Epistemology).",
+        "Generate candidate revisions and test whether they reduce unresolved tensions without collapsing explanatory coverage (Moral Epistemology).",
       questions: [
         "Which principle might justifiably be narrowed or qualified?",
         "Which judgment might need confidence adjustment given your background theories?",
@@ -65,7 +65,7 @@
     rationale: {
       title: "Record Rationale",
       description:
-        "Document why you accepted certain revisions and rejected alternatives, including which SEP-style pressure tests were decisive.",
+        "Document why you accepted certain revisions and rejected alternatives, including which methodological pressure tests were decisive.",
       questions: [
         "What change did you make, and what was your strongest reason?",
         "What competing revision did you reject, and why?",
@@ -431,9 +431,9 @@
   }
 
   function relationColor(relation) {
-    if (relation === "support") return "#2c8d57";
-    if (relation === "conflict") return "#bf3b46";
-    return "#8a94a6";
+    if (relation === "support") return "#3f6f57";
+    if (relation === "conflict") return "#ab4758";
+    return "#7b7f78";
   }
 
   function ensureSvgDefs(svg) {
@@ -456,9 +456,9 @@
       defs.appendChild(marker);
     }
 
-    addMarker("arrow-support", "#2c8d57");
-    addMarker("arrow-conflict", "#bf3b46");
-    addMarker("arrow-neutral", "#8a94a6");
+    addMarker("arrow-support", "#3f6f57");
+    addMarker("arrow-conflict", "#ab4758");
+    addMarker("arrow-neutral", "#7b7f78");
 
     svg.appendChild(defs);
   }

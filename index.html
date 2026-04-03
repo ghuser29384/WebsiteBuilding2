@@ -26,11 +26,12 @@
       <div class="header-tools">
         <button id="navToggle" class="nav-toggle" type="button" aria-expanded="false" aria-controls="mainNav" aria-label="Open main menu">Menu</button>
         <nav id="mainNav" class="main-nav" aria-label="Primary">
-          <a href="#featured-market-day">Research</a>
+          <a href="#research">Research</a>
           <a href="#deliberation">About</a>
           <a href="#studio">Dialogues</a>
           <a href="publication.html">Publications</a>
           <a href="moral-market.html">Markets</a>
+          <a href="wre-module.html">Module</a>
           <a href="#pledge">Pledge</a>
           <a class="nav-pill" href="#footerNewsletter">Newsletter</a>
           <a href="profile.html">Profile</a>
@@ -40,7 +41,7 @@
   </header>
 
   <main id="main-content" class="container" tabindex="-1">
-    <section class="section reveal forethought-intro-section" aria-label="Normativity Editorial Intro">
+    <section id="research" class="section reveal forethought-intro-section" aria-label="Normativity Editorial Intro">
       <div class="forethought-intro-inner container">
         <article class="forethought-intro-card">
           <p class="eyebrow">Research</p>
@@ -68,7 +69,7 @@
     <section id="parfit-mountain" class="section reveal parfit-section" aria-labelledby="parfitTitle">
       <div class="parfit-head">
         <p class="eyebrow">A longterm view</p>
-        <h2 id="parfitTitle">Competing ethical theories can climb toward the same summit from different sides.</h2>
+        <h2 id="parfitTitle">Competing ethical theories can climb toward truth from different sides.</h2>
         <p class="parfit-lede">
           As Derek Parfit suggested, routes differ, intermediate judgments diverge, and local views conflict. Yet sustained reflection can reveal convergence on deeper truths.
         </p>
@@ -83,7 +84,7 @@
           <ul class="parfit-list">
             <li>Different starting points: welfare, duty, virtue, contract, relation.</li>
             <li>Distinct local routes: disagreements persist for long stretches.</li>
-            <li>Shared summit pressure: broader coherence pulls views upward.</li>
+            <li>Truth pressure: broader coherence pulls views upward.</li>
           </ul>
         </article>
 
@@ -128,7 +129,7 @@
             <text class="parfit-graphic-label" x="646" y="500">Hybrid</text>
             <text class="parfit-graphic-label" x="724" y="438">Relational</text>
             <text class="parfit-graphic-label" x="700" y="492">Contractualist</text>
-            <text class="parfit-summit-label" x="468" y="86">Shared summit</text>
+            <text class="parfit-summit-label" x="468" y="86">Truth</text>
           </svg>
         </article>
       </div>
@@ -194,8 +195,8 @@
 
     <section id="sep-foundations" class="section reveal" aria-labelledby="sepFoundationsTitle">
       <div class="section-head">
-        <p class="eyebrow">SEP Foundations</p>
-        <h2 id="sepFoundationsTitle">Website logic now tracks core debates from the Stanford Encyclopedia of Philosophy.</h2>
+        <p class="eyebrow">Foundations</p>
+        <h2 id="sepFoundationsTitle">Website logic now tracks core debates in moral philosophy.</h2>
         <p class="hint">
           We reviewed the core entries on moral theory, epistemology, disagreement, dilemmas, realism/cognitivism, consequentialism, deontology,
           virtue ethics, thought experiments, and reflective equilibrium. Use these links as the conceptual baseline for markets, dialogues, and WRE rounds.
@@ -380,11 +381,11 @@
           </div>
           <ul id="beliefChips" class="belief-chip-list"></ul>
           <p class="hint re-source-note">
-            Animation informed by SEP (<em>Reflective Equilibrium</em>), Rawls, Daniels, Scanlon, and recent directed reflective equilibrium work.
+            Animation informed by reflective-equilibrium research (<em>Reflective Equilibrium</em>), Rawls, Daniels, Scanlon, and recent directed reflective equilibrium work.
           </p>
           <div class="button-row">
             <a class="btn btn-ghost" href="normative-issues.html#deliberation-protocol">
-              Open SEP Deliberation Protocol
+              Open Deliberation Protocol
             </a>
           </div>
         </article>
@@ -407,6 +408,195 @@
             <p><span class="metric-label">Judgment-principle tension</span><strong id="spreadValue">0 pts</strong></p>
           </div>
         </article>
+      </div>
+    </section>
+
+    <section id="studio" class="section reveal">
+      <div class="section-head">
+        <p class="eyebrow">Dialogues</p>
+        <h2>Match, Discuss, Update, Commit</h2>
+      </div>
+      <p id="gateBanner" class="gate-banner">Studio is locked until the pledge is signed.</p>
+
+      <div id="studioContent" class="studio-content locked">
+        <div class="studio-grid">
+          <article class="panel">
+            <h3>Create A Dialogue</h3>
+            <form id="convictionForm" class="compact-form">
+              <label class="field-row" for="claimInput">
+                Truth-apt proposition under discussion (you believe this is &gt;50% likely true)
+                <textarea id="claimInput" name="claim" rows="3" required placeholder="e.g., Buying factory-farmed meat is morally wrong."></textarea>
+              </label>
+              <p class="hint sep-dialogue-hint">
+                Good proposition format: a declarative claim that can be true or false (not a question or slogan).
+                See <a href="https://plato.stanford.edu/entries/reasoning-moral/" target="_blank" rel="noopener">Moral Reasoning</a> and
+                <a href="https://plato.stanford.edu/entries/reflective-equilibrium/" target="_blank" rel="noopener">Reflective Equilibrium</a>.
+              </p>
+              <label class="field-row" for="confidenceInput">
+                Your confidence that the proposition is true: <span id="confidenceValue">60%</span>
+                <input id="confidenceInput" name="confidence" type="range" min="1" max="100" step="1" value="60">
+              </label>
+              <label class="field-row" for="creatorReasonInput">
+                Reasons for your confidence (10 sentences max)
+                <textarea id="creatorReasonInput" name="creatorReason" rows="3" required placeholder="Explain the main evidence or intuitions driving your confidence."></textarea>
+              </label>
+              <label class="field-row" for="assumptionInput">
+                Assumed propositions (optional, one per line)
+                <textarea id="assumptionInput" name="assumptions" rows="3" placeholder="e.g., Non-human animal suffering matters morally."></textarea>
+              </label>
+              <label class="field-row checkbox-row" for="truthAptConfirm">
+                <input id="truthAptConfirm" name="truthAptConfirm" type="checkbox" required>
+                I affirm this proposition is truth-apt and that I believe it is more likely true than not true.
+              </label>
+              <div class="availability-block">
+                <p class="field-label">Your availability (select any half-hour slot in the next 30 days)</p>
+                <div id="roomAvailability" class="availability-grid" role="group" aria-label="Dialogue creator availability"></div>
+              </div>
+              <p id="convictionStatus" class="hint"></p>
+              <button class="btn btn-secondary" type="submit">Create Dialogue</button>
+            </form>
+
+            <div class="subhead-row">
+              <h4>Your Dialogues</h4>
+              <p class="hint">Pick one to manage reservations and matches.</p>
+            </div>
+            <ul id="convictionList" class="stack-list"></ul>
+          </article>
+
+          <article class="panel">
+            <h3>Reserve and Match</h3>
+            <p class="hint">Reservations require an opposing belief, a confidence score, reasons, and overlapping time slots.</p>
+            <div id="activeConvictionSummary" class="mini-summary">No active dialogue selected yet.</div>
+
+            <form id="reservationForm" class="compact-form">
+              <label class="field-row" for="reservationNameInput">
+                Participant username
+                <input id="reservationNameInput" name="reservationName" type="text" placeholder="e.g., jasmine" required>
+                <span class="hint">If signed in, this auto-fills with your username.</span>
+              </label>
+              <label class="field-row" for="reservationBeliefInput">
+                Belief about the proposition
+                <select id="reservationBeliefInput" name="reservationBelief" required>
+                  <option value="true">The proposition is true</option>
+                  <option value="false">The proposition is not true</option>
+                </select>
+              </label>
+              <label class="field-row" for="reservationConfidenceInput">
+                Confidence in that belief: <span id="reservationConfidenceValue">50%</span>
+                <input id="reservationConfidenceInput" name="reservationConfidence" type="range" min="1" max="100" step="1" value="50">
+              </label>
+              <label class="field-row" for="reservationReasonInput">
+                Reasons for your confidence (10 sentences max)
+                <textarea id="reservationReasonInput" name="reservationReason" rows="3" required placeholder="Explain the main evidence or intuitions driving your confidence."></textarea>
+              </label>
+              <div class="availability-block">
+                <p class="field-label">Your availability (select any half-hour slot in the next 30 days)</p>
+                <div id="reservationAvailability" class="availability-grid" role="group" aria-label="Participant availability"></div>
+              </div>
+              <p id="reservationStatus" class="hint"></p>
+              <button class="btn btn-secondary" type="submit">Reserve A Seat</button>
+            </form>
+
+            <div id="attendancePolicyModal" class="attendance-modal" hidden>
+              <div class="attendance-modal-backdrop" data-attendance-close="true"></div>
+              <div
+                class="attendance-modal-dialog"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="attendancePolicyTitle"
+                aria-describedby="attendancePolicyDescription"
+              >
+                <button id="attendancePolicyCloseBtn" class="attendance-close-btn" type="button" aria-label="Close attendance policy prompt">×</button>
+                <h4 id="attendancePolicyTitle">Attendance Policy</h4>
+                <p id="attendancePolicyDescription" class="attendance-policy-copy">
+                  If you will not be able to attend the session, please unregister in advance to free up the spot for another person.
+                </p>
+                <label class="field-row" for="attendancePolicyInput">
+                  Please type "I understand" to sign up for this session.
+                  <input
+                    id="attendancePolicyInput"
+                    name="attendancePolicyInput"
+                    type="text"
+                    autocomplete="off"
+                    spellcheck="false"
+                    placeholder="I understand"
+                  >
+                </label>
+                <p id="attendancePolicyStatus" class="status-line attendance-policy-status" role="status" aria-live="polite"></p>
+                <div class="attendance-policy-actions">
+                  <button id="attendancePolicyCancelBtn" class="btn btn-ghost" type="button">Cancel</button>
+                  <button id="attendancePolicyConfirmBtn" class="btn btn-primary" type="button">Complete Sign Up</button>
+                </div>
+              </div>
+            </div>
+
+            <div class="subhead-row">
+              <h4>Current Reservations</h4>
+              <p class="hint">Opposing beliefs and overlapping times drive matching.</p>
+            </div>
+            <ul id="reservationList" class="stack-list reservation-list"></ul>
+
+            <h4>Suggested Matches</h4>
+            <p id="matchRationale" class="hint">Select a dialogue to generate suggested matches.</p>
+            <div id="counterpartList" class="counterpart-list"></div>
+
+            <div class="invite-block">
+              <h4>Invite A Specific User</h4>
+              <form id="inviteForm" class="compact-form">
+                <label class="field-row" for="inviteNameInput">
+                  Username to invite
+                  <input id="inviteNameInput" name="inviteName" type="text" placeholder="e.g., jasper" required>
+                </label>
+                <div class="availability-block">
+                  <p class="field-label">Your proposed availability (select any half-hour slot in the next 30 days)</p>
+                  <div id="inviteAvailability" class="availability-grid" role="group" aria-label="Invite availability"></div>
+                </div>
+                <p id="inviteStatus" class="hint"></p>
+                <button class="btn btn-ghost" type="submit">Send Invite</button>
+              </form>
+              <ul id="inviteList" class="stack-list invite-list"></ul>
+            </div>
+
+            <h3 class="session-head">3) Log The Dialogue Outcome</h3>
+            <form id="sessionForm" class="compact-form">
+              <p id="sessionPartnerSummary" class="mini-summary">No participant selected yet.</p>
+              <label class="field-row" for="counterArgumentInput">
+                Strongest argument you heard from your participant
+                <textarea id="counterArgumentInput" name="counterArgument" rows="3" required></textarea>
+              </label>
+              <label class="field-row" for="replyInput">
+                Your strongest reply (or concession)
+                <textarea id="replyInput" name="reply" rows="3" required></textarea>
+              </label>
+              <label class="field-row" for="postConfidenceInput">
+                After discussion, confidence that the active claim is true: <span id="postConfidenceValue">50%</span>
+                <input id="postConfidenceInput" name="postConfidence" type="range" min="0" max="100" step="1" value="50">
+              </label>
+
+              <p id="thresholdNotice" class="threshold-note" role="status" aria-live="polite"></p>
+
+              <div id="actionCommitmentBlock" class="action-block hidden">
+                <label class="field-row" for="actionPlanInput">
+                  Required action (because confidence is over 50%)
+                  <textarea id="actionPlanInput" name="actionPlan" rows="2" placeholder="State the concrete behavior change you will implement."></textarea>
+                </label>
+                <div class="date-grid">
+                  <label class="field-row" for="startDateInput">
+                    Start date
+                    <input id="startDateInput" name="startDate" type="date">
+                  </label>
+                  <label class="field-row" for="checkinDateInput">
+                    Accountability check-in
+                    <input id="checkinDateInput" name="checkinDate" type="date">
+                  </label>
+                </div>
+              </div>
+
+              <button class="btn btn-primary" type="submit">Log Dialogue Result</button>
+              <p id="sessionStatus" class="status-line" role="status" aria-live="polite"></p>
+            </form>
+          </article>
+        </div>
       </div>
     </section>
 
@@ -639,7 +829,7 @@
           <p>Among opposing participants with shared time slots, we prefer the smallest confidence-gap to maximize productive exchange.</p>
         </article>
         <article class="panel">
-          <h3>4) SEP-informed tie-breakers</h3>
+          <h3>4) Method-informed tie-breakers</h3>
           <p>If confidence gaps are similar, we prioritize pairs with better disagreement-depth signals (case, principle, background theory) and clearer reasons.</p>
         </article>
       </div>
@@ -657,7 +847,7 @@
 
     <section id="sep-dialogue-protocol" class="section reveal">
       <div class="section-head">
-        <p class="eyebrow">SEP Protocol</p>
+        <p class="eyebrow">Dialogue Protocol</p>
         <h2>How to Disagree Without Losing Epistemic Discipline</h2>
       </div>
       <div class="rule-grid">
@@ -738,195 +928,6 @@
       </div>
     </section>
 
-    <section id="studio" class="section reveal">
-      <div class="section-head">
-        <p class="eyebrow">Dialogues</p>
-        <h2>Match, Discuss, Update, Commit</h2>
-      </div>
-      <p id="gateBanner" class="gate-banner">Studio is locked until the pledge is signed.</p>
-
-      <div id="studioContent" class="studio-content locked">
-        <div class="studio-grid">
-          <article class="panel">
-            <h3>Create A Dialogue</h3>
-            <form id="convictionForm" class="compact-form">
-              <label class="field-row" for="claimInput">
-                Truth-apt proposition under discussion (you believe this is &gt;50% likely true)
-                <textarea id="claimInput" name="claim" rows="3" required placeholder="e.g., Buying factory-farmed meat is morally wrong."></textarea>
-              </label>
-              <p class="hint sep-dialogue-hint">
-                Good proposition format: a declarative claim that can be true or false (not a question or slogan).
-                See <a href="https://plato.stanford.edu/entries/reasoning-moral/" target="_blank" rel="noopener">Moral Reasoning</a> and
-                <a href="https://plato.stanford.edu/entries/reflective-equilibrium/" target="_blank" rel="noopener">Reflective Equilibrium</a>.
-              </p>
-              <label class="field-row" for="confidenceInput">
-                Your confidence that the proposition is true: <span id="confidenceValue">60%</span>
-                <input id="confidenceInput" name="confidence" type="range" min="1" max="100" step="1" value="60">
-              </label>
-              <label class="field-row" for="creatorReasonInput">
-                Reasons for your confidence (10 sentences max)
-                <textarea id="creatorReasonInput" name="creatorReason" rows="3" required placeholder="Explain the main evidence or intuitions driving your confidence."></textarea>
-              </label>
-              <label class="field-row" for="assumptionInput">
-                Assumed propositions (optional, one per line)
-                <textarea id="assumptionInput" name="assumptions" rows="3" placeholder="e.g., Non-human animal suffering matters morally."></textarea>
-              </label>
-              <label class="field-row checkbox-row" for="truthAptConfirm">
-                <input id="truthAptConfirm" name="truthAptConfirm" type="checkbox" required>
-                I affirm this proposition is truth-apt and that I believe it is more likely true than not true.
-              </label>
-              <div class="availability-block">
-                <p class="field-label">Your availability (select any half-hour slot in the next 30 days)</p>
-                <div id="roomAvailability" class="availability-grid" role="group" aria-label="Dialogue creator availability"></div>
-              </div>
-              <p id="convictionStatus" class="hint"></p>
-              <button class="btn btn-secondary" type="submit">Create Dialogue</button>
-            </form>
-
-            <div class="subhead-row">
-              <h4>Your Dialogues</h4>
-              <p class="hint">Pick one to manage reservations and matches.</p>
-            </div>
-            <ul id="convictionList" class="stack-list"></ul>
-          </article>
-
-          <article class="panel">
-            <h3>Reserve and Match</h3>
-            <p class="hint">Reservations require an opposing belief, a confidence score, reasons, and overlapping time slots.</p>
-            <div id="activeConvictionSummary" class="mini-summary">No active dialogue selected yet.</div>
-
-            <form id="reservationForm" class="compact-form">
-              <label class="field-row" for="reservationNameInput">
-                Participant username
-                <input id="reservationNameInput" name="reservationName" type="text" placeholder="e.g., jasmine" required>
-                <span class="hint">If signed in, this auto-fills with your username.</span>
-              </label>
-              <label class="field-row" for="reservationBeliefInput">
-                Belief about the proposition
-                <select id="reservationBeliefInput" name="reservationBelief" required>
-                  <option value="true">The proposition is true</option>
-                  <option value="false">The proposition is not true</option>
-                </select>
-              </label>
-              <label class="field-row" for="reservationConfidenceInput">
-                Confidence in that belief: <span id="reservationConfidenceValue">50%</span>
-                <input id="reservationConfidenceInput" name="reservationConfidence" type="range" min="1" max="100" step="1" value="50">
-              </label>
-              <label class="field-row" for="reservationReasonInput">
-                Reasons for your confidence (10 sentences max)
-                <textarea id="reservationReasonInput" name="reservationReason" rows="3" required placeholder="Explain the main evidence or intuitions driving your confidence."></textarea>
-              </label>
-              <div class="availability-block">
-                <p class="field-label">Your availability (select any half-hour slot in the next 30 days)</p>
-                <div id="reservationAvailability" class="availability-grid" role="group" aria-label="Participant availability"></div>
-              </div>
-              <p id="reservationStatus" class="hint"></p>
-              <button class="btn btn-secondary" type="submit">Reserve A Seat</button>
-            </form>
-
-            <div id="attendancePolicyModal" class="attendance-modal" hidden>
-              <div class="attendance-modal-backdrop" data-attendance-close="true"></div>
-              <div
-                class="attendance-modal-dialog"
-                role="dialog"
-                aria-modal="true"
-                aria-labelledby="attendancePolicyTitle"
-                aria-describedby="attendancePolicyDescription"
-              >
-                <button id="attendancePolicyCloseBtn" class="attendance-close-btn" type="button" aria-label="Close attendance policy prompt">×</button>
-                <h4 id="attendancePolicyTitle">Attendance Policy</h4>
-                <p id="attendancePolicyDescription" class="attendance-policy-copy">
-                  If you will not be able to attend the session, please unregister in advance to free up the spot for another person.
-                </p>
-                <label class="field-row" for="attendancePolicyInput">
-                  Please type "I understand" to sign up for this session.
-                  <input
-                    id="attendancePolicyInput"
-                    name="attendancePolicyInput"
-                    type="text"
-                    autocomplete="off"
-                    spellcheck="false"
-                    placeholder="I understand"
-                  >
-                </label>
-                <p id="attendancePolicyStatus" class="status-line attendance-policy-status" role="status" aria-live="polite"></p>
-                <div class="attendance-policy-actions">
-                  <button id="attendancePolicyCancelBtn" class="btn btn-ghost" type="button">Cancel</button>
-                  <button id="attendancePolicyConfirmBtn" class="btn btn-primary" type="button">Complete Sign Up</button>
-                </div>
-              </div>
-            </div>
-
-            <div class="subhead-row">
-              <h4>Current Reservations</h4>
-              <p class="hint">Opposing beliefs and overlapping times drive matching.</p>
-            </div>
-            <ul id="reservationList" class="stack-list reservation-list"></ul>
-
-            <h4>Suggested Matches</h4>
-            <p id="matchRationale" class="hint">Select a dialogue to generate suggested matches.</p>
-            <div id="counterpartList" class="counterpart-list"></div>
-
-            <div class="invite-block">
-              <h4>Invite A Specific User</h4>
-              <form id="inviteForm" class="compact-form">
-                <label class="field-row" for="inviteNameInput">
-                  Username to invite
-                  <input id="inviteNameInput" name="inviteName" type="text" placeholder="e.g., jasper" required>
-                </label>
-                <div class="availability-block">
-                  <p class="field-label">Your proposed availability (select any half-hour slot in the next 30 days)</p>
-                  <div id="inviteAvailability" class="availability-grid" role="group" aria-label="Invite availability"></div>
-                </div>
-                <p id="inviteStatus" class="hint"></p>
-                <button class="btn btn-ghost" type="submit">Send Invite</button>
-              </form>
-              <ul id="inviteList" class="stack-list invite-list"></ul>
-            </div>
-
-            <h3 class="session-head">3) Log The Dialogue Outcome</h3>
-            <form id="sessionForm" class="compact-form">
-              <p id="sessionPartnerSummary" class="mini-summary">No participant selected yet.</p>
-              <label class="field-row" for="counterArgumentInput">
-                Strongest argument you heard from your participant
-                <textarea id="counterArgumentInput" name="counterArgument" rows="3" required></textarea>
-              </label>
-              <label class="field-row" for="replyInput">
-                Your strongest reply (or concession)
-                <textarea id="replyInput" name="reply" rows="3" required></textarea>
-              </label>
-              <label class="field-row" for="postConfidenceInput">
-                After discussion, confidence that the active claim is true: <span id="postConfidenceValue">50%</span>
-                <input id="postConfidenceInput" name="postConfidence" type="range" min="0" max="100" step="1" value="50">
-              </label>
-
-              <p id="thresholdNotice" class="threshold-note" role="status" aria-live="polite"></p>
-
-              <div id="actionCommitmentBlock" class="action-block hidden">
-                <label class="field-row" for="actionPlanInput">
-                  Required action (because confidence is over 50%)
-                  <textarea id="actionPlanInput" name="actionPlan" rows="2" placeholder="State the concrete behavior change you will implement."></textarea>
-                </label>
-                <div class="date-grid">
-                  <label class="field-row" for="startDateInput">
-                    Start date
-                    <input id="startDateInput" name="startDate" type="date">
-                  </label>
-                  <label class="field-row" for="checkinDateInput">
-                    Accountability check-in
-                    <input id="checkinDateInput" name="checkinDate" type="date">
-                  </label>
-                </div>
-              </div>
-
-              <button class="btn btn-primary" type="submit">Log Dialogue Result</button>
-              <p id="sessionStatus" class="status-line" role="status" aria-live="polite"></p>
-            </form>
-          </article>
-        </div>
-      </div>
-    </section>
-
     <section id="ledger" class="section reveal">
       <div class="section-head ledger-head">
         <div>
@@ -977,10 +978,11 @@
         <p class="forethought-footer-note">Openly and honestly reflect on moral beliefs; try our best to understand others' beliefs; try our best to act according to our considered beliefs.</p>
       </div>
       <nav class="forethought-footer-nav" aria-label="Footer navigation">
-        <a href="#featured-market-day">Research</a>
+        <a href="#research">Research</a>
         <a href="#deliberation">About</a>
         <a href="#studio">Dialogues</a>
         <a href="#pledge">Pledge</a>
+        <a href="wre-module.html">Module</a>
         <a href="publication.html">Publications</a>
         <a href="moral-market.html">Markets</a>
         <a href="profile.html">Profile</a>

@@ -1,14 +1,14 @@
 :root {
   --bg: #ffffff;
-  --surface: #ffffff;
-  --surface-soft: #f7f9fc;
-  --line: #d9e1eb;
-  --text: #2f2f2f;
-  --muted: #5f6c7b;
-  --accent: #2f5c87;
-  --support: #0a6;
-  --conflict: #d23;
-  --focus: #2f7de6;
+  --surface: #f6f5f0;
+  --surface-soft: #efeee8;
+  --line: #d5d3c9;
+  --text: #2a2826;
+  --muted: #5f615b;
+  --accent: #222a33;
+  --support: #3f6f57;
+  --conflict: #ab4758;
+  --focus: #ff6235;
   --radius: 12px;
 }
 
@@ -53,8 +53,8 @@ body {
   left: 0.5rem;
   z-index: 1000;
   background: #ffffff;
-  color: #2f5c87;
-  border: 1px solid #c6d2e0;
+  color: #222a33;
+  border: 1px solid #c3c1b8;
   border-radius: 8px;
   padding: 0.34rem 0.54rem;
   text-decoration: none;
@@ -73,13 +73,14 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 3px solid rgba(47, 125, 230, 0.3);
+  outline: 3px solid rgba(255, 98, 53, 0.3);
   outline-offset: 2px;
 }
 
 .wre-topbar {
   border-bottom: 1px solid var(--line);
-  background: #ffffff;
+  background: rgba(255, 255, 255, 0.94);
+  backdrop-filter: blur(4px);
 }
 
 .wre-topbar .wre-shell {
@@ -172,7 +173,7 @@ textarea:focus-visible {
   width: 100%;
   height: 9px;
   border-radius: 999px;
-  background: #edf2f7;
+  background: #e8e7de;
   overflow: hidden;
 }
 
@@ -182,7 +183,7 @@ textarea:focus-visible {
   width: 0%;
   border-radius: inherit;
   transition: width 300ms ease;
-  background: linear-gradient(90deg, #5ca6ff 0%, #2f5c87 100%);
+  background: linear-gradient(90deg, #ff6235 0%, #222a33 100%);
 }
 
 .sep-method-card p {
@@ -205,7 +206,7 @@ textarea:focus-visible {
 .sep-method-links a {
   color: var(--accent);
   text-decoration: none;
-  border-bottom: 1px dotted rgba(47, 92, 135, 0.45);
+  border-bottom: 1px dotted rgba(34, 42, 51, 0.45);
 }
 
 .sep-method-links a:hover,
@@ -245,11 +246,11 @@ textarea:focus-visible {
 }
 
 .btn {
-  border: 1px solid #c6d2e0;
-  border-radius: 8px;
+  border: 1px solid #c3c1b8;
+  border-radius: 10px;
   padding: 0.4rem 0.66rem;
-  background: #ffffff;
-  color: #25384f;
+  background: #efeee8;
+  color: #3f433e;
   font: inherit;
   font-size: 0.86rem;
   font-weight: 650;
@@ -257,7 +258,7 @@ textarea:focus-visible {
 }
 
 .btn:hover {
-  background: #f4f8fc;
+  background: #e7e6de;
 }
 
 .btn:focus-visible {

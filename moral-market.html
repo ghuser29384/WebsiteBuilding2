@@ -80,6 +80,23 @@
             <input id="searchInput" type="search" placeholder="e.g., abortion, factory farming, free speech">
           </label>
           <div id="categoryFilters" class="filter-row" role="tablist" aria-label="Market categories"></div>
+          <div class="market-toolbar" aria-label="Market sorting and filters">
+            <label class="sort-wrap" for="sortSelect">
+              Sort by
+              <select id="sortSelect">
+                <option value="contested_desc">Most contested</option>
+                <option value="volume_desc">Most signals</option>
+                <option value="activity_desc">Most active this week</option>
+                <option value="confidence_desc">Highest confidence (yes/lead)</option>
+                <option value="confidence_asc">Lowest confidence (yes/lead)</option>
+              </select>
+            </label>
+            <label class="toggle-wrap" for="positionsOnlyToggle">
+              <input id="positionsOnlyToggle" type="checkbox">
+              Show only markets where I cast credence tokens
+            </label>
+            <p id="resultSummary" class="result-summary" role="status" aria-live="polite"></p>
+          </div>
         </div>
         <div id="marketGrid" class="market-grid"></div>
 

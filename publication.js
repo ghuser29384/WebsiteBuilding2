@@ -1457,6 +1457,13 @@
     const articleDots = [];
     const commentDots = [];
     const xLabelEvery = Math.max(1, Math.floor(buckets.length / 6));
+    const articleColor = "#3f6f57";
+    const commentColor = "#c0704d";
+    const gridColor = "#d4d3ca";
+    const axisColor = "#bbb9af";
+    const labelColor = "#686b65";
+    const plotBg = "#f7f6f1";
+    const legendBg = "#efeee8";
 
     buckets.forEach(function (bucket, index) {
       const x = buckets.length === 1 ? padLeft + innerW / 2 : padLeft + (innerW * index) / (buckets.length - 1);
@@ -1465,8 +1472,8 @@
 
       articlePath.push((index === 0 ? "M " : "L ") + x.toFixed(2) + " " + articleY.toFixed(2));
       commentPath.push((index === 0 ? "M " : "L ") + x.toFixed(2) + " " + commentY.toFixed(2));
-      articleDots.push('<circle cx="' + x.toFixed(2) + '" cy="' + articleY.toFixed(2) + '" r="2.8" fill="#246c4a"></circle>');
-      commentDots.push('<circle cx="' + x.toFixed(2) + '" cy="' + commentY.toFixed(2) + '" r="2.8" fill="#3a6ea5"></circle>');
+      articleDots.push('<circle cx="' + x.toFixed(2) + '" cy="' + articleY.toFixed(2) + '" r="2.8" fill="' + articleColor + '"></circle>');
+      commentDots.push('<circle cx="' + x.toFixed(2) + '" cy="' + commentY.toFixed(2) + '" r="2.8" fill="' + commentColor + '"></circle>');
     });
 
     const grid = [0, 0.25, 0.5, 0.75, 1].map(function (t) {
@@ -1481,12 +1488,12 @@
         (width - padRight) +
         '" y2="' +
         y.toFixed(2) +
-        '" stroke="#dbe3ec" stroke-width="1"></line>' +
+        '" stroke="' + gridColor + '" stroke-width="1"></line>' +
         '<text x="' +
         (padLeft - 8) +
         '" y="' +
         (y + 4).toFixed(2) +
-        '" text-anchor="end" fill="#607286" font-size="10">' +
+        '" text-anchor="end" fill="' + labelColor + '" font-size="10">' +
         tick +
         "</text>"
       );
@@ -1501,7 +1508,7 @@
           x.toFixed(2) +
           '" y="' +
           (height - 10) +
-          '" text-anchor="middle" fill="#63778e" font-size="10">' +
+          '" text-anchor="middle" fill="' + labelColor + '" font-size="10">' +
           escapeHtml(bucket.label) +
           "</text>"
         );
@@ -1513,7 +1520,7 @@
       width +
       '" height="' +
       height +
-      '" fill="#ffffff"></rect>' +
+      '" fill="' + plotBg + '"></rect>' +
       grid.join("") +
       '<line x1="' +
       padLeft +
@@ -1523,30 +1530,30 @@
       (width - padRight) +
       '" y2="' +
       (padTop + innerH) +
-      '" stroke="#cfd9e4" stroke-width="1"></line>' +
+      '" stroke="' + axisColor + '" stroke-width="1"></line>' +
       '<path d="' +
       articlePath.join(" ") +
-      '" fill="none" stroke="#246c4a" stroke-width="2.2"></path>' +
+      '" fill="none" stroke="' + articleColor + '" stroke-width="2.2"></path>' +
       '<path d="' +
       commentPath.join(" ") +
-      '" fill="none" stroke="#3a6ea5" stroke-width="2.2"></path>' +
+      '" fill="none" stroke="' + commentColor + '" stroke-width="2.2"></path>' +
       articleDots.join("") +
       commentDots.join("") +
       '<rect x="' +
       (width - 210) +
-      '" y="10" width="200" height="26" rx="8" fill="#f7fbff" stroke="#d4deea"></rect>' +
+      '" y="10" width="200" height="26" rx="8" fill="' + legendBg + '" stroke="' + gridColor + '"></rect>' +
       '<circle cx="' +
       (width - 195) +
-      '" cy="23" r="4" fill="#246c4a"></circle>' +
+      '" cy="23" r="4" fill="' + articleColor + '"></circle>' +
       '<text x="' +
       (width - 186) +
-      '" y="27" fill="#385672" font-size="11">Articles</text>' +
+      '" y="27" fill="' + labelColor + '" font-size="11">Articles</text>' +
       '<circle cx="' +
       (width - 122) +
-      '" cy="23" r="4" fill="#3a6ea5"></circle>' +
+      '" cy="23" r="4" fill="' + commentColor + '"></circle>' +
       '<text x="' +
       (width - 113) +
-      '" y="27" fill="#385672" font-size="11">Passage comments</text>' +
+      '" y="27" fill="' + labelColor + '" font-size="11">Passage comments</text>' +
       xLabels;
   }
 
@@ -2264,7 +2271,7 @@
   function setArticleStatus(text, isError) {
     if (!el.articleStatus) return;
     el.articleStatus.textContent = text;
-    el.articleStatus.style.color = isError ? "#8f2236" : "#355271";
+    el.articleStatus.style.color = isError ? "#ab4758" : "#5f615b";
   }
 
   function escapeHtml(text) {

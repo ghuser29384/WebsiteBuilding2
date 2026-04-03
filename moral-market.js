@@ -17,7 +17,7 @@
   const TREND_GRID_LEVELS = [75, 50, 25, 0];
   const DEFAULT_CAST_COINS = 25;
   const DEFAULT_MULTI_OPTION_COINS = 12;
-  const OPTION_COLORS = ["#7db5ff", "#40c9a2", "#87a4ff", "#f3a06c", "#b299ff", "#f2d35d", "#74d4ff"];
+  const OPTION_COLORS = ["#476b8f", "#4f7f67", "#7a6d95", "#c7774d", "#7f8b4e", "#8f6e8a", "#5f7f8b"];
 
   const MARKETS = [
     createBinaryMarket({
@@ -156,7 +156,7 @@
             "Deprivation account: murder is seriously wrong because it removes the victim's valuable future experiences, projects, relationships, and goods they otherwise would have had.",
           sources: [
             {
-              label: "SEP - Death (Deprivation Account)",
+              label: "Reference - Death (Deprivation Account)",
               url: "https://plato.stanford.edu/entries/death/#DeprAcco",
             },
             {
@@ -175,7 +175,7 @@
             "Consequentialist account: murder is wrong when it predictably makes outcomes worse overall, including severe suffering, grief, fear, social instability, and foreclosed welfare.",
           sources: [
             {
-              label: "SEP - Consequentialism",
+              label: "Reference - Consequentialism",
               url: "https://plato.stanford.edu/entries/consequentialism/",
             },
             {
@@ -194,7 +194,7 @@
             "Kantian account: murder is wrong because it annihilates the conditions for autonomous agency and treats a rational person as a mere object rather than an end in themselves.",
           sources: [
             {
-              label: "SEP - Kant's Moral Philosophy",
+              label: "Reference - Kant's Moral Philosophy",
               url: "https://plato.stanford.edu/entries/kant-moral/",
             },
             {
@@ -213,7 +213,7 @@
             "Rights-based account: murder is wrong because it infringes a stringent claim-right not to be killed, independent of whether aggregate outcomes would otherwise improve.",
           sources: [
             {
-              label: "SEP - Rights",
+              label: "Reference - Rights",
               url: "https://plato.stanford.edu/entries/rights/",
             },
             {
@@ -232,7 +232,7 @@
             "Virtue-ethical account: murder is wrong because it expresses and entrenches grave defects of character such as cruelty, injustice, callousness, and disregard for practical wisdom.",
           sources: [
             {
-              label: "SEP - Virtue Ethics",
+              label: "Reference - Virtue Ethics",
               url: "https://plato.stanford.edu/entries/ethics-virtue/",
             },
             {
@@ -270,6 +270,8 @@
   });
 
   let activeCategory = "all";
+  let activeSort = "contested_desc";
+  let showPositionsOnly = false;
   let selectedMarketId = null;
   let selectedSide = "yes";
   const binaryCoinDraftByKey = Object.create(null);
@@ -294,6 +296,9 @@
     positionCount: document.getElementById("positionCount"),
     searchInput: document.getElementById("searchInput"),
     categoryFilters: document.getElementById("categoryFilters"),
+    sortSelect: document.getElementById("sortSelect"),
+    positionsOnlyToggle: document.getElementById("positionsOnlyToggle"),
+    resultSummary: document.getElementById("resultSummary"),
     marketGrid: document.getElementById("marketGrid"),
     marketDetailMain: document.getElementById("marketDetailMain"),
     detailMarketType: document.getElementById("detailMarketType"),
@@ -530,6 +535,20 @@
       renderMarketGrid();
     });
 
+    if (el.sortSelect) {
+      el.sortSelect.addEventListener("change", function () {
+        activeSort = String(el.sortSelect.value || "contested_desc");
+        renderMarketGrid();
+      });
+    }
+
+    if (el.positionsOnlyToggle) {
+      el.positionsOnlyToggle.addEventListener("change", function () {
+        showPositionsOnly = Boolean(el.positionsOnlyToggle.checked);
+        renderMarketGrid();
+      });
+    }
+
     el.categoryFilters.addEventListener("click", function (event) {
       const button = event.target.closest("button[data-category]");
       if (!button) return;
@@ -562,6 +581,19 @@
 
       const card = event.target.closest("article[data-market-id]");
       if (!card) return;
+      const marketId = card.getAttribute("data-market-id");
+      if (!marketId) return;
+      selectMarket(marketId);
+    });
+
+    el.marketGrid.addEventListener("keydown", function (event) {
+      if (!(event.target instanceof HTMLElement)) return;
+      if (event.key !== "Enter" && event.key !== " ") return;
+      const interactive = event.target.closest("button, input, select, textarea, a");
+      if (interactive && !interactive.matches("article[data-market-id]")) return;
+      const card = event.target.closest("article[data-market-id]");
+      if (!card) return;
+      event.preventDefault();
       const marketId = card.getAttribute("data-market-id");
       if (!marketId) return;
       selectMarket(marketId);
@@ -773,6 +805,13 @@
       })
       .join("");
 
+    if (el.sortSelect) {
+      el.sortSelect.value = activeSort;
+    }
+    if (el.positionsOnlyToggle) {
+      el.positionsOnlyToggle.checked = showPositionsOnly;
+    }
+
     updateFilterStyles();
   }
 
@@ -789,7 +828,7 @@
       .trim()
       .toLowerCase();
 
-    const filtered = MARKETS.filter(function (market) {
+    const filteredBySearchAndCategory = MARKETS.filter(function (market) {
       const categoryMatch = activeCategory === "all" || market.category === activeCategory;
       const searchMatch =
         query.length === 0 ||
@@ -798,13 +837,28 @@
       return categoryMatch && searchMatch;
     });
 
-    if (filtered.length === 0) {
-      el.marketGrid.innerHTML =
-        '<article class="empty-item"><p>No markets match your search/filter.</p></article>';
+    const filtered = showPositionsOnly
+      ? filteredBySearchAndCategory.filter(function (market) {
+          return getPositionsForMarket(market.id).length > 0;
+        })
+      : filteredBySearchAndCategory;
+
+    const sorted = sortMarketsForGrid(filtered);
+    updateResultSummary(sorted.length, MARKETS.length, query);
+
+    if (sorted.length === 0) {
+      let emptyText = "No markets match your filters.";
+      if (showPositionsOnly && filteredBySearchAndCategory.length > 0) {
+        emptyText = "No active positions in the currently filtered markets.";
+      } else if (query.length > 0) {
+        emptyText = 'No markets found for "' + escapeHtml(query) + '".';
+      }
+
+      el.marketGrid.innerHTML = '<article class="empty-item"><p>' + emptyText + "</p></article>";
       return;
     }
 
-    el.marketGrid.innerHTML = filtered
+    el.marketGrid.innerHTML = sorted
       .map(function (market) {
         const snapshot = getMarketSnapshot(market);
         const positions = getPositionsForMarket(market.id);
@@ -822,6 +876,8 @@
           (isActive ? " active" : "") +
           '" data-market-id="' +
           escapeHtml(market.id) +
+          '" role="button" tabindex="0" aria-label="Open market: ' +
+          escapeHtml(market.question) +
           '">' +
           '<div class="card-top">' +
           '<span class="category-tag">' +
@@ -840,6 +896,77 @@
         );
       })
       .join("");
+  }
+
+  function sortMarketsForGrid(markets) {
+    return markets
+      .slice()
+      .sort(function (a, b) {
+        const scoreA = getMarketSortScore(a, activeSort);
+        const scoreB = getMarketSortScore(b, activeSort);
+        if (scoreA !== scoreB) {
+          return scoreB - scoreA;
+        }
+        return a.question.localeCompare(b.question);
+      });
+  }
+
+  function getMarketSortScore(market, mode) {
+    if (mode === "volume_desc") {
+      return market.volume || 0;
+    }
+
+    if (mode === "activity_desc") {
+      return state.activity.reduce(function (count, activityItem) {
+        return count + (activityItem.marketId === market.id ? 1 : 0);
+      }, 0);
+    }
+
+    if (mode === "confidence_desc") {
+      return getMarketConfidenceShare(market);
+    }
+
+    if (mode === "confidence_asc") {
+      return -getMarketConfidenceShare(market);
+    }
+
+    return getMarketContestedScore(market);
+  }
+
+  function getMarketConfidenceShare(market) {
+    const snapshot = getMarketSnapshot(market);
+    if (market.type === "binary") {
+      return snapshot.optionShares.yes || 0;
+    }
+    return snapshot.ordered[0] ? snapshot.ordered[0].share : 0;
+  }
+
+  function getMarketContestedScore(market) {
+    const snapshot = getMarketSnapshot(market);
+    if (market.type === "binary") {
+      const yes = snapshot.optionShares.yes || 0;
+      const no = snapshot.optionShares.no || 0;
+      return 100 - Math.abs(yes - no);
+    }
+
+    const top = snapshot.ordered[0] ? snapshot.ordered[0].share : 0;
+    const second = snapshot.ordered[1] ? snapshot.ordered[1].share : 0;
+    return 100 - Math.abs(top - second);
+  }
+
+  function updateResultSummary(shownCount, totalCount, query) {
+    if (!el.resultSummary) return;
+    const querySegment = query ? ' for "' + query + '"' : "";
+    const positionSegment = showPositionsOnly ? " with your positions" : "";
+    el.resultSummary.textContent =
+      "Showing " +
+      shownCount +
+      " of " +
+      totalCount +
+      " markets" +
+      querySegment +
+      positionSegment +
+      ".";
   }
 
   function renderMarketDetailMain() {
