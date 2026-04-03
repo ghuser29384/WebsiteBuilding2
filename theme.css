@@ -1116,3 +1116,124 @@ body.forethought-site .site-footer {
     opacity: 0.16;
   }
 }
+
+/*
+  Secondary palette normalization:
+  keep all secondary UI tones in a muted editorial range and avoid saturated
+  semantic colors that clash with the site's core Forethought-like language.
+*/
+body.forethought-site {
+  --nm-secondary-bg: #f3f2ec;
+  --nm-secondary-bg-hover: #ebe9e1;
+  --nm-secondary-border: #c8c4b8;
+  --nm-secondary-text: #4d524c;
+  --nm-yes: #4f6a5e;
+  --nm-yes-soft: #eef2ef;
+  --nm-no: #725860;
+  --nm-no-soft: #f2ecee;
+}
+
+body.forethought-site .featured-price.yes {
+  border-color: #bccac3 !important;
+  background: var(--nm-yes-soft) !important;
+  color: var(--nm-yes) !important;
+}
+
+body.forethought-site .featured-price.no {
+  border-color: #cdbec2 !important;
+  background: var(--nm-no-soft) !important;
+  color: var(--nm-no) !important;
+}
+
+body.forethought-site .fmc-yes-line,
+body.forethought-site .fmc-yes-dot,
+body.forethought-site .fmc-yes-hover-dot {
+  stroke: var(--nm-yes) !important;
+  fill: var(--nm-yes) !important;
+}
+
+body.forethought-site .fmc-no-line,
+body.forethought-site .fmc-no-dot,
+body.forethought-site .fmc-no-hover-dot {
+  stroke: var(--nm-no) !important;
+  fill: var(--nm-no) !important;
+}
+
+body.forethought-site .fmc-grid {
+  stroke: rgba(110, 112, 106, 0.26) !important;
+}
+
+body.forethought-site .fmc-axis-label,
+body.forethought-site .fmc-legend,
+body.forethought-site .fmc-hover-label {
+  fill: var(--nm-muted) !important;
+}
+
+body.forethought-site .fmc-latest-guide,
+body.forethought-site .fmc-hover-guide {
+  stroke: rgba(87, 91, 84, 0.48) !important;
+}
+
+body.forethought-site .sep-link,
+body.forethought-site .featured-top-market-link {
+  color: var(--nm-muted) !important;
+  border-bottom-color: rgba(120, 124, 116, 0.54) !important;
+}
+
+body.forethought-site .sep-link:hover,
+body.forethought-site .sep-link:focus-visible,
+body.forethought-site .featured-top-market-link:hover,
+body.forethought-site .featured-top-market-link:focus-visible {
+  color: var(--nm-primary) !important;
+  border-bottom-color: rgba(47, 61, 83, 0.62) !important;
+}
+
+body.forethought-site .featured-market-prompt,
+body.forethought-site .featured-market-snapshot,
+body.forethought-site .featured-top-label,
+body.forethought-site #featuredMarketMeta {
+  color: var(--nm-muted) !important;
+}
+
+body.forethought-site .bar-yes {
+  background: linear-gradient(90deg, #5f7a6e 0%, #4f6a5e 100%) !important;
+}
+
+body.forethought-site .bar-no {
+  background: linear-gradient(90deg, #83666d 0%, #725860 100%) !important;
+}
+
+body.forethought-site .wre-banner {
+  background: var(--nm-surface-soft) !important;
+  border-color: var(--nm-line-strong) !important;
+}
+
+body.forethought-site .wre-banner a {
+  color: var(--nm-primary) !important;
+}
+
+body.forethought-site .quote-btn.yes strong,
+body.forethought-site .feed-side.yes,
+body.forethought-site .positions-side.yes,
+body.forethought-site .detail-outcome-card.yes h3,
+body.forethought-site .detail-outcome-card.yes .detail-share {
+  color: var(--nm-yes) !important;
+}
+
+body.forethought-site .quote-btn.no strong,
+body.forethought-site .feed-side.no,
+body.forethought-site .positions-side.no,
+body.forethought-site .detail-outcome-card.no h3,
+body.forethought-site .detail-outcome-card.no .detail-share {
+  color: var(--nm-no) !important;
+}
+
+body.forethought-site .detail-outcome-card.yes {
+  border-color: #bccac3 !important;
+  background: var(--nm-yes-soft) !important;
+}
+
+body.forethought-site .detail-outcome-card.no {
+  border-color: #cdbec2 !important;
+  background: var(--nm-no-soft) !important;
+}
