@@ -1003,6 +1003,8 @@
     inviteStatus: document.getElementById("inviteStatus"),
     inviteList: document.getElementById("inviteList"),
     activeConvictionSummary: document.getElementById("activeConvictionSummary"),
+    activeDialogueWritings: document.getElementById("activeDialogueWritings"),
+    openDialoguePublicationLink: document.getElementById("openDialoguePublicationLink"),
     matchRationale: document.getElementById("matchRationale"),
     counterpartList: document.getElementById("counterpartList"),
     sessionForm: document.getElementById("sessionForm"),
@@ -4808,7 +4810,20 @@
       button.setAttribute("data-conviction-id", item.id);
       button.textContent = item.id === state.activeConvictionId ? "Active Dialogue" : "Use For Matching";
 
-      li.appendChild(button);
+      const writingLink = document.createElement("a");
+      writingLink.className = "btn btn-ghost";
+      writingLink.href = "publication.html?dialogue=" + encodeURIComponent(String(item.id || ""));
+      writingLink.textContent = "View Writings";
+
+      const actionRow = document.createElement("div");
+      actionRow.style.display = "flex";
+      actionRow.style.gap = "0.42rem";
+      actionRow.style.flexWrap = "wrap";
+      actionRow.style.marginTop = "0.45rem";
+      actionRow.appendChild(button);
+      actionRow.appendChild(writingLink);
+
+      li.appendChild(actionRow);
       el.convictionList.appendChild(li);
     });
   }
@@ -4828,6 +4843,7 @@
     if (!activeConviction) {
       currentMatches = [];
       el.activeConvictionSummary.textContent = "No active dialogue selected yet.";
+      renderActiveDialogueWritings(null);
       el.counterpartList.innerHTML = "";
       if (el.reservationList) {
         el.reservationList.innerHTML = "";
@@ -4876,6 +4892,7 @@
 
     renderReservationList(activeConviction);
     renderInviteList(activeConviction);
+    renderActiveDialogueWritings(activeConviction);
 
     currentMatches = buildMatches(activeConviction);
     if (
@@ -5051,6 +5068,100 @@
       item.appendChild(meta);
       el.inviteList.appendChild(item);
     });
+  }
+
+  function renderActiveDialogueWritings(activeConviction) {
+    if (!el.activeDialogueWritings) return;
+    el.activeDialogueWritings.innerHTML = "";
+
+    if (!activeConviction) {
+      if (el.openDialoguePublicationLink) {
+        el.openDialoguePublicationLink.href = "publication.html";
+      }
+      const empty = document.createElement("li");
+      empty.className = "mini-summary";
+      empty.textContent = "Select a dialogue to view writings specifically published about it.";
+      el.activeDialogueWritings.appendChild(empty);
+      return;
+    }
+
+    const dialogueId = String(activeConviction.id || "");
+    if (el.openDialoguePublicationLink) {
+      el.openDialoguePublicationLink.href = "publication.html?dialogue=" + encodeURIComponent(dialogueId);
+    }
+
+    const linkedArticles = loadPublicationArticlesSnapshot()
+      .filter(function (article) {
+        return String((article && article.dialogueId) || "") === dialogueId;
+      })
+      .sort(function (a, b) {
+        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+      });
+
+    if (linkedArticles.length === 0) {
+      const empty = document.createElement("li");
+      empty.className = "mini-summary";
+      empty.textContent = "No writings linked to this dialogue yet. Publish one in the Dialogue Writing Space.";
+      el.activeDialogueWritings.appendChild(empty);
+      return;
+    }
+
+    linkedArticles.slice(0, 6).forEach(function (article) {
+      const item = document.createElement("li");
+      item.className = "conviction-item";
+
+      const title = document.createElement("p");
+      title.innerHTML = "<strong>" + escapeHtml(article.title || "Untitled article") + "</strong>";
+
+      const meta = document.createElement("p");
+      meta.className = "hint";
+      meta.textContent =
+        "By @" +
+        String(article.author || "user") +
+        " | " +
+        formatDate(article.createdAt) +
+        " | Dialogue-linked writing";
+
+      const excerpt = document.createElement("p");
+      excerpt.className = "hint";
+      excerpt.textContent = truncateText(String(article.body || "").replace(/\s+/g, " "), 180);
+
+      const link = document.createElement("a");
+      link.className = "btn btn-ghost";
+      link.href = "publication.html?dialogue=" + encodeURIComponent(dialogueId) + "#article-" + String(article.id || "");
+      link.textContent = "Open Article";
+
+      item.appendChild(title);
+      item.appendChild(meta);
+      item.appendChild(excerpt);
+      item.appendChild(link);
+      el.activeDialogueWritings.appendChild(item);
+    });
+  }
+
+  function loadPublicationArticlesSnapshot() {
+    try {
+      const raw = window.localStorage.getItem("normativity-publications-v1");
+      if (!raw) return [];
+      const parsed = JSON.parse(raw);
+      if (!parsed || !Array.isArray(parsed.articles)) return [];
+      return parsed.articles
+        .map(function (article) {
+          return {
+            id: String((article && article.id) || ""),
+            author: String((article && article.author) || ""),
+            title: String((article && article.title) || ""),
+            body: String((article && article.body) || ""),
+            dialogueId: String((article && article.dialogueId) || ""),
+            createdAt: String((article && article.createdAt) || ""),
+          };
+        })
+        .filter(function (article) {
+          return Boolean(article.id);
+        });
+    } catch (_error) {
+      return [];
+    }
   }
 
   function formatSlotList(slotIds, max, catalog) {

@@ -2,6 +2,8 @@
   "use strict";
 
   const STORAGE_KEY = "normativity-publications-v1";
+  const DIALOGUE_STORAGE_KEY_BASE = "normativity-dialogue-state-v1";
+  const DIALOGUE_GUEST_SESSION_KEY = DIALOGUE_STORAGE_KEY_BASE + "--guest-session";
   const MAX_MODEL_SIZE = 4;
   const MAX_PASSAGE_SELECTION = 800;
 
@@ -71,6 +73,10 @@
   let state = loadState();
   let activeUser = "";
   let feedMode = state.feedMode || "all";
+  let dialogueCatalog = [];
+  let dialogueById = {};
+  let activeDialogueSpaceId = "";
+  let pendingComposerDialogueId = "";
 
   const el = {
     activeUserBadge: document.getElementById("activeUserBadge"),
@@ -78,6 +84,8 @@
     articleForm: document.getElementById("articleForm"),
     articleTitle: document.getElementById("articleTitle"),
     articleBody: document.getElementById("articleBody"),
+    articleDialogueSelect: document.getElementById("articleDialogueSelect"),
+    articleDialogueSummary: document.getElementById("articleDialogueSummary"),
     clearArticleBtn: document.getElementById("clearArticleBtn"),
     mentionPreview: document.getElementById("mentionPreview"),
     articleStatus: document.getElementById("articleStatus"),
@@ -90,6 +98,9 @@
 
     articleFeed: document.getElementById("articleFeed"),
     feedHint: document.getElementById("feedHint"),
+    dialogueSpaceSelect: document.getElementById("dialogueSpaceSelect"),
+    dialogueSpaceSummary: document.getElementById("dialogueSpaceSummary"),
+    dialogueArticleList: document.getElementById("dialogueArticleList"),
     insightsRange: document.getElementById("insightsRange"),
     insightCards: document.getElementById("insightCards"),
     insightTakeaways: document.getElementById("insightTakeaways"),
@@ -124,10 +135,17 @@
       feedMode = "all";
       state.feedMode = "all";
     }
+    loadDialogueCatalog();
+    activeDialogueSpaceId = getRequestedDialogueIdFromUrl();
+    if (!dialogueById[activeDialogueSpaceId] && dialogueCatalog.length > 0) {
+      activeDialogueSpaceId = dialogueCatalog[0].id;
+    }
+    pendingComposerDialogueId = activeDialogueSpaceId || "";
 
     bindEvents();
     updateSyllogismPreview();
     renderAll();
+    openHashArticleIfPresent();
   }
 
   function bindEvents() {
@@ -139,6 +157,10 @@
         el.articleTitle.value = "";
         el.articleBody.value = "";
         resetArticlePropositionPicker();
+        if (el.articleDialogueSelect) {
+          el.articleDialogueSelect.value = "";
+        }
+        updateArticleDialogueSummary();
         updateMentionPreview();
         setArticleStatus("");
       });
@@ -148,6 +170,9 @@
     }
     if (el.articleTitle) {
       el.articleTitle.addEventListener("input", updateMentionPreview);
+    }
+    if (el.articleDialogueSelect) {
+      el.articleDialogueSelect.addEventListener("change", updateArticleDialogueSummary);
     }
 
     if (el.inboxList) {
@@ -160,6 +185,12 @@
       el.articleFeed.addEventListener("mouseup", onArticleSelectionMouseUp);
       el.articleFeed.addEventListener("touchend", onArticleSelectionMouseUp);
       el.articleFeed.addEventListener("click", onArticleFeedAction);
+    }
+    if (el.dialogueSpaceSelect) {
+      el.dialogueSpaceSelect.addEventListener("change", onDialogueSpaceChange);
+    }
+    if (el.dialogueArticleList) {
+      el.dialogueArticleList.addEventListener("click", onDialogueSpaceAction);
     }
     if (el.propositionBoard) {
       el.propositionBoard.addEventListener("change", onPropositionBoardChange);
@@ -212,6 +243,8 @@
     const title = (el.articleTitle && el.articleTitle.value ? el.articleTitle.value : "").trim();
     const body = (el.articleBody && el.articleBody.value ? el.articleBody.value : "").trim();
     const positions = collectArticlePositions();
+    const selectedDialogueId = el.articleDialogueSelect ? String(el.articleDialogueSelect.value || "") : "";
+    const selectedDialogue = selectedDialogueId && dialogueById[selectedDialogueId] ? dialogueById[selectedDialogueId] : null;
 
     if (!title || !body) {
       setArticleStatus("Title and body are required.", true);
@@ -230,10 +263,16 @@
       body: body,
       mentions: mentions,
       positions: positions,
+      dialogueId: selectedDialogue ? selectedDialogue.id : "",
+      dialogueClaim: selectedDialogue ? selectedDialogue.claim : "",
+      dialogueAssumptions: selectedDialogue && Array.isArray(selectedDialogue.assumptions) ? selectedDialogue.assumptions.slice(0, 8) : [],
       createdAt: new Date().toISOString(),
     };
 
     state.articles.unshift(article);
+    if (selectedDialogue) {
+      activeDialogueSpaceId = selectedDialogue.id;
+    }
 
     const uniqueMentions = Array.from(new Set(mentions));
     let notificationCount = 0;
@@ -258,7 +297,11 @@
 
     el.articleTitle.value = "";
     el.articleBody.value = "";
+    if (el.articleDialogueSelect) {
+      el.articleDialogueSelect.value = "";
+    }
     resetArticlePropositionPicker();
+    updateArticleDialogueSummary();
     updateMentionPreview();
 
     const status =
@@ -280,6 +323,21 @@
     state.feedMode = feedMode;
     saveState();
     renderFeed();
+  }
+
+  function onDialogueSpaceChange(event) {
+    const dialogueId = String((event.target && event.target.value) || "");
+    activeDialogueSpaceId = dialogueById[dialogueId] ? dialogueId : "";
+    setDialogueQueryParam(activeDialogueSpaceId);
+    renderDialogueSpaces();
+  }
+
+  function onDialogueSpaceAction(event) {
+    const button = event.target.closest("button[data-jump-article-id]");
+    if (!button) return;
+    const articleId = String(button.getAttribute("data-jump-article-id") || "");
+    if (!articleId) return;
+    jumpToArticle(articleId);
   }
 
   function onArticlePropositionToggle(event) {
@@ -341,14 +399,26 @@
     if (jumpBtn) {
       const articleId = String(jumpBtn.getAttribute("data-jump-article-id") || "");
       if (!articleId) return;
-      const card = document.getElementById("article-" + articleId);
-      if (!card) return;
-      card.scrollIntoView({ behavior: "smooth", block: "center" });
-      card.classList.add("article-card-highlight");
-      window.setTimeout(function () {
-        card.classList.remove("article-card-highlight");
-      }, 1200);
+      jumpToArticle(articleId);
     }
+  }
+
+  function jumpToArticle(articleId) {
+    if (!articleId) return;
+    if (feedMode === "personal") {
+      feedMode = "all";
+      state.feedMode = "all";
+      saveState();
+      renderFeed();
+      updateFeedToggleState();
+    }
+    const card = document.getElementById("article-" + articleId);
+    if (!card) return;
+    card.scrollIntoView({ behavior: "smooth", block: "center" });
+    card.classList.add("article-card-highlight");
+    window.setTimeout(function () {
+      card.classList.remove("article-card-highlight");
+    }, 1200);
   }
 
   function onArticleSelectionMouseUp(event) {
@@ -706,12 +776,16 @@
   }
 
   function renderAll() {
+    syncActiveUserFromAuth();
+    loadDialogueCatalog();
     renderActiveUser();
     renderComposerAccess();
     renderInbox();
     renderInsights();
     renderPropositionBoard();
     renderArticlePropositionPicker();
+    renderDialoguePicker();
+    renderDialogueSpaces();
     renderFeed();
     updateMentionPreview();
   }
@@ -833,6 +907,7 @@
             "</p>"
           : "";
 
+      const dialogueLine = renderArticleDialogueLine(article);
       const positionLine = renderArticlePositionLine(article, relevance, disagreements);
       const visibleAnnotations = getVisibleAnnotationsForArticle(article);
       const highlightedBody = buildAnnotatedArticleBody(article.body, visibleAnnotations);
@@ -884,6 +959,7 @@
         " · " +
         escapeHtml(formatDate(article.createdAt)) +
         "</p>" +
+        dialogueLine +
         positionLine +
         '<p class="article-body" data-article-id="' +
         escapeHtml(article.id) +
@@ -1054,6 +1130,267 @@
       });
     });
     return selections;
+  }
+
+  function loadDialogueCatalog() {
+    const dialogueState = readDialogueState();
+    const items = [];
+    const seen = new Set();
+
+    if (dialogueState && Array.isArray(dialogueState.convictions)) {
+      dialogueState.convictions.forEach(function (conviction) {
+        const id = String((conviction && conviction.id) || "").trim();
+        const claim = String((conviction && conviction.claim) || "").trim();
+        if (!id || !claim || seen.has(id)) return;
+        seen.add(id);
+        items.push({
+          id: id,
+          claim: claim,
+          assumptions: Array.isArray(conviction.assumptions) ? conviction.assumptions.slice(0, 8) : [],
+          updatedAt: String((conviction && conviction.updatedAt) || (conviction && conviction.createdAt) || ""),
+        });
+      });
+    }
+
+    const articleDialogs = Array.isArray(state.articles)
+      ? state.articles
+          .map(function (article) {
+            const id = String((article && article.dialogueId) || "").trim();
+            if (!id || seen.has(id)) return null;
+            const claim = String((article && article.dialogueClaim) || "").trim();
+            if (!claim) return null;
+            seen.add(id);
+            return {
+              id: id,
+              claim: claim,
+              assumptions: Array.isArray(article.dialogueAssumptions) ? article.dialogueAssumptions.slice(0, 8) : [],
+              updatedAt: String(article.createdAt || ""),
+            };
+          })
+          .filter(Boolean)
+      : [];
+
+    const merged = items.concat(articleDialogs);
+    merged.sort(function (a, b) {
+      return new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime();
+    });
+    dialogueCatalog = merged;
+    dialogueById = merged.reduce(function (map, item) {
+      map[item.id] = item;
+      return map;
+    }, {});
+
+    if (!dialogueById[activeDialogueSpaceId]) {
+      activeDialogueSpaceId = merged.length ? merged[0].id : "";
+    }
+  }
+
+  function readDialogueState() {
+    const keys = [];
+    try {
+      if (authApi && typeof authApi.scopedStorageKey === "function" && activeUser) {
+        keys.push({ storage: localStorage, key: authApi.scopedStorageKey(DIALOGUE_STORAGE_KEY_BASE) });
+      }
+    } catch (_error) {
+      // ignore
+    }
+    keys.push({ storage: sessionStorage, key: DIALOGUE_GUEST_SESSION_KEY });
+    keys.push({ storage: localStorage, key: DIALOGUE_STORAGE_KEY_BASE + "--guest" });
+    keys.push({ storage: localStorage, key: DIALOGUE_STORAGE_KEY_BASE });
+
+    for (let i = 0; i < keys.length; i += 1) {
+      const candidate = keys[i];
+      try {
+        const raw = candidate.storage.getItem(candidate.key);
+        if (!raw) continue;
+        const parsed = JSON.parse(raw);
+        if (parsed && Array.isArray(parsed.convictions)) {
+          return parsed;
+        }
+      } catch (_error) {
+        // continue
+      }
+    }
+    return null;
+  }
+
+  function renderDialoguePicker() {
+    if (!el.articleDialogueSelect) return;
+    const currentValue = String(el.articleDialogueSelect.value || "");
+    const selectedId = currentValue && dialogueById[currentValue]
+      ? currentValue
+      : pendingComposerDialogueId && dialogueById[pendingComposerDialogueId]
+      ? pendingComposerDialogueId
+      : "";
+    const options =
+      '<option value="">General publication (not tied to a dialogue)</option>' +
+      dialogueCatalog
+        .map(function (dialogue) {
+          return (
+            '<option value="' +
+            escapeHtml(dialogue.id) +
+            '"' +
+            (dialogue.id === selectedId ? " selected" : "") +
+            ">" +
+            escapeHtml(truncateText(dialogue.claim, 130)) +
+            "</option>"
+          );
+        })
+        .join("");
+    el.articleDialogueSelect.innerHTML = options;
+    if (selectedId && !dialogueById[selectedId]) {
+      el.articleDialogueSelect.value = "";
+    } else if (selectedId) {
+      el.articleDialogueSelect.value = selectedId;
+      pendingComposerDialogueId = "";
+    }
+    updateArticleDialogueSummary();
+  }
+
+  function updateArticleDialogueSummary() {
+    if (!el.articleDialogueSummary) return;
+    const selectedId = el.articleDialogueSelect ? String(el.articleDialogueSelect.value || "") : "";
+    if (!selectedId || !dialogueById[selectedId]) {
+      el.articleDialogueSummary.textContent =
+        "Select a dialogue to publish writing specifically in that dialogue's writing space.";
+      return;
+    }
+    const dialogue = dialogueById[selectedId];
+    const assumptions = Array.isArray(dialogue.assumptions) ? dialogue.assumptions : [];
+    el.articleDialogueSummary.textContent =
+      "Dialogue claim: " +
+      truncateText(dialogue.claim, 180) +
+      (assumptions.length ? " | Assumed premises: " + assumptions.length : " | No assumed premises listed.");
+  }
+
+  function renderDialogueSpaces() {
+    if (!el.dialogueSpaceSelect || !el.dialogueSpaceSummary || !el.dialogueArticleList) return;
+    const hasDialogs = dialogueCatalog.length > 0;
+
+    if (!hasDialogs) {
+      el.dialogueSpaceSelect.innerHTML = '<option value="">No dialogue selected</option>';
+      el.dialogueSpaceSummary.textContent = "No dialogues found yet. Create a dialogue first, then link articles to it.";
+      el.dialogueArticleList.innerHTML = '<li class="hint">No dialogue-linked writings yet.</li>';
+      setDialogueQueryParam("");
+      return;
+    }
+
+    const options = dialogueCatalog
+      .map(function (dialogue) {
+        return (
+          '<option value="' +
+          escapeHtml(dialogue.id) +
+          '"' +
+          (dialogue.id === activeDialogueSpaceId ? " selected" : "") +
+          ">" +
+          escapeHtml(truncateText(dialogue.claim, 150)) +
+          "</option>"
+        );
+      })
+      .join("");
+    el.dialogueSpaceSelect.innerHTML = options;
+    if (!dialogueById[activeDialogueSpaceId]) {
+      activeDialogueSpaceId = dialogueCatalog[0].id;
+      el.dialogueSpaceSelect.value = activeDialogueSpaceId;
+    }
+    setDialogueQueryParam(activeDialogueSpaceId);
+
+    const activeDialogue = dialogueById[activeDialogueSpaceId];
+    const linkedArticles = (Array.isArray(state.articles) ? state.articles : []).filter(function (article) {
+      return String(article.dialogueId || "") === activeDialogueSpaceId;
+    });
+
+    el.dialogueSpaceSummary.textContent =
+      "Showing writings only about this dialogue: \"" +
+      truncateText(activeDialogue.claim, 180) +
+      "\" (" +
+      linkedArticles.length +
+      " article" +
+      (linkedArticles.length === 1 ? "" : "s") +
+      ").";
+
+    if (linkedArticles.length === 0) {
+      el.dialogueArticleList.innerHTML =
+        '<li class="hint">No writings have been published specifically about this dialogue yet.</li>';
+      return;
+    }
+
+    el.dialogueArticleList.innerHTML = linkedArticles
+      .map(function (article) {
+        const excerpt = truncateText(String(article.body || "").replace(/\s+/g, " "), 220);
+        return (
+          '<li class="dialogue-article-item">' +
+          '<p class="dialogue-article-title"><strong>' +
+          escapeHtml(article.title || "Untitled") +
+          "</strong></p>" +
+          '<p class="dialogue-article-meta">By @' +
+          escapeHtml(article.author || "user") +
+          " · " +
+          escapeHtml(formatDate(article.createdAt)) +
+          "</p>" +
+          '<p class="dialogue-article-excerpt">' +
+          escapeHtml(excerpt) +
+          "</p>" +
+          '<div class="dialogue-article-actions">' +
+          '<button type="button" class="btn btn-ghost" data-jump-article-id="' +
+          escapeHtml(article.id) +
+          '">Open in feed</button>' +
+          "</div>" +
+          "</li>"
+        );
+      })
+      .join("");
+  }
+
+  function getRequestedDialogueIdFromUrl() {
+    try {
+      const params = new URLSearchParams(window.location.search || "");
+      return String(params.get("dialogue") || "");
+    } catch (_error) {
+      return "";
+    }
+  }
+
+  function setDialogueQueryParam(dialogueId) {
+    try {
+      if (!window.history || typeof window.history.replaceState !== "function") return;
+      const url = new URL(window.location.href);
+      if (dialogueId) {
+        url.searchParams.set("dialogue", dialogueId);
+      } else {
+        url.searchParams.delete("dialogue");
+      }
+      window.history.replaceState({}, "", url.toString());
+    } catch (_error) {
+      // ignore
+    }
+  }
+
+  function openHashArticleIfPresent() {
+    const hash = String(window.location.hash || "");
+    if (!hash || hash.indexOf("#article-") !== 0) return;
+    const articleId = hash.replace(/^#article-/, "");
+    if (!articleId) return;
+    window.setTimeout(function () {
+      jumpToArticle(articleId);
+    }, 0);
+  }
+
+  function renderArticleDialogueLine(article) {
+    const dialogueId = String((article && article.dialogueId) || "");
+    const dialogueClaim = String((article && article.dialogueClaim) || "");
+    if (!dialogueId || !dialogueClaim) return "";
+    const href = "publication.html?dialogue=" + encodeURIComponent(dialogueId);
+    return (
+      '<p class="article-dialogue-line">' +
+      '<span class="article-dialogue-chip">Dialogue writing</span>' +
+      '<a href="' +
+      href +
+      '">' +
+      escapeHtml(truncateText(dialogueClaim, 170)) +
+      "</a>" +
+      "</p>"
+    );
   }
 
   function renderArticlePositionLine(article, relevance, disagreements) {
@@ -1989,6 +2326,50 @@
       .filter(Boolean);
   }
 
+  function normalizeArticles(value) {
+    if (!Array.isArray(value)) return [];
+    return value
+      .map(function (article) {
+        if (!article || typeof article !== "object") return null;
+        return {
+          id: String(article.id || makeId("art")),
+          author: normalizeHandle(article.author),
+          title: String(article.title || ""),
+          body: String(article.body || ""),
+          mentions: Array.isArray(article.mentions)
+            ? article.mentions
+                .map(function (handle) {
+                  return normalizeHandle(handle);
+                })
+                .filter(Boolean)
+            : [],
+          positions: Array.isArray(article.positions)
+            ? article.positions
+                .map(function (position) {
+                  const overallId = String((position && position.overallId) || "");
+                  const propositionId = String((position && position.propositionId) || "");
+                  if (!overallId || !propositionId) return null;
+                  return {
+                    overallId: overallId,
+                    propositionId: propositionId,
+                    stance: position && position.stance === "false" ? "false" : "true",
+                  };
+                })
+                .filter(Boolean)
+            : [],
+          dialogueId: String(article.dialogueId || ""),
+          dialogueClaim: String(article.dialogueClaim || ""),
+          dialogueAssumptions: Array.isArray(article.dialogueAssumptions)
+            ? article.dialogueAssumptions.map(function (assumption) {
+                return String(assumption || "");
+              })
+            : [],
+          createdAt: String(article.createdAt || new Date().toISOString()),
+        };
+      })
+      .filter(Boolean);
+  }
+
   function ensureUser(handle) {
     const normalized = normalizeHandle(handle);
     if (!normalized) return;
@@ -2023,7 +2404,7 @@
       const parsed = JSON.parse(raw);
       return {
         users: parsed && parsed.users && typeof parsed.users === "object" ? parsed.users : {},
-        articles: Array.isArray(parsed && parsed.articles) ? parsed.articles : [],
+        articles: normalizeArticles(parsed && parsed.articles),
         notifications: normalizeNotifications(parsed && parsed.notifications),
         annotations: Array.isArray(parsed && parsed.annotations) ? parsed.annotations : [],
         annotationReplies: Array.isArray(parsed && parsed.annotationReplies) ? parsed.annotationReplies : [],
@@ -2084,6 +2465,13 @@
   function formatDecimal(value) {
     if (!Number.isFinite(value)) return "0.0";
     return value.toFixed(1);
+  }
+
+  function truncateText(text, limit) {
+    const raw = String(text || "").replace(/\s+/g, " ").trim();
+    if (!raw) return "";
+    if (!Number.isFinite(limit) || limit <= 0 || raw.length <= limit) return raw;
+    return raw.slice(0, Math.max(0, limit - 1)).trimEnd() + "…";
   }
 
   function findArticleById(articleId) {

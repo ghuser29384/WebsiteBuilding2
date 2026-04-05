@@ -126,6 +126,16 @@
               placeholder="Write your argument clearly. Mention users with @username."
             ></textarea>
 
+            <div class="article-dialogue-block">
+              <label for="articleDialogueSelect">Dialogue this writing is about</label>
+              <select id="articleDialogueSelect" name="articleDialogue">
+                <option value="">General publication (not tied to a dialogue)</option>
+              </select>
+              <p id="articleDialogueSummary" class="hint">
+                Select a dialogue to publish writing specifically in that dialogue's writing space.
+              </p>
+            </div>
+
             <div class="mention-preview-row">
               <p class="label-lite">Detected mentions:</p>
               <p id="mentionPreview" class="hint">None</p>
@@ -249,6 +259,21 @@
           </ul>
         </article>
       </aside>
+    </section>
+
+    <section class="panel publication-card dialogue-space-card">
+      <div class="publication-card-head">
+        <h2>Dialogue Writing Spaces</h2>
+        <p class="hint">Each dialogue has a dedicated space that includes only writings specifically about that dialogue.</p>
+      </div>
+      <div class="dialogue-space-controls">
+        <label for="dialogueSpaceSelect">Dialogue</label>
+        <select id="dialogueSpaceSelect">
+          <option value="">No dialogue selected</option>
+        </select>
+      </div>
+      <p id="dialogueSpaceSummary" class="hint"></p>
+      <ul id="dialogueArticleList" class="dialogue-article-list" aria-live="polite"></ul>
     </section>
 
     <section class="panel publication-card publication-feed-card">
