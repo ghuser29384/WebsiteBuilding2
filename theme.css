@@ -905,15 +905,47 @@ body.forethought-site .wre-nav a {
 }
 
 @media (min-width: 940px) {
+  body.forethought-site .header-inner {
+    align-items: center;
+    gap: 1.4rem;
+  }
+
+  body.forethought-site .brand {
+    display: inline-flex;
+    align-items: center;
+    min-height: 42px;
+    line-height: 0.92;
+    white-space: nowrap;
+    transform: translateY(-1px);
+  }
+
+  body.forethought-site .header-tools {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: nowrap;
+    gap: 0.9rem;
+  }
+
   body.forethought-site .main-nav,
   body.forethought-site .top-nav,
   body.forethought-site .wre-nav {
+    display: flex;
+    align-items: center;
+    flex-wrap: nowrap;
     gap: 1.2rem;
   }
 
   body.forethought-site .main-nav a:not(.nav-pill),
   body.forethought-site .top-nav a,
   body.forethought-site .wre-nav a {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    line-height: 1;
+    white-space: nowrap;
     position: relative;
     padding: 0.2rem 0 !important;
     border: 0 !important;
@@ -960,6 +992,47 @@ body.forethought-site .wre-nav a {
   body.forethought-site .wre-nav a:focus-visible,
   body.forethought-site .wre-nav a[aria-current="page"] {
     color: var(--nm-ink) !important;
+  }
+
+  body.forethought-site .auth-controls {
+    display: flex;
+    align-items: center;
+    align-self: center;
+    flex-wrap: nowrap;
+    gap: 0.66rem;
+    margin-left: 0.2rem;
+  }
+
+  body.forethought-site .auth-link,
+  body.forethought-site .auth-signout {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    line-height: 1;
+    white-space: nowrap;
+    padding: 0 0.94rem;
+    font-size: 0.98rem;
+    font-weight: 600;
+  }
+
+  body.forethought-site .auth-chip {
+    display: inline-flex;
+    align-items: center;
+    min-height: 40px;
+    line-height: 1;
+    white-space: nowrap;
+    padding: 0 0.72rem;
+  }
+
+  body.forethought-site .main-nav a.nav-pill {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px;
+    line-height: 1;
+    white-space: nowrap;
+    padding: 0 0.86rem !important;
   }
 }
 

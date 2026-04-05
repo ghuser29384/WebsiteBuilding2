@@ -2923,6 +2923,181 @@ html:not([data-theme]) .normative-inline-dotted {
   text-decoration: underline;
 }
 
+.influence-section {
+  margin-top: 0.4rem;
+}
+
+.influence-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.41fr) minmax(0, 0.59fr);
+  gap: 0.9rem;
+  align-items: stretch;
+}
+
+.influence-copy {
+  background: #f4f4f1 !important;
+  display: grid;
+  gap: 0.5rem;
+  align-content: start;
+}
+
+.influence-copy p {
+  margin: 0;
+  color: #4b535d;
+}
+
+.influence-copy .hint {
+  color: #5a6168;
+}
+
+.influence-graphic-card {
+  position: relative;
+  border: 1px solid #e0e2dd;
+  background: #efefea;
+  overflow: hidden;
+}
+
+.influence-graphic-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(149, 152, 152, 0.2) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(149, 152, 152, 0.2) 1px, transparent 1px);
+  background-size: 52px 52px;
+}
+
+#influenceWindowGraphic {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+.influence-grid-lines path {
+  fill: none;
+  stroke: #9da09d;
+  stroke-width: 1.35;
+}
+
+.influence-curve {
+  fill: none;
+  stroke: #ff5f35;
+  stroke-width: 3.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 1180;
+  stroke-dashoffset: 1180;
+  transition: stroke-dashoffset 2.3s cubic-bezier(0.16, 0.84, 0.34, 1);
+}
+
+.influence-side-bar,
+.influence-present-bar {
+  stroke: rgba(43, 47, 53, 0.14);
+  stroke-width: 1.2;
+  transition:
+    transform 1.05s cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 1.05s ease;
+  transform-origin: center bottom;
+}
+
+.influence-side-bar {
+  fill: rgba(77, 88, 101, 0.28);
+  opacity: 0.66;
+  transform: translateY(28px) scaleY(0.7);
+}
+
+.influence-present-bar {
+  fill: rgba(255, 95, 53, 0.78);
+  opacity: 0.42;
+  transform: translateY(138px) scaleY(0.28);
+}
+
+.influence-point {
+  fill: #ff5f35;
+  stroke: #f6f4ef;
+  stroke-width: 2;
+  opacity: 0;
+  transform: translateY(12px);
+  transition: opacity 0.75s ease, transform 0.75s ease;
+}
+
+.influence-point-ancestors,
+.influence-point-future {
+  fill: #6a737d;
+}
+
+.influence-axis-label {
+  fill: #5a6166;
+  font-size: 16px;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 500;
+}
+
+.influence-node-label {
+  fill: #5f6670;
+  font-size: 15px;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-weight: 500;
+  opacity: 0;
+  transform: translateY(8px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.influence-node-label.present {
+  fill: #2e343b;
+  font-weight: 600;
+}
+
+.influence-caption {
+  margin: 0;
+  padding: 0.7rem 0.82rem 0.8rem;
+  color: #50575f;
+  border-top: 1px solid rgba(141, 146, 144, 0.34);
+  font-size: 0.93rem;
+}
+
+#influence-window.reveal-on .influence-graphic-card .influence-curve {
+  stroke-dashoffset: 0;
+}
+
+#influence-window.reveal-on .influence-graphic-card .influence-side-bar,
+#influence-window.reveal-on .influence-graphic-card .influence-present-bar {
+  transform: translateY(0) scaleY(1);
+  opacity: 1;
+}
+
+#influence-window.reveal-on .influence-graphic-card .influence-point,
+#influence-window.reveal-on .influence-graphic-card .influence-node-label {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+#influence-window.reveal-on .influence-graphic-card .influence-point-ancestors,
+#influence-window.reveal-on .influence-graphic-card .influence-point-future {
+  transition-delay: 0.52s;
+}
+
+#influence-window.reveal-on .influence-graphic-card .influence-point-present,
+#influence-window.reveal-on .influence-graphic-card .influence-node-label.present {
+  transition-delay: 0.82s;
+}
+
+@media (max-width: 1060px) {
+  .influence-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .influence-axis-label,
+  .influence-node-label {
+    font-size: 12px;
+  }
+}
+
 .forethought-page .rule-grid,
 .forethought-page .progress-grid,
 .forethought-page .comparison-grid,
@@ -3196,6 +3371,20 @@ html:not([data-theme]) .normative-inline-dotted {
   .parfit-route-line,
   .parfit-lattice-line {
     animation: none !important;
+  }
+
+  .influence-curve {
+    transition: none !important;
+    stroke-dashoffset: 0 !important;
+  }
+
+  .influence-side-bar,
+  .influence-present-bar,
+  .influence-point,
+  .influence-node-label {
+    transition: none !important;
+    transform: none !important;
+    opacity: 1 !important;
   }
 }
 
