@@ -1,0 +1,273 @@
+.research-page {
+  background: #ffffff;
+}
+
+.research-main {
+  display: grid;
+  gap: 1.4rem;
+  padding: 1.6rem 0 3.4rem;
+}
+
+.research-hero {
+  padding: 1.3rem;
+  background: #f3f3ef !important;
+}
+
+.research-hero-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 0.54fr) minmax(0, 0.46fr);
+  gap: 1rem;
+  align-items: stretch;
+}
+
+.research-hero-copy {
+  display: grid;
+  gap: 0.72rem;
+  align-content: start;
+}
+
+.research-hero-copy h1 {
+  font-size: clamp(2.1rem, 4vw, 3.8rem);
+  line-height: 1.04;
+  max-width: 13ch;
+  margin: 0;
+}
+
+.research-lede {
+  font-size: 1.08rem;
+  line-height: 1.48;
+  color: #3f4549;
+}
+
+.research-hero-summary {
+  display: grid;
+  gap: 0.42rem;
+  padding-top: 0.1rem;
+}
+
+.research-hero-summary p {
+  margin: 0;
+  color: #4e5559;
+}
+
+.research-hero-graphic,
+.research-stack-graphic,
+.research-public-graphic {
+  background: #efefea !important;
+  padding: 0;
+  overflow: hidden;
+}
+
+.research-section {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.research-card-grid {
+  display: grid;
+  gap: 0.9rem;
+}
+
+.research-card-grid-3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.research-card-grid-4 {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.research-card {
+  display: grid;
+  gap: 0.45rem;
+  align-content: start;
+  min-height: 100%;
+}
+
+.research-card h3,
+.research-checklist h3,
+.research-stack-copy h3 {
+  margin: 0;
+  font-size: 1.16rem;
+}
+
+.research-card p,
+.research-stack-copy p,
+.research-public-copy p,
+.research-closing p {
+  margin: 0;
+}
+
+.research-stack-layout,
+.research-public-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.42fr) minmax(0, 0.58fr);
+  gap: 0.9rem;
+  align-items: stretch;
+}
+
+.research-stack-copy,
+.research-public-copy,
+.research-checklist,
+.research-closing {
+  display: grid;
+  gap: 0.7rem;
+  align-content: start;
+}
+
+.research-long-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.46rem;
+  color: #454d51;
+}
+
+.research-long-list strong {
+  color: #2f2d2b;
+  font-weight: 600;
+}
+
+.research-graphic-caption {
+  margin: 0;
+  padding: 0.8rem 0.95rem 0.9rem;
+  color: #50575d;
+  border-top: 1px solid rgba(126, 132, 134, 0.26);
+}
+
+.research-grid path {
+  fill: none;
+  stroke: rgba(140, 145, 145, 0.3);
+  stroke-width: 1.2;
+}
+
+.research-node {
+  fill: #f8f8f5;
+  stroke: #d2d7d2;
+  stroke-width: 1.15;
+}
+
+.research-node-root {
+  fill: #fdfcf8;
+  stroke: #c6cdc8;
+}
+
+.research-node-wide {
+  fill: #f8f8f5;
+}
+
+.research-node-title,
+.research-node-copy,
+.research-flow-caption,
+.research-grid-label {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  fill: #394047;
+}
+
+.research-node-title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.research-node-copy {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.research-link {
+  fill: none;
+  stroke: #ff5f35;
+  stroke-width: 2.2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-dasharray: 10 8;
+}
+
+.research-link-strong {
+  stroke: #2f3d53;
+  stroke-dasharray: 14 8;
+}
+
+.research-link-loop {
+  stroke: #7f8587;
+  stroke-dasharray: 12 9;
+}
+
+.research-travel-dot {
+  fill: #ff5f35;
+  stroke: #f7f7f4;
+  stroke-width: 1.6;
+}
+
+.research-travel-dot-strong {
+  fill: #2f3d53;
+}
+
+.research-flow-caption {
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.research-checklist {
+  background: #f4f5f1 !important;
+}
+
+.research-closing {
+  background: #f3f3ef !important;
+}
+
+#researchTargetsGraphic,
+#researchStackGraphic,
+#researchPublicGraphic {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+@media (max-width: 1100px) {
+  .research-card-grid-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 920px) {
+  .research-hero-grid,
+  .research-stack-layout,
+  .research-public-layout,
+  .research-card-grid-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .research-main {
+    gap: 1.1rem;
+  }
+
+  .research-hero,
+  .research-card,
+  .research-checklist,
+  .research-closing,
+  .research-stack-copy,
+  .research-public-copy {
+    padding: 1rem;
+  }
+
+  .research-card-grid-4 {
+    grid-template-columns: 1fr;
+  }
+
+  .research-node-title {
+    font-size: 13px;
+  }
+
+  .research-node-copy,
+  .research-flow-caption {
+    font-size: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .research-link {
+    animation: none !important;
+  }
+}
