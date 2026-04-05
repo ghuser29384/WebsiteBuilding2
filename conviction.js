@@ -1095,6 +1095,7 @@
   function init() {
     initChartTrackpadZooming();
     bindRevealAnimation();
+    bindStudioHashNavigation();
     bindCountUpAnimation();
     bindScrollTriggeredAnimations();
     bindNavigationControls();
@@ -4753,10 +4754,36 @@
         el.pledgeFirstAction.value = state.pledge.firstAction || "";
       }
     } else {
-      el.gateBanner.textContent = "Studio is locked until the pledge is signed.";
+      el.gateBanner.textContent = "Browse dialogues below. Sign the pledge to create, reserve, and log dialogue outcomes.";
       el.pledgeStatus.textContent = "";
     }
     syncReservationIdentityField();
+  }
+
+  function bindStudioHashNavigation() {
+    const studio = document.getElementById("studio");
+    if (!studio) return;
+
+    function revealStudioFromHash() {
+      const hash = String(window.location.hash || "");
+      if (hash !== "#studio") return;
+      studio.classList.add("reveal-on");
+      if (typeof studio.scrollIntoView === "function") {
+        studio.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+
+    const studioAnchors = document.querySelectorAll(
+      'a[href="#studio"], a[href="index.html#studio"], a[href="/#studio"], a[href="/index.html#studio"]'
+    );
+    studioAnchors.forEach(function (anchor) {
+      anchor.addEventListener("click", function () {
+        window.setTimeout(revealStudioFromHash, 0);
+      });
+    });
+
+    window.addEventListener("hashchange", revealStudioFromHash);
+    window.setTimeout(revealStudioFromHash, 0);
   }
 
   function renderConvictionList() {

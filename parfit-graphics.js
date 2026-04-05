@@ -146,10 +146,8 @@
     }
 
     var cards = section.querySelectorAll(".parfit-graphic-card");
-    var hasPlayed = false;
     var rafId = 0;
     var startTime = 0;
-    var animationDurationMs = 6800;
 
     function setPaused(paused) {
       cards.forEach(function (card) {
@@ -158,25 +156,15 @@
     }
 
     function step(timestamp) {
-      if (hasPlayed) return;
       if (!startTime) startTime = timestamp;
-      var elapsedMs = timestamp - startTime;
-      var elapsedSeconds = elapsedMs / 1000;
+      var elapsedSeconds = (timestamp - startTime) / 1000;
       mountain.update(elapsedSeconds);
       lattice.update(elapsedSeconds);
-      if (elapsedMs >= animationDurationMs) {
-        hasPlayed = true;
-        rafId = 0;
-        mountain.setStatic();
-        lattice.setStatic();
-        setPaused(true);
-        return;
-      }
       rafId = window.requestAnimationFrame(step);
     }
 
-    function startOnce() {
-      if (hasPlayed || rafId) return;
+    function startContinuous() {
+      if (rafId) return;
       setPaused(false);
       startTime = 0;
       rafId = window.requestAnimationFrame(step);
@@ -191,7 +179,7 @@
         function (entries) {
           entries.forEach(function (entry) {
             if (entry.isIntersecting) {
-              startOnce();
+              startContinuous();
               observer.unobserve(section);
             }
           });
@@ -202,7 +190,7 @@
       );
       observer.observe(section);
     } else {
-      startOnce();
+      startContinuous();
     }
   }
 

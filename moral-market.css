@@ -1899,3 +1899,94 @@ h3,
 .hint {
   color: var(--home-muted) !important;
 }
+
+/* Final Yes/No palette alignment: remove green/red in favor of slate + stone */
+html[data-theme="light"],
+html:not([data-theme]) {
+  --yes: #2f3d53;
+  --yes-soft: #eef1f5;
+  --no: #6f665f;
+  --no-soft: #f3efea;
+}
+
+html[data-theme="light"] .bar-yes,
+html:not([data-theme]) .bar-yes {
+  background: linear-gradient(90deg, #3a4b64 0%, #2f3d53 100%);
+}
+
+html[data-theme="light"] .bar-no,
+html:not([data-theme]) .bar-no {
+  background: linear-gradient(90deg, #7f746b 0%, #6f665f 100%);
+}
+
+html[data-theme="light"] .quote-btn.yes strong,
+html[data-theme="light"] .feed-side.yes,
+html[data-theme="light"] .positions-side.yes,
+html:not([data-theme]) .quote-btn.yes strong,
+html:not([data-theme]) .feed-side.yes,
+html:not([data-theme]) .positions-side.yes {
+  color: var(--yes) !important;
+}
+
+html[data-theme="light"] .quote-btn.no strong,
+html[data-theme="light"] .feed-side.no,
+html[data-theme="light"] .positions-side.no,
+html:not([data-theme]) .quote-btn.no strong,
+html:not([data-theme]) .feed-side.no,
+html:not([data-theme]) .positions-side.no {
+  color: var(--no) !important;
+}
+
+html[data-theme="light"] .quote-btn.yes:hover,
+html[data-theme="light"] .quote-btn.yes:focus-visible,
+html[data-theme="light"] .quote-btn.yes.selected,
+html:not([data-theme]) .quote-btn.yes:hover,
+html:not([data-theme]) .quote-btn.yes:focus-visible,
+html:not([data-theme]) .quote-btn.yes.selected {
+  border-color: #bcc4cf;
+  background: var(--yes-soft);
+}
+
+html[data-theme="light"] .quote-btn.no:hover,
+html[data-theme="light"] .quote-btn.no:focus-visible,
+html[data-theme="light"] .quote-btn.no.selected,
+html:not([data-theme]) .quote-btn.no:hover,
+html:not([data-theme]) .quote-btn.no:focus-visible,
+html:not([data-theme]) .quote-btn.no.selected {
+  border-color: #cec7c0;
+  background: var(--no-soft);
+}
+
+html[data-theme="light"] .detail-outcome-card.yes,
+html:not([data-theme]) .detail-outcome-card.yes {
+  border-color: #bcc4cf;
+  background: var(--yes-soft);
+}
+
+html[data-theme="light"] .detail-outcome-card.no,
+html:not([data-theme]) .detail-outcome-card.no {
+  border-color: #cec7c0;
+  background: var(--no-soft);
+}
+
+html[data-theme="light"] .side-btn[data-side="yes"].active,
+html:not([data-theme]) .side-btn[data-side="yes"].active {
+  border-color: #bcc4cf;
+  background: var(--yes-soft);
+}
+
+html[data-theme="light"] .side-btn[data-side="no"].active,
+html:not([data-theme]) .side-btn[data-side="no"].active {
+  border-color: #cec7c0;
+  background: var(--no-soft);
+}
+
+html[data-theme="light"] .field-row input[type="range"],
+html:not([data-theme]) .field-row input[type="range"] {
+  accent-color: var(--yes);
+}
+
+html[data-theme="light"] .ticket.side-no .field-row input[type="range"],
+html:not([data-theme]) .ticket.side-no .field-row input[type="range"] {
+  accent-color: var(--no);
+}

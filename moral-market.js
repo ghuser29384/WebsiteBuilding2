@@ -17,7 +17,7 @@
   const TREND_GRID_LEVELS = [75, 50, 25, 0];
   const DEFAULT_CAST_COINS = 25;
   const DEFAULT_MULTI_OPTION_COINS = 12;
-  const OPTION_COLORS = ["#476b8f", "#4f7f67", "#7a6d95", "#c7774d", "#7f8b4e", "#8f6e8a", "#5f7f8b"];
+  const OPTION_COLORS = ["#2f3d53", "#6f665f", "#5d6f86", "#8a7a6e", "#7d858f", "#8a7f95", "#5f7380"];
 
   const MARKETS = [
     createBinaryMarket({
