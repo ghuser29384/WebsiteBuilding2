@@ -307,10 +307,20 @@
     detailQuestion: document.getElementById("detailQuestion"),
     detailConsensusLine: document.getElementById("detailConsensusLine"),
     detailWeekLine: document.getElementById("detailWeekLine"),
+    detailSignalCount: document.getElementById("detailSignalCount"),
+    detailForecasterCount: document.getElementById("detailForecasterCount"),
+    detailCurrentEstimate: document.getElementById("detailCurrentEstimate"),
+    detailEstimateRange: document.getElementById("detailEstimateRange"),
     detailContext: document.getElementById("detailContext"),
     detailOutcomeContext: document.getElementById("detailOutcomeContext"),
     detailTheoryContext: document.getElementById("detailTheoryContext"),
     detailActivityList: document.getElementById("detailActivityList"),
+    detailDistributionMeta: document.getElementById("detailDistributionMeta"),
+    detailDistributionChart: document.getElementById("detailDistributionChart"),
+    detailDistributionLegend: document.getElementById("detailDistributionLegend"),
+    detailDistributionSummary: document.getElementById("detailDistributionSummary"),
+    detailFactorsGrid: document.getElementById("detailFactorsGrid"),
+    detailJumpToCast: document.getElementById("detailJumpToCast"),
     detailTrendMeta: document.getElementById("detailTrendMeta"),
     detailTrendChart: document.getElementById("detailTrendChart"),
     detailTrendLegend: document.getElementById("detailTrendLegend"),
@@ -335,6 +345,12 @@
     feedList: document.getElementById("feedList"),
     positionsPanel: document.getElementById("positionsPanel"),
     positionsList: document.getElementById("positionsList"),
+    detailInfoPanel: document.getElementById("detailInfoPanel"),
+    detailInfoList: document.getElementById("detailInfoList"),
+    detailTagPanel: document.getElementById("detailTagPanel"),
+    detailTagList: document.getElementById("detailTagList"),
+    detailSimilarPanel: document.getElementById("detailSimilarPanel"),
+    detailSimilarList: document.getElementById("detailSimilarList"),
     resolutionSection: document.getElementById("resolutionSection"),
     resolutionSummary: document.getElementById("resolutionSummary"),
   };
@@ -370,6 +386,7 @@
   function initChartTrackpadZooming() {
     enableTrackpadZoomForChart(el.trendChart, { maxScale: 16 });
     enableTrackpadZoomForChart(el.detailTrendChart, { maxScale: 16 });
+    enableTrackpadZoomForChart(el.detailDistributionChart, { maxScale: 16 });
   }
 
   function enableTrackpadZoomForChart(svgEl, options) {
@@ -724,6 +741,13 @@
 
     el.castBtn.addEventListener("click", onCastCoins);
     el.clearBtn.addEventListener("click", onClearMarket);
+
+    if (el.detailJumpToCast) {
+      el.detailJumpToCast.addEventListener("click", function () {
+        if (!el.ticketPanel) return;
+        el.ticketPanel.scrollIntoView({ behavior: "smooth", block: "start" });
+      });
+    }
   }
 
   function renderAll() {
@@ -744,6 +768,8 @@
 
   function renderRouteLayout() {
     const inDetail = isDetailRoute && Boolean(getSelectedMarket());
+
+    document.body.classList.toggle("market-detail-route", inDetail);
 
     if (el.heroSection) {
       el.heroSection.hidden = inDetail;
@@ -766,6 +792,18 @@
     }
     if (el.positionsPanel) {
       el.positionsPanel.hidden = inDetail;
+    }
+    if (el.detailInfoPanel) {
+      el.detailInfoPanel.hidden = !inDetail;
+      el.detailInfoPanel.classList.toggle("hidden", !inDetail);
+    }
+    if (el.detailTagPanel) {
+      el.detailTagPanel.hidden = !inDetail;
+      el.detailTagPanel.classList.toggle("hidden", !inDetail);
+    }
+    if (el.detailSimilarPanel) {
+      el.detailSimilarPanel.hidden = !inDetail;
+      el.detailSimilarPanel.classList.toggle("hidden", !inDetail);
     }
     if (el.resolutionSection) {
       el.resolutionSection.hidden = inDetail;
@@ -989,7 +1027,7 @@
       el.detailCategory.textContent = market.category;
     }
     if (el.detailVolume) {
-      el.detailVolume.textContent = formatVolume(market.volume) + " signals";
+      el.detailVolume.textContent = formatVolume(market.volume) + " weekly volume";
     }
     if (el.detailQuestion) {
       el.detailQuestion.textContent = market.question;
@@ -1008,7 +1046,16 @@
     if (el.detailContext) {
       el.detailContext.textContent = market.context || defaultMarketContext(market);
     }
+    if (el.detailSignalCount) {
+      el.detailSignalCount.textContent = formatVolume(market.volume) + " signals";
+    }
+    if (el.detailForecasterCount) {
+      el.detailForecasterCount.textContent = compactNumber.format(getSyntheticParticipantCount(market)) + " participants";
+    }
 
+    renderDetailDistribution(market, snapshot);
+    renderDetailFactors(market, snapshot);
+    renderDetailSidebar(market, snapshot);
     renderDetailTrendPanel(market);
     renderDetailActivity(market);
 
@@ -1018,6 +1065,597 @@
     }
 
     renderMultiDetailSections(market, snapshot);
+  }
+
+  function renderDetailDistribution(market, snapshot) {
+    if (!el.detailDistributionChart || !el.detailDistributionMeta || !el.detailDistributionLegend || !el.detailDistributionSummary) {
+      return;
+    }
+
+    if (market.type === "binary") {
+      const distribution = buildBinaryDistribution(market, snapshot);
+      if (el.detailCurrentEstimate) {
+        el.detailCurrentEstimate.textContent = formatPercent(distribution.mean * 100);
+      }
+      if (el.detailEstimateRange) {
+        el.detailEstimateRange.textContent =
+          "Median " +
+          formatPercent(distribution.q50 * 100) +
+          " | 10-90 range " +
+          formatPercent(distribution.q10 * 100) +
+          " to " +
+          formatPercent(distribution.q90 * 100) +
+          ".";
+      }
+      el.detailDistributionMeta.textContent =
+        "Board-weighted credence distribution across 0%-100% confidence that the proposition is true.";
+      el.detailDistributionLegend.innerHTML =
+        '<span class="distribution-pill">Mean ' +
+        formatPercent(distribution.mean * 100) +
+        "</span>" +
+        '<span class="distribution-pill">Median ' +
+        formatPercent(distribution.q50 * 100) +
+        "</span>" +
+        '<span class="distribution-pill">10-90 range ' +
+        formatPercent(distribution.q10 * 100) +
+        " - " +
+        formatPercent(distribution.q90 * 100) +
+        "</span>";
+      el.detailDistributionSummary.textContent =
+        "The curve estimates how the market's total credence is distributed across confidence levels, rather than only showing the final YES / NO split.";
+      renderBinaryDistributionChart(distribution);
+      return;
+    }
+
+    if (el.detailCurrentEstimate) {
+      const lead = snapshot.ordered[0];
+      const option = lead ? getOption(market.id, lead.optionId) : null;
+      el.detailCurrentEstimate.textContent = option ? option.letter + ". " + lead.share + "%" : "Open ballot";
+    }
+    if (el.detailEstimateRange) {
+      el.detailEstimateRange.textContent = "Compare the full distribution across available theories, not just the leading option.";
+    }
+    el.detailDistributionMeta.textContent = "Current share held by each option in the ballot.";
+    el.detailDistributionLegend.innerHTML = snapshot.ordered
+      .slice(0, 4)
+      .map(function (item, index) {
+        const option = getOption(market.id, item.optionId);
+        if (!option) return "";
+        return (
+          '<span class="distribution-pill">' +
+          escapeHtml(option.letter + ". " + option.shortLabel) +
+          " " +
+          item.share +
+          "%</span>"
+        );
+      })
+      .join("");
+    el.detailDistributionSummary.textContent =
+      "Multi-choice markets show the complete split across explanations so disagreements stay visible.";
+    renderMultiDistributionChart(market, snapshot);
+  }
+
+  function renderBinaryDistributionChart(distribution) {
+    const chart = el.detailDistributionChart;
+    const width = 920;
+    const height = 320;
+    const padding = { top: 24, right: 24, bottom: 48, left: 28 };
+    const plotWidth = width - padding.left - padding.right;
+    const plotHeight = height - padding.top - padding.bottom;
+    const baselineY = padding.top + plotHeight;
+    const maxY = distribution.maxY || 1;
+
+    const areaPath = distribution.points
+      .map(function (point, index) {
+        const x = padding.left + point.x * plotWidth;
+        const y = padding.top + (1 - point.y / maxY) * plotHeight;
+        return (index === 0 ? "M" : "L") + " " + x.toFixed(2) + " " + y.toFixed(2);
+      })
+      .join(" ");
+
+    const linePath = areaPath;
+    const areaClosed =
+      areaPath +
+      " L " +
+      (padding.left + plotWidth).toFixed(2) +
+      " " +
+      baselineY.toFixed(2) +
+      " L " +
+      padding.left.toFixed(2) +
+      " " +
+      baselineY.toFixed(2) +
+      " Z";
+
+    const q10X = padding.left + distribution.q10 * plotWidth;
+    const q90X = padding.left + distribution.q90 * plotWidth;
+    const meanX = padding.left + distribution.mean * plotWidth;
+    const meanY = padding.top + (1 - distribution.meanDensity / maxY) * plotHeight;
+
+    const axisLabels = [0, 25, 50, 75, 100]
+      .map(function (value) {
+        const x = padding.left + (value / 100) * plotWidth;
+        return (
+          '<text class="distribution-axis distribution-axis-x" x="' +
+          x.toFixed(2) +
+          '" y="' +
+          (baselineY + 28).toFixed(2) +
+          '" text-anchor="' +
+          (value === 0 ? "start" : value === 100 ? "end" : "middle") +
+          '">' +
+          value +
+          "%</text>"
+        );
+      })
+      .join("");
+
+    const gridLines = [0.25, 0.5, 0.75]
+      .map(function (ratio) {
+        const y = padding.top + (1 - ratio) * plotHeight;
+        return (
+          '<line class="distribution-grid" x1="' +
+          padding.left +
+          '" y1="' +
+          y.toFixed(2) +
+          '" x2="' +
+          (padding.left + plotWidth).toFixed(2) +
+          '" y2="' +
+          y.toFixed(2) +
+          '"></line>'
+        );
+      })
+      .join("");
+
+    chart.setAttribute("aria-label", "Confidence distribution for " + distribution.question);
+    chart.innerHTML =
+      '<defs>' +
+      '<linearGradient id="marketDistributionFill" x1="0" x2="0" y1="0" y2="1">' +
+      '<stop offset="0%" stop-color="#ff6b3d" stop-opacity="0.34"></stop>' +
+      '<stop offset="100%" stop-color="#ff6b3d" stop-opacity="0.02"></stop>' +
+      "</linearGradient>" +
+      "</defs>" +
+      '<rect class="distribution-bg" x="0" y="0" width="' +
+      width +
+      '" height="' +
+      height +
+      '" rx="16" ry="16"></rect>' +
+      gridLines +
+      '<rect class="distribution-band" x="' +
+      q10X.toFixed(2) +
+      '" y="' +
+      padding.top +
+      '" width="' +
+      Math.max(2, q90X - q10X).toFixed(2) +
+      '" height="' +
+      plotHeight.toFixed(2) +
+      '"></rect>' +
+      '<path class="distribution-area" d="' +
+      areaClosed +
+      '" fill="url(#marketDistributionFill)"></path>' +
+      '<path class="distribution-line" d="' +
+      linePath +
+      '"></path>' +
+      '<line class="distribution-baseline" x1="' +
+      padding.left +
+      '" y1="' +
+      baselineY.toFixed(2) +
+      '" x2="' +
+      (padding.left + plotWidth).toFixed(2) +
+      '" y2="' +
+      baselineY.toFixed(2) +
+      '"></line>' +
+      '<line class="distribution-mean-line" x1="' +
+      meanX.toFixed(2) +
+      '" y1="' +
+      padding.top +
+      '" x2="' +
+      meanX.toFixed(2) +
+      '" y2="' +
+      baselineY.toFixed(2) +
+      '"></line>' +
+      '<circle class="distribution-mean-dot" cx="' +
+      meanX.toFixed(2) +
+      '" cy="' +
+      meanY.toFixed(2) +
+      '" r="7"></circle>' +
+      '<text class="distribution-label" x="' +
+      meanX.toFixed(2) +
+      '" y="' +
+      Math.max(20, meanY - 14).toFixed(2) +
+      '" text-anchor="middle">Mean ' +
+      formatPercent(distribution.mean * 100) +
+      "</text>" +
+      axisLabels;
+  }
+
+  function renderMultiDistributionChart(market, snapshot) {
+    const chart = el.detailDistributionChart;
+    const width = 920;
+    const height = 320;
+    const padding = { top: 28, right: 24, bottom: 30, left: 220 };
+    const plotWidth = width - padding.left - padding.right;
+
+    const ordered = snapshot.ordered.slice(0, Math.min(snapshot.ordered.length, 5));
+    const rowHeight = 42;
+    const bars = ordered
+      .map(function (item, index) {
+        const option = getOption(market.id, item.optionId);
+        if (!option) return "";
+        const y = padding.top + index * (rowHeight + 14);
+        const barWidth = Math.max(8, (item.share / 100) * plotWidth);
+        const color = getOptionColor(index);
+        return (
+          '<text class="distribution-axis distribution-axis-y" x="' +
+          (padding.left - 14) +
+          '" y="' +
+          (y + 23) +
+          '" text-anchor="end">' +
+          escapeHtml(option.letter + ". " + option.shortLabel) +
+          "</text>" +
+          '<rect class="distribution-multi-track" x="' +
+          padding.left +
+          '" y="' +
+          y +
+          '" width="' +
+          plotWidth +
+          '" height="' +
+          rowHeight +
+          '" rx="10" ry="10"></rect>' +
+          '<rect x="' +
+          padding.left +
+          '" y="' +
+          y +
+          '" width="' +
+          barWidth.toFixed(2) +
+          '" height="' +
+          rowHeight +
+          '" rx="10" ry="10" fill="' +
+          color +
+          '" opacity="0.86"></rect>' +
+          '<text class="distribution-label distribution-label-end" x="' +
+          (padding.left + Math.min(barWidth + 14, plotWidth - 6)).toFixed(2) +
+          '" y="' +
+          (y + 25).toFixed(2) +
+          '">' +
+          item.share +
+          "%</text>"
+        );
+      })
+      .join("");
+
+    chart.setAttribute("aria-label", "Option distribution for " + market.question);
+    chart.innerHTML =
+      '<rect class="distribution-bg" x="0" y="0" width="' +
+      width +
+      '" height="' +
+      height +
+      '" rx="16" ry="16"></rect>' +
+      bars;
+  }
+
+  function renderDetailFactors(market, snapshot) {
+    if (!el.detailFactorsGrid) return;
+
+    const factors = getMarketFactors(market, snapshot);
+    el.detailFactorsGrid.innerHTML = factors
+      .map(function (factor) {
+        return (
+          '<article class="factor-card factor-' +
+          escapeHtml(factor.tone) +
+          '">' +
+          '<div class="factor-meter"><span></span></div>' +
+          '<div class="factor-copy">' +
+          '<p class="factor-kicker">' +
+          escapeHtml(factor.kicker) +
+          "</p>" +
+          '<h4 class="factor-title">' +
+          escapeHtml(factor.title) +
+          "</h4>" +
+          '<p class="factor-body">' +
+          escapeHtml(factor.body) +
+          "</p>" +
+          '<p class="factor-meta">' +
+          escapeHtml(factor.meta) +
+          "</p>" +
+          "</div>" +
+          "</article>"
+        );
+      })
+      .join("");
+  }
+
+  function renderDetailSidebar(market, snapshot) {
+    renderDetailInfo(market, snapshot);
+    renderDetailTags(market);
+    renderDetailSimilar(market);
+  }
+
+  function renderDetailInfo(market, snapshot) {
+    if (!el.detailInfoList) return;
+
+    const participantCount = getSyntheticParticipantCount(market);
+    const interval = market.type === "binary" ? buildBinaryDistribution(market, snapshot) : null;
+    const infoRows = [
+      ["Category", market.category],
+      ["Weekly volume", formatVolume(market.volume) + " credence tokens"],
+      ["Participants", compactNumber.format(participantCount)],
+      ["Market closes", "This Sunday"],
+      [
+        "Current estimate",
+        market.type === "binary"
+          ? "YES " + (snapshot.optionShares.yes || 0) + "% / NO " + (snapshot.optionShares.no || 0) + "%"
+          : describeTopOptions(market, snapshot, 2),
+      ],
+    ];
+
+    if (interval) {
+      infoRows.push([
+        "10-90 range",
+        formatPercent(interval.q10 * 100) + " to " + formatPercent(interval.q90 * 100),
+      ]);
+    }
+
+    el.detailInfoList.innerHTML = infoRows
+      .map(function (row) {
+        return (
+          "<div>" +
+          "<dt>" +
+          escapeHtml(row[0]) +
+          "</dt>" +
+          "<dd>" +
+          escapeHtml(row[1]) +
+          "</dd>" +
+          "</div>"
+        );
+      })
+      .join("");
+  }
+
+  function renderDetailTags(market) {
+    if (!el.detailTagList) return;
+    el.detailTagList.innerHTML = getMarketTags(market)
+      .map(function (tag) {
+        return '<span class="detail-tag">' + escapeHtml(tag) + "</span>";
+      })
+      .join("");
+  }
+
+  function renderDetailSimilar(market) {
+    if (!el.detailSimilarList) return;
+
+    const similar = getSimilarMarkets(market).slice(0, 4);
+    el.detailSimilarList.innerHTML = similar
+      .map(function (candidate) {
+        const snapshot = getMarketSnapshot(candidate);
+        const estimate =
+          candidate.type === "binary"
+            ? "YES " + (snapshot.optionShares.yes || 0) + "%"
+            : describeTopOptions(candidate, snapshot, 1);
+        return (
+          '<a class="detail-similar-card" href="moral-market.html?market=' +
+          encodeURIComponent(candidate.id) +
+          '">' +
+          '<span class="detail-similar-question">' +
+          escapeHtml(candidate.question) +
+          "</span>" +
+          '<span class="detail-similar-meta">' +
+          escapeHtml(estimate + " • " + candidate.category) +
+          "</span>" +
+          "</a>"
+        );
+      })
+      .join("");
+  }
+
+  function getMarketFactors(market, snapshot) {
+    if (market.type === "binary") {
+      const yesShare = snapshot.optionShares.yes || 0;
+      const noShare = snapshot.optionShares.no || 0;
+      return [
+        {
+          tone: "higher",
+          kicker: "Pushes TRUE higher",
+          title: yesShare >= noShare ? "Current lead case" : "Primary upside case",
+          body: truncateCopy(extractLeadSentence(market.yesCase || "")),
+          meta: "Current YES support: " + yesShare + "%",
+        },
+        {
+          tone: "lower",
+          kicker: "Pushes TRUE lower",
+          title: noShare > yesShare ? "Current lead case" : "Primary downside case",
+          body: truncateCopy(extractLeadSentence(market.noCase || "")),
+          meta: "Current NO support: " + noShare + "%",
+        },
+        {
+          tone: "sensitive",
+          kicker: "Most decision-relevant uncertainty",
+          title: "What would move this market fastest",
+          body: truncateCopy(deriveSensitivityText(market)),
+          meta: "Category: " + market.category,
+        },
+      ];
+    }
+
+    return snapshot.ordered.slice(0, 3).map(function (item, index) {
+      const option = getOption(market.id, item.optionId);
+      const theory = option ? option.theory : "Competing theory explanation.";
+      return {
+        tone: index === 0 ? "higher" : index === 1 ? "sensitive" : "lower",
+        kicker: "Option " + (option ? option.letter : String(index + 1)),
+        title: option ? option.label : "Open ballot option",
+        body: truncateCopy(extractLeadSentence(theory)),
+        meta: item.share + "% of current credence",
+      };
+    });
+  }
+
+  function getMarketTags(market) {
+    const tags = [market.category, market.type === "binary" ? "Binary ballot" : "Open ballot"];
+    const keywordMap = [
+      ["autonomy", "Autonomy"],
+      ["rights", "Rights"],
+      ["harm", "Harm"],
+      ["welfare", "Welfare"],
+      ["suffering", "Suffering"],
+      ["justice", "Justice"],
+      ["dignity", "Dignity"],
+      ["agency", "Agency"],
+      ["public safety", "Public safety"],
+      ["law", "Law"],
+    ];
+    const haystack = (market.context + " " + (market.yesCase || "") + " " + (market.noCase || "")).toLowerCase();
+    keywordMap.forEach(function (entry) {
+      if (haystack.includes(entry[0].toLowerCase()) && tags.indexOf(entry[1]) === -1) {
+        tags.push(entry[1]);
+      }
+    });
+    return tags.slice(0, 6);
+  }
+
+  function getSimilarMarkets(market) {
+    return MARKETS.filter(function (candidate) {
+      return candidate.id !== market.id;
+    }).sort(function (a, b) {
+      return getMarketSimilarityScore(market, b) - getMarketSimilarityScore(market, a);
+    });
+  }
+
+  function getMarketSimilarityScore(source, candidate) {
+    let score = 0;
+    if (source.category === candidate.category) score += 4;
+    if (source.type === candidate.type) score += 2;
+    const sourceConfidence = getMarketConfidenceShare(source);
+    const candidateConfidence = getMarketConfidenceShare(candidate);
+    score += Math.max(0, 2 - Math.abs(sourceConfidence - candidateConfidence) / 25);
+    return score;
+  }
+
+  function getSyntheticParticipantCount(market) {
+    const activityCount = state.activity.reduce(function (count, activityItem) {
+      return count + (activityItem.marketId === market.id ? 1 : 0);
+    }, 0);
+    return Math.max(180, Math.round(market.volume / 8 + activityCount * 6));
+  }
+
+  function deriveSensitivityText(market) {
+    if (market.type === "multi") {
+      return "The market moves most when one explanatory theory accounts for the strongest cases without generating new counterexamples.";
+    }
+
+    const context = String(market.context || "");
+    if (context) {
+      return context;
+    }
+
+    return "The estimate is most sensitive to which empirical and normative premise people treat as decision-relevant, rather than to rhetorical framing alone.";
+  }
+
+  function truncateCopy(text) {
+    const normalized = String(text || "").replace(/\s+/g, " ").trim();
+    if (normalized.length <= 170) return normalized;
+    return normalized.slice(0, 167).trimEnd() + "...";
+  }
+
+  function extractLeadSentence(text) {
+    const normalized = String(text || "").replace(/\s+/g, " ").trim();
+    if (!normalized) return "";
+    const match = normalized.match(/[^.!?]+[.!?]?/);
+    return match ? match[0].trim() : normalized;
+  }
+
+  function buildBinaryDistribution(market, snapshot) {
+    const mean = clamp((snapshot.optionShares.yes || 0) / 100, 0.03, 0.97);
+    const confidenceGap = Math.abs((snapshot.optionShares.yes || 0) - 50);
+    const concentration = clamp(7 + market.volume / 3200 + confidenceGap / 5, 6, 22);
+    const alpha = Math.max(1.2, mean * concentration);
+    const beta = Math.max(1.2, (1 - mean) * concentration);
+    const points = [];
+    let maxY = 0;
+
+    for (let i = 0; i <= 80; i += 1) {
+      const x = 0.01 + (i / 80) * 0.98;
+      const y = betaPdf(x, alpha, beta);
+      if (y > maxY) maxY = y;
+      points.push({ x: x, y: y });
+    }
+
+    const q10 = betaQuantile(alpha, beta, 0.1);
+    const q50 = betaQuantile(alpha, beta, 0.5);
+    const q90 = betaQuantile(alpha, beta, 0.9);
+    const meanDensity = betaPdf(mean, alpha, beta);
+
+    return {
+      question: market.question,
+      mean: mean,
+      q10: q10,
+      q50: q50,
+      q90: q90,
+      meanDensity: meanDensity,
+      maxY: maxY,
+      points: points,
+    };
+  }
+
+  function betaPdf(x, alpha, beta) {
+    const safeX = clamp(x, 0.0001, 0.9999);
+    return Math.exp(
+      (alpha - 1) * Math.log(safeX) +
+      (beta - 1) * Math.log(1 - safeX) -
+      logBeta(alpha, beta)
+    );
+  }
+
+  function betaQuantile(alpha, beta, target) {
+    const steps = 360;
+    const normalizedTarget = clamp(target, 0, 1);
+    const checkpoints = [];
+    let totalArea = 0;
+    let lastX = 0.01;
+    let lastY = betaPdf(lastX, alpha, beta);
+
+    for (let i = 1; i <= steps; i += 1) {
+      const x = 0.01 + (i / steps) * 0.98;
+      const y = betaPdf(x, alpha, beta);
+      totalArea += ((lastY + y) / 2) * (x - lastX);
+      checkpoints.push({ x: x, cumulative: totalArea });
+      lastX = x;
+      lastY = y;
+    }
+
+    const targetArea = totalArea * normalizedTarget;
+    for (let i = 0; i < checkpoints.length; i += 1) {
+      if (checkpoints[i].cumulative >= targetArea) {
+        return checkpoints[i].x;
+      }
+    }
+
+    return 0.99;
+  }
+
+  function logBeta(alpha, beta) {
+    return logGamma(alpha) + logGamma(beta) - logGamma(alpha + beta);
+  }
+
+  function logGamma(value) {
+    const coefficients = [
+      76.18009172947146,
+      -86.50532032941677,
+      24.01409824083091,
+      -1.231739572450155,
+      0.001208650973866179,
+      -0.000005395239384953,
+    ];
+    let x = value;
+    let y = value;
+    let tmp = x + 5.5;
+    tmp -= (x + 0.5) * Math.log(tmp);
+    let series = 1.000000000190015;
+
+    coefficients.forEach(function (coefficient) {
+      y += 1;
+      series += coefficient / y;
+    });
+
+    return Math.log(2.5066282746310005 * series / x) - tmp;
   }
 
   function renderBinaryDetailSections(market, snapshot) {
@@ -1283,12 +1921,16 @@
 
   function renderTicket() {
     const market = getSelectedMarket();
+    const ticketHeading = el.ticketPanel ? el.ticketPanel.querySelector("h2") : null;
 
     if (!market) {
       el.ticketPrompt.style.display = "";
       el.ticketContent.classList.add("hidden");
       el.ticketPanel.classList.remove("side-no");
       el.ticketPanel.classList.remove("side-yes");
+      if (ticketHeading) {
+        ticketHeading.textContent = "Normativity Ticket";
+      }
       return;
     }
 
@@ -1298,6 +1940,9 @@
 
     el.ticketPrompt.style.display = "none";
     el.ticketContent.classList.remove("hidden");
+    if (ticketHeading) {
+      ticketHeading.textContent = isDetailRoute ? "Cast Credence" : "Normativity Ticket";
+    }
     el.ticketQuestion.textContent = market.question;
     el.ticketConsensus.textContent = renderConsensusLine(market, snapshot);
     el.weekWindow.textContent =
@@ -2631,6 +3276,10 @@
 
   function formatVolume(value) {
     return compactNumber.format(value);
+  }
+
+  function formatPercent(value) {
+    return Math.round(Number(value) || 0) + "%";
   }
 
   function formatCredenceTokens(value) {

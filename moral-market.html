@@ -105,21 +105,52 @@
             <a class="detail-back-link" href="moral-market.html">Back to all markets</a>
             <span id="detailMarketType" class="category-tag">Market</span>
           </div>
-          <div class="detail-meta-row">
-            <span id="detailCategory" class="category-tag"></span>
-            <span id="detailVolume" class="volume-tag"></span>
-          </div>
-          <h2 id="detailQuestion" class="detail-question"></h2>
-          <p id="detailConsensusLine" class="ticket-consensus"></p>
-          <p id="detailWeekLine" class="hint"></p>
 
-          <section class="trend-panel detail-trend-panel" aria-live="polite">
-            <div class="trend-head">
-              <p class="trend-title">Market Trend</p>
-              <p class="trend-meta" id="detailTrendMeta"></p>
+          <section class="detail-hero-card" aria-live="polite">
+            <div class="detail-hero-topline">
+              <div class="detail-pill-row">
+                <span id="detailSignalCount" class="detail-pill">0 signals</span>
+                <span id="detailForecasterCount" class="detail-pill">0 participants</span>
+              </div>
+              <div class="detail-meta-row">
+                <span id="detailCategory" class="category-tag"></span>
+                <span id="detailVolume" class="volume-tag"></span>
+              </div>
             </div>
-            <svg id="detailTrendChart" class="trend-chart detail-trend-chart" viewBox="0 0 920 300" role="img" aria-label="Detailed credence trend chart"></svg>
-            <div id="detailTrendLegend" class="trend-legend"></div>
+
+            <h2 id="detailQuestion" class="detail-question"></h2>
+
+            <div class="detail-estimate-block">
+              <p class="detail-estimate-label">Current estimate</p>
+              <p id="detailCurrentEstimate" class="detail-estimate-value"></p>
+              <p id="detailEstimateRange" class="detail-estimate-range"></p>
+            </div>
+
+            <section class="distribution-panel" aria-live="polite">
+              <div class="trend-head">
+                <p class="trend-title">Confidence Distribution</p>
+                <p class="trend-meta" id="detailDistributionMeta"></p>
+              </div>
+              <svg id="detailDistributionChart" class="trend-chart detail-distribution-chart" viewBox="0 0 920 320" role="img" aria-label="Confidence distribution for this market"></svg>
+              <div id="detailDistributionLegend" class="distribution-legend"></div>
+              <p id="detailDistributionSummary" class="detail-distribution-summary"></p>
+            </section>
+
+            <div class="detail-action-row">
+              <button id="detailJumpToCast" class="btn btn-primary" type="button">Cast Credence Tokens</button>
+              <a class="btn btn-ghost detail-share-link" href="#timelineSection">View Timeline</a>
+            </div>
+
+            <p id="detailConsensusLine" class="ticket-consensus"></p>
+            <p id="detailWeekLine" class="hint"></p>
+          </section>
+
+          <section class="detail-factors-block">
+            <div class="detail-section-head">
+              <h3>Top Key Factors</h3>
+              <p class="hint">Which considerations move the market estimate most.</p>
+            </div>
+            <div id="detailFactorsGrid" class="detail-factors-grid" aria-live="polite"></div>
           </section>
 
           <section class="detail-context-block">
@@ -129,6 +160,15 @@
 
           <section id="detailOutcomeContext" class="detail-outcome-grid" aria-live="polite"></section>
           <section id="detailTheoryContext" class="detail-theory-list" aria-live="polite"></section>
+
+          <section id="timelineSection" class="trend-panel detail-trend-panel" aria-live="polite">
+            <div class="trend-head">
+              <p class="trend-title">Timeline</p>
+              <p class="trend-meta" id="detailTrendMeta"></p>
+            </div>
+            <svg id="detailTrendChart" class="trend-chart detail-trend-chart" viewBox="0 0 920 300" role="img" aria-label="Detailed credence trend chart"></svg>
+            <div id="detailTrendLegend" class="trend-legend"></div>
+          </section>
 
           <section class="detail-activity-block">
             <h3>Recent Market Activity</h3>
@@ -175,6 +215,21 @@
         <section id="positionsPanel" class="panel side-panel">
           <h3>Your Positions</h3>
           <ul id="positionsList" class="positions-list"></ul>
+        </section>
+
+        <section id="detailInfoPanel" class="panel side-panel hidden" hidden>
+          <h3>Market Details</h3>
+          <dl id="detailInfoList" class="detail-info-list"></dl>
+        </section>
+
+        <section id="detailTagPanel" class="panel side-panel hidden" hidden>
+          <h3>Key Lenses</h3>
+          <div id="detailTagList" class="detail-tag-list"></div>
+        </section>
+
+        <section id="detailSimilarPanel" class="panel side-panel hidden" hidden>
+          <h3>Similar Questions</h3>
+          <div id="detailSimilarList" class="detail-similar-list"></div>
         </section>
       </aside>
     </section>
