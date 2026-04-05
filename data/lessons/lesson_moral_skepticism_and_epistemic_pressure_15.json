@@ -16,8 +16,7 @@
       "prompt": "What is your judgment about diverting?",
       "options": [
         "Permissible",
-        "Impermissible",
-        "Unsure"
+        "Impermissible"
       ]
     },
     {

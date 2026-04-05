@@ -5,7 +5,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Diverting the trolley saves more lives overall.",
-    "source": "https://plato.stanford.edu/entries/moral-theory/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "trolley_standard",
@@ -13,7 +13,7 @@
     "weight": -1,
     "relation": "conflict",
     "basis": "The diversion intentionally kills one person.",
-    "source": "https://plato.stanford.edu/entries/moral-theory/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "trolley_fat_man",
@@ -21,7 +21,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Pushing one saves five, increasing total welfare.",
-    "source": "https://plato.stanford.edu/entries/thought-experiment/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "trolley_fat_man",
@@ -29,7 +29,7 @@
     "weight": -1,
     "relation": "conflict",
     "basis": "The action requires directly killing one person.",
-    "source": "https://plato.stanford.edu/entries/thought-experiment/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "transplant_case",
@@ -37,7 +37,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Killing one saves five failing patients.",
-    "source": "https://plato.stanford.edu/entries/moral-theory/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "transplant_case",
@@ -45,7 +45,7 @@
     "weight": -1,
     "relation": "conflict",
     "basis": "The surgeon must kill an innocent person.",
-    "source": "https://plato.stanford.edu/entries/moral-theory/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "transplant_case",
@@ -53,7 +53,7 @@
     "weight": -1,
     "relation": "conflict",
     "basis": "Using an unwilling donor violates personal autonomy.",
-    "source": "https://plato.stanford.edu/entries/ethics-deontological/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "promise_breaking_case",
@@ -61,7 +61,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Promises and debts normally generate reasons to follow through.",
-    "source": "https://plato.stanford.edu/entries/moral-dilemmas/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "promise_breaking_case",
@@ -69,7 +69,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Returning the weapon risks serious harm, so protection may take priority.",
-    "source": "https://plato.stanford.edu/entries/moral-dilemmas/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "keep_promises",
@@ -77,7 +77,7 @@
     "weight": -1,
     "relation": "conflict",
     "basis": "Keeping a promise can conflict with preventing harm in exceptional cases.",
-    "source": "https://plato.stanford.edu/entries/moral-dilemmas/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "lifeboat_case",
@@ -85,7 +85,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Scarcity pressures may push toward saving the greatest number.",
-    "source": "https://plato.stanford.edu/entries/thought-experiment/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "lifeboat_case",
@@ -93,7 +93,7 @@
     "weight": -1,
     "relation": "conflict",
     "basis": "Survival choices may require harming or sacrificing individuals.",
-    "source": "https://plato.stanford.edu/entries/thought-experiment/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "prisoners_dilemma_moral",
@@ -101,7 +101,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Mutual cooperation yields better outcomes for all parties.",
-    "source": "https://plato.stanford.edu/entries/reasoning-moral/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "prisoners_dilemma_moral",
@@ -109,7 +109,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Cooperation treats each party as a fair partner rather than an exploitable rival.",
-    "source": "https://plato.stanford.edu/entries/disagreement-moral/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "maximize_welfare",
@@ -117,7 +117,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Act consequentialism ties right action to maximizing good outcomes.",
-    "source": "https://plato.stanford.edu/entries/consequentialism/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "maximize_welfare",
@@ -125,7 +125,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Act utilitarianism is the act-consequentialist form of utilitarianism.",
-    "source": "https://plato.stanford.edu/entries/consequentialism/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "rule_selected_by_consequences",
@@ -133,7 +133,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Rule consequentialism evaluates acts via rules chosen for their consequences.",
-    "source": "https://plato.stanford.edu/entries/consequentialism-rule/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "rule_selected_by_consequences",
@@ -141,7 +141,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Rule utilitarianism uses welfare-maximizing rules to assess actions.",
-    "source": "https://plato.stanford.edu/entries/consequentialism-rule/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "impartiality",
@@ -149,7 +149,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Utilitarianism treats each person's welfare as counting equally.",
-    "source": "https://plato.stanford.edu/entries/consequentialism/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "do_not_kill",
@@ -157,7 +157,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Deontological constraints can forbid killing regardless of outcomes.",
-    "source": "https://plato.stanford.edu/entries/ethics-deontological/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "keep_promises",
@@ -165,7 +165,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Promise-keeping duties are central to deontological ethics.",
-    "source": "https://plato.stanford.edu/entries/ethics-deontological/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "protect_from_harm",
@@ -173,7 +173,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Deontological theories often recognize duties to prevent serious harm.",
-    "source": "https://plato.stanford.edu/entries/ethics-deontological/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "respect_autonomy",
@@ -181,7 +181,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Kantian ethics centers respect for persons and their autonomy.",
-    "source": "https://plato.stanford.edu/entries/ethics-deontological/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "treat_persons_as_ends",
@@ -189,7 +189,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Kantian ethics requires treating persons as ends in themselves.",
-    "source": "https://plato.stanford.edu/entries/ethics-deontological/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "cultivate_virtue",
@@ -197,7 +197,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Virtue ethics evaluates actions by the character traits they express.",
-    "source": "https://plato.stanford.edu/entries/ethics-virtue/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "cooperate_for_mutual_benefit",
@@ -205,7 +205,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Contractualist reasoning stresses principles acceptable to each person.",
-    "source": "https://plato.stanford.edu/entries/ethics-deontological/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "fairness",
@@ -213,7 +213,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Fairness aligns with principles no one could reasonably reject.",
-    "source": "https://plato.stanford.edu/entries/ethics-deontological/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "thought_experiments",
@@ -221,7 +221,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Test cases are commonly used to pressure principles and trigger revisions.",
-    "source": "https://plato.stanford.edu/entries/reflective-equilibrium/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "moral_disagreement",
@@ -229,7 +229,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Persistent disagreement is evidence pressure in iterative moral revision.",
-    "source": "https://plato.stanford.edu/entries/disagreement-moral/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "moral_skepticism",
@@ -237,7 +237,7 @@
     "weight": -1,
     "relation": "conflict",
     "basis": "Skeptical arguments challenge claims to robust moral knowledge or truth.",
-    "source": "https://plato.stanford.edu/entries/skepticism-moral/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "ethical_intuitionism",
@@ -245,7 +245,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Intuitionism offers one account of how basic moral knowledge is possible.",
-    "source": "https://plato.stanford.edu/entries/intuitionism-ethics/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "moral_realism",
@@ -253,7 +253,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Realist views are typically cognitivist about moral claims.",
-    "source": "https://plato.stanford.edu/entries/moral-realism/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "noncognitivism",
@@ -261,7 +261,7 @@
     "weight": -1,
     "relation": "conflict",
     "basis": "Non-cognitivism denies that moral claims are truth-apt beliefs.",
-    "source": "https://plato.stanford.edu/entries/moral-cognitivism/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "error_theory",
@@ -269,7 +269,7 @@
     "weight": -1,
     "relation": "conflict",
     "basis": "Error theory denies that moral claims are in fact true.",
-    "source": "https://plato.stanford.edu/entries/moral-realism/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "moral_disagreement",
@@ -277,7 +277,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Persistent disagreement is commonly used in skeptical argument.",
-    "source": "https://plato.stanford.edu/entries/disagreement-moral/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "universalizability",
@@ -285,7 +285,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Kantian approaches test maxims by universalizability.",
-    "source": "https://plato.stanford.edu/entries/ethics-deontological/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "reasonable_rejectability",
@@ -293,7 +293,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Contractualism evaluates principles by reasonable rejectability.",
-    "source": "https://plato.stanford.edu/entries/ethics-deontological/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "reasonable_rejectability",
@@ -301,7 +301,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Constructivist approaches tie normativity to justified procedures of endorsement.",
-    "source": "https://plato.stanford.edu/entries/normativity-metaethics/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "epistemic_humility_under_disagreement",
@@ -309,7 +309,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Disagreement can rationally constrain confidence.",
-    "source": "https://plato.stanford.edu/entries/moral-epistemology/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "murderer_at_door_case",
@@ -317,7 +317,7 @@
     "weight": -1,
     "relation": "conflict",
     "basis": "The case pressures strict formulations of truth-telling duties.",
-    "source": "https://plato.stanford.edu/entries/ethics-deontological/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "murderer_at_door_case",
@@ -325,7 +325,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Many judge preventing grave harm as weightier in this context.",
-    "source": "https://plato.stanford.edu/entries/moral-dilemmas/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "numbers_rescue_case",
@@ -333,7 +333,7 @@
     "weight": 1,
     "relation": "support",
     "basis": "Saving the greater number tracks welfare-maximizing reasoning.",
-    "source": "https://plato.stanford.edu/entries/consequentialism/"
+    "source": "/normative-issues.html#reference-library"
   },
   {
     "from": "numbers_rescue_case",
@@ -341,6 +341,6 @@
     "weight": -1,
     "relation": "conflict",
     "basis": "Some rescue choices pressure side-constraint interpretations.",
-    "source": "https://plato.stanford.edu/entries/moral-theory/"
+    "source": "/normative-issues.html#reference-library"
   }
 ]

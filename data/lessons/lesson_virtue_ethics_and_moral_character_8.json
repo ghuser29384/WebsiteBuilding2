@@ -16,8 +16,7 @@
       "prompt": "What would a virtuous person do?",
       "options": [
         "Return it",
-        "Refuse to return",
-        "Unsure"
+        "Refuse to return"
       ]
     },
     {

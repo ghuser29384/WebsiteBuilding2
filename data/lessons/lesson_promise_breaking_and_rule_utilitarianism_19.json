@@ -16,8 +16,7 @@
       "prompt": "Should you keep the promise?",
       "options": [
         "Yes",
-        "No",
-        "Unsure"
+        "No"
       ]
     },
     {

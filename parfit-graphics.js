@@ -146,9 +146,10 @@
     }
 
     var cards = section.querySelectorAll(".parfit-graphic-card");
-    var running = false;
+    var hasPlayed = false;
     var rafId = 0;
     var startTime = 0;
+    var animationDurationMs = 6800;
 
     function setPaused(paused) {
       cards.forEach(function (card) {
@@ -157,39 +158,41 @@
     }
 
     function step(timestamp) {
-      if (!running) return;
+      if (hasPlayed) return;
       if (!startTime) startTime = timestamp;
-      var elapsedSeconds = (timestamp - startTime) / 1000;
+      var elapsedMs = timestamp - startTime;
+      var elapsedSeconds = elapsedMs / 1000;
       mountain.update(elapsedSeconds);
       lattice.update(elapsedSeconds);
-      rafId = window.requestAnimationFrame(step);
-    }
-
-    function start() {
-      if (running) return;
-      running = true;
-      setPaused(false);
-      rafId = window.requestAnimationFrame(step);
-    }
-
-    function stop() {
-      if (!running) return;
-      running = false;
-      setPaused(true);
-      if (rafId) {
-        window.cancelAnimationFrame(rafId);
+      if (elapsedMs >= animationDurationMs) {
+        hasPlayed = true;
+        rafId = 0;
+        mountain.setStatic();
+        lattice.setStatic();
+        setPaused(true);
+        return;
       }
-      rafId = 0;
+      rafId = window.requestAnimationFrame(step);
     }
+
+    function startOnce() {
+      if (hasPlayed || rafId) return;
+      setPaused(false);
+      startTime = 0;
+      rafId = window.requestAnimationFrame(step);
+    }
+
+    mountain.update(0);
+    lattice.update(0);
+    setPaused(true);
 
     if ("IntersectionObserver" in window) {
       var observer = new IntersectionObserver(
         function (entries) {
           entries.forEach(function (entry) {
             if (entry.isIntersecting) {
-              start();
-            } else {
-              stop();
+              startOnce();
+              observer.unobserve(section);
             }
           });
         },
@@ -199,7 +202,7 @@
       );
       observer.observe(section);
     } else {
-      start();
+      startOnce();
     }
   }
 

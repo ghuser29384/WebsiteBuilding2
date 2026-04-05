@@ -12,7 +12,10 @@
     {
       "type": "judgment",
       "prompt": "What would a virtuous person do?",
-      "choices": ["Return it", "Refuse to return", "Unsure"]
+      "choices": [
+        "Return it",
+        "Refuse to return"
+      ]
     },
     {
       "type": "principle",

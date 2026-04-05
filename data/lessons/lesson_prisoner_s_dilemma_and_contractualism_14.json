@@ -16,8 +16,7 @@
       "prompt": "Should you choose to cooperate?",
       "options": [
         "Yes",
-        "No",
-        "Unsure"
+        "No"
       ]
     },
     {

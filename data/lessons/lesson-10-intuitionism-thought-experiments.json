@@ -12,7 +12,10 @@
     {
       "type": "judgment",
       "prompt": "Is it permissible to push the man?",
-      "choices": ["Yes", "No", "Unsure"]
+      "choices": [
+        "Yes",
+        "No"
+      ]
     },
     {
       "type": "principle",

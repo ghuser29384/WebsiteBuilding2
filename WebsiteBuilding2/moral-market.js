@@ -152,7 +152,7 @@
           sources: [
             {
               label: "Reference - Death (Deprivation Account)",
-              url: "https://plato.stanford.edu/entries/death/#DeprAcco",
+              url: "/normative-issues.html#reference-library",
             },
             {
               label: "Don Marquis (1989), The Journal of Philosophy, doi:10.2307/2026961",
@@ -171,7 +171,7 @@
           sources: [
             {
               label: "Reference - Consequentialism",
-              url: "https://plato.stanford.edu/entries/consequentialism/",
+              url: "/normative-issues.html#reference-library",
             },
             {
               label: "J.J.C. Smart (1956), The Philosophical Quarterly, doi:10.2307/2216786",
@@ -190,7 +190,7 @@
           sources: [
             {
               label: "Reference - Kant's Moral Philosophy",
-              url: "https://plato.stanford.edu/entries/kant-moral/",
+              url: "/normative-issues.html#reference-library",
             },
             {
               label: "Christine Korsgaard (1986), Mind, doi:10.1093/mind/XCV.374.183",
@@ -209,7 +209,7 @@
           sources: [
             {
               label: "Reference - Rights",
-              url: "https://plato.stanford.edu/entries/rights/",
+              url: "/normative-issues.html#reference-library",
             },
             {
               label: "Judith Jarvis Thomson (1971), Philosophy & Public Affairs (JSTOR)",
@@ -228,7 +228,7 @@
           sources: [
             {
               label: "Reference - Virtue Ethics",
-              url: "https://plato.stanford.edu/entries/ethics-virtue/",
+              url: "/normative-issues.html#reference-library",
             },
             {
               label: "Rosalind Hursthouse (1991), Philosophy & Public Affairs",

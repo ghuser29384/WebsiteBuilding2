@@ -6,6 +6,7 @@ import { LessonCard } from "/wre/components/LessonCard.js";
 const MAX_NODES_COLLAPSED = 12;
 const MAX_NODES_EXPANDED = 20;
 const CONFIDENCE_STORAGE_PREFIX = "wre:confidence:";
+const LESSON_SESSION_STORAGE_PREFIX = "wre:session:";
 const LEGACY_CHOICE_STORAGE_KEYS = ["choice", "wre:choice", "wre:answer", "wre:selectedAnswer"];
 
 const state = {
@@ -47,6 +48,7 @@ const state = {
   deltaScore: 0,
   changedEdgeIds: new Set(),
   changedEdgeTimer: 0,
+  sessionRestored: false,
 };
 
 const el = {
@@ -55,6 +57,12 @@ const el = {
   progressTitle: document.getElementById("progressTitle"),
   progressFill: document.getElementById("progressFill"),
   progressTrack: document.querySelector(".progress-track"),
+  sessionLabel: document.getElementById("sessionLabel"),
+  resetLessonBtn: document.getElementById("resetLessonBtn"),
+  resetAllLessonsBtn: document.getElementById("resetAllLessonsBtn"),
+  coherenceDeltaChip: document.getElementById("coherenceDeltaChip"),
+  edgeResolvedChip: document.getElementById("edgeResolvedChip"),
+  edgeTensionChip: document.getElementById("edgeTensionChip"),
   expandGraphBtn: document.getElementById("expandGraphBtn"),
   lessonCardHost: document.getElementById("lessonCardHost"),
   graphHost: document.getElementById("graphHost"),
@@ -103,8 +111,26 @@ function bindEvents() {
   if (el.expandGraphBtn) {
     el.expandGraphBtn.addEventListener("click", function () {
       state.expanded = !state.expanded;
+      state.sessionRestored = false;
       rebuildSubgraph();
       recomputeAndRender(state.nodeStates, false);
+    });
+  }
+
+  if (el.resetLessonBtn) {
+    el.resetLessonBtn.addEventListener("click", function () {
+      if (!state.lesson) return;
+      clearLessonSession(state.lesson.id);
+      clearStoredConfidence(state.lesson.id);
+      loadLesson(state.currentLessonPath).catch(renderFatalError);
+    });
+  }
+
+  if (el.resetAllLessonsBtn) {
+    el.resetAllLessonsBtn.addEventListener("click", function () {
+      clearAllLessonSessionsAndConfidence();
+      if (!state.currentLessonPath) return;
+      loadLesson(state.currentLessonPath).catch(renderFatalError);
     });
   }
 }
@@ -136,6 +162,7 @@ async function loadLesson(path) {
   state.deltaScore = 0;
   state.subgraphCache = new Map();
   state.coherenceMemo.clear();
+  state.sessionRestored = false;
   if (state.changedEdgeTimer) {
     clearTimeout(state.changedEdgeTimer);
     state.changedEdgeTimer = 0;
@@ -143,6 +170,18 @@ async function loadLesson(path) {
 
   await ensureGraphData();
   rebuildSubgraph();
+  const restoredSession = loadLessonSession(lesson.id, lesson.options);
+  if (restoredSession) {
+    applyLessonSession(restoredSession, lesson);
+    if (state.expanded) {
+      rebuildSubgraph();
+    }
+    applyNodeStatesFromSession(restoredSession.nodeStates);
+    if (hasSelectedAnswer()) {
+      state.nodeStates[state.lesson.caseId] = inferCaseState(state.selectedAnswer);
+    }
+    state.sessionRestored = true;
+  }
   state.coherence = computeCoherenceMemoized(state.nodeStates);
   state.contribution = { perEdge: [], topContributors: [] };
   if (el.lessonPicker) {
@@ -260,6 +299,7 @@ function handleAnswer(answer, confidence) {
   state.confidence = normalized.confidence;
   saveStoredConfidence(state.lesson.id, state.confidence);
   state.revisionUsed = false;
+  state.sessionRestored = false;
 
   const caseState = inferCaseState(state.selectedAnswer);
   state.nodeStates[state.lesson.caseId] = caseState;
@@ -288,6 +328,7 @@ function handleConfidenceChange(nextConfidence) {
   if (hasSelectedAnswer()) {
     const previousStates = cloneStates(state.nodeStates);
     state.nodeStates[state.lesson.caseId] = inferCaseState(state.selectedAnswer);
+    state.sessionRestored = false;
     recomputeAndRender(previousStates, true);
   } else {
     renderLessonFlowOnly();
@@ -301,6 +342,7 @@ function handleAutoRevision() {
   const previousStates = cloneStates(state.nodeStates);
   state.nodeStates[targetId] = cycleState(state.nodeStates[targetId]);
   state.revisionUsed = true;
+  state.sessionRestored = false;
   recomputeAndRender(previousStates, true);
 }
 
@@ -308,11 +350,13 @@ function handleContinueStep() {
   if (state.interactionStage === 0) {
     if (!hasSelectedAnswer()) return;
     state.interactionStage = 1;
+    state.sessionRestored = false;
     renderLessonFlowOnly();
     return;
   }
   if (state.interactionStage === 1) {
     state.interactionStage = 2;
+    state.sessionRestored = false;
     renderLessonFlowOnly();
   }
 }
@@ -331,6 +375,7 @@ function handleGraphNodeToggle(nodeId) {
 
   const previousStates = cloneStates(state.nodeStates);
   state.nodeStates[id] = cycleState(state.nodeStates[id]);
+  state.sessionRestored = false;
 
   if (hasSelectedAnswer() && node.type === "principle" && !state.revisionUsed) {
     state.revisionUsed = true;
@@ -407,10 +452,12 @@ function recomputeAndRender(previousStates, highlightChanges) {
 function renderNow() {
   if (!state.lesson) return;
   updateProgress();
+  renderSessionControls();
   renderLessonCard();
   renderGraph();
   renderGauge();
   renderInspector();
+  syncLessonSession();
   if (el.expandGraphBtn) {
     el.expandGraphBtn.textContent = state.expanded ? "Collapse graph" : "Expand graph";
     el.expandGraphBtn.setAttribute("aria-label", state.expanded ? "Collapse to one hop graph" : "Expand graph to deeper neighborhood");
@@ -420,8 +467,10 @@ function renderNow() {
 function renderLessonFlowOnly() {
   if (!state.lesson) return;
   updateProgress();
+  renderSessionControls();
   renderLessonCard();
   renderInspector();
+  syncLessonSession();
 }
 
 function renderLessonCard() {
@@ -497,6 +546,50 @@ function updateProgress() {
   }
   if (el.progressTrack) {
     el.progressTrack.setAttribute("aria-valuenow", percent.toFixed(1));
+  }
+}
+
+function renderSessionControls() {
+  if (!state.lesson) return;
+
+  if (el.sessionLabel) {
+    if (state.sessionRestored) {
+      const suffix = hasSelectedAnswer()
+        ? " Current answer: " + state.selectedAnswer + " (" + Math.round(state.confidence) + "%)."
+        : "";
+      el.sessionLabel.textContent = "Resumed local lesson state." + suffix;
+    } else {
+      el.sessionLabel.textContent = hasSelectedAnswer()
+        ? "Current answer: " + state.selectedAnswer + " (" + Math.round(state.confidence) + "%)."
+        : "Fresh lesson session.";
+    }
+  }
+
+  if (el.coherenceDeltaChip) {
+    const delta = Number(state.deltaScore || 0);
+    const prefix = delta > 0 ? "+" : "";
+    el.coherenceDeltaChip.textContent = "Delta: " + prefix + delta.toFixed(1) + " pts";
+    el.coherenceDeltaChip.classList.toggle("is-positive", delta > 0);
+    el.coherenceDeltaChip.classList.toggle("is-negative", delta < 0);
+  }
+
+  const perEdge = Array.isArray(state.coherence && state.coherence.perEdge) ? state.coherence.perEdge : [];
+  const resolved = perEdge.filter(function (edge) {
+    return edge.satisfied;
+  }).length;
+  const activeTensions = perEdge.filter(function (edge) {
+    if (edge.satisfied) return false;
+    const fromState = normalizeState(state.nodeStates[edge.from]);
+    const toState = normalizeState(state.nodeStates[edge.to]);
+    return fromState !== 0 && toState !== 0;
+  }).length;
+
+  if (el.edgeResolvedChip) {
+    el.edgeResolvedChip.textContent = "Resolved edges: " + resolved;
+  }
+  if (el.edgeTensionChip) {
+    el.edgeTensionChip.textContent = "Active tensions: " + activeTensions;
+    el.edgeTensionChip.classList.toggle("is-negative", activeTensions > 0);
   }
 }
 
@@ -624,17 +717,17 @@ function buildLessonSourceContext() {
       {
         label: "Reflective Equilibrium",
         title: "Reflective Equilibrium",
-        url: "https://plato.stanford.edu/entries/reflective-equilibrium/",
+        url: "/normative-issues.html#reference-library",
       },
       {
         label: "Moral Epistemology",
         title: "Moral Epistemology",
-        url: "https://plato.stanford.edu/entries/moral-epistemology/",
+        url: "/normative-issues.html#reference-library",
       },
       {
         label: "Moral Disagreement",
         title: "Moral Disagreement",
-        url: "https://plato.stanford.edu/entries/disagreement-moral/",
+        url: "/normative-issues.html#reference-library",
       },
     ],
     caveat:
@@ -738,19 +831,19 @@ function buildSepDiagnosticReport() {
     links: [
       {
         label: "Reflective Equilibrium",
-        url: "https://plato.stanford.edu/entries/reflective-equilibrium/",
+        url: "/normative-issues.html#reference-library",
       },
       {
         label: "Moral Disagreement",
-        url: "https://plato.stanford.edu/entries/disagreement-moral/",
+        url: "/normative-issues.html#reference-library",
       },
       {
         label: "Moral Reasoning",
-        url: "https://plato.stanford.edu/entries/reasoning-moral/",
+        url: "/normative-issues.html#reference-library",
       },
       {
         label: "Moral Epistemology",
-        url: "https://plato.stanford.edu/entries/moral-epistemology/",
+        url: "/normative-issues.html#reference-library",
       },
     ],
   };
@@ -1100,6 +1193,124 @@ function prettifyLessonPath(path) {
 
 function confidenceStorageKey(lessonId) {
   return CONFIDENCE_STORAGE_PREFIX + String(lessonId || "default");
+}
+
+function lessonSessionStorageKey(lessonId) {
+  return LESSON_SESSION_STORAGE_PREFIX + String(lessonId || "default");
+}
+
+function syncLessonSession() {
+  if (!state.lesson) return;
+  const key = lessonSessionStorageKey(state.lesson.id);
+  const nodeStates = {};
+  state.subgraph.nodes.forEach(function (node) {
+    nodeStates[node.id] = normalizeState(state.nodeStates[node.id]);
+  });
+
+  const snapshot = {
+    selectedAnswer: normalizeSelectedAnswer(state.selectedAnswer, state.lesson.options),
+    confidence: canonicalizeConfidence(state.confidence),
+    interactionStage: clamp(Number(state.interactionStage), 0, 2),
+    revisionUsed: Boolean(state.revisionUsed),
+    expanded: Boolean(state.expanded),
+    nodeStates: nodeStates,
+    updatedAt: new Date().toISOString(),
+  };
+
+  try {
+    window.localStorage.setItem(key, JSON.stringify(snapshot));
+  } catch (error) {
+    // Ignore write failures.
+  }
+}
+
+function loadLessonSession(lessonId, allowedOptions) {
+  try {
+    const key = lessonSessionStorageKey(lessonId);
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object") return null;
+
+    const selectedAnswer = normalizeSelectedAnswer(parsed.selectedAnswer, allowedOptions);
+    const confidence = canonicalizeConfidence(parsed.confidence);
+    const interactionStage = clamp(Number(parsed.interactionStage), 0, 2);
+    const revisionUsed = Boolean(parsed.revisionUsed);
+    const expanded = Boolean(parsed.expanded);
+    const nodeStates = sanitizeNodeStates(parsed.nodeStates);
+
+    return {
+      selectedAnswer: selectedAnswer,
+      confidence: confidence,
+      interactionStage: selectedAnswer ? interactionStage : 0,
+      revisionUsed: selectedAnswer ? revisionUsed : false,
+      expanded: expanded,
+      nodeStates: nodeStates,
+    };
+  } catch (error) {
+    return null;
+  }
+}
+
+function applyLessonSession(session, lesson) {
+  if (!session || !lesson) return;
+  state.selectedAnswer = normalizeSelectedAnswer(session.selectedAnswer, lesson.options);
+  state.confidence = canonicalizeConfidence(session.confidence);
+  state.interactionStage = state.selectedAnswer ? clamp(Number(session.interactionStage), 0, 2) : 0;
+  state.revisionUsed = state.selectedAnswer ? Boolean(session.revisionUsed) : false;
+  state.expanded = Boolean(session.expanded);
+  saveStoredConfidence(lesson.id, state.confidence);
+}
+
+function applyNodeStatesFromSession(nodeStates) {
+  const source = nodeStates && typeof nodeStates === "object" ? nodeStates : {};
+  state.subgraph.nodes.forEach(function (node) {
+    if (Object.prototype.hasOwnProperty.call(source, node.id)) {
+      state.nodeStates[node.id] = normalizeState(source[node.id]);
+      return;
+    }
+    if (!Object.prototype.hasOwnProperty.call(state.nodeStates, node.id)) {
+      state.nodeStates[node.id] = 0;
+    }
+  });
+}
+
+function sanitizeNodeStates(value) {
+  const source = value && typeof value === "object" ? value : {};
+  const clean = {};
+  Object.keys(source).forEach(function (key) {
+    clean[String(key)] = normalizeState(source[key]);
+  });
+  return clean;
+}
+
+function clearLessonSession(lessonId) {
+  try {
+    window.localStorage.removeItem(lessonSessionStorageKey(lessonId));
+  } catch (error) {
+    // Ignore storage errors.
+  }
+}
+
+function clearStoredConfidence(lessonId) {
+  try {
+    window.localStorage.removeItem(confidenceStorageKey(lessonId));
+  } catch (error) {
+    // Ignore storage errors.
+  }
+}
+
+function clearAllLessonSessionsAndConfidence() {
+  try {
+    for (let i = window.localStorage.length - 1; i >= 0; i -= 1) {
+      const key = String(window.localStorage.key(i) || "");
+      if (key.indexOf(LESSON_SESSION_STORAGE_PREFIX) === 0 || key.indexOf(CONFIDENCE_STORAGE_PREFIX) === 0) {
+        window.localStorage.removeItem(key);
+      }
+    }
+  } catch (error) {
+    // Ignore storage errors.
+  }
 }
 
 function canonicalizeConfidence(value) {

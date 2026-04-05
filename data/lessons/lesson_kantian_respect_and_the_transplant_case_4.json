@@ -16,8 +16,7 @@
       "prompt": "Is the surgeon permitted to proceed?",
       "options": [
         "Yes",
-        "No",
-        "Unsure"
+        "No"
       ]
     },
     {

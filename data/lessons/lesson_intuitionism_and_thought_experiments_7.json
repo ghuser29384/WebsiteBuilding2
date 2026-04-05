@@ -16,8 +16,7 @@
       "prompt": "Is it permissible to push the man?",
       "options": [
         "Yes",
-        "No",
-        "Unsure"
+        "No"
       ]
     },
     {

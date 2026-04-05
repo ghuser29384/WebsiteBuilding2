@@ -186,6 +186,79 @@ textarea:focus-visible {
   background: linear-gradient(90deg, #ff6235 0%, #222a33 100%);
 }
 
+.session-card {
+  border: 1px solid var(--line);
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 0.7rem 0.75rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.session-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+#sessionLabel {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.84rem;
+  font-weight: 600;
+}
+
+.session-actions {
+  display: flex;
+  gap: 0.38rem;
+  flex-wrap: wrap;
+}
+
+.coherence-meta-row {
+  display: flex;
+  gap: 0.42rem;
+  flex-wrap: wrap;
+}
+
+.coherence-chip {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #c9c6bc;
+  border-radius: 999px;
+  background: #f3f2ec;
+  color: #50544f;
+  font-size: 0.76rem;
+  font-weight: 700;
+  padding: 0.16rem 0.5rem;
+}
+
+.coherence-chip.is-positive {
+  border-color: #b5c9be;
+  background: #edf3ef;
+  color: #466958;
+}
+
+.coherence-chip.is-negative {
+  border-color: #cbbbc0;
+  background: #f3ecee;
+  color: #6d525a;
+}
+
+.keyboard-hint {
+  margin: 0;
+}
+
+kbd {
+  border: 1px solid #c9c6bc;
+  background: #f7f6f0;
+  border-radius: 4px;
+  padding: 0 0.26rem;
+  font-family: inherit;
+  font-size: 0.78rem;
+}
+
 .sep-method-card p {
   margin: 0;
 }

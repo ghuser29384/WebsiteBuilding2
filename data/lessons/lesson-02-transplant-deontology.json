@@ -12,7 +12,10 @@
     {
       "type": "judgment",
       "prompt": "Is it permissible for the surgeon to proceed?",
-      "choices": ["Yes", "No", "Unsure"]
+      "choices": [
+        "Yes",
+        "No"
+      ]
     },
     {
       "type": "principle",

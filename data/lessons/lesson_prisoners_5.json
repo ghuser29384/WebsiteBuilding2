@@ -12,7 +12,10 @@
     {
       "type": "judgment",
       "prompt": "Should you choose to cooperate?",
-      "choices": ["Yes", "No", "Unsure"]
+      "choices": [
+        "Yes",
+        "No"
+      ]
     },
     {
       "type": "principle",

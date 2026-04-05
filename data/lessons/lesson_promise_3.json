@@ -12,7 +12,10 @@
     {
       "type": "judgment",
       "prompt": "Should you keep the promise?",
-      "choices": ["Yes", "No", "Unsure"]
+      "choices": [
+        "Yes",
+        "No"
+      ]
     },
     {
       "type": "principle",

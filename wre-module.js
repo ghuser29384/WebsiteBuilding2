@@ -10,21 +10,21 @@
       label: "Act Utilitarianism",
       description: "Each of us should do whatever is expected to make the outcome best.",
       sepTitle: "Consequentialism",
-      sepUrl: "https://plato.stanford.edu/entries/consequentialism/",
+      sepUrl: "/normative-issues.html#reference-library",
     },
     {
       id: "rule_utilitarianism",
       label: "Rule Utilitarianism",
       description: "Each of us should act on the principles whose acceptance would make things go best.",
       sepTitle: "Rule Consequentialism",
-      sepUrl: "https://plato.stanford.edu/entries/consequentialism-rule/",
+      sepUrl: "/normative-issues.html#reference-library",
     },
     {
       id: "kantian_ethics",
       label: "Kantian Ethics",
       description: "Each of us should act on the principles whose universal acceptance everyone could rationally will.",
       sepTitle: "Deontological Ethics",
-      sepUrl: "https://plato.stanford.edu/entries/ethics-deontological/",
+      sepUrl: "/normative-issues.html#reference-library",
     },
     {
       id: "scanlon_contractualism",
@@ -32,7 +32,7 @@
       description:
         "An act is wrong if and only if, and because, such acts are disallowed by some principle that no one could reasonably reject.",
       sepTitle: "Deontological Ethics",
-      sepUrl: "https://plato.stanford.edu/entries/ethics-deontological/",
+      sepUrl: "/normative-issues.html#reference-library",
     },
   ];
 
@@ -53,7 +53,7 @@
         scanlon_contractualism: "B",
       },
       sepTitle: "Moral Theory",
-      sepUrl: "https://plato.stanford.edu/entries/moral-theory/",
+      sepUrl: "/normative-issues.html#reference-library",
     },
     {
       id: "framing_innocent_case",
@@ -71,7 +71,7 @@
         scanlon_contractualism: "B",
       },
       sepTitle: "Moral Dilemmas",
-      sepUrl: "https://plato.stanford.edu/entries/moral-dilemmas/",
+      sepUrl: "/normative-issues.html#reference-library",
     },
     {
       id: "murderer_at_door_case",
@@ -89,7 +89,7 @@
         scanlon_contractualism: "A",
       },
       sepTitle: "Deontological Ethics",
-      sepUrl: "https://plato.stanford.edu/entries/ethics-deontological/",
+      sepUrl: "/normative-issues.html#reference-library",
     },
     {
       id: "promise_vs_rescue_case",
@@ -107,7 +107,7 @@
         scanlon_contractualism: "A",
       },
       sepTitle: "Moral Dilemmas",
-      sepUrl: "https://plato.stanford.edu/entries/moral-dilemmas/",
+      sepUrl: "/normative-issues.html#reference-library",
     },
     {
       id: "property_emergency_case",
@@ -125,7 +125,7 @@
         scanlon_contractualism: "A",
       },
       sepTitle: "Deontological Ethics",
-      sepUrl: "https://plato.stanford.edu/entries/ethics-deontological/",
+      sepUrl: "/normative-issues.html#reference-library",
     },
     {
       id: "numbers_rescue_case",
@@ -143,7 +143,7 @@
         scanlon_contractualism: "B",
       },
       sepTitle: "Consequentialism",
-      sepUrl: "https://plato.stanford.edu/entries/consequentialism/",
+      sepUrl: "/normative-issues.html#reference-library",
     },
   ];
 
@@ -163,6 +163,14 @@
   };
 
   const el = {
+    moduleRoundsValue: document.getElementById("moduleRoundsValue"),
+    moduleShiftsValue: document.getElementById("moduleShiftsValue"),
+    moduleAvgConfidenceValue: document.getElementById("moduleAvgConfidenceValue"),
+    moduleEvidenceRateValue: document.getElementById("moduleEvidenceRateValue"),
+    exportRoundsBtn: document.getElementById("exportRoundsBtn"),
+    resetModuleBtn: document.getElementById("resetModuleBtn"),
+    moduleResumeLine: document.getElementById("moduleResumeLine"),
+    moduleStatusLine: document.getElementById("moduleStatusLine"),
     casePicker: document.getElementById("casePicker"),
     caseTitle: document.getElementById("caseTitle"),
     caseSummary: document.getElementById("caseSummary"),
@@ -204,6 +212,7 @@
     renderQuestionStep();
     renderHistory();
     renderSummary();
+    renderModuleAnalytics();
   }
 
   function bindEvents() {
@@ -267,6 +276,14 @@
       el.startCurrentBtn.addEventListener("click", function () {
         startRound(state.currentCaseId);
       });
+    }
+
+    if (el.exportRoundsBtn) {
+      el.exportRoundsBtn.addEventListener("click", onExportRounds);
+    }
+
+    if (el.resetModuleBtn) {
+      el.resetModuleBtn.addEventListener("click", onResetModule);
     }
   }
 
@@ -406,6 +423,7 @@
     renderReflectionTimer();
     renderSepAnchors();
     renderSummary();
+    renderModuleAnalytics();
     persistState();
   }
 
@@ -534,6 +552,7 @@
     state.timer.done = true;
     renderSummary();
     renderHistory();
+    renderModuleAnalytics();
     persistState();
   }
 
@@ -727,6 +746,161 @@
       .join("");
   }
 
+  function renderModuleAnalytics() {
+    const stats = computeModuleStats(state.history);
+
+    if (el.moduleRoundsValue) {
+      el.moduleRoundsValue.textContent = String(stats.rounds);
+    }
+    if (el.moduleShiftsValue) {
+      el.moduleShiftsValue.textContent = String(stats.principleShifts);
+    }
+    if (el.moduleAvgConfidenceValue) {
+      el.moduleAvgConfidenceValue.textContent = stats.avgUpdatedConfidence;
+    }
+    if (el.moduleEvidenceRateValue) {
+      el.moduleEvidenceRateValue.textContent = stats.evidenceAcceptedRate;
+    }
+    if (el.moduleResumeLine) {
+      if (state.answers.q5) {
+        el.moduleResumeLine.textContent = "Current round completed. Start a new case or run the recommended case.";
+      } else if (Object.keys(state.answers).length > 0) {
+        const currentCase = getCurrentCase();
+        const caseTitle = currentCase ? currentCase.title : "current case";
+        el.moduleResumeLine.textContent =
+          "Unfinished round restored: " + caseTitle + " (Question " + state.step + " of 5).";
+      } else {
+        el.moduleResumeLine.textContent = "No unfinished round.";
+      }
+    }
+  }
+
+  function computeModuleStats(history) {
+    const rounds = Array.isArray(history) ? history : [];
+    if (rounds.length === 0) {
+      return {
+        rounds: 0,
+        principleShifts: 0,
+        avgUpdatedConfidence: "--",
+        evidenceAcceptedRate: "--",
+      };
+    }
+
+    let shiftCount = 0;
+    let q5ConfidenceSum = 0;
+    let evidenceAccepted = 0;
+
+    rounds.forEach(function (entry) {
+      if (!entry) return;
+      if (entry.q1 && entry.q5 && entry.q1 !== entry.q5) {
+        shiftCount += 1;
+      }
+      const q5Confidence = entry.confidences && Number.isFinite(Number(entry.confidences.q5))
+        ? clamp(Number(entry.confidences.q5), 1, 100)
+        : 63;
+      q5ConfidenceSum += q5Confidence;
+      if (entry.q4 === "yes") {
+        evidenceAccepted += 1;
+      }
+    });
+
+    const avgConfidence = Math.round(q5ConfidenceSum / rounds.length);
+    const evidenceRate = Math.round((evidenceAccepted / rounds.length) * 100);
+
+    return {
+      rounds: rounds.length,
+      principleShifts: shiftCount,
+      avgUpdatedConfidence: avgConfidence + "%",
+      evidenceAcceptedRate: evidenceRate + "%",
+    };
+  }
+
+  function setModuleStatus(text, isError) {
+    if (!el.moduleStatusLine) return;
+    el.moduleStatusLine.textContent = String(text || "");
+    el.moduleStatusLine.classList.toggle("is-error", Boolean(isError));
+    el.moduleStatusLine.classList.toggle("is-success", Boolean(text) && !isError);
+  }
+
+  function onExportRounds() {
+    const rounds = Array.isArray(state.history) ? state.history : [];
+    if (rounds.length === 0) {
+      setModuleStatus("No completed rounds to export yet.", true);
+      return;
+    }
+
+    const payload = {
+      exportedAt: new Date().toISOString(),
+      roundCount: rounds.length,
+      principles: PRINCIPLES.map(function (principle) {
+        return {
+          id: principle.id,
+          label: principle.label,
+          description: principle.description,
+        };
+      }),
+      cases: CASES.map(function (lessonCase) {
+        return {
+          id: lessonCase.id,
+          title: lessonCase.title,
+          difficulty: lessonCase.difficulty,
+        };
+      }),
+      rounds: rounds,
+    };
+
+    const today = new Date();
+    const stamp =
+      today.getFullYear() +
+      "-" +
+      String(today.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(today.getDate()).padStart(2, "0");
+    const filename = "normativity-wre-rounds-" + stamp + ".json";
+
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = window.URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = filename;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    window.setTimeout(function () {
+      window.URL.revokeObjectURL(url);
+    }, 1200);
+
+    setModuleStatus("Exported " + rounds.length + " rounds.", false);
+  }
+
+  function onResetModule() {
+    const confirmed = window.confirm("Reset this WRE module history and current round?");
+    if (!confirmed) return;
+
+    clearTimerInterval();
+    state.step = 1;
+    state.answers = {};
+    state.confidences = {};
+    state.history = [];
+    state.recommendedCaseId = "";
+    state.timer.remaining = REFLECTION_SECONDS;
+    state.timer.running = false;
+    state.timer.done = false;
+
+    try {
+      window.localStorage.removeItem(STORAGE_KEY);
+    } catch (_error) {
+      // no-op
+    }
+
+    renderCurrentCase();
+    renderQuestionStep();
+    renderHistory();
+    renderSummary();
+    renderModuleAnalytics();
+    setModuleStatus("Module data reset.", false);
+  }
+
   function recommendNextCase(principleId, currentCaseId, history, confidence, evidenceAnswer) {
     const targetPrinciple = String(principleId || "");
     if (!targetPrinciple) return currentCaseId;
@@ -875,19 +1049,19 @@
       links: [
         {
           title: "Reflective Equilibrium",
-          url: "https://plato.stanford.edu/entries/reflective-equilibrium/",
+          url: "/normative-issues.html#reference-library",
         },
         {
           title: "Moral Disagreement",
-          url: "https://plato.stanford.edu/entries/disagreement-moral/",
+          url: "/normative-issues.html#reference-library",
         },
         {
           title: "Moral Epistemology",
-          url: "https://plato.stanford.edu/entries/moral-epistemology/",
+          url: "/normative-issues.html#reference-library",
         },
         {
           title: "Moral Reasoning",
-          url: "https://plato.stanford.edu/entries/reasoning-moral/",
+          url: "/normative-issues.html#reference-library",
         },
       ],
     };
@@ -911,6 +1085,7 @@
     renderCurrentCase();
     renderQuestionStep();
     renderSummary();
+    setModuleStatus("", false);
     persistState();
   }
 

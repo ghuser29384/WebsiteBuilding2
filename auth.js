@@ -282,7 +282,7 @@
   function renderHeaderControls() {
     var user = getCurrentUser();
     var headerTools = document.querySelector(".header-tools");
-    var wreTopbar = document.querySelector(".wre-topbar-inner");
+    var wreTopbar = document.querySelector(".wre-topbar-inner, .wre-topbar .wre-shell");
     var host = headerTools || wreTopbar;
     if (!host) return;
 

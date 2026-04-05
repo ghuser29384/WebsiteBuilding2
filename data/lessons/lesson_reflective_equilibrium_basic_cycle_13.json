@@ -16,8 +16,7 @@
       "prompt": "Is diverting permissible?",
       "options": [
         "Yes",
-        "No",
-        "Unsure"
+        "No"
       ]
     },
     {

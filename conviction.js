@@ -268,7 +268,7 @@
       title: "Is purchasing factory-farmed meat morally permissible?",
       prompt: "Should individuals keep buying factory-farmed meat given suffering and demand effects?",
       category: "Animal welfare",
-      sepUrl: "https://plato.stanford.edu/entries/vegetarianism/",
+      sepUrl: "/normative-issues.html#reference-library",
       sepTitle: "Vegetarianism",
       yes: 24,
       no: 76,
@@ -281,7 +281,7 @@
       title: "Is purchasing fast fashion morally permissible?",
       prompt: "Do low prices justify environmental and labor externalities of fast fashion supply chains?",
       category: "Consumption ethics",
-      sepUrl: "https://plato.stanford.edu/entries/exploitation/",
+      sepUrl: "/normative-issues.html#reference-library",
       sepTitle: "Exploitation",
       yes: 31,
       no: 69,
@@ -294,7 +294,7 @@
       title: "Is abortion morally permissible in most cases?",
       prompt: "How should autonomy, moral status, and social consequences be weighed in policy and personal decisions?",
       category: "Bioethics",
-      sepUrl: "https://plato.stanford.edu/entries/abortion/",
+      sepUrl: "/normative-issues.html#reference-library",
       sepTitle: "Abortion",
       yes: 57,
       no: 43,
@@ -307,7 +307,7 @@
       title: "Is a strong carbon tax morally required?",
       prompt: "Are collective climate harms sufficient to justify broad pricing constraints on emissions?",
       category: "Climate and consumption",
-      sepUrl: "https://plato.stanford.edu/entries/climate-science/",
+      sepUrl: "/normative-issues.html#reference-library",
       sepTitle: "Climate Science",
       yes: 63,
       no: 37,
@@ -320,7 +320,7 @@
       title: "Do high-income citizens owe significant cross-border aid?",
       prompt: "Do duties to distant strangers require large recurring transfers, beyond local obligations?",
       category: "Global poverty",
-      sepUrl: "https://plato.stanford.edu/entries/international-justice/",
+      sepUrl: "/normative-issues.html#reference-library",
       sepTitle: "International Justice",
       yes: 72,
       no: 28,
@@ -333,7 +333,7 @@
       title: "Is retributive punishment morally justified?",
       prompt: "Can desert-based punishment be defended apart from deterrence and rehabilitation outcomes?",
       category: "Criminal justice",
-      sepUrl: "https://plato.stanford.edu/entries/legal-punishment/",
+      sepUrl: "/normative-issues.html#reference-library",
       sepTitle: "Legal Punishment",
       yes: 44,
       no: 56,
@@ -346,7 +346,7 @@
       title: "Is deplatforming harmful speech morally permissible?",
       prompt: "When does harm prevention override broad free-expression protections in public platforms?",
       category: "Free speech",
-      sepUrl: "https://plato.stanford.edu/entries/freedom-speech/",
+      sepUrl: "/normative-issues.html#reference-library",
       sepTitle: "Freedom of Speech",
       yes: 53,
       no: 47,
@@ -359,7 +359,7 @@
       title: "Is a global frontier-AI pause morally required?",
       prompt: "Do catastrophic-risk concerns justify strong temporary limits on advanced model deployment?",
       category: "AI governance",
-      sepUrl: "https://plato.stanford.edu/entries/ethics-ai/",
+      sepUrl: "/normative-issues.html#reference-library",
       sepTitle: "Ethics of Artificial Intelligence and Robotics",
       yes: 46,
       no: 54,
@@ -2043,9 +2043,7 @@
     }
     activeConviction.invites.unshift(invite);
     activeConviction.updatedAt = new Date().toISOString();
-    formStatus.invite = availability.length
-      ? "Invite recorded. Share your availability with the invited participant."
-      : "Invite recorded. Share availability details with the invited participant.";
+    formStatus.invite = "Invite recorded.";
     saveState();
 
     resetInviteForm();
@@ -5345,19 +5343,40 @@
     if (!container) return;
     container.innerHTML = "";
     const list = Array.isArray(slots) && slots.length > 0 ? slots : availabilitySlots;
-    list.forEach(function (slot, index) {
-      const label = document.createElement("label");
-      label.className = "availability-item";
-      const input = document.createElement("input");
-      input.type = "checkbox";
-      input.name = namePrefix + "_slot_" + index;
-      input.setAttribute("data-slot-id", slot.id);
-      const text = document.createElement("span");
-      text.textContent = slot.label || formatSlotLabel(slot.id, list);
-      label.appendChild(input);
-      label.appendChild(text);
-      container.appendChild(label);
-    });
+    const renderToken = String(Date.now()) + "-" + Math.random().toString(36).slice(2, 8);
+    container.setAttribute("data-render-token", renderToken);
+    let index = 0;
+    const chunkSize = 96;
+
+    function renderChunk() {
+      if (container.getAttribute("data-render-token") !== renderToken) return;
+      const fragment = document.createDocumentFragment();
+      const limit = Math.min(index + chunkSize, list.length);
+      for (; index < limit; index += 1) {
+        const slot = list[index];
+        const label = document.createElement("label");
+        label.className = "availability-item";
+        const input = document.createElement("input");
+        input.type = "checkbox";
+        input.name = namePrefix + "_slot_" + index;
+        input.setAttribute("data-slot-id", slot.id);
+        const text = document.createElement("span");
+        text.textContent = slot.label || formatSlotLabel(slot.id, list);
+        label.appendChild(input);
+        label.appendChild(text);
+        fragment.appendChild(label);
+      }
+      container.appendChild(fragment);
+      if (index < list.length) {
+        if (typeof window.requestAnimationFrame === "function") {
+          window.requestAnimationFrame(renderChunk);
+        } else {
+          window.setTimeout(renderChunk, 0);
+        }
+      }
+    }
+
+    renderChunk();
   }
 
   function getSelectedAvailability(container) {

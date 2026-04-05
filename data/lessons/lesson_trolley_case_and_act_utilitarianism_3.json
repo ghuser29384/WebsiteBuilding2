@@ -16,8 +16,7 @@
       "prompt": "Is it permissible to divert the trolley?",
       "options": [
         "Yes",
-        "No",
-        "Unsure"
+        "No"
       ]
     },
     {

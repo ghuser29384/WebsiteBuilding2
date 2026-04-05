@@ -12,7 +12,10 @@
     {
       "type": "judgment",
       "prompt": "Is it permissible to divert the trolley?",
-      "choices": ["Yes", "No", "Unsure"]
+      "choices": [
+        "Yes",
+        "No"
+      ]
     },
     {
       "type": "principle",

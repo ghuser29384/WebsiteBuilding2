@@ -12,7 +12,10 @@
     {
       "type": "judgment",
       "prompt": "Is diverting permissible?",
-      "choices": ["Yes", "No", "Unsure"]
+      "choices": [
+        "Yes",
+        "No"
+      ]
     },
     {
       "type": "principle",
