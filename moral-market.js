@@ -319,6 +319,10 @@
     detailDistributionChart: document.getElementById("detailDistributionChart"),
     detailDistributionLegend: document.getElementById("detailDistributionLegend"),
     detailDistributionSummary: document.getElementById("detailDistributionSummary"),
+    detailVoterDistributionMeta: document.getElementById("detailVoterDistributionMeta"),
+    detailVoterDistributionChart: document.getElementById("detailVoterDistributionChart"),
+    detailVoterDistributionLegend: document.getElementById("detailVoterDistributionLegend"),
+    detailVoterDistributionSummary: document.getElementById("detailVoterDistributionSummary"),
     detailFactorsGrid: document.getElementById("detailFactorsGrid"),
     detailJumpToCast: document.getElementById("detailJumpToCast"),
     detailTrendMeta: document.getElementById("detailTrendMeta"),
@@ -418,6 +422,7 @@
     enableTrackpadZoomForChart(el.trendChart, { maxScale: 16 });
     enableTrackpadZoomForChart(el.detailTrendChart, { maxScale: 16 });
     enableTrackpadZoomForChart(el.detailDistributionChart, { maxScale: 16 });
+    enableTrackpadZoomForChart(el.detailVoterDistributionChart, { maxScale: 16 });
   }
 
   function enableTrackpadZoomForChart(svgEl, options) {
@@ -1099,116 +1104,143 @@
   }
 
   function renderDetailDistribution(market, snapshot) {
-    if (!el.detailDistributionChart || !el.detailDistributionMeta || !el.detailDistributionLegend || !el.detailDistributionSummary) {
-      return;
-    }
+    const voterSnapshot = getMarketVoterSnapshot(market, snapshot);
+    updateDetailEstimateBlock(market, snapshot, voterSnapshot);
+
+    renderDistributionPanel({
+      market: market,
+      snapshot: snapshot,
+      chartEl: el.detailDistributionChart,
+      metaEl: el.detailDistributionMeta,
+      legendEl: el.detailDistributionLegend,
+      summaryEl: el.detailDistributionSummary,
+      mode: "tokens",
+    });
+
+    renderDistributionPanel({
+      market: market,
+      snapshot: voterSnapshot,
+      chartEl: el.detailVoterDistributionChart,
+      metaEl: el.detailVoterDistributionMeta,
+      legendEl: el.detailVoterDistributionLegend,
+      summaryEl: el.detailVoterDistributionSummary,
+      mode: "voters",
+    });
+  }
+
+  function updateDetailEstimateBlock(market, tokenSnapshot, voterSnapshot) {
+    if (!el.detailCurrentEstimate || !el.detailEstimateRange) return;
 
     if (market.type === "binary") {
-      const distribution = buildBinaryDistribution(market, snapshot);
-      if (el.detailCurrentEstimate) {
-        el.detailCurrentEstimate.textContent = formatPercent(distribution.mean * 100);
-      }
-      if (el.detailEstimateRange) {
-        el.detailEstimateRange.textContent =
-          "Median " +
-          formatPercent(distribution.q50 * 100) +
-          " | 10-90 range " +
-          formatPercent(distribution.q10 * 100) +
-          " to " +
-          formatPercent(distribution.q90 * 100) +
-          ".";
-      }
-      el.detailDistributionMeta.textContent =
-        "Board-weighted credence distribution across 0%-100% confidence that the proposition is true.";
-      el.detailDistributionLegend.innerHTML =
-        '<span class="distribution-pill">Mean ' +
-        formatPercent(distribution.mean * 100) +
-        "</span>" +
-        '<span class="distribution-pill">Median ' +
-        formatPercent(distribution.q50 * 100) +
-        "</span>" +
-        '<span class="distribution-pill">10-90 range ' +
-        formatPercent(distribution.q10 * 100) +
-        " - " +
-        formatPercent(distribution.q90 * 100) +
-        "</span>";
-      el.detailDistributionSummary.textContent =
-        "The curve estimates how the market's total credence is distributed across confidence levels, rather than only showing the final YES / NO split.";
-      renderBinaryDistributionChart(distribution);
+      const yesToken = tokenSnapshot.optionShares.yes || 0;
+      const noToken = tokenSnapshot.optionShares.no || 0;
+      const leadId = yesToken >= noToken ? "yes" : "no";
+      const leadShare = leadId === "yes" ? yesToken : noToken;
+      const yesVoters = voterSnapshot.optionShares.yes || 0;
+      const noVoters = voterSnapshot.optionShares.no || 0;
+
+      el.detailCurrentEstimate.textContent = leadId.toUpperCase() + " " + leadShare + "%";
+      el.detailEstimateRange.textContent =
+        "Token split: YES " +
+        yesToken +
+        "% / NO " +
+        noToken +
+        "%. Voter split: YES " +
+        yesVoters +
+        "% / NO " +
+        noVoters +
+        "%.";
       return;
     }
 
-    if (el.detailCurrentEstimate) {
-      const lead = snapshot.ordered[0];
-      const option = lead ? getOption(market.id, lead.optionId) : null;
-      el.detailCurrentEstimate.textContent = option ? option.letter + ". " + lead.share + "%" : "Open ballot";
+    const tokenLead = tokenSnapshot.ordered[0];
+    const voterLead = voterSnapshot.ordered[0];
+    const tokenOption = tokenLead ? getOption(market.id, tokenLead.optionId) : null;
+    const voterOption = voterLead ? getOption(market.id, voterLead.optionId) : null;
+
+    el.detailCurrentEstimate.textContent = tokenOption ? tokenOption.letter + ". " + tokenLead.share + "%" : "Open ballot";
+    el.detailEstimateRange.textContent =
+      "Token lead: " +
+      (tokenOption ? tokenOption.letter + ". " + tokenLead.share + "%" : "Open ballot") +
+      ". Voter lead: " +
+      (voterOption ? voterOption.letter + ". " + voterLead.share + "%" : "Open ballot") +
+      ".";
+  }
+
+  function renderDistributionPanel(config) {
+    if (!config || !config.chartEl || !config.metaEl || !config.legendEl || !config.summaryEl) {
+      return;
     }
-    if (el.detailEstimateRange) {
-      el.detailEstimateRange.textContent = "Compare the full distribution across available theories, not just the leading option.";
-    }
-    el.detailDistributionMeta.textContent = "Current share held by each option in the ballot.";
-    el.detailDistributionLegend.innerHTML = getLeadingOptionsInLetterOrder(market, snapshot, 4)
-      .map(function (item, index) {
+
+    const market = config.market;
+    const snapshot = config.snapshot;
+    const isTokenMode = config.mode === "tokens";
+
+    config.metaEl.textContent = isTokenMode
+      ? "Percentage of credence tokens cast on each answer among total tokens cast in this market."
+      : "Percentage of voters for each answer among the total number of voters in this market.";
+
+    config.legendEl.innerHTML = getOptionsInLetterOrderWithShares(market, snapshot)
+      .map(function (item) {
         const option = getOption(market.id, item.optionId);
         if (!option) return "";
         return (
           '<span class="distribution-pill">' +
-          escapeHtml(option.letter + ". " + option.shortLabel) +
+          escapeHtml(optionDisplayLabel(option, market.type === "binary")) +
           " " +
           item.share +
           "%</span>"
         );
       })
       .join("");
-    el.detailDistributionSummary.textContent =
-      "Multi-choice markets show the complete split across explanations so disagreements stay visible.";
-    renderMultiDistributionChart(market, snapshot);
+
+    config.summaryEl.textContent = isTokenMode
+      ? "This view tracks conviction-weighted allocation: larger credence-token commitments move the split more."
+      : "This view tracks support breadth across participants: each voter counts once regardless of token size.";
+
+    renderAnswerShareDistributionChart(
+      config.chartEl,
+      market,
+      snapshot,
+      (isTokenMode ? "Token share" : "Voter share") + " across answers for " + market.question
+    );
   }
 
-  function renderBinaryDistributionChart(distribution) {
-    const chart = el.detailDistributionChart;
+  function renderAnswerShareDistributionChart(chartEl, market, snapshot, ariaLabel) {
+    if (!chartEl) return;
+
     const width = 920;
     const height = 320;
-    const padding = { top: 24, right: 24, bottom: 48, left: 28 };
+    const ordered = getOptionsInLetterOrderWithShares(market, snapshot);
+    const padding = {
+      top: 28,
+      right: 30,
+      bottom: 36,
+      left: market.type === "binary" ? 170 : 230,
+    };
     const plotWidth = width - padding.left - padding.right;
-    const plotHeight = height - padding.top - padding.bottom;
-    const baselineY = padding.top + plotHeight;
-    const maxY = distribution.maxY || 1;
+    const rowGap = ordered.length > 4 ? 10 : 14;
+    const availableHeight = height - padding.top - padding.bottom - rowGap * Math.max(0, ordered.length - 1);
+    const rowHeight = clamp(availableHeight / Math.max(1, ordered.length), 28, 46);
+    const axisY = padding.top + ordered.length * rowHeight + Math.max(0, ordered.length - 1) * rowGap + 18;
 
-    const areaPath = distribution.points
-      .map(function (point, index) {
-        const x = padding.left + point.x * plotWidth;
-        const y = padding.top + (1 - point.y / maxY) * plotHeight;
-        return (index === 0 ? "M" : "L") + " " + x.toFixed(2) + " " + y.toFixed(2);
-      })
-      .join(" ");
-
-    const linePath = areaPath;
-    const areaClosed =
-      areaPath +
-      " L " +
-      (padding.left + plotWidth).toFixed(2) +
-      " " +
-      baselineY.toFixed(2) +
-      " L " +
-      padding.left.toFixed(2) +
-      " " +
-      baselineY.toFixed(2) +
-      " Z";
-
-    const q10X = padding.left + distribution.q10 * plotWidth;
-    const q90X = padding.left + distribution.q90 * plotWidth;
-    const meanX = padding.left + distribution.mean * plotWidth;
-    const meanY = padding.top + (1 - distribution.meanDensity / maxY) * plotHeight;
-
-    const axisLabels = [0, 25, 50, 75, 100]
+    const verticalGuides = [0, 25, 50, 75, 100]
       .map(function (value) {
         const x = padding.left + (value / 100) * plotWidth;
         return (
+          '<line class="distribution-scale-line" x1="' +
+          x.toFixed(2) +
+          '" y1="' +
+          padding.top +
+          '" x2="' +
+          x.toFixed(2) +
+          '" y2="' +
+          (axisY - 14).toFixed(2) +
+          '"></line>' +
           '<text class="distribution-axis distribution-axis-x" x="' +
           x.toFixed(2) +
           '" y="' +
-          (baselineY + 28).toFixed(2) +
+          axisY.toFixed(2) +
           '" text-anchor="' +
           (value === 0 ? "start" : value === 100 ? "end" : "middle") +
           '">' +
@@ -1218,133 +1250,48 @@
       })
       .join("");
 
-    const gridLines = [0.25, 0.5, 0.75]
-      .map(function (ratio) {
-        const y = padding.top + (1 - ratio) * plotHeight;
-        return (
-          '<line class="distribution-grid" x1="' +
-          padding.left +
-          '" y1="' +
-          y.toFixed(2) +
-          '" x2="' +
-          (padding.left + plotWidth).toFixed(2) +
-          '" y2="' +
-          y.toFixed(2) +
-          '"></line>'
-        );
-      })
-      .join("");
-
-    chart.setAttribute("aria-label", "Confidence distribution for " + distribution.question);
-    chart.innerHTML =
-      '<defs>' +
-      '<linearGradient id="marketDistributionFill" x1="0" x2="0" y1="0" y2="1">' +
-      '<stop offset="0%" stop-color="#ff6b3d" stop-opacity="0.34"></stop>' +
-      '<stop offset="100%" stop-color="#ff6b3d" stop-opacity="0.02"></stop>' +
-      "</linearGradient>" +
-      "</defs>" +
-      '<rect class="distribution-bg" x="0" y="0" width="' +
-      width +
-      '" height="' +
-      height +
-      '" rx="16" ry="16"></rect>' +
-      gridLines +
-      '<rect class="distribution-band" x="' +
-      q10X.toFixed(2) +
-      '" y="' +
-      padding.top +
-      '" width="' +
-      Math.max(2, q90X - q10X).toFixed(2) +
-      '" height="' +
-      plotHeight.toFixed(2) +
-      '"></rect>' +
-      '<path class="distribution-area" d="' +
-      areaClosed +
-      '" fill="url(#marketDistributionFill)"></path>' +
-      '<path class="distribution-line" d="' +
-      linePath +
-      '"></path>' +
-      '<line class="distribution-baseline" x1="' +
-      padding.left +
-      '" y1="' +
-      baselineY.toFixed(2) +
-      '" x2="' +
-      (padding.left + plotWidth).toFixed(2) +
-      '" y2="' +
-      baselineY.toFixed(2) +
-      '"></line>' +
-      '<line class="distribution-mean-line" x1="' +
-      meanX.toFixed(2) +
-      '" y1="' +
-      padding.top +
-      '" x2="' +
-      meanX.toFixed(2) +
-      '" y2="' +
-      baselineY.toFixed(2) +
-      '"></line>' +
-      '<circle class="distribution-mean-dot" cx="' +
-      meanX.toFixed(2) +
-      '" cy="' +
-      meanY.toFixed(2) +
-      '" r="7"></circle>' +
-      '<text class="distribution-label" x="' +
-      meanX.toFixed(2) +
-      '" y="' +
-      Math.max(20, meanY - 14).toFixed(2) +
-      '" text-anchor="middle">Mean ' +
-      formatPercent(distribution.mean * 100) +
-      "</text>" +
-      axisLabels;
-  }
-
-  function renderMultiDistributionChart(market, snapshot) {
-    const chart = el.detailDistributionChart;
-    const width = 920;
-    const height = 320;
-    const padding = { top: 28, right: 24, bottom: 30, left: 220 };
-    const plotWidth = width - padding.left - padding.right;
-
-    const ordered = getOptionsInLetterOrderWithShares(market, snapshot).slice(0, Math.min(market.options.length, 5));
-    const rowHeight = 42;
     const bars = ordered
       .map(function (item, index) {
         const option = getOption(market.id, item.optionId);
         if (!option) return "";
-        const y = padding.top + index * (rowHeight + 14);
-        const barWidth = Math.max(8, (item.share / 100) * plotWidth);
+
+        const y = padding.top + index * (rowHeight + rowGap);
+        const barWidth = Math.max(item.share === 0 ? 0 : 8, (item.share / 100) * plotWidth);
         const color = getOptionColor(index);
+        const label = optionDisplayLabel(option, market.type === "binary");
+        const valueX = padding.left + Math.min(barWidth + 14, plotWidth - 6);
         return (
           '<text class="distribution-axis distribution-axis-y" x="' +
           (padding.left - 14) +
           '" y="' +
-          (y + 23) +
+          (y + rowHeight / 2 + 5).toFixed(2) +
           '" text-anchor="end">' +
-          escapeHtml(option.letter + ". " + option.shortLabel) +
+          escapeHtml(label) +
           "</text>" +
           '<rect class="distribution-multi-track" x="' +
           padding.left +
           '" y="' +
-          y +
+          y.toFixed(2) +
           '" width="' +
-          plotWidth +
+          plotWidth.toFixed(2) +
           '" height="' +
-          rowHeight +
+          rowHeight.toFixed(2) +
           '" rx="10" ry="10"></rect>' +
           '<rect x="' +
           padding.left +
           '" y="' +
-          y +
+          y.toFixed(2) +
           '" width="' +
           barWidth.toFixed(2) +
           '" height="' +
-          rowHeight +
+          rowHeight.toFixed(2) +
           '" rx="10" ry="10" fill="' +
           color +
-          '" opacity="0.86"></rect>' +
+          '" opacity="0.9"></rect>' +
           '<text class="distribution-label distribution-label-end" x="' +
-          (padding.left + Math.min(barWidth + 14, plotWidth - 6)).toFixed(2) +
+          valueX.toFixed(2) +
           '" y="' +
-          (y + 25).toFixed(2) +
+          (y + rowHeight / 2 + 6).toFixed(2) +
           '">' +
           item.share +
           "%</text>"
@@ -1352,13 +1299,14 @@
       })
       .join("");
 
-    chart.setAttribute("aria-label", "Option distribution for " + market.question);
-    chart.innerHTML =
+    chartEl.setAttribute("aria-label", ariaLabel);
+    chartEl.innerHTML =
       '<rect class="distribution-bg" x="0" y="0" width="' +
       width +
       '" height="' +
       height +
       '" rx="16" ry="16"></rect>' +
+      verticalGuides +
       bars;
   }
 
@@ -1403,26 +1351,25 @@
     if (!el.detailInfoList) return;
 
     const participantCount = getSyntheticParticipantCount(market);
-    const interval = market.type === "binary" ? buildBinaryDistribution(market, snapshot) : null;
+    const voterSnapshot = getMarketVoterSnapshot(market, snapshot);
     const infoRows = [
       ["Category", market.category],
       ["Weekly volume", formatVolume(market.volume) + " credence tokens"],
       ["Participants", compactNumber.format(participantCount)],
       ["Market closes", "This Sunday"],
       [
-        "Current estimate",
+        "Token split",
         market.type === "binary"
           ? "YES " + (snapshot.optionShares.yes || 0) + "% / NO " + (snapshot.optionShares.no || 0) + "%"
           : describeLeadingOptionsInLetterOrder(market, snapshot, 2),
       ],
+      [
+        "Voter split",
+        market.type === "binary"
+          ? "YES " + (voterSnapshot.optionShares.yes || 0) + "% / NO " + (voterSnapshot.optionShares.no || 0) + "%"
+          : describeLeadingOptionsInLetterOrder(market, voterSnapshot, 2),
+      ],
     ];
-
-    if (interval) {
-      infoRows.push([
-        "10-90 range",
-        formatPercent(interval.q10 * 100) + " to " + formatPercent(interval.q90 * 100),
-      ]);
-    }
 
     el.detailInfoList.innerHTML = infoRows
       .map(function (row) {
@@ -2958,6 +2905,39 @@
 
     const shares = roundSharesToHundred(market.options, optionCoins, total);
 
+    const ordered = market.options
+      .map(function (option) {
+        return {
+          optionId: option.id,
+          share: shares[option.id] || 0,
+        };
+      })
+      .sort(function (a, b) {
+        return b.share - a.share;
+      });
+
+    return {
+      optionShares: shares,
+      ordered: ordered,
+    };
+  }
+
+  // Voter share is flatter than token share because each participant counts once,
+  // while token allocation amplifies higher-conviction positions.
+  function getMarketVoterSnapshot(market, tokenSnapshot) {
+    const rawSupport = Object.create(null);
+    const exponent = market.type === "binary" ? 0.68 : 0.74;
+
+    market.options.forEach(function (option) {
+      const tokenShare = Math.max(0.001, (tokenSnapshot.optionShares[option.id] || 0) / 100);
+      rawSupport[option.id] = Math.pow(tokenShare, exponent);
+    });
+
+    const totalRaw = market.options.reduce(function (sum, option) {
+      return sum + (rawSupport[option.id] || 0);
+    }, 0);
+
+    const shares = roundSharesToHundred(market.options, rawSupport, totalRaw);
     const ordered = market.options
       .map(function (option) {
         return {

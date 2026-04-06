@@ -2183,6 +2183,13 @@ html:not([data-theme]) .positions-side.no {
   font-size: 0.95rem;
 }
 
+div.distribution-grid {
+  margin-top: 1.1rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
 .distribution-panel {
   border: 1px solid var(--line);
   border-radius: 22px;
@@ -2221,7 +2228,7 @@ html:not([data-theme]) .positions-side.no {
   fill: transparent;
 }
 
-.distribution-grid {
+.distribution-scale-line {
   stroke: rgba(107, 102, 95, 0.16);
   stroke-width: 1;
 }
@@ -2530,6 +2537,10 @@ html:not([data-theme]) .positions-side.no {
 
   .distribution-panel {
     padding: 0.8rem;
+  }
+
+  div.distribution-grid {
+    grid-template-columns: 1fr;
   }
 
   .detail-action-row .btn {

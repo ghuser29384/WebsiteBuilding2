@@ -126,15 +126,27 @@
               <p id="detailEstimateRange" class="detail-estimate-range"></p>
             </div>
 
-            <section class="distribution-panel" aria-live="polite">
-              <div class="trend-head">
-                <p class="trend-title">Confidence Distribution</p>
-                <p class="trend-meta" id="detailDistributionMeta"></p>
-              </div>
-              <svg id="detailDistributionChart" class="trend-chart detail-distribution-chart" viewBox="0 0 920 320" role="img" aria-label="Confidence distribution for this market"></svg>
-              <div id="detailDistributionLegend" class="distribution-legend"></div>
-              <p id="detailDistributionSummary" class="detail-distribution-summary"></p>
-            </section>
+            <div class="distribution-grid">
+              <section class="distribution-panel" aria-live="polite">
+                <div class="trend-head">
+                  <p class="trend-title">Token Distribution</p>
+                  <p class="trend-meta" id="detailDistributionMeta"></p>
+                </div>
+                <svg id="detailDistributionChart" class="trend-chart detail-distribution-chart" viewBox="0 0 920 320" role="img" aria-label="Distribution of credence tokens across answers"></svg>
+                <div id="detailDistributionLegend" class="distribution-legend"></div>
+                <p id="detailDistributionSummary" class="detail-distribution-summary"></p>
+              </section>
+
+              <section class="distribution-panel" aria-live="polite">
+                <div class="trend-head">
+                  <p class="trend-title">Voter Distribution</p>
+                  <p class="trend-meta" id="detailVoterDistributionMeta"></p>
+                </div>
+                <svg id="detailVoterDistributionChart" class="trend-chart detail-distribution-chart" viewBox="0 0 920 320" role="img" aria-label="Distribution of voters across answers"></svg>
+                <div id="detailVoterDistributionLegend" class="distribution-legend"></div>
+                <p id="detailVoterDistributionSummary" class="detail-distribution-summary"></p>
+              </section>
+            </div>
 
             <div class="detail-action-row">
               <button id="detailJumpToCast" class="btn btn-primary" type="button">Cast Credence Tokens</button>
