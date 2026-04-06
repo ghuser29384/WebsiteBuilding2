@@ -17,7 +17,7 @@
   const TREND_GRID_LEVELS = [75, 50, 25, 0];
   const DEFAULT_CAST_COINS = 25;
   const DEFAULT_MULTI_OPTION_COINS = 12;
-  const OPTION_COLORS = ["#2f3d53", "#6f665f", "#5d6f86", "#8a7a6e", "#7d858f", "#8a7f95", "#5f7380"];
+  const OPTION_COLORS = ["#2f3d53", "#7b6858", "#5a6b72", "#9a7b68", "#7f8474", "#6d7488", "#8e8478"];
 
   const MARKETS = [
     createBinaryMarket({
@@ -2198,6 +2198,17 @@
     const leadStroke = Number(target.leadStroke) || 2.8;
     const baseStroke = Number(target.baseStroke) || 2.2;
     const dotRadius = Number(target.dotRadius) || 4.2;
+    const lastPoint = points[points.length - 1];
+    const baselineY = padding.top + plotHeight;
+
+    const leaderOptionId = market.options.reduce(function (leadId, option, index) {
+      const share = clamp(Number(lastPoint.s[option.id] || 0), 0, 100);
+      if (!leadId) return option.id;
+      const leadShare = clamp(Number(lastPoint.s[leadId] || 0), 0, 100);
+      if (share > leadShare) return option.id;
+      if (share < leadShare) return leadId;
+      return index === 0 ? option.id : leadId;
+    }, "");
 
     const grid = TREND_GRID_LEVELS.map(function (level) {
       const y = padding.top + ((100 - level) / 100) * plotHeight;
@@ -2218,25 +2229,49 @@
         '">' +
         level +
         "%</text>"
-      );
-    }).join("");
+        );
+      }).join("");
+
+    const pathByOptionId = Object.create(null);
+    market.options.forEach(function (option) {
+      pathByOptionId[option.id] = points
+        .map(function (point, pointIndex) {
+          const x = padding.left + (pointIndex / maxIndex) * plotWidth;
+          const share = clamp(Number(point.s[option.id] || 0), 0, 100);
+          const y = padding.top + ((100 - share) / 100) * plotHeight;
+          return (pointIndex === 0 ? "M" : "L") + " " + x.toFixed(2) + " " + y.toFixed(2);
+        })
+        .join(" ");
+    });
+
+    let leaderArea = "";
+    if (leaderOptionId && pathByOptionId[leaderOptionId]) {
+      const leaderColor = getOptionColor(getOptionOrderIndex(market, leaderOptionId));
+      const leaderPath = pathByOptionId[leaderOptionId];
+      leaderArea =
+        '<path d="' +
+        leaderPath +
+        " L " +
+        (padding.left + plotWidth).toFixed(2) +
+        " " +
+        baselineY.toFixed(2) +
+        " L " +
+        padding.left.toFixed(2) +
+        " " +
+        baselineY.toFixed(2) +
+        ' Z" fill="' +
+        leaderColor +
+        '" opacity="0.07"></path>';
+    }
 
     const optionPaths = market.options
       .map(function (option, index) {
         const color = getOptionColor(index);
-        const d = points
-          .map(function (point, pointIndex) {
-            const x = padding.left + (pointIndex / maxIndex) * plotWidth;
-            const share = clamp(Number(point.s[option.id] || 0), 0, 100);
-            const y = padding.top + ((100 - share) / 100) * plotHeight;
-            return (pointIndex === 0 ? "M" : "L") + " " + x.toFixed(2) + " " + y.toFixed(2);
-          })
-          .join(" ");
-
-        const lastPoint = points[points.length - 1];
+        const d = pathByOptionId[option.id];
         const finalShare = clamp(Number(lastPoint.s[option.id] || 0), 0, 100);
         const finalX = padding.left + plotWidth;
         const finalY = padding.top + ((100 - finalShare) / 100) * plotHeight;
+        const isLeader = option.id === leaderOptionId;
 
         return (
           '<path d="' +
@@ -2244,7 +2279,9 @@
           '" fill="none" stroke="' +
           color +
           '" stroke-width="' +
-          (index === 0 ? leadStroke : baseStroke) +
+          (isLeader ? leadStroke : baseStroke) +
+          '" stroke-opacity="' +
+          (isLeader ? "0.96" : "0.74") +
           '" stroke-linecap="round" stroke-linejoin="round"></path>' +
           '<circle cx="' +
           finalX.toFixed(2) +
@@ -2254,7 +2291,9 @@
           dotRadius +
           '" fill="' +
           color +
-          '" opacity="0.95"></circle>'
+          '" stroke="#fffdfa" stroke-width="2.4" opacity="' +
+          (isLeader ? "1" : "0.92") +
+          '"></circle>'
         );
       })
       .join("");
@@ -2266,10 +2305,19 @@
       '" height="' +
       height +
       '" rx="12" ry="12"></rect>' +
+      '<line class="trend-latest-guide" x1="' +
+      (padding.left + plotWidth).toFixed(2) +
+      '" y1="' +
+      padding.top.toFixed(2) +
+      '" x2="' +
+      (padding.left + plotWidth).toFixed(2) +
+      '" y2="' +
+      baselineY.toFixed(2) +
+      '"></line>' +
       grid +
+      leaderArea +
       optionPaths;
 
-    const lastPoint = points[points.length - 1];
     metaEl.textContent = "Updated " + formatTimeAgo(lastPoint.t);
 
     const latest = market.options
