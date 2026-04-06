@@ -509,6 +509,131 @@
             </p>
           </div>
         </div>
+        <div class="progress-timing-grid">
+          <article class="panel timing-card">
+            <p class="eyebrow">Longterm Welfare</p>
+            <h3>Equal progress in all domains can move welfare forward and extinction forward at the same time.</h3>
+            <p>
+              Equal progress in all domains doesn't increase total human welfare. It causes humans to enjoy higher welfare sooner,
+              but it also causes humans to develop dangerous technology sooner: human-made pandemics, power-seeking AI, and
+              increasingly destructive weapons.
+            </p>
+            <p>
+              If progress remains equally accelerated across all domains, then humanity also reaches existential catastrophe sooner.
+              In the simple case where every domain is accelerated by 1 year, humanity goes extinct 1 year sooner as well. The gain is
+              one earlier year of welfare; the loss is one entire later year of welfare at roughly the quality of life humanity would
+              otherwise have had in 2026.
+            </p>
+            <p class="timing-source-note">
+              Adapted from Toby Ord, <em>On the Value of Advancing Progress</em>.
+            </p>
+          </article>
+
+          <article class="panel timing-graphic-card" aria-label="Graphic comparing ordinary and equally accelerated progress paths">
+            <svg class="timing-graphic" viewBox="0 0 960 430" role="img" aria-label="Equal progress raises welfare earlier but also brings extinction earlier, causing lost welfare years">
+              <rect x="0" y="0" width="960" height="430" fill="#f3f3ef"></rect>
+              <g class="timing-grid-lines">
+                <path d="M76 44H918"></path>
+                <path d="M76 116H918"></path>
+                <path d="M76 188H918"></path>
+                <path d="M76 260H918"></path>
+                <path d="M76 332H918"></path>
+                <path d="M76 44V332"></path>
+                <path d="M240 44V332"></path>
+                <path d="M404 44V332"></path>
+                <path d="M568 44V332"></path>
+                <path d="M732 44V332"></path>
+                <path d="M918 44V332"></path>
+              </g>
+
+              <path class="timing-path baseline" d="M90 300 C150 266 208 232 246 206 C298 170 346 126 396 92 C448 58 514 48 588 74 C652 98 710 124 762 114 C806 106 840 72 872 58 C888 52 902 188 914 326"></path>
+              <path class="timing-path accelerated" d="M90 320 C154 280 214 244 252 214 C306 174 354 128 408 90 C466 48 530 44 604 66 C664 84 718 112 770 106 C810 102 842 74 870 62 C884 58 892 170 900 326"></path>
+
+              <path class="timing-loss-area" d="M900 62 L914 58 L914 326 L900 326 Z"></path>
+              <line class="timing-drop-line" x1="900" y1="62" x2="900" y2="326"></line>
+              <line class="timing-drop-line" x1="914" y1="58" x2="914" y2="326"></line>
+
+              <text class="timing-axis-label" x="76" y="368">Earlier centuries</text>
+              <text class="timing-axis-label" x="360" y="368">Industrial / scientific acceleration</text>
+              <text class="timing-axis-label" x="716" y="368">High-risk capability era</text>
+              <text class="timing-y-label" x="14" y="52">Welfare</text>
+              <text class="timing-y-label" x="12" y="328">0</text>
+
+              <text class="timing-curve-label" x="522" y="108">Ordinary progress</text>
+              <text class="timing-curve-label accent" x="516" y="48">Equal progress accelerated by 1 year</text>
+              <text class="timing-area-label" x="804" y="94">Lost welfare year</text>
+              <text class="timing-area-label small" x="780" y="118">equal to roughly one year at the</text>
+              <text class="timing-area-label small" x="786" y="138">unaccelerated welfare level</text>
+            </svg>
+            <p class="timing-caption">
+              Equal acceleration shifts both good years and dangerous years earlier. If extinction also comes earlier,
+              total welfare need not increase.
+            </p>
+          </article>
+        </div>
+
+        <div class="progress-timing-grid progress-timing-grid-secondary">
+          <article class="panel timing-card">
+            <p class="eyebrow">Differential Progress</p>
+            <h3>What increases total human welfare instead is differential progress.</h3>
+            <p>
+              Differential progress means accelerating some domains of progress so that they arrive earlier than progress in
+              other domains. The aim is to get norms, institutions, and moral understanding ahead of capabilities that make
+              catastrophic mistakes easier.
+            </p>
+            <p>
+              By developing social norms and institutions that regulate the development of future technologies, progress in
+              technology becomes less dangerous. This is why ethical discovery, metaethical clarity, state capacity, and
+              international coordination matter instrumentally as well as intrinsically.
+            </p>
+            <p>
+              We have already discovered many low-hanging-fruit ethical truths. Most people in history did not consider slavery
+              wrong. The remaining work is harder: discovering ethical and metaethical truths that are more difficult to see,
+              but that may matter even more for shaping advanced civilization well.
+            </p>
+          </article>
+
+          <article class="panel timing-graphic-card" aria-label="Graphic illustrating differential progress">
+            <svg class="timing-graphic timing-graphic-ladder" viewBox="0 0 960 430" role="img" aria-label="Differential progress accelerates moral discovery and governance before dangerous capabilities">
+              <rect x="0" y="0" width="960" height="430" fill="#f3f3ef"></rect>
+              <g class="timing-grid-lines">
+                <path d="M88 72H904"></path>
+                <path d="M88 166H904"></path>
+                <path d="M88 260H904"></path>
+                <path d="M88 354H904"></path>
+                <path d="M88 72V354"></path>
+                <path d="M332 72V354"></path>
+                <path d="M576 72V354"></path>
+                <path d="M820 72V354"></path>
+              </g>
+
+              <path class="timing-lane-line ethics" d="M112 314 L284 314 L412 208 L574 208 L692 122 L820 122"></path>
+              <path class="timing-lane-line institutions" d="M112 354 L320 354 L320 252 L592 252 L592 148 L820 148"></path>
+              <path class="timing-lane-line tech" d="M112 274 L448 274 L448 274 L738 274 L738 84 L820 84"></path>
+
+              <circle class="timing-node ethics" cx="412" cy="208" r="8"></circle>
+              <circle class="timing-node institutions" cx="592" cy="148" r="8"></circle>
+              <circle class="timing-node tech" cx="738" cy="84" r="8"></circle>
+
+              <text class="timing-lane-label" x="114" y="300">Moral + metaethical discovery</text>
+              <text class="timing-lane-label" x="114" y="340">Norms + institutions</text>
+              <text class="timing-lane-label" x="114" y="260">Dangerous capabilities</text>
+
+              <text class="timing-curve-label accent" x="364" y="192">ethical insight arrives earlier</text>
+              <text class="timing-curve-label accent" x="544" y="132">institutions regulate later capabilities</text>
+              <text class="timing-curve-label" x="650" y="66">dangerous technology arrives later</text>
+
+              <text class="timing-axis-label" x="88" y="390">present</text>
+              <text class="timing-axis-label" x="300" y="390">discover harder truths</text>
+              <text class="timing-axis-label" x="544" y="390">build governance</text>
+              <text class="timing-axis-label" x="772" y="390">capabilities under regulation</text>
+            </svg>
+            <p class="timing-caption">
+              The goal is not to stop progress across the board. It is to bring moral understanding and institutional restraint
+              forward relative to dangerous capability growth.
+            </p>
+          </article>
+        </div>
       </div>
       <div class="deliberation-grid">
         <article class="panel deliberation-copy">
