@@ -357,6 +357,37 @@
 
   init();
 
+  function getAuthUser() {
+    try {
+      if (!window.NormativityAuth || typeof window.NormativityAuth.getCurrentUser !== "function") {
+        return null;
+      }
+      return window.NormativityAuth.getCurrentUser() || null;
+    } catch (_error) {
+      return null;
+    }
+  }
+
+  function isAuthenticated() {
+    const user = getAuthUser();
+    return Boolean(user && user.id);
+  }
+
+  function getCurrentPathWithSearchAndHash() {
+    const path = window.location.pathname || "/moral-market.html";
+    const search = window.location.search || "";
+    const hash = window.location.hash || "";
+    return path + search + hash;
+  }
+
+  function getAuthRedirectUrl(mode) {
+    return "auth.html?mode=" + encodeURIComponent(mode || "signin") + "&next=" + encodeURIComponent(getCurrentPathWithSearchAndHash());
+  }
+
+  function redirectToAuth(mode) {
+    window.location.assign(getAuthRedirectUrl(mode || "signin"));
+  }
+
   function resolveScopedStorageKey(baseKey) {
     try {
       if (!window.NormativityAuth || typeof window.NormativityAuth.scopedStorageKey !== "function") {
@@ -816,7 +847,7 @@
   function renderStats() {
     el.marketCount.textContent = String(MARKETS.length);
     el.castCount.textContent = String(state.activity.length);
-    el.positionCount.textContent = String(getCoinsRemaining());
+    el.positionCount.textContent = isAuthenticated() ? String(getCoinsRemaining()) : "—";
   }
 
   function renderFilters() {
@@ -1116,8 +1147,7 @@
       el.detailEstimateRange.textContent = "Compare the full distribution across available theories, not just the leading option.";
     }
     el.detailDistributionMeta.textContent = "Current share held by each option in the ballot.";
-    el.detailDistributionLegend.innerHTML = snapshot.ordered
-      .slice(0, 4)
+    el.detailDistributionLegend.innerHTML = getLeadingOptionsInLetterOrder(market, snapshot, 4)
       .map(function (item, index) {
         const option = getOption(market.id, item.optionId);
         if (!option) return "";
@@ -1274,7 +1304,7 @@
     const padding = { top: 28, right: 24, bottom: 30, left: 220 };
     const plotWidth = width - padding.left - padding.right;
 
-    const ordered = snapshot.ordered.slice(0, Math.min(snapshot.ordered.length, 5));
+    const ordered = getOptionsInLetterOrderWithShares(market, snapshot).slice(0, Math.min(market.options.length, 5));
     const rowHeight = 42;
     const bars = ordered
       .map(function (item, index) {
@@ -1383,7 +1413,7 @@
         "Current estimate",
         market.type === "binary"
           ? "YES " + (snapshot.optionShares.yes || 0) + "% / NO " + (snapshot.optionShares.no || 0) + "%"
-          : describeTopOptions(market, snapshot, 2),
+          : describeLeadingOptionsInLetterOrder(market, snapshot, 2),
       ],
     ];
 
@@ -1475,12 +1505,20 @@
       ];
     }
 
-    return snapshot.ordered.slice(0, 3).map(function (item, index) {
+    const topRanked = snapshot.ordered.slice(0, 3);
+    const rankByOptionId = new Map(
+      topRanked.map(function (item, index) {
+        return [item.optionId, index];
+      })
+    );
+
+    return getLeadingOptionsInLetterOrder(market, snapshot, 3).map(function (item) {
       const option = getOption(market.id, item.optionId);
       const theory = option ? option.theory : "Competing theory explanation.";
+      const rank = rankByOptionId.has(item.optionId) ? rankByOptionId.get(item.optionId) : 2;
       return {
-        tone: index === 0 ? "higher" : index === 1 ? "sensitive" : "lower",
-        kicker: "Option " + (option ? option.letter : String(index + 1)),
+        tone: rank === 0 ? "higher" : rank === 1 ? "sensitive" : "lower",
+        kicker: "Option " + (option ? option.letter : String(rank + 1)),
         title: option ? option.label : "Open ballot option",
         body: truncateCopy(extractLeadSentence(theory)),
         meta: item.share + "% of current credence",
@@ -1701,7 +1739,7 @@
 
   function renderMultiDetailSections(market, snapshot) {
     if (el.detailOutcomeContext) {
-      const topSummary = describeTopOptions(market, snapshot, 3);
+      const topSummary = describeLeadingOptionsInLetterOrder(market, snapshot, 4);
       el.detailOutcomeContext.innerHTML =
         '<article class="detail-overview-card">' +
         "<h3>Open Ballot (Multi-choice)</h3>" +
@@ -1824,7 +1862,7 @@
   }
 
   function renderMultiCardBody(market, snapshot) {
-    const top = snapshot.ordered.slice(0, 3);
+    const top = getLeadingOptionsInLetterOrder(market, snapshot, 3);
 
     return (
       renderMultiBar(market, snapshot) +
@@ -1922,6 +1960,7 @@
   function renderTicket() {
     const market = getSelectedMarket();
     const ticketHeading = el.ticketPanel ? el.ticketPanel.querySelector("h2") : null;
+    const signedIn = isAuthenticated();
 
     if (!market) {
       el.ticketPrompt.style.display = "";
@@ -1961,10 +2000,12 @@
     }
 
     const hasAllocation = getPositionsForMarket(market.id).length > 0;
-    el.clearBtn.hidden = !hasAllocation;
+    el.clearBtn.hidden = !signedIn || !hasAllocation;
+    el.castBtn.hidden = !signedIn;
 
-    el.remainingLine.textContent =
-      "Credence tokens remaining this week: " + getCoinsRemaining() + " / " + WEEKLY_COINS + ".";
+    el.remainingLine.textContent = signedIn
+      ? "Credence tokens remaining this week: " + getCoinsRemaining() + " / " + WEEKLY_COINS + "."
+      : "Browsing mode: sign in or sign up to cast credence tokens and save positions.";
 
     updateTicketPreview();
   }
@@ -1980,26 +2021,36 @@
       );
     }
 
-    const top = snapshot.ordered.slice(0, 3);
-    const details = top
-      .map(function (item) {
-        const option = getOption(market.id, item.optionId);
-        if (!option) return "";
-        return option.letter + ". " + item.share + "%";
-      })
-      .filter(Boolean)
-      .join(" | ");
-
-    return "Current board split (top choices): " + details;
+    return "Current board split (top choices): " + describeLeadingOptionsInLetterOrder(market, snapshot, 4);
   }
 
   function renderTicketControls(market, snapshot) {
+    if (!isAuthenticated()) {
+      renderGuestTicketControls();
+      return;
+    }
+
     if (market.type === "binary") {
       renderBinaryTicketControls(market);
       return;
     }
 
     renderMultiTicketControls(market, snapshot);
+  }
+
+  function renderGuestTicketControls() {
+    el.ticketControls.innerHTML =
+      '<div class="market-auth-gate">' +
+      '<p class="market-auth-copy">Sign in or sign up to cast credence tokens, track your positions, and carry your weekly budget across markets.</p>' +
+      '<div class="market-auth-actions">' +
+      '<a class="btn btn-primary market-auth-link" href="' +
+      escapeHtml(getAuthRedirectUrl("signin")) +
+      '">Sign in</a>' +
+      '<a class="btn btn-ghost market-auth-link" href="' +
+      escapeHtml(getAuthRedirectUrl("signup")) +
+      '">Sign up</a>' +
+      "</div>" +
+      "</div>";
   }
 
   function renderBinaryTicketControls(market) {
@@ -2281,10 +2332,13 @@
           color: getOptionColor(index),
           share: clamp(Number(lastPoint.s[option.id] || 0), 0, 100),
         };
-      })
-      .sort(function (a, b) {
+      });
+
+    if (market.type === "binary") {
+      latest.sort(function (a, b) {
         return b.share - a.share;
       });
+    }
 
     legendEl.innerHTML = latest
       .map(function (item) {
@@ -2319,6 +2373,11 @@
   }
 
   function updateBinaryPreview(market) {
+    if (!isAuthenticated()) {
+      el.ticketPreview.textContent = "Browse the market freely. Authentication is required before you can cast credence tokens.";
+      return;
+    }
+
     const coinsInput = el.ticketPanel.querySelector("#binaryCoinsRange");
     const coins = clamp(Math.round(Number((coinsInput && coinsInput.value) || DEFAULT_CAST_COINS)), 1, WEEKLY_COINS);
     const existing = getPositionsForMarket(market.id)[0] || null;
@@ -2370,6 +2429,11 @@
   }
 
   function updateMultiPreview(market) {
+    if (!isAuthenticated()) {
+      el.ticketPreview.textContent = "Browse the market freely. Authentication is required before you can cast credence tokens.";
+      return;
+    }
+
     const draftPositions = getDraftMultiPositions(market);
     const existingPositions = getPositionsForMarket(market.id);
 
@@ -2417,6 +2481,12 @@
   }
 
   function onCastCoins() {
+    if (!isAuthenticated()) {
+      el.ticketStatus.textContent = "Sign in or sign up to cast credence tokens.";
+      redirectToAuth("signin");
+      return;
+    }
+
     ensureCurrentWeek();
 
     const market = getSelectedMarket();
@@ -2546,6 +2616,12 @@
   }
 
   function onClearMarket() {
+    if (!isAuthenticated()) {
+      el.ticketStatus.textContent = "Sign in or sign up to manage market allocations.";
+      redirectToAuth("signin");
+      return;
+    }
+
     const market = getSelectedMarket();
     if (!market) {
       el.ticketStatus.textContent = "Select a proposition first.";
@@ -2672,6 +2748,12 @@
   }
 
   function renderPositions() {
+    if (!isAuthenticated()) {
+      el.positionsList.innerHTML =
+        '<li class="empty-item"><p>Sign in or sign up to track your positions and remaining credence tokens.</p></li>';
+      return;
+    }
+
     if (state.positions.length === 0) {
       el.positionsList.innerHTML = '<li class="empty-item"><p>No active positions this week.</p></li>';
       return;
@@ -2984,6 +3066,42 @@
       })
       .filter(Boolean)
       .join(" | ");
+  }
+
+  function describeLeadingOptionsInLetterOrder(market, snapshot, count) {
+    return getLeadingOptionsInLetterOrder(market, snapshot, count)
+      .map(function (item) {
+        const option = getOption(market.id, item.optionId);
+        if (!option) return "";
+        return optionDisplayLabel(option, market.type === "binary") + " " + item.share + "%";
+      })
+      .filter(Boolean)
+      .join(" | ");
+  }
+
+  function getLeadingOptionsInLetterOrder(market, snapshot, count) {
+    return snapshot.ordered
+      .slice(0, count)
+      .slice()
+      .sort(function (a, b) {
+        return getOptionOrderIndex(market, a.optionId) - getOptionOrderIndex(market, b.optionId);
+      });
+  }
+
+  function getOptionsInLetterOrderWithShares(market, snapshot) {
+    return market.options.map(function (option) {
+      return {
+        optionId: option.id,
+        share: snapshot.optionShares[option.id] || 0,
+      };
+    });
+  }
+
+  function getOptionOrderIndex(market, optionId) {
+    for (let i = 0; i < market.options.length; i += 1) {
+      if (market.options[i].id === optionId) return i;
+    }
+    return Number.MAX_SAFE_INTEGER;
   }
 
   function optionDisplayLabel(option, binaryStyle) {
@@ -3372,6 +3490,10 @@
 
   function loadState(week) {
     try {
+      if (!isAuthenticated()) {
+        return defaultState(week);
+      }
+
       const stored = readStoredStateRaw();
       if (!stored || !stored.raw) return defaultState(week);
       if (stored.key !== STORAGE_KEY) {
