@@ -1036,6 +1036,21 @@ body.forethought-site .wre-nav a {
   }
 }
 
+body.forethought-site .brand,
+body.forethought-site .wre-brand {
+  display: inline-flex;
+  align-items: center;
+  line-height: 0;
+  text-decoration: none;
+}
+
+body.forethought-site .brand img,
+body.forethought-site .wre-brand img {
+  display: block;
+  width: auto;
+  height: clamp(28px, 3.2vw, 40px);
+}
+
 body.forethought-site .main-nav a.nav-pill {
   border: 1px solid var(--nm-line-strong) !important;
   border-radius: 14px !important;
