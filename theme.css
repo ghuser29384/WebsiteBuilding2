@@ -1042,13 +1042,22 @@ body.forethought-site .wre-brand {
   align-items: center;
   line-height: 0;
   text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  flex: 0 0 auto;
+  width: clamp(108px, 11vw, 156px);
+  height: clamp(72px, 7vw, 98px);
 }
 
 body.forethought-site .brand img,
 body.forethought-site .wre-brand img {
+  position: absolute;
   display: block;
   width: auto;
-  height: clamp(58px, 6.2vw, 84px);
+  max-width: none;
+  height: clamp(430px, 40vw, 620px);
+  left: -8px;
+  top: clamp(-300px, -28vw, -220px);
 }
 
 body.forethought-site .main-nav a.nav-pill {
