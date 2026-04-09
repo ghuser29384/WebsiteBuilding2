@@ -1048,7 +1048,7 @@ body.forethought-site .brand img,
 body.forethought-site .wre-brand img {
   display: block;
   width: auto;
-  height: clamp(28px, 3.2vw, 40px);
+  height: clamp(38px, 4vw, 54px);
 }
 
 body.forethought-site .main-nav a.nav-pill {
