@@ -773,7 +773,7 @@ body.forethought-site .wre-topbar-inner {
 }
 
 body.forethought-site .header-inner {
-  min-height: 112px;
+  min-height: 96px;
 }
 
 body.forethought-site h1,
@@ -913,10 +913,10 @@ body.forethought-site .wre-nav a {
   body.forethought-site .brand {
     display: inline-flex;
     align-items: center;
-    min-height: 42px;
-    line-height: 0.92;
+    min-height: auto;
+    line-height: 0;
     white-space: nowrap;
-    transform: translateY(-1px);
+    transform: none;
   }
 
   body.forethought-site .header-tools {
@@ -1042,22 +1042,19 @@ body.forethought-site .wre-brand {
   align-items: center;
   line-height: 0;
   text-decoration: none;
-  position: relative;
-  overflow: hidden;
   flex: 0 0 auto;
-  width: clamp(108px, 11vw, 156px);
-  height: clamp(72px, 7vw, 98px);
+  width: auto;
+  height: auto;
+  max-width: min(38vw, 420px);
 }
 
 body.forethought-site .brand img,
 body.forethought-site .wre-brand img {
-  position: absolute;
   display: block;
   width: auto;
-  max-width: none;
-  height: clamp(430px, 40vw, 620px);
-  left: -8px;
-  top: clamp(-300px, -28vw, -220px);
+  max-width: min(38vw, 420px);
+  height: clamp(54px, 5.2vw, 78px);
+  object-fit: contain;
 }
 
 body.forethought-site .main-nav a.nav-pill {
