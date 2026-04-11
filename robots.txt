@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /auth.html
+Disallow: /profile.html
+Disallow: /WebsiteBuilding2/
+Disallow: /client/
+Disallow: /server/
+Disallow: /node_modules/
+Disallow: /index.html.wre-backup
+
+Sitemap: https://normativity.org/sitemap.xml
