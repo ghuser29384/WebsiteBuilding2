@@ -773,7 +773,7 @@ body.forethought-site .wre-topbar-inner {
 }
 
 body.forethought-site .header-inner {
-  min-height: 96px;
+  min-height: 88px;
 }
 
 body.forethought-site h1,
@@ -1045,15 +1045,15 @@ body.forethought-site .wre-brand {
   flex: 0 0 auto;
   width: auto;
   height: auto;
-  max-width: min(38vw, 420px);
+  max-width: min(30vw, 340px);
 }
 
 body.forethought-site .brand img,
 body.forethought-site .wre-brand img {
   display: block;
   width: auto;
-  max-width: min(38vw, 420px);
-  height: clamp(54px, 5.2vw, 78px);
+  max-width: min(30vw, 340px);
+  height: clamp(42px, 4.1vw, 60px);
   object-fit: contain;
 }
 
