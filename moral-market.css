@@ -2030,10 +2030,10 @@ html:not([data-theme]) {
   --ink: #23201c;
   --ink-soft: #6b665f;
   --accent: #ff6b3d;
-  --yes: #415a68;
-  --yes-soft: #eef3f5;
-  --no: #8f6b64;
-  --no-soft: #f7f0ee;
+  --yes: #359b5f;
+  --yes-soft: #edf8f1;
+  --no: #cb3232;
+  --no-soft: #fbeeee;
   --warning: #ff6b3d;
   --shadow-sm: 0 8px 24px rgba(35, 32, 28, 0.05);
   --shadow-md: 0 18px 38px rgba(35, 32, 28, 0.08);
@@ -2041,12 +2041,12 @@ html:not([data-theme]) {
 
 html[data-theme="light"] .bar-yes,
 html:not([data-theme]) .bar-yes {
-  background: linear-gradient(90deg, #587384 0%, #415a68 100%);
+  background: linear-gradient(90deg, #4bae72 0%, #359b5f 100%);
 }
 
 html[data-theme="light"] .bar-no,
 html:not([data-theme]) .bar-no {
-  background: linear-gradient(90deg, #a67c74 0%, #8f6b64 100%);
+  background: linear-gradient(90deg, #d85a5a 0%, #cb3232 100%);
 }
 
 html[data-theme="light"] .quote-btn.yes strong,
@@ -2055,7 +2055,7 @@ html[data-theme="light"] .positions-side.yes,
 html:not([data-theme]) .quote-btn.yes strong,
 html:not([data-theme]) .feed-side.yes,
 html:not([data-theme]) .positions-side.yes {
-  color: #415a68 !important;
+  color: #359b5f !important;
 }
 
 html[data-theme="light"] .quote-btn.no strong,
@@ -2064,7 +2064,7 @@ html[data-theme="light"] .positions-side.no,
 html:not([data-theme]) .quote-btn.no strong,
 html:not([data-theme]) .feed-side.no,
 html:not([data-theme]) .positions-side.no {
-  color: #8f6b64 !important;
+  color: #cb3232 !important;
 }
 
 .market-detail-route .container {

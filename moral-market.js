@@ -3198,7 +3198,10 @@
     return options.get(optionId) || null;
   }
 
-  function getOptionColor(index) {
+  function getOptionColor(index, market) {
+    if (market && market.type === "binary") {
+      return index === 0 ? "#359b5f" : "#cb3232";
+    }
     return OPTION_COLORS[index % OPTION_COLORS.length];
   }
 
