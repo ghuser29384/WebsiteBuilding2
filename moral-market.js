@@ -1257,7 +1257,7 @@
 
         const y = padding.top + index * (rowHeight + rowGap);
         const barWidth = Math.max(item.share === 0 ? 0 : 8, (item.share / 100) * plotWidth);
-        const color = getOptionColor(index);
+        const color = getOptionColor(getOptionOrderIndex(market, item.optionId), market);
         const label = optionDisplayLabel(option, market.type === "binary");
         const valueX = padding.left + Math.min(barWidth + 14, plotWidth - 6);
         return (
@@ -2246,7 +2246,7 @@
 
     let leaderArea = "";
     if (leaderOptionId && pathByOptionId[leaderOptionId]) {
-      const leaderColor = getOptionColor(getOptionOrderIndex(market, leaderOptionId));
+      const leaderColor = getOptionColor(getOptionOrderIndex(market, leaderOptionId), market);
       const leaderPath = pathByOptionId[leaderOptionId];
       leaderArea =
         '<path d="' +
@@ -2266,7 +2266,7 @@
 
     const optionPaths = market.options
       .map(function (option, index) {
-        const color = getOptionColor(index);
+        const color = getOptionColor(index, market);
         const d = pathByOptionId[option.id];
         const finalShare = clamp(Number(lastPoint.s[option.id] || 0), 0, 100);
         const finalX = padding.left + plotWidth;
@@ -2324,7 +2324,7 @@
       .map(function (option, index) {
         return {
           option: option,
-          color: getOptionColor(index),
+          color: getOptionColor(index, market),
           share: clamp(Number(lastPoint.s[option.id] || 0), 0, 100),
         };
       });
