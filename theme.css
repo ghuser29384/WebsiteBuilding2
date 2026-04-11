@@ -1159,6 +1159,18 @@ body.forethought-site textarea::placeholder {
   color: #8d9088;
 }
 
+body.forethought-site .forethought-newsletter-row input {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 0.2rem 0;
+}
+
+body.forethought-site .forethought-newsletter-row input:focus-visible {
+  outline: none;
+}
+
 body.forethought-site .featured-market-chart,
 body.forethought-site #featuredMarketChart,
 body.forethought-site #deliberationChart,
