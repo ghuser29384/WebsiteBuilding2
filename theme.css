@@ -991,7 +991,7 @@ body.forethought-site .wre-nav a {
     position: absolute;
     left: 0;
     right: 0;
-    bottom: -0.4rem;
+    bottom: -0.18rem;
     height: 1px;
     background: var(--nm-signal);
     transform: scaleX(0);
@@ -1074,15 +1074,15 @@ body.forethought-site .wre-brand {
   flex: 0 0 auto;
   width: auto;
   height: auto;
-  max-width: min(24vw, 280px);
+  max-width: min(21vw, 244px);
 }
 
 body.forethought-site .brand img,
 body.forethought-site .wre-brand img {
   display: block;
   width: auto;
-  max-width: min(24vw, 280px);
-  height: clamp(34px, 3.35vw, 48px);
+  max-width: min(21vw, 244px);
+  height: clamp(30px, 2.95vw, 42px);
   object-fit: contain;
 }
 
