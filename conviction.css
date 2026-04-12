@@ -2032,6 +2032,28 @@ body.attendance-modal-open {
   color: #324e70;
 }
 
+.pledge-modal-dialog {
+  width: min(780px, 100%);
+}
+
+.pledge-modal-copy {
+  margin-bottom: 0.9rem;
+  border: 1px solid #d6dee9;
+  border-radius: var(--radius-sm);
+  background: #f7f5ef;
+  padding: 0.75rem;
+  color: #4b5049;
+}
+
+.pledge-modal-form {
+  gap: 0.85rem;
+}
+
+.pledge-modal-form .check-row {
+  align-items: flex-start;
+  padding: 0.25rem 0;
+}
+
 .attendance-policy-status {
   min-height: 1.2rem;
   margin-bottom: 0.3rem;
@@ -2095,6 +2117,18 @@ body.attendance-modal-open {
   background: #f4eee2;
   color: var(--ink-soft);
   font-size: 0.88rem;
+}
+
+.high-stake-preview,
+.high-stake-promise-preview {
+  background: linear-gradient(180deg, rgba(255, 95, 53, 0.08), rgba(255, 95, 53, 0.03));
+  border-color: rgba(255, 95, 53, 0.22);
+  color: #56453a;
+}
+
+.high-stake-preview strong,
+.high-stake-promise-preview strong {
+  color: #2f2d2b;
 }
 
 .inline-field {
@@ -2222,6 +2256,47 @@ body.attendance-modal-open {
   color: var(--ink-soft);
   font-size: 0.85rem;
   margin-bottom: 0.4rem;
+}
+
+.proof-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  margin: 0.8rem 0 0.7rem;
+}
+
+.proof-card {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #f8f5ee;
+  padding: 0.55rem;
+}
+
+.proof-card.uploaded {
+  border-color: rgba(53, 155, 95, 0.28);
+  background: rgba(53, 155, 95, 0.08);
+}
+
+.proof-card-title {
+  margin: 0 0 0.18rem;
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.proof-card-meta,
+.proof-card-status {
+  margin: 0;
+  font-size: 0.76rem;
+  color: var(--ink-soft);
+}
+
+.proof-upload-block {
+  margin: 0.4rem 0 0.8rem;
+  padding: 0.8rem;
+  border: 1px dashed rgba(95, 97, 91, 0.32);
+  border-radius: var(--radius-sm);
+  background: rgba(248, 242, 231, 0.55);
 }
 
 .site-footer {
@@ -2685,6 +2760,7 @@ html:not([data-theme]) .normative-inline-dotted {
   .rule-grid,
   .score-grid,
   .date-grid,
+  .proof-grid,
   .hero-stats,
   .deliberation-metrics,
   .featured-market-main-meta,

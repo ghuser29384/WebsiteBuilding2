@@ -930,6 +930,9 @@
     session: null,
     reservation: null,
     invite: null,
+    highStakeCreate: null,
+    highStakeReservation: null,
+    highStakeSession: null,
   };
 
   const availabilitySlots = buildAvailabilitySlots();
@@ -943,8 +946,11 @@
 
   let state = loadState();
   let currentMatches = [];
+  let currentHighStakeMatches = [];
   let pendingReservationSignup = null;
+  let pendingPledgeAction = null;
   let attendancePolicyReturnFocusEl = null;
+  let pledgeModalReturnFocusEl = null;
   const chartZoomStateByEl = new WeakMap();
   let reflectiveEquilibriumAnimationStarted = false;
   const featuredMarketUiState = {
@@ -967,15 +973,33 @@
     pledgeStatus: document.getElementById("pledgeStatus"),
     pledgeMetrics: document.getElementById("pledgeMetrics"),
     pledgeRegistryList: document.getElementById("pledgeRegistryList"),
+    pledgeModal: document.getElementById("pledgeModal"),
+    pledgeModalForm: document.getElementById("pledgeModalForm"),
+    pledgeModalCloseBtn: document.getElementById("pledgeModalCloseBtn"),
+    pledgeModalCancelBtn: document.getElementById("pledgeModalCancelBtn"),
+    pledgeModalStatus: document.getElementById("pledgeModalStatus"),
+    pledgeModalName: document.getElementById("pledgeModalName"),
+    pledgeModalRole: document.getElementById("pledgeModalRole"),
+    pledgeModalFocus: document.getElementById("pledgeModalFocus"),
+    pledgeModalFirstAction: document.getElementById("pledgeModalFirstAction"),
     gateBanner: document.getElementById("gateBanner"),
     studioContent: document.getElementById("studioContent"),
+    highStakeGateBanner: document.getElementById("highStakeGateBanner"),
+    highStakeContent: document.getElementById("highStakeContent"),
     confidenceInput: document.getElementById("confidenceInput"),
     confidenceValue: document.getElementById("confidenceValue"),
+    highStakeConfidenceInput: document.getElementById("highStakeConfidenceInput"),
+    highStakeConfidenceValue: document.getElementById("highStakeConfidenceValue"),
     reservationConfidenceInput: document.getElementById("reservationConfidenceInput"),
     reservationConfidenceValue: document.getElementById("reservationConfidenceValue"),
+    highStakeReservationConfidenceInput: document.getElementById("highStakeReservationConfidenceInput"),
+    highStakeReservationConfidenceValue: document.getElementById("highStakeReservationConfidenceValue"),
     postConfidenceInput: document.getElementById("postConfidenceInput"),
     postConfidenceValue: document.getElementById("postConfidenceValue"),
+    highStakePostConfidenceInput: document.getElementById("highStakePostConfidenceInput"),
+    highStakePostConfidenceValue: document.getElementById("highStakePostConfidenceValue"),
     thresholdNotice: document.getElementById("thresholdNotice"),
+    highStakeThresholdNotice: document.getElementById("highStakeThresholdNotice"),
     convictionForm: document.getElementById("convictionForm"),
     convictionStatus: document.getElementById("convictionStatus"),
     convictionList: document.getElementById("convictionList"),
@@ -984,6 +1008,17 @@
     assumptionInput: document.getElementById("assumptionInput"),
     truthAptConfirm: document.getElementById("truthAptConfirm"),
     roomAvailability: document.getElementById("roomAvailability"),
+    highStakeForm: document.getElementById("highStakeForm"),
+    highStakeStatus: document.getElementById("highStakeStatus"),
+    highStakeList: document.getElementById("highStakeList"),
+    highStakeFactsInput: document.getElementById("highStakeFactsInput"),
+    highStakeActionInput: document.getElementById("highStakeActionInput"),
+    highStakeCreatorReasonInput: document.getElementById("highStakeCreatorReasonInput"),
+    highStakeAssumptionInput: document.getElementById("highStakeAssumptionInput"),
+    highStakeTruthAptConfirm: document.getElementById("highStakeTruthAptConfirm"),
+    highStakeEligibilityConfirm: document.getElementById("highStakeEligibilityConfirm"),
+    highStakeRoomAvailability: document.getElementById("highStakeRoomAvailability"),
+    highStakePreview: document.getElementById("highStakePreview"),
     reservationForm: document.getElementById("reservationForm"),
     reservationNameInput: document.getElementById("reservationNameInput"),
     reservationBeliefInput: document.getElementById("reservationBeliefInput"),
@@ -997,6 +1032,14 @@
     attendancePolicyInput: document.getElementById("attendancePolicyInput"),
     attendancePolicyStatus: document.getElementById("attendancePolicyStatus"),
     reservationList: document.getElementById("reservationList"),
+    highStakeReservationForm: document.getElementById("highStakeReservationForm"),
+    highStakeReservationNameInput: document.getElementById("highStakeReservationNameInput"),
+    highStakeReservationBeliefInput: document.getElementById("highStakeReservationBeliefInput"),
+    highStakeReservationReasonInput: document.getElementById("highStakeReservationReasonInput"),
+    highStakeReservationEligibilityConfirm: document.getElementById("highStakeReservationEligibilityConfirm"),
+    highStakeReservationAvailability: document.getElementById("highStakeReservationAvailability"),
+    highStakeReservationStatus: document.getElementById("highStakeReservationStatus"),
+    highStakeReservationList: document.getElementById("highStakeReservationList"),
     inviteForm: document.getElementById("inviteForm"),
     inviteNameInput: document.getElementById("inviteNameInput"),
     inviteAvailability: document.getElementById("inviteAvailability"),
@@ -1007,6 +1050,11 @@
     openDialoguePublicationLink: document.getElementById("openDialoguePublicationLink"),
     matchRationale: document.getElementById("matchRationale"),
     counterpartList: document.getElementById("counterpartList"),
+    activeHighStakeSummary: document.getElementById("activeHighStakeSummary"),
+    activeHighStakeWritings: document.getElementById("activeHighStakeWritings"),
+    openHighStakePublicationLink: document.getElementById("openHighStakePublicationLink"),
+    highStakeMatchRationale: document.getElementById("highStakeMatchRationale"),
+    highStakeCounterpartList: document.getElementById("highStakeCounterpartList"),
     sessionForm: document.getElementById("sessionForm"),
     sessionPartnerSummary: document.getElementById("sessionPartnerSummary"),
     counterArgumentInput: document.getElementById("counterArgumentInput"),
@@ -1016,6 +1064,16 @@
     startDateInput: document.getElementById("startDateInput"),
     checkinDateInput: document.getElementById("checkinDateInput"),
     sessionStatus: document.getElementById("sessionStatus"),
+    highStakeSessionForm: document.getElementById("highStakeSessionForm"),
+    highStakeSessionPartnerSummary: document.getElementById("highStakeSessionPartnerSummary"),
+    highStakeCounterArgumentInput: document.getElementById("highStakeCounterArgumentInput"),
+    highStakeReplyInput: document.getElementById("highStakeReplyInput"),
+    highStakePromiseBlock: document.getElementById("highStakePromiseBlock"),
+    highStakePromisePreview: document.getElementById("highStakePromisePreview"),
+    highStakePromiseNoteInput: document.getElementById("highStakePromiseNoteInput"),
+    highStakeStartDateInput: document.getElementById("highStakeStartDateInput"),
+    highStakeEndDateInput: document.getElementById("highStakeEndDateInput"),
+    highStakeSessionStatus: document.getElementById("highStakeSessionStatus"),
     ledgerList: document.getElementById("ledgerList"),
     resetDemoBtn: document.getElementById("resetDemoBtn"),
     statValues: document.querySelectorAll(".stat-value[data-count-to]"),
@@ -1101,21 +1159,38 @@
     bindNavigationControls();
     bindActiveSectionHighlight();
     mountAttendancePolicyModalRoot();
+    mountPledgeModalRoot();
     bindEvents();
     if (el.confidenceInput) {
       el.confidenceInput.value = "60";
     }
     updateConfidenceText(el.confidenceInput, el.confidenceValue);
+    if (el.highStakeConfidenceInput) {
+      el.highStakeConfidenceInput.value = "60";
+      updateConfidenceText(el.highStakeConfidenceInput, el.highStakeConfidenceValue);
+    }
     if (el.reservationConfidenceInput) {
       el.reservationConfidenceInput.value = "50";
       updateConfidenceText(el.reservationConfidenceInput, el.reservationConfidenceValue);
     }
+    if (el.highStakeReservationConfidenceInput) {
+      el.highStakeReservationConfidenceInput.value = "50";
+      updateConfidenceText(el.highStakeReservationConfidenceInput, el.highStakeReservationConfidenceValue);
+    }
     renderAvailabilityOptions(el.roomAvailability, "room", availabilitySlots);
+    renderAvailabilityOptions(el.highStakeRoomAvailability, "high_stake_room", availabilitySlots);
     renderAvailabilityOptions(el.reservationAvailability, "reservation", availabilitySlots);
+    renderAvailabilityOptions(el.highStakeReservationAvailability, "high_stake_reservation", availabilitySlots);
     renderAvailabilityOptions(el.inviteAvailability, "invite", availabilitySlots);
     syncReservationIdentityField();
+    syncHighStakeReservationIdentityField();
     updateConfidenceText(el.postConfidenceInput, el.postConfidenceValue);
+    if (el.highStakePostConfidenceInput) {
+      updateConfidenceText(el.highStakePostConfidenceInput, el.highStakePostConfidenceValue);
+    }
     updateThresholdState();
+    updateHighStakePreview();
+    updateHighStakeThresholdState();
     render();
   }
 
@@ -1508,8 +1583,14 @@
       el.pledgeFirstAction.addEventListener("input", renderPledgePanel);
     }
     el.convictionForm.addEventListener("submit", onConvictionSubmit);
+    if (el.highStakeForm) {
+      el.highStakeForm.addEventListener("submit", onHighStakeSubmit);
+    }
     if (el.reservationForm) {
       el.reservationForm.addEventListener("submit", onReservationSubmit);
+    }
+    if (el.highStakeReservationForm) {
+      el.highStakeReservationForm.addEventListener("submit", onHighStakeReservationSubmit);
     }
     if (el.attendancePolicyCloseBtn) {
       el.attendancePolicyCloseBtn.addEventListener("click", closeAttendancePolicyModal);
@@ -1537,6 +1618,22 @@
         closeAttendancePolicyModal();
       });
     }
+    if (el.pledgeModalForm) {
+      el.pledgeModalForm.addEventListener("submit", onPledgeModalSubmit);
+    }
+    if (el.pledgeModalCloseBtn) {
+      el.pledgeModalCloseBtn.addEventListener("click", closePledgeModal);
+    }
+    if (el.pledgeModalCancelBtn) {
+      el.pledgeModalCancelBtn.addEventListener("click", closePledgeModal);
+    }
+    if (el.pledgeModal) {
+      el.pledgeModal.addEventListener("click", function (event) {
+        const closer = event.target.closest("[data-pledge-close]");
+        if (!closer) return;
+        closePledgeModal();
+      });
+    }
     if (el.inviteForm) {
       el.inviteForm.addEventListener("submit", onInviteSubmit);
     }
@@ -1544,15 +1641,43 @@
     el.confidenceInput.addEventListener("input", function () {
       updateConfidenceText(el.confidenceInput, el.confidenceValue);
     });
+    if (el.highStakeConfidenceInput) {
+      el.highStakeConfidenceInput.addEventListener("input", function () {
+        updateConfidenceText(el.highStakeConfidenceInput, el.highStakeConfidenceValue);
+      });
+    }
+    if (el.highStakeFactsInput) {
+      el.highStakeFactsInput.addEventListener("input", updateHighStakePreview);
+    }
+    if (el.highStakeActionInput) {
+      el.highStakeActionInput.addEventListener("input", updateHighStakePreview);
+    }
     if (el.reservationConfidenceInput) {
       el.reservationConfidenceInput.addEventListener("input", function () {
         updateConfidenceText(el.reservationConfidenceInput, el.reservationConfidenceValue);
+      });
+    }
+    if (el.highStakeReservationConfidenceInput) {
+      el.highStakeReservationConfidenceInput.addEventListener("input", function () {
+        updateConfidenceText(el.highStakeReservationConfidenceInput, el.highStakeReservationConfidenceValue);
       });
     }
     el.postConfidenceInput.addEventListener("input", function () {
       updateConfidenceText(el.postConfidenceInput, el.postConfidenceValue);
       updateThresholdState();
     });
+    if (el.startDateInput) {
+      el.startDateInput.addEventListener("input", syncDialogueCommitmentEndDate);
+    }
+    if (el.highStakePostConfidenceInput) {
+      el.highStakePostConfidenceInput.addEventListener("input", function () {
+        updateConfidenceText(el.highStakePostConfidenceInput, el.highStakePostConfidenceValue);
+        updateHighStakeThresholdState();
+      });
+    }
+    if (el.highStakeStartDateInput) {
+      el.highStakeStartDateInput.addEventListener("input", syncHighStakePromiseEndDate);
+    }
 
     document.addEventListener("keydown", function (event) {
       if (event.key !== "Escape") return;
@@ -1612,6 +1737,25 @@
       setSessionStatus("");
     });
 
+    if (el.highStakeList) {
+      el.highStakeList.addEventListener("click", function (event) {
+        const button = event.target.closest("button[data-high-stake-id]");
+        if (!button) return;
+        const highStakeId = button.getAttribute("data-high-stake-id");
+        if (!highStakeId) return;
+        state.activeHighStakeId = highStakeId;
+        state.selectedHighStakeCounterpartId = null;
+        formStatus.highStakeCreate = "";
+        formStatus.highStakeReservation = "";
+        formStatus.highStakeSession = "";
+        saveState();
+        renderHighStakeList();
+        renderHighStakeMatching();
+        renderHighStakeSessionPartner();
+        setHighStakeSessionStatus("");
+      });
+    }
+
     el.counterpartList.addEventListener("click", function (event) {
       const button = event.target.closest("button[data-counterpart-id]");
       if (!button) return;
@@ -1624,7 +1768,29 @@
       setSessionStatus("Participant selected. Start your dialogue and log the outcome.");
     });
 
+    if (el.highStakeCounterpartList) {
+      el.highStakeCounterpartList.addEventListener("click", function (event) {
+        const button = event.target.closest("button[data-high-stake-counterpart-id]");
+        if (!button) return;
+        const counterpartId = button.getAttribute("data-high-stake-counterpart-id");
+        if (!counterpartId) return;
+        state.selectedHighStakeCounterpartId = counterpartId;
+        saveState();
+        renderHighStakeMatching();
+        renderHighStakeSessionPartner();
+        setHighStakeSessionStatus("Participant selected. Start your high-stakes dialogue and log the outcome.");
+      });
+    }
+
     el.ledgerList.addEventListener("click", function (event) {
+      const proofButton = event.target.closest("button[data-ledger-proof-upload]");
+      if (proofButton) {
+        const proofLedgerId = proofButton.getAttribute("data-ledger-proof-upload");
+        if (!proofLedgerId) return;
+        onLedgerProofUpload(proofLedgerId);
+        return;
+      }
+
       const button = event.target.closest("button[data-ledger-id]");
       if (!button) return;
       const ledgerId = button.getAttribute("data-ledger-id");
@@ -1644,69 +1810,146 @@
       storage.removeItem(getStorageKey());
       state = createDefaultState();
       currentMatches = [];
+      currentHighStakeMatches = [];
       resetConvictionForm();
+      resetHighStakeForm();
       resetReservationForm();
+      resetHighStakeReservationForm();
       resetInviteForm();
       resetSessionForm();
+      resetHighStakeSessionForm();
       setSessionStatus("");
+      setHighStakeSessionStatus("");
       formStatus.conviction = "";
       formStatus.reservation = "";
       formStatus.invite = "";
+      formStatus.highStakeCreate = "";
+      formStatus.highStakeReservation = "";
+      formStatus.highStakeSession = "";
       render();
     });
   }
 
-  function onPledgeSubmit(event) {
-    event.preventDefault();
-    const formData = new FormData(el.pledgeForm);
+  function validatePledgeFormSubmission(formEl) {
+    if (!formEl) {
+      return { ok: false, error: "Pledge form is unavailable." };
+    }
+    const requiredChecks = Array.from(formEl.querySelectorAll('input[type="checkbox"][required]'));
+    const uncheckedRequired = requiredChecks.some(function (checkbox) {
+      return !checkbox.checked;
+    });
+    if (uncheckedRequired) {
+      return { ok: false, error: "Confirm all three pledge commitments before signing." };
+    }
+
+    const formData = new FormData(formEl);
     const name = String(formData.get("pledgeName") || "").trim();
     const role = String(formData.get("pledgeRole") || "").trim();
     const focus = String(formData.get("pledgeFocus") || "").trim();
     const firstAction = String(formData.get("pledgeFirstAction") || "").trim();
+
     if (!name) {
-      el.pledgeStatus.textContent = "Please add a name or username.";
-      return;
+      return { ok: false, error: "Please add a name or username." };
     }
     if (!role) {
-      el.pledgeStatus.textContent = "Please select your role.";
-      return;
+      return { ok: false, error: "Please select your role." };
     }
     if (!focus) {
-      el.pledgeStatus.textContent = "Please add your normative focus area.";
-      return;
+      return { ok: false, error: "Please add your normative focus area." };
     }
     if (!firstAction) {
-      el.pledgeStatus.textContent = "Please specify a first accountability action.";
-      return;
+      return { ok: false, error: "Please specify a first accountability action." };
     }
+
+    return {
+      ok: true,
+      value: {
+        name: name,
+        role: role,
+        focus: focus,
+        firstAction: firstAction,
+      },
+    };
+  }
+
+  function applyPledgeSignature(values) {
     const signedAt = new Date().toISOString();
     state.pledge.signed = true;
-    state.pledge.name = name;
-    state.pledge.role = role;
-    state.pledge.focus = focus;
-    state.pledge.firstAction = firstAction;
+    state.pledge.name = values.name;
+    state.pledge.role = values.role;
+    state.pledge.focus = values.focus;
+    state.pledge.firstAction = values.firstAction;
     state.pledge.signedAt = signedAt;
     state.pledgeRegistry.unshift({
       id: uid("pl"),
-      name: name,
-      role: role,
-      focus: focus,
-      firstAction: firstAction,
+      name: values.name,
+      role: values.role,
+      focus: values.focus,
+      firstAction: values.firstAction,
       signedAt: signedAt,
     });
     saveState();
     renderGate();
     renderPledgePanel();
-    el.pledgeStatus.textContent =
-      name + " signed the pledge on " + formatDate(state.pledge.signedAt) + ". Studio unlocked.";
+    return signedAt;
   }
 
-  function onConvictionSubmit(event) {
+  function submitPledgeForm(formEl, statusEl, options) {
+    const config = options || {};
+    const validation = validatePledgeFormSubmission(formEl);
+    if (!validation.ok) {
+      if (statusEl) {
+        statusEl.textContent = validation.error;
+      }
+      return false;
+    }
+
+    const signedAt = applyPledgeSignature(validation.value);
+    const successText =
+      validation.value.name + " signed the pledge on " + formatDate(signedAt) + ". Studio unlocked.";
+    if (el.pledgeStatus) {
+      el.pledgeStatus.textContent = successText;
+    }
+    if (statusEl) {
+      statusEl.textContent = successText;
+    }
+
+    if (typeof config.onSuccess === "function") {
+      config.onSuccess();
+    }
+    return true;
+  }
+
+  function onPledgeSubmit(event) {
     event.preventDefault();
+    submitPledgeForm(el.pledgeForm, el.pledgeStatus);
+  }
+
+  function onPledgeModalSubmit(event) {
+    event.preventDefault();
+    submitPledgeForm(el.pledgeModalForm, el.pledgeModalStatus, {
+      onSuccess: function () {
+        const pendingAction = pendingPledgeAction;
+        pendingPledgeAction = null;
+        resetPledgeModalForm();
+        closePledgeModal();
+        if (pendingAction === "create-dialogue") {
+          processConvictionSubmission();
+        }
+      },
+    });
+  }
+
+  function processConvictionSubmission() {
     if (!state.pledge.signed) {
       formStatus.conviction = "Sign the pledge first to create dialogues.";
       renderMatching();
-      return;
+      openPledgeModal({
+        pendingAction: "create-dialogue",
+        returnFocusEl:
+          (el.convictionForm && el.convictionForm.querySelector('button[type="submit"]')) || el.convictionForm,
+      });
+      return false;
     }
 
     const formData = new FormData(el.convictionForm);
@@ -1793,6 +2036,380 @@
     renderMatching();
     renderSessionPartner();
     setSessionStatus("");
+    return true;
+  }
+
+  function onConvictionSubmit(event) {
+    event.preventDefault();
+    processConvictionSubmission();
+  }
+
+  function normalizeHighStakeFragment(text) {
+    return String(text || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/^[,.;:]+/, "")
+      .replace(/\s*[,.;:]+$/, "");
+  }
+
+  function buildHighStakeClaim(facts, action) {
+    const normalizedFacts = normalizeHighStakeFragment(facts).replace(/^if you\b/i, "").trim();
+    const normalizedAction = normalizeHighStakeFragment(action).replace(/^you must\b/i, "").trim();
+    if (!normalizedFacts && !normalizedAction) {
+      return "If you [facts], you must [action].";
+    }
+    if (!normalizedFacts) {
+      return "If you [facts], you must " + normalizedAction + ".";
+    }
+    if (!normalizedAction) {
+      return "If you " + normalizedFacts + ", you must [action].";
+    }
+    return "If you " + normalizedFacts + ", you must " + normalizedAction + ".";
+  }
+
+  function validateHighStakeComponents(facts, action) {
+    const normalizedFacts = normalizeHighStakeFragment(facts);
+    const normalizedAction = normalizeHighStakeFragment(action);
+    if (!normalizedFacts) {
+      return { ok: false, error: "Describe the factual condition that determines who is eligible for this dialogue." };
+    }
+    if (!normalizedAction) {
+      return { ok: false, error: "Describe the action the eligible person would be required to take." };
+    }
+    if (countSentences(normalizedFacts) > 2) {
+      return { ok: false, error: "Keep the factual condition concise enough to state as eligibility facts." };
+    }
+    if (countSentences(normalizedAction) > 3) {
+      return { ok: false, error: "Keep the required action concise enough to state as a single practical commitment." };
+    }
+    const claim = buildHighStakeClaim(normalizedFacts, normalizedAction);
+    const truthAptCheck = validateTruthAptProposition(claim);
+    if (!truthAptCheck.ok) {
+      return truthAptCheck;
+    }
+    return {
+      ok: true,
+      facts: normalizedFacts.replace(/^if you\b/i, "").trim(),
+      action: normalizedAction.replace(/^you must\b/i, "").trim(),
+      claim: claim,
+    };
+  }
+
+  function updateHighStakePreview() {
+    if (!el.highStakePreview) return;
+    const claim = buildHighStakeClaim(
+      el.highStakeFactsInput ? el.highStakeFactsInput.value : "",
+      el.highStakeActionInput ? el.highStakeActionInput.value : ""
+    );
+    el.highStakePreview.innerHTML = "<strong>Proposition preview:</strong> " + escapeHtml(claim);
+    if (el.highStakePromisePreview && !el.highStakePostConfidenceInput) {
+      el.highStakePromisePreview.innerHTML =
+        "<strong>One-year promise:</strong> Act according to " + escapeHtml(claim) + " for one year.";
+    }
+    if (el.highStakePostConfidenceInput) {
+      updateHighStakeThresholdState();
+    }
+  }
+
+  function onHighStakeSubmit(event) {
+    event.preventDefault();
+    if (!state.pledge.signed) {
+      formStatus.highStakeCreate = "Sign the pledge first to create high-stakes dialogues.";
+      renderHighStakeMatching();
+      return;
+    }
+
+    const formData = new FormData(el.highStakeForm);
+    const facts = String(formData.get("highStakeFacts") || "").trim();
+    const action = String(formData.get("highStakeAction") || "").trim();
+    const confidence = clamp(Number(formData.get("highStakeConfidence")), 1, 100);
+    const creatorReason = String(formData.get("highStakeCreatorReason") || "").trim();
+    const assumptionsRaw = String(formData.get("highStakeAssumptions") || "");
+    const assumptions = assumptionsRaw
+      .split(/\n+/)
+      .map(function (line) {
+        return line.trim();
+      })
+      .filter(function (line) {
+        return line.length > 0;
+      });
+    const availability = getSelectedAvailability(el.highStakeRoomAvailability);
+    const propositionCheck = validateHighStakeComponents(facts, action);
+
+    if (!propositionCheck.ok) {
+      formStatus.highStakeCreate = propositionCheck.error;
+      renderHighStakeMatching();
+      return;
+    }
+    if (!creatorReason) {
+      formStatus.highStakeCreate = "Add your reasons for the confidence level.";
+      renderHighStakeMatching();
+      return;
+    }
+    if (countSentences(creatorReason) > 10) {
+      formStatus.highStakeCreate = "Keep the reasons to ten sentences or fewer.";
+      renderHighStakeMatching();
+      return;
+    }
+    if (confidence <= 50) {
+      formStatus.highStakeCreate = "High-stakes dialogue creators must believe the proposition is more likely than not (>50%).";
+      renderHighStakeMatching();
+      return;
+    }
+    if (!el.highStakeTruthAptConfirm || !el.highStakeTruthAptConfirm.checked) {
+      formStatus.highStakeCreate = "Confirm that the proposition is truth-apt and that you believe it is more likely than not.";
+      renderHighStakeMatching();
+      return;
+    }
+    if (!el.highStakeEligibilityConfirm || !el.highStakeEligibilityConfirm.checked) {
+      formStatus.highStakeCreate = "Confirm that you currently meet the factual condition stated in the proposition.";
+      renderHighStakeMatching();
+      return;
+    }
+    if (!availability.length) {
+      formStatus.highStakeCreate = "Select at least one 30-minute availability slot.";
+      renderHighStakeMatching();
+      return;
+    }
+
+    const authUser = getAuthUser();
+    const room = {
+      id: uid("hs"),
+      type: "high-stakes",
+      facts: propositionCheck.facts,
+      action: propositionCheck.action,
+      claim: propositionCheck.claim,
+      creatorBelief: "true",
+      creatorUserId: authUser && authUser.id ? String(authUser.id) : "",
+      creatorHandle:
+        authUser && authUser.handle
+          ? String(authUser.handle)
+          : normalizeHandleToken(state.pledge.name || ""),
+      creatorEligible: true,
+      confidence: confidence,
+      assumptions: assumptions,
+      creatorReason: creatorReason,
+      availability: availability,
+      slotCatalog: availabilitySlots,
+      reservations: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    state.highStakes.unshift(room);
+    state.activeHighStakeId = room.id;
+    state.selectedHighStakeCounterpartId = null;
+    formStatus.highStakeCreate = "High-stakes dialogue created. Collect eligible opposing reservations to generate matches.";
+    saveState();
+
+    resetHighStakeForm();
+    renderHighStakeList();
+    renderHighStakeMatching();
+    renderHighStakeSessionPartner();
+    setHighStakeSessionStatus("");
+  }
+
+  function onHighStakeReservationSubmit(event) {
+    event.preventDefault();
+    if (!state.pledge.signed) {
+      formStatus.highStakeReservation = "Sign the pledge first to reserve a high-stakes dialogue.";
+      renderHighStakeMatching();
+      return;
+    }
+    const activeRoom = getActiveHighStakeRoom();
+    if (!activeRoom) {
+      formStatus.highStakeReservation = "Select a high-stakes dialogue first.";
+      renderHighStakeMatching();
+      return;
+    }
+
+    const selectedAvailability = getSelectedAvailability(el.highStakeReservationAvailability);
+    if (!selectedAvailability.length) {
+      formStatus.highStakeReservation = "Select at least one availability slot.";
+      renderHighStakeMatching();
+      return;
+    }
+
+    const validation = buildHighStakeReservationSubmission(activeRoom, selectedAvailability);
+    if (!validation.ok) {
+      formStatus.highStakeReservation = validation.error;
+      renderHighStakeMatching();
+      return;
+    }
+
+    attendancePolicyReturnFocusEl =
+      event && event.submitter && typeof event.submitter.focus === "function"
+        ? event.submitter
+        : (el.highStakeReservationForm && el.highStakeReservationForm.querySelector('button[type="submit"]')) || null;
+    pendingReservationSignup = validation.payload;
+    openAttendancePolicyModal(validation.payload);
+  }
+
+  function buildHighStakeReservationSubmission(activeRoom, selectedAvailability) {
+    if (!el.highStakeReservationForm) {
+      return { ok: false, error: "High-stakes reservation form is unavailable." };
+    }
+
+    const formData = new FormData(el.highStakeReservationForm);
+    const authUser = getAuthUser();
+    const enteredName = String(formData.get("highStakeReservationName") || "").trim();
+    const signedInHandle = authUser && authUser.handle ? String(authUser.handle).trim().replace(/^@+/, "") : "";
+    const isSignedIn = Boolean(authUser && authUser.id && signedInHandle);
+    const name = isSignedIn ? signedInHandle : enteredName;
+    const userId = authUser && authUser.id ? String(authUser.id) : getGuestReserverId();
+    const userHandle = isSignedIn ? signedInHandle : "";
+    const belief = String(formData.get("highStakeReservationBelief") || "true");
+    const confidence = clamp(Number(formData.get("highStakeReservationConfidence")), 1, 100);
+    const reason = String(formData.get("highStakeReservationReason") || "").trim();
+    const availability = Array.isArray(selectedAvailability)
+      ? selectedAvailability.slice()
+      : getSelectedAvailability(el.highStakeReservationAvailability);
+    const eligible = Boolean(el.highStakeReservationEligibilityConfirm && el.highStakeReservationEligibilityConfirm.checked);
+
+    if (!name) {
+      return { ok: false, error: "Add a username to reserve the high-stakes dialogue." };
+    }
+    if (!reason) {
+      return { ok: false, error: "Add your reasons for the confidence level." };
+    }
+    if (countSentences(reason) > 10) {
+      return { ok: false, error: "Keep the reasons to ten sentences or fewer." };
+    }
+    if (!eligible) {
+      return { ok: false, error: "Only people who currently meet the factual condition can reserve this high-stakes dialogue." };
+    }
+    if (!availability.length) {
+      return { ok: false, error: "Select at least one availability slot." };
+    }
+
+    const participantHandle = normalizeHandleToken(name);
+    const creatorHandle = normalizeHandleToken(activeRoom.creatorHandle || "");
+    const creatorUserId = String(activeRoom.creatorUserId || "");
+    const sameCreatorAccount = creatorUserId && userId && creatorUserId === userId;
+    const sameParticipantHandle = creatorHandle && participantHandle && creatorHandle === participantHandle;
+    if (sameCreatorAccount || sameParticipantHandle) {
+      return {
+        ok: false,
+        error: "You cannot reserve your own high-stakes dialogue as participant. Enter another participant username.",
+      };
+    }
+
+    return {
+      ok: true,
+      payload: {
+        kind: "high-stakes",
+        convictionId: activeRoom.id,
+        reservation: {
+          id: uid("hsr"),
+          userId: userId,
+          userHandle: userHandle,
+          name: name,
+          belief: belief === "false" ? "false" : "true",
+          confidence: confidence,
+          reason: reason,
+          eligible: true,
+          availability: availability,
+          createdAt: new Date().toISOString(),
+        },
+      },
+    };
+  }
+
+  function onHighStakeSessionSubmit(event) {
+    event.preventDefault();
+    if (!state.pledge.signed) {
+      setHighStakeSessionStatus("Sign the pledge first.");
+      return;
+    }
+    const activeRoom = getActiveHighStakeRoom();
+    if (!activeRoom) {
+      setHighStakeSessionStatus("Create and select a high-stakes dialogue first.");
+      return;
+    }
+    if (!state.selectedHighStakeCounterpartId) {
+      setHighStakeSessionStatus("Select a participant before logging the high-stakes dialogue.");
+      return;
+    }
+    const selectedCounterpart = getSelectedHighStakeCounterpart();
+    if (!selectedCounterpart) {
+      setHighStakeSessionStatus("Re-select a participant from the current high-stakes match list before submitting.");
+      return;
+    }
+
+    const formData = new FormData(el.highStakeSessionForm);
+    const counterArgument = String(formData.get("highStakeCounterArgument") || "").trim();
+    const reply = String(formData.get("highStakeReply") || "").trim();
+    const postConfidence = clamp(Number(formData.get("highStakePostConfidence")), 0, 100);
+    const promiseNote = String(formData.get("highStakePromiseNote") || "").trim();
+    const startDate = String(formData.get("highStakeStartDate") || "");
+    const endDate = String(formData.get("highStakeEndDate") || "");
+
+    if (!counterArgument || !reply) {
+      setHighStakeSessionStatus("Record both the strongest counterargument and your strongest reply.");
+      return;
+    }
+    if (postConfidence > 50 && (!startDate || !endDate)) {
+      setHighStakeSessionStatus("Confidence is over 50%, so the one-year promise dates are required.");
+      return;
+    }
+
+    const session = {
+      id: uid("hss"),
+      roomId: activeRoom.id,
+      counterpartId: selectedCounterpart.id,
+      counterpartName: selectedCounterpart.name,
+      counterpartBelief: selectedCounterpart.belief,
+      counterpartConfidence: selectedCounterpart.confidence,
+      counterArgument: counterArgument,
+      reply: reply,
+      postConfidence: postConfidence,
+      createdAt: new Date().toISOString(),
+    };
+    state.highStakeSessions.unshift(session);
+
+    const roomRef = getHighStakeRoomById(activeRoom.id);
+    if (roomRef) {
+      roomRef.confidence = postConfidence;
+      roomRef.updatedAt = new Date().toISOString();
+    }
+
+    if (postConfidence > 50) {
+      const promiseClaim = buildHighStakeClaim(activeRoom.facts, activeRoom.action);
+      const actionPlan =
+        "For one year, act according to this proposition: " +
+        promiseClaim +
+        (promiseNote ? " Implementation note: " + promiseNote : "");
+      state.ledger.unshift({
+        id: uid("lg"),
+        commitmentType: "high-stakes",
+        convictionId: activeRoom.id,
+        counterpartId: selectedCounterpart.id,
+        claim: promiseClaim,
+        assumptions: Array.isArray(activeRoom.assumptions) ? activeRoom.assumptions : [],
+        participantName: selectedCounterpart.name,
+        participantBelief: selectedCounterpart.belief,
+        participantConfidence: selectedCounterpart.confidence,
+        actionPlan: actionPlan,
+        startDate: startDate,
+        endDate: endDate,
+        checkinDate: endDate,
+        commitmentMonths: 12,
+        monthlyProofs: buildMonthlyProofEntries(startDate, 12),
+        confidenceAtDecision: postConfidence,
+        status: "pending",
+        createdAt: new Date().toISOString(),
+      });
+      setHighStakeSessionStatus("High-stakes dialogue logged. Confidence is above 50%, so the one-year promise with monthly proof uploads is now in your action ledger.");
+    } else {
+      setHighStakeSessionStatus("High-stakes dialogue logged. Confidence is at or below 50%, so no one-year promise entry was created.");
+    }
+
+    saveState();
+    resetHighStakeSessionForm();
+    renderHighStakeList();
+    renderHighStakeMatching();
+    renderHighStakeSessionPartner();
+    renderLedger();
   }
 
   function onReservationSubmit(event) {
@@ -1881,6 +2498,7 @@
     return {
       ok: true,
       payload: {
+        kind: "dialogue",
         convictionId: activeConviction.id,
         reservation: {
           id: uid("rs"),
@@ -1909,23 +2527,42 @@
       return;
     }
 
-    const conviction = getConvictionById(pendingReservationSignup.convictionId);
-    if (!conviction) {
-      setAttendancePolicyStatus("This dialogue is no longer available. Please reselect one.", true);
+    const isHighStake = pendingReservationSignup.kind === "high-stakes";
+    const room = isHighStake
+      ? getHighStakeRoomById(pendingReservationSignup.convictionId)
+      : getConvictionById(pendingReservationSignup.convictionId);
+    if (!room) {
+      setAttendancePolicyStatus(
+        isHighStake ? "This high-stakes dialogue is no longer available. Please reselect one." : "This dialogue is no longer available. Please reselect one.",
+        true
+      );
       return;
     }
 
-    if (!Array.isArray(conviction.reservations)) {
-      conviction.reservations = [];
+    if (!Array.isArray(room.reservations)) {
+      room.reservations = [];
     }
-    conviction.reservations.unshift(pendingReservationSignup.reservation);
-    conviction.updatedAt = new Date().toISOString();
+    room.reservations.unshift(pendingReservationSignup.reservation);
+    room.updatedAt = new Date().toISOString();
 
-    formStatus.reservation = "Reservation added. Matches will update automatically.";
+    if (isHighStake) {
+      formStatus.highStakeReservation = "Reservation added. Eligible matches will update automatically.";
+    } else {
+      formStatus.reservation = "Reservation added. Matches will update automatically.";
+    }
     saveState();
-    resetReservationForm();
+    if (isHighStake) {
+      resetHighStakeReservationForm();
+    } else {
+      resetReservationForm();
+    }
     closeAttendancePolicyModal();
-    renderMatching();
+    if (isHighStake) {
+      renderHighStakeMatching();
+      renderHighStakeSessionPartner();
+    } else {
+      renderMatching();
+    }
   }
 
   function openAttendancePolicyModal(signUpPayload) {
@@ -1937,12 +2574,17 @@
         : 0;
     if (slotCount < 1) {
       pendingReservationSignup = null;
-      formStatus.reservation = "Select at least one availability slot before sign-up.";
-      renderMatching();
+      if (payload && payload.kind === "high-stakes") {
+        formStatus.highStakeReservation = "Select at least one availability slot before sign-up.";
+        renderHighStakeMatching();
+      } else {
+        formStatus.reservation = "Select at least one availability slot before sign-up.";
+        renderMatching();
+      }
       return;
     }
     el.attendancePolicyModal.hidden = false;
-    document.body.classList.add("attendance-modal-open");
+    syncBodyModalOpenState();
     if (el.attendancePolicyInput) {
       el.attendancePolicyInput.value = "";
       el.attendancePolicyInput.disabled = false;
@@ -1965,7 +2607,7 @@
     pendingReservationSignup = null;
     if (!el.attendancePolicyModal) return;
     el.attendancePolicyModal.hidden = true;
-    document.body.classList.remove("attendance-modal-open");
+    syncBodyModalOpenState();
     if (el.attendancePolicyInput) {
       el.attendancePolicyInput.value = "";
     }
@@ -1980,6 +2622,85 @@
     return !el.attendancePolicyModal.hidden;
   }
 
+  function seedPledgeModalForm() {
+    if (!el.pledgeModalForm) return;
+    const authUser = getAuthUser();
+    const fallbackName =
+      (state.pledge && state.pledge.name) ||
+      (el.pledgeName && el.pledgeName.value ? el.pledgeName.value.trim() : "") ||
+      (authUser && authUser.handle ? String(authUser.handle).replace(/^@+/, "").trim() : "");
+    const fallbackRole =
+      (state.pledge && state.pledge.role) ||
+      (el.pledgeRole && el.pledgeRole.value ? el.pledgeRole.value.trim() : "");
+    const fallbackFocus =
+      (state.pledge && state.pledge.focus) ||
+      (el.pledgeFocus && el.pledgeFocus.value ? el.pledgeFocus.value.trim() : "");
+    const fallbackAction =
+      (state.pledge && state.pledge.firstAction) ||
+      (el.pledgeFirstAction && el.pledgeFirstAction.value ? el.pledgeFirstAction.value.trim() : "");
+
+    if (el.pledgeModalName && !String(el.pledgeModalName.value || "").trim()) {
+      el.pledgeModalName.value = fallbackName;
+    }
+    if (el.pledgeModalRole && !String(el.pledgeModalRole.value || "").trim()) {
+      el.pledgeModalRole.value = fallbackRole;
+    }
+    if (el.pledgeModalFocus && !String(el.pledgeModalFocus.value || "").trim()) {
+      el.pledgeModalFocus.value = fallbackFocus;
+    }
+    if (el.pledgeModalFirstAction && !String(el.pledgeModalFirstAction.value || "").trim()) {
+      el.pledgeModalFirstAction.value = fallbackAction;
+    }
+  }
+
+  function openPledgeModal(options) {
+    if (!el.pledgeModal) return;
+    const config = options || {};
+    pendingPledgeAction = config.pendingAction || null;
+    pledgeModalReturnFocusEl = config.returnFocusEl || null;
+    seedPledgeModalForm();
+    el.pledgeModal.hidden = false;
+    syncBodyModalOpenState();
+    if (el.pledgeModalStatus) {
+      el.pledgeModalStatus.textContent = "";
+    }
+    window.requestAnimationFrame(function () {
+      if (!isPledgeModalOpen()) return;
+      const focusTarget = el.pledgeModalName || el.pledgeModalForm;
+      if (!focusTarget || typeof focusTarget.focus !== "function") return;
+      try {
+        focusTarget.focus({ preventScroll: true });
+      } catch (_error) {
+        focusTarget.focus();
+      }
+    });
+  }
+
+  function closePledgeModal() {
+    const focusTarget = pledgeModalReturnFocusEl;
+    pledgeModalReturnFocusEl = null;
+    pendingPledgeAction = null;
+    if (!el.pledgeModal) return;
+    el.pledgeModal.hidden = true;
+    syncBodyModalOpenState();
+    if (el.pledgeModalStatus) {
+      el.pledgeModalStatus.textContent = "";
+    }
+    if (focusTarget && typeof focusTarget.focus === "function") {
+      focusTarget.focus();
+    }
+  }
+
+  function isPledgeModalOpen() {
+    if (!el.pledgeModal) return false;
+    return !el.pledgeModal.hidden;
+  }
+
+  function syncBodyModalOpenState() {
+    if (!document.body) return;
+    document.body.classList.toggle("attendance-modal-open", isAttendancePolicyModalOpen() || isPledgeModalOpen());
+  }
+
   function setAttendancePolicyStatus(text, isError) {
     if (!el.attendancePolicyStatus) return;
     el.attendancePolicyStatus.textContent = text || "";
@@ -1992,6 +2713,12 @@
     document.body.appendChild(el.attendancePolicyModal);
   }
 
+  function mountPledgeModalRoot() {
+    if (!el.pledgeModal || !document.body) return;
+    if (el.pledgeModal.parentElement === document.body) return;
+    document.body.appendChild(el.pledgeModal);
+  }
+
   function syncReservationIdentityField() {
     if (!el.reservationNameInput) return;
     const authUser = getAuthUser();
@@ -2002,6 +2729,18 @@
       el.reservationNameInput.value = String(authUser.handle).trim().replace(/^@+/, "");
     }
     el.reservationNameInput.placeholder = "e.g., jasmine";
+  }
+
+  function syncHighStakeReservationIdentityField() {
+    if (!el.highStakeReservationNameInput) return;
+    const authUser = getAuthUser();
+
+    el.highStakeReservationNameInput.readOnly = false;
+    el.highStakeReservationNameInput.removeAttribute("aria-readonly");
+    if (authUser && authUser.handle && !String(el.highStakeReservationNameInput.value || "").trim()) {
+      el.highStakeReservationNameInput.value = String(authUser.handle).trim().replace(/^@+/, "");
+    }
+    el.highStakeReservationNameInput.placeholder = "e.g., jasmine";
   }
 
   function onInviteSubmit(event) {
@@ -2081,18 +2820,15 @@
     const actionPlan = String(formData.get("actionPlan") || "").trim();
     const startDate = String(formData.get("startDate") || "");
     const checkinDate = String(formData.get("checkinDate") || "");
+    const endDate = startDate ? addMonthsISO(startDate, 12) : "";
 
     if (!counterArgument || !reply) {
       setSessionStatus("Record both the strongest counterargument and your strongest reply.");
       return;
     }
     if (postConfidence > 50) {
-      if (!actionPlan || !startDate || !checkinDate) {
-        setSessionStatus("Confidence is over 50%, so action plan and dates are required.");
-        return;
-      }
-      if (checkinDate < startDate) {
-        setSessionStatus("Check-in date must be on or after the start date.");
+      if (!actionPlan || !startDate) {
+        setSessionStatus("Confidence is over 50%, so a 12-month action plan and start date are required.");
         return;
       }
     }
@@ -2122,6 +2858,7 @@
     if (postConfidence > 50) {
       state.ledger.unshift({
         id: uid("lg"),
+        commitmentType: "dialogue",
         convictionId: activeConviction.id,
         counterpartId: selectedCounterpart.id,
         claim: activeConviction.claim,
@@ -2131,12 +2868,15 @@
         participantConfidence: selectedCounterpart.confidence,
         actionPlan: actionPlan,
         startDate: startDate,
-        checkinDate: checkinDate,
+        endDate: endDate || checkinDate,
+        checkinDate: endDate || checkinDate,
+        commitmentMonths: 12,
+        monthlyProofs: buildMonthlyProofEntries(startDate, 12),
         confidenceAtDecision: postConfidence,
         status: "pending",
         createdAt: new Date().toISOString(),
       });
-      setSessionStatus("Dialogue logged. You crossed 50%, so this action is now in your ledger.");
+      setSessionStatus("Dialogue logged. You crossed 50%, so a 12-month commitment with monthly proof uploads is now in your ledger.");
     } else {
       setSessionStatus("Dialogue logged. Confidence is at or below 50%, so no mandatory action entry was created.");
     }
@@ -2156,6 +2896,9 @@
     renderConvictionList();
     renderMatching();
     renderSessionPartner();
+    renderHighStakeList();
+    renderHighStakeMatching();
+    renderHighStakeSessionPartner();
     renderLedger();
   }
 
@@ -4733,6 +5476,9 @@
   function renderGate() {
     const signed = state.pledge.signed;
     el.studioContent.classList.toggle("locked", !signed);
+    if (el.highStakeContent) {
+      el.highStakeContent.classList.toggle("locked", !signed);
+    }
     if (signed) {
       const name = state.pledge.name || "Member";
       const role = pledgeRoleLabel(state.pledge.role);
@@ -4740,6 +5486,14 @@
       const dateLabel = state.pledge.signedAt ? formatDate(state.pledge.signedAt) : "today";
       el.gateBanner.textContent =
         "Studio unlocked for " + name + " (" + role + "). Focus: " + focus + ". Pledge signed on " + dateLabel + ".";
+      if (el.highStakeGateBanner) {
+        el.highStakeGateBanner.textContent =
+          "High-stakes dialogue unlocked for " +
+          name +
+          " (" +
+          role +
+          "). You may create or reserve only if you meet the factual condition in the proposition.";
+      }
       if (!el.pledgeStatus.textContent.trim()) {
         el.pledgeStatus.textContent = name + " signed the pledge on " + dateLabel + ".";
       }
@@ -4755,9 +5509,14 @@
       }
     } else {
       el.gateBanner.textContent = "Browse dialogues below. Sign the pledge to create, reserve, and log dialogue outcomes.";
+      if (el.highStakeGateBanner) {
+        el.highStakeGateBanner.textContent =
+          "Browse high-stakes dialogues below. Sign the pledge to create, reserve, and log one-year commitments.";
+      }
       el.pledgeStatus.textContent = "";
     }
     syncReservationIdentityField();
+    syncHighStakeReservationIdentityField();
   }
 
   function bindStudioHashNavigation() {
@@ -4852,6 +5611,71 @@
 
       li.appendChild(actionRow);
       el.convictionList.appendChild(li);
+    });
+  }
+
+  function renderHighStakeList() {
+    if (!el.highStakeList) return;
+    el.highStakeList.innerHTML = "";
+    if (!Array.isArray(state.highStakes) || state.highStakes.length === 0) {
+      const empty = document.createElement("li");
+      empty.className = "mini-summary";
+      empty.textContent = "No high-stakes dialogues yet. Create one to start eligibility-gated matching.";
+      el.highStakeList.appendChild(empty);
+      return;
+    }
+
+    state.highStakes.forEach(function (item) {
+      const li = document.createElement("li");
+      li.className = "conviction-item" + (item.id === state.activeHighStakeId ? " active" : "");
+
+      const title = document.createElement("p");
+      title.innerHTML = "<strong>" + escapeHtml(item.claim) + "</strong>";
+
+      const meta = document.createElement("p");
+      meta.className = "hint";
+      meta.textContent =
+        "Confidence: " +
+        item.confidence +
+        "% | Shared premises: " +
+        (Array.isArray(item.assumptions) ? item.assumptions.length : 0) +
+        " | Availability: " +
+        (Array.isArray(item.availability) ? item.availability.length : 0) +
+        " slots";
+
+      const facts = document.createElement("p");
+      facts.className = "hint";
+      facts.textContent = "Eligibility facts: " + truncateText(item.facts || "", 140);
+
+      const action = document.createElement("p");
+      action.className = "hint";
+      action.textContent = "Required action: " + truncateText(item.action || "", 140);
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = item.id === state.activeHighStakeId ? "btn btn-primary" : "btn btn-ghost";
+      button.setAttribute("data-high-stake-id", item.id);
+      button.textContent = item.id === state.activeHighStakeId ? "Active High-stakes Dialogue" : "Use For Matching";
+
+      const writingLink = document.createElement("a");
+      writingLink.className = "btn btn-ghost";
+      writingLink.href = "publication.html?dialogue=" + encodeURIComponent(String(item.id || ""));
+      writingLink.textContent = "View Writings";
+
+      const actionRow = document.createElement("div");
+      actionRow.style.display = "flex";
+      actionRow.style.gap = "0.42rem";
+      actionRow.style.flexWrap = "wrap";
+      actionRow.style.marginTop = "0.45rem";
+      actionRow.appendChild(button);
+      actionRow.appendChild(writingLink);
+
+      li.appendChild(title);
+      li.appendChild(meta);
+      li.appendChild(facts);
+      li.appendChild(action);
+      li.appendChild(actionRow);
+      el.highStakeList.appendChild(li);
     });
   }
 
@@ -5025,6 +5849,296 @@
       card.appendChild(explanation);
       card.appendChild(button);
       el.counterpartList.appendChild(card);
+    });
+  }
+
+  function renderHighStakeMatching() {
+    const activeRoom = getActiveHighStakeRoom();
+    if (el.highStakeReservationStatus) {
+      el.highStakeReservationStatus.textContent = formStatus.highStakeReservation || "";
+    }
+    if (el.highStakeStatus) {
+      el.highStakeStatus.textContent = formStatus.highStakeCreate || "";
+    }
+
+    if (!activeRoom) {
+      currentHighStakeMatches = [];
+      if (el.activeHighStakeSummary) {
+        el.activeHighStakeSummary.textContent = "No active high-stakes dialogue selected yet.";
+      }
+      renderActiveHighStakeWritings(null);
+      if (el.highStakeCounterpartList) {
+        el.highStakeCounterpartList.innerHTML = "";
+      }
+      if (el.highStakeReservationList) {
+        el.highStakeReservationList.innerHTML = "";
+      }
+      if (el.highStakeMatchRationale) {
+        el.highStakeMatchRationale.textContent =
+          formStatus.highStakeCreate || "Create and select a high-stakes dialogue to generate suggested matches.";
+      }
+      renderHighStakeSessionPartner();
+      return;
+    }
+
+    const slotCatalog =
+      Array.isArray(activeRoom.slotCatalog) && activeRoom.slotCatalog.length >= AVAILABILITY_SLOT_COUNT
+        ? activeRoom.slotCatalog
+        : availabilitySlots;
+
+    if (el.activeHighStakeSummary) {
+      el.activeHighStakeSummary.innerHTML =
+        "<strong>Active proposition:</strong> " +
+        escapeHtml(activeRoom.claim) +
+        "<br><strong>Eligibility facts:</strong> " +
+        escapeHtml(activeRoom.facts) +
+        "<br><strong>Required action:</strong> " +
+        escapeHtml(activeRoom.action) +
+        "<br><strong>Confidence:</strong> " +
+        activeRoom.confidence +
+        "% | <strong>Shared premises:</strong> " +
+        (Array.isArray(activeRoom.assumptions) ? activeRoom.assumptions.length : 0) +
+        " | <strong>Availability:</strong> " +
+        (Array.isArray(activeRoom.availability) ? activeRoom.availability.length : 0) +
+        " slots";
+    }
+
+    if (el.highStakeReservationAvailability) {
+      const currentRoomId = el.highStakeReservationAvailability.getAttribute("data-room-id");
+      if (currentRoomId !== activeRoom.id) {
+        el.highStakeReservationAvailability.setAttribute("data-room-id", activeRoom.id);
+        renderAvailabilityOptions(el.highStakeReservationAvailability, "high_stake_reservation", slotCatalog);
+      }
+    }
+    updateHighStakeThresholdState();
+
+    renderHighStakeReservationList(activeRoom);
+    renderActiveHighStakeWritings(activeRoom);
+
+    currentHighStakeMatches = buildHighStakeMatches(activeRoom);
+    if (
+      state.selectedHighStakeCounterpartId &&
+      !currentHighStakeMatches.some(function (item) {
+        return item.id === state.selectedHighStakeCounterpartId;
+      })
+    ) {
+      state.selectedHighStakeCounterpartId = null;
+      saveState();
+    }
+
+    if (currentHighStakeMatches.length === 0) {
+      if (el.highStakeCounterpartList) {
+        el.highStakeCounterpartList.innerHTML = "";
+      }
+      const reservations = Array.isArray(activeRoom.reservations) ? activeRoom.reservations : [];
+      const eligibleReservations = reservations.filter(function (reservation) {
+        return Boolean(reservation && reservation.eligible);
+      });
+      const hasOpposed = eligibleReservations.some(function (reservation) {
+        const reservationBelief = reservation && reservation.belief === "false" ? "false" : "true";
+        return reservationBelief !== "true";
+      });
+      if (eligibleReservations.length === 0) {
+        el.highStakeMatchRationale.textContent =
+          "No eligible opposing reservations yet. Only participants who meet the factual condition can be matched.";
+      } else if (!hasOpposed) {
+        el.highStakeMatchRationale.textContent =
+          "Eligible reservations exist, but no one currently holds the opposite belief about the proposition.";
+      } else {
+        el.highStakeMatchRationale.textContent =
+          "Eligible opposing reservations exist, but there are no overlapping 30-minute slots yet.";
+      }
+      renderHighStakeSessionPartner();
+      return;
+    }
+
+    el.highStakeMatchRationale.textContent =
+      "Matches require eligibility, opposite beliefs, and overlapping slots. They then prioritize the smallest confidence gap and the clearest reasoned disagreement.";
+
+    el.highStakeCounterpartList.innerHTML = "";
+    currentHighStakeMatches.forEach(function (match, index) {
+      const card = document.createElement("article");
+      card.className = "counterpart-card";
+      card.style.setProperty("--card-delay", String(index * 0.055) + "s");
+
+      const selected = state.selectedHighStakeCounterpartId === match.id;
+
+      const head = document.createElement("div");
+      head.className = "counterpart-head";
+
+      const title = document.createElement("h4");
+      title.textContent = match.name;
+
+      const score = document.createElement("span");
+      score.className = "score-pill";
+      score.textContent = "Δ " + match.confidenceGap + " pts | Fit " + match.matchScore + "/100";
+
+      head.appendChild(title);
+      head.appendChild(score);
+
+      const meta = document.createElement("div");
+      meta.className = "counterpart-meta";
+      meta.appendChild(chip("Belief: " + (match.belief === "false" ? "False" : "True"), "chip"));
+      meta.appendChild(chip("Confidence: " + match.confidence + "%", "chip"));
+      meta.appendChild(chip("Shared slots: " + match.sharedSlots.length, "chip"));
+      meta.appendChild(chip("Eligible: yes", "chip"));
+      meta.appendChild(chip("Dispute level: " + match.depthSummary, "chip"));
+
+      const reason = document.createElement("p");
+      reason.className = "hint";
+      reason.textContent = truncateText(match.reason, 160);
+
+      const metrics = document.createElement("div");
+      metrics.className = "score-grid";
+      metrics.innerHTML =
+        "<span>Confidence proximity: " +
+        match.metrics.confidenceProximity +
+        "/100</span>" +
+        "<span>Overlap quality: " +
+        match.metrics.overlap +
+        "/100</span>" +
+        "<span>Depth bridge: " +
+        match.metrics.disagreementDepth +
+        "/100</span>" +
+        "<span>Reason clarity: " +
+        match.metrics.reasonQuality +
+        "/100</span>";
+
+      const slots = document.createElement("p");
+      slots.className = "hint";
+      slots.textContent = "Overlap: " + formatSlotList(match.sharedSlots, 3, activeRoom.slotCatalog);
+
+      const explanation = document.createElement("p");
+      explanation.className = "hint";
+      explanation.textContent = "Why this ranking: " + match.rationale;
+
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = selected ? "btn btn-primary" : "btn btn-secondary";
+      button.setAttribute("data-high-stake-counterpart-id", match.id);
+      button.textContent = selected ? "Selected Participant" : "Select Participant";
+
+      card.appendChild(head);
+      card.appendChild(meta);
+      card.appendChild(reason);
+      card.appendChild(metrics);
+      card.appendChild(slots);
+      card.appendChild(explanation);
+      card.appendChild(button);
+      el.highStakeCounterpartList.appendChild(card);
+    });
+  }
+
+  function renderHighStakeReservationList(activeRoom) {
+    if (!el.highStakeReservationList) return;
+    el.highStakeReservationList.innerHTML = "";
+    const reservations = Array.isArray(activeRoom.reservations) ? activeRoom.reservations : [];
+    const eligibleReservations = reservations.filter(function (reservation) {
+      return Boolean(reservation && reservation.eligible);
+    });
+    if (eligibleReservations.length === 0) {
+      const empty = document.createElement("li");
+      empty.className = "mini-summary";
+      empty.textContent = "No eligible reservations yet.";
+      el.highStakeReservationList.appendChild(empty);
+      return;
+    }
+
+    eligibleReservations.forEach(function (reservation) {
+      const item = document.createElement("li");
+      item.className = "conviction-item";
+
+      const title = document.createElement("p");
+      title.innerHTML = "<strong>" + escapeHtml(reservation.name) + "</strong>";
+
+      const meta = document.createElement("p");
+      meta.className = "hint";
+      meta.textContent =
+        "Belief: " +
+        (reservation.belief === "false" ? "False" : "True") +
+        " | Confidence: " +
+        reservation.confidence +
+        "% | Slots: " +
+        (Array.isArray(reservation.availability) ? reservation.availability.length : 0) +
+        " | Eligible: yes";
+
+      const reason = document.createElement("p");
+      reason.className = "hint";
+      reason.textContent = truncateText(reservation.reason, 160);
+
+      item.appendChild(title);
+      item.appendChild(meta);
+      item.appendChild(reason);
+      el.highStakeReservationList.appendChild(item);
+    });
+  }
+
+  function renderActiveHighStakeWritings(activeRoom) {
+    if (!el.activeHighStakeWritings) return;
+    el.activeHighStakeWritings.innerHTML = "";
+
+    if (!activeRoom) {
+      if (el.openHighStakePublicationLink) {
+        el.openHighStakePublicationLink.href = "publication.html";
+      }
+      const empty = document.createElement("li");
+      empty.className = "mini-summary";
+      empty.textContent = "Select a high-stakes dialogue to view writings specifically published about it.";
+      el.activeHighStakeWritings.appendChild(empty);
+      return;
+    }
+
+    const dialogueId = String(activeRoom.id || "");
+    if (el.openHighStakePublicationLink) {
+      el.openHighStakePublicationLink.href = "publication.html?dialogue=" + encodeURIComponent(dialogueId);
+    }
+
+    const linkedArticles = loadPublicationArticlesSnapshot()
+      .filter(function (article) {
+        return String((article && article.dialogueId) || "") === dialogueId;
+      })
+      .sort(function (a, b) {
+        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+      });
+
+    if (linkedArticles.length === 0) {
+      const empty = document.createElement("li");
+      empty.className = "mini-summary";
+      empty.textContent = "No writings linked to this high-stakes dialogue yet. Publish one in the Dialogue Writing Space.";
+      el.activeHighStakeWritings.appendChild(empty);
+      return;
+    }
+
+    linkedArticles.slice(0, 6).forEach(function (article) {
+      const item = document.createElement("li");
+      item.className = "conviction-item";
+
+      const title = document.createElement("p");
+      title.innerHTML = "<strong>" + escapeHtml(article.title || "Untitled article") + "</strong>";
+
+      const meta = document.createElement("p");
+      meta.className = "hint";
+      meta.textContent =
+        "By @" +
+        String(article.author || "user") +
+        " | " +
+        formatDate(article.createdAt) +
+        " | High-stakes dialogue-linked writing";
+
+      const excerpt = document.createElement("p");
+      excerpt.className = "hint";
+      excerpt.textContent = truncateText(String(article.body || "").replace(/\s+/g, " "), 180);
+
+      const link = document.createElement("a");
+      link.className = "btn btn-ghost";
+      link.href = "publication.html?dialogue=" + encodeURIComponent(dialogueId) + "#article-" + String(article.id || "");
+      link.textContent = "Open Article";
+
+      item.appendChild(title);
+      item.appendChild(meta);
+      item.appendChild(excerpt);
+      item.appendChild(link);
+      el.activeHighStakeWritings.appendChild(item);
     });
   }
 
@@ -5222,6 +6336,26 @@
       (Array.isArray(chosen.sharedSlots) ? chosen.sharedSlots.length : 0);
   }
 
+  function renderHighStakeSessionPartner() {
+    if (!el.highStakeSessionPartnerSummary) return;
+    const chosen = getSelectedHighStakeCounterpart();
+    if (!chosen) {
+      el.highStakeSessionPartnerSummary.textContent = "No participant selected yet.";
+      return;
+    }
+    el.highStakeSessionPartnerSummary.innerHTML =
+      "<strong>Selected participant:</strong> " +
+      escapeHtml(chosen.name) +
+      " | Belief: " +
+      (chosen.belief === "false" ? "False" : "True") +
+      " | Confidence: " +
+      chosen.confidence +
+      "% | Match fit: " +
+      (Number.isFinite(Number(chosen.matchScore)) ? Math.round(Number(chosen.matchScore)) : 0) +
+      "/100 | Eligible: yes | Shared slots: " +
+      (Array.isArray(chosen.sharedSlots) ? chosen.sharedSlots.length : 0);
+  }
+
   function renderLedger() {
     el.ledgerList.innerHTML = "";
     if (state.ledger.length === 0) {
@@ -5233,69 +6367,186 @@
     }
 
     state.ledger.forEach(function (entry) {
+      const normalizedEntry = normalizeLedgerEntry(entry);
       const row = document.createElement("article");
-      row.className = "ledger-item" + (entry.status === "done" ? " done" : "");
+      row.className = "ledger-item" + (normalizedEntry.status === "done" ? " done" : "");
 
       const title = document.createElement("h4");
-      title.textContent = entry.claim;
+      title.textContent = normalizedEntry.claim;
 
       const meta = document.createElement("p");
       meta.className = "ledger-meta";
+      const commitmentLabel = normalizedEntry.commitmentType === "high-stakes" ? "High-stakes promise" : "Dialogue action";
       meta.textContent =
-        "Confidence at commitment: " +
-        entry.confidenceAtDecision +
+        commitmentLabel +
+        " | Confidence at commitment: " +
+        normalizedEntry.confidenceAtDecision +
         "% | Start " +
-        entry.startDate +
-        " | Check-in " +
-        entry.checkinDate +
+        normalizedEntry.startDate +
+        (normalizedEntry.endDate ? " | End " + normalizedEntry.endDate : " | Check-in " + normalizedEntry.checkinDate) +
         " | Logged " +
-        formatDate(entry.createdAt);
+        formatDate(normalizedEntry.createdAt);
 
-      const assumptions = Array.isArray(entry.assumptions) ? entry.assumptions : [];
+      const assumptions = Array.isArray(normalizedEntry.assumptions) ? normalizedEntry.assumptions : [];
       const assumptionLine = document.createElement("p");
       assumptionLine.className = "hint";
       assumptionLine.textContent =
         assumptions.length > 0 ? "Assumed propositions: " + truncateText(assumptions.join("; "), 140) : "Assumed propositions: none listed.";
 
       const action = document.createElement("p");
-      action.innerHTML = "<strong>Action plan:</strong> " + escapeHtml(entry.actionPlan);
+      action.innerHTML = "<strong>Action plan:</strong> " + escapeHtml(normalizedEntry.actionPlan);
 
       const source = document.createElement("p");
       source.className = "hint";
       source.textContent =
         "Participant: " +
-        (entry.participantName || "Unknown") +
+        (normalizedEntry.participantName || "Unknown") +
         " | Belief: " +
-        (entry.participantBelief === "false" ? "False" : "True") +
+        (normalizedEntry.participantBelief === "false" ? "False" : "True") +
         " | Confidence: " +
-        (Number(entry.participantConfidence) || 0) +
+        (Number(normalizedEntry.participantConfidence) || 0) +
         "%";
+
+      const proofSummary = document.createElement("p");
+      proofSummary.className = "hint";
+      const uploadedProofCount = normalizedEntry.monthlyProofs.filter(function (item) {
+        return Boolean(item && item.uploadedAt);
+      }).length;
+      proofSummary.textContent =
+        "Monthly proof uploads: " +
+        uploadedProofCount +
+        "/" +
+        normalizedEntry.monthlyProofs.length +
+        " completed.";
+
+      const proofGrid = document.createElement("div");
+      proofGrid.className = "proof-grid";
+      normalizedEntry.monthlyProofs.forEach(function (proof) {
+        const proofCard = document.createElement("article");
+        proofCard.className = "proof-card" + (proof.uploadedAt ? " uploaded" : "");
+
+        const proofTitle = document.createElement("p");
+        proofTitle.className = "proof-card-title";
+        proofTitle.textContent = "Month " + proof.monthNumber;
+
+        const proofDue = document.createElement("p");
+        proofDue.className = "proof-card-meta";
+        proofDue.textContent = "Due " + proof.dueDate;
+
+        const proofStatus = document.createElement("p");
+        proofStatus.className = "proof-card-status";
+        proofStatus.textContent = proof.uploadedAt
+          ? "Uploaded " + formatDate(proof.uploadedAt) + (proof.fileName ? " · " + proof.fileName : "")
+          : "Pending";
+
+        proofCard.appendChild(proofTitle);
+        proofCard.appendChild(proofDue);
+        proofCard.appendChild(proofStatus);
+        proofGrid.appendChild(proofCard);
+      });
+
+      const nextProof = normalizedEntry.monthlyProofs.find(function (proof) {
+        return !proof.uploadedAt;
+      });
+      const proofUploadBlock = document.createElement("div");
+      proofUploadBlock.className = "proof-upload-block";
+      if (nextProof) {
+        const uploadIntro = document.createElement("p");
+        uploadIntro.className = "hint";
+        uploadIntro.textContent =
+          "Next required upload: month " + nextProof.monthNumber + " (due " + nextProof.dueDate + ").";
+
+        const uploadField = document.createElement("label");
+        uploadField.className = "field-row";
+        uploadField.htmlFor = "ledger-proof-file-" + normalizedEntry.id;
+        uploadField.textContent = "Upload proof file";
+
+        const uploadInput = document.createElement("input");
+        uploadInput.id = "ledger-proof-file-" + normalizedEntry.id;
+        uploadInput.type = "file";
+        uploadInput.setAttribute("data-ledger-proof-file", normalizedEntry.id);
+        uploadField.appendChild(uploadInput);
+
+        const noteField = document.createElement("label");
+        noteField.className = "field-row";
+        noteField.htmlFor = "ledger-proof-note-" + normalizedEntry.id;
+        noteField.textContent = "Short proof note (optional)";
+
+        const noteInput = document.createElement("textarea");
+        noteInput.id = "ledger-proof-note-" + normalizedEntry.id;
+        noteInput.rows = 2;
+        noteInput.placeholder = "Summarize what the proof shows.";
+        noteInput.setAttribute("data-ledger-proof-note", normalizedEntry.id);
+        noteField.appendChild(noteInput);
+
+        const uploadStatus = document.createElement("p");
+        uploadStatus.className = "hint";
+        uploadStatus.setAttribute("data-ledger-proof-status", normalizedEntry.id);
+        uploadStatus.textContent = "";
+
+        const uploadButton = document.createElement("button");
+        uploadButton.type = "button";
+        uploadButton.className = "btn btn-secondary";
+        uploadButton.setAttribute("data-ledger-proof-upload", normalizedEntry.id);
+        uploadButton.textContent = "Upload Monthly Proof";
+
+        proofUploadBlock.appendChild(uploadIntro);
+        proofUploadBlock.appendChild(uploadField);
+        proofUploadBlock.appendChild(noteField);
+        proofUploadBlock.appendChild(uploadStatus);
+        proofUploadBlock.appendChild(uploadButton);
+      } else {
+        const complete = document.createElement("p");
+        complete.className = "hint";
+        complete.textContent = "All 12 monthly proof uploads have been recorded.";
+        proofUploadBlock.appendChild(complete);
+      }
 
       const button = document.createElement("button");
       button.type = "button";
-      button.className = entry.status === "done" ? "btn btn-ghost" : "btn btn-primary";
-      button.setAttribute("data-ledger-id", entry.id);
-      button.textContent = entry.status === "done" ? "Mark As Pending" : "Mark As Completed";
+      const proofsComplete = uploadedProofCount === normalizedEntry.monthlyProofs.length;
+      button.className = normalizedEntry.status === "done" ? "btn btn-ghost" : "btn btn-primary";
+      button.setAttribute("data-ledger-id", normalizedEntry.id);
+      button.textContent = normalizedEntry.status === "done" ? "Mark As Pending" : (proofsComplete ? "Mark As Completed" : "Complete After 12 Proofs");
+      if (normalizedEntry.status !== "done" && !proofsComplete) {
+        button.disabled = true;
+        button.title = "Upload all 12 monthly proofs before completing this commitment.";
+      }
 
       row.appendChild(title);
       row.appendChild(meta);
       row.appendChild(assumptionLine);
       row.appendChild(action);
       row.appendChild(source);
+      row.appendChild(proofSummary);
+      row.appendChild(proofGrid);
+      row.appendChild(proofUploadBlock);
       row.appendChild(button);
       el.ledgerList.appendChild(row);
     });
   }
 
   function buildMatches(conviction) {
+    return buildMatchesForRoom(conviction, Array.isArray(conviction && conviction.reservations) ? conviction.reservations : []);
+  }
+
+  function buildHighStakeMatches(room) {
+    const reservations = Array.isArray(room && room.reservations)
+      ? room.reservations.filter(function (reservation) {
+          return Boolean(reservation && reservation.eligible);
+        })
+      : [];
+    return buildMatchesForRoom(room, reservations);
+  }
+
+  function buildMatchesForRoom(room, reservations) {
     // Hard constraints (opposed belief + shared availability) stay unchanged.
     // Method-informed tie-breakers then rank by disagreement depth and reason quality.
-    const creatorSlots = new Set(Array.isArray(conviction.availability) ? conviction.availability : []);
-    const reservations = Array.isArray(conviction.reservations) ? conviction.reservations : [];
-    const creatorBelief = conviction.creatorBelief === "false" ? "false" : "true";
-    const creatorProfile = analyzeReasonProfile(conviction.creatorReason || "");
-    const creatorAssumptionLexicon = buildAssumptionLexicon(conviction.assumptions || []);
-    const creatorConfidence = clamp(Number(conviction.confidence), 1, 100);
+    const creatorSlots = new Set(Array.isArray(room.availability) ? room.availability : []);
+    const creatorBelief = room.creatorBelief === "false" ? "false" : "true";
+    const creatorProfile = analyzeReasonProfile(room.creatorReason || "");
+    const creatorAssumptionLexicon = buildAssumptionLexicon(room.assumptions || []);
+    const creatorConfidence = clamp(Number(room.confidence), 1, 100);
 
     return reservations
       .map(function (reservation) {
@@ -5305,7 +6556,7 @@
           return creatorSlots.has(slotId);
         });
         if (!opposed || sharedSlots.length === 0) return null;
-        const confidenceGap = Math.abs(Number(conviction.confidence) - Number(reservation.confidence));
+        const confidenceGap = Math.abs(Number(room.confidence) - Number(reservation.confidence));
         const reservationProfile = analyzeReasonProfile(reservation.reason || "");
         const overlapScore = computeOverlapScore(sharedSlots.length, creatorSlots.size);
         const confidenceProximity = clamp(1 - confidenceGap / 100, 0, 1);
@@ -5380,11 +6631,37 @@
     );
   }
 
+  function getSelectedHighStakeCounterpart() {
+    if (!state.selectedHighStakeCounterpartId) return null;
+    return (
+      currentHighStakeMatches.find(function (item) {
+        return item.id === state.selectedHighStakeCounterpartId;
+      }) || null
+    );
+  }
+
+  function getActiveHighStakeRoom() {
+    return (
+      (Array.isArray(state.highStakes) ? state.highStakes : []).find(function (item) {
+        return item.id === state.activeHighStakeId;
+      }) || null
+    );
+  }
+
   function getConvictionById(convictionId) {
     if (!convictionId) return null;
     return (
       state.convictions.find(function (item) {
         return item.id === convictionId;
+      }) || null
+    );
+  }
+
+  function getHighStakeRoomById(roomId) {
+    if (!roomId) return null;
+    return (
+      (Array.isArray(state.highStakes) ? state.highStakes : []).find(function (item) {
+        return item.id === roomId;
       }) || null
     );
   }
@@ -5396,21 +6673,70 @@
     if (triggered) {
       el.thresholdNotice.className = "threshold-note triggered";
       el.thresholdNotice.textContent =
-        "Threshold crossed: because confidence is above 50%, a concrete action commitment is required.";
+        "Threshold crossed: because confidence is above 50%, a concrete 12-month action commitment with monthly proof uploads is required.";
       el.actionCommitmentBlock.classList.remove("hidden");
       el.actionPlanInput.required = true;
       el.startDateInput.required = true;
       el.checkinDateInput.required = true;
+      el.checkinDateInput.readOnly = true;
       if (!el.startDateInput.value) el.startDateInput.value = todayISO();
-      if (!el.checkinDateInput.value) el.checkinDateInput.value = plusDaysISO(14);
+      syncDialogueCommitmentEndDate();
     } else {
       el.thresholdNotice.className = "threshold-note neutral";
       el.thresholdNotice.textContent =
-        "Threshold not crossed: action commitment is optional until confidence moves above 50%.";
+        "Threshold not crossed: the 12-month commitment and monthly proof uploads activate only if confidence moves above 50%.";
       el.actionCommitmentBlock.classList.add("hidden");
       el.actionPlanInput.required = false;
       el.startDateInput.required = false;
       el.checkinDateInput.required = false;
+      el.checkinDateInput.readOnly = true;
+    }
+  }
+
+  function updateHighStakeThresholdState() {
+    if (
+      !el.highStakePostConfidenceInput ||
+      !el.highStakeThresholdNotice ||
+      !el.highStakePromiseBlock ||
+      !el.highStakeStartDateInput ||
+      !el.highStakeEndDateInput
+    ) {
+      return;
+    }
+
+    const value = Number(el.highStakePostConfidenceInput.value || "50");
+    const triggered = value > 50;
+    const activeRoom = getActiveHighStakeRoom();
+    const promiseClaim = activeRoom ? buildHighStakeClaim(activeRoom.facts, activeRoom.action) : buildHighStakeClaim(
+      el.highStakeFactsInput ? el.highStakeFactsInput.value : "",
+      el.highStakeActionInput ? el.highStakeActionInput.value : ""
+    );
+
+    if (triggered) {
+      el.highStakeThresholdNotice.className = "threshold-note triggered";
+      el.highStakeThresholdNotice.textContent =
+        "Threshold crossed: because confidence is above 50%, you must promise to act according to the proposition for one year and upload proof every month.";
+      el.highStakePromiseBlock.classList.remove("hidden");
+      el.highStakeStartDateInput.required = true;
+      if (!el.highStakeStartDateInput.value) {
+        el.highStakeStartDateInput.value = todayISO();
+      }
+      syncHighStakePromiseEndDate();
+      if (el.highStakePromisePreview) {
+        el.highStakePromisePreview.innerHTML =
+          "<strong>One-year promise:</strong> " + escapeHtml(promiseClaim);
+      }
+    } else {
+      el.highStakeThresholdNotice.className = "threshold-note neutral";
+      el.highStakeThresholdNotice.textContent =
+        "Threshold not crossed: the one-year promise activates only if confidence moves above 50%.";
+      el.highStakePromiseBlock.classList.add("hidden");
+      el.highStakeStartDateInput.required = false;
+      el.highStakeEndDateInput.value = "";
+      if (el.highStakePromisePreview) {
+        el.highStakePromisePreview.innerHTML =
+          "<strong>One-year promise:</strong> " + escapeHtml(promiseClaim);
+      }
     }
   }
 
@@ -5550,7 +6876,7 @@
 
   function countSentences(text) {
     const cleaned = String(text || "")
-      .replace(/\\s+/g, " ")
+      .replace(/\s+/g, " ")
       .trim();
     if (!cleaned) return 0;
     const parts = cleaned.split(/[.!?]+/).filter(function (part) {
@@ -5776,6 +7102,117 @@
     el.sessionStatus.textContent = text;
   }
 
+  function setHighStakeSessionStatus(text) {
+    if (!el.highStakeSessionStatus) return;
+    el.highStakeSessionStatus.textContent = text;
+  }
+
+  function syncDialogueCommitmentEndDate() {
+    if (!el.startDateInput || !el.checkinDateInput) return;
+    const startDate = String(el.startDateInput.value || "");
+    if (!startDate) {
+      el.checkinDateInput.value = "";
+      return;
+    }
+    el.checkinDateInput.value = addMonthsISO(startDate, 12);
+  }
+
+  function syncHighStakePromiseEndDate() {
+    if (!el.highStakeStartDateInput || !el.highStakeEndDateInput) return;
+    const startDate = String(el.highStakeStartDateInput.value || "");
+    if (!startDate) {
+      el.highStakeEndDateInput.value = "";
+      return;
+    }
+    el.highStakeEndDateInput.value = addMonthsISO(startDate, 12);
+  }
+
+  function buildMonthlyProofEntries(startDate, months, existingProofs) {
+    const totalMonths = Math.max(1, Number(months) || 12);
+    const existingList = Array.isArray(existingProofs) ? existingProofs : [];
+    const byMonth = existingList.reduce(function (map, item) {
+      const key = Number(item && item.monthNumber);
+      if (!Number.isFinite(key) || key < 1) return map;
+      map[key] = item;
+      return map;
+    }, {});
+    const baseDate = startDate || todayISO();
+    const proofs = [];
+    for (let monthNumber = 1; monthNumber <= totalMonths; monthNumber += 1) {
+      const existing = byMonth[monthNumber] || {};
+      proofs.push({
+        monthNumber: monthNumber,
+        dueDate: String(existing.dueDate || addMonthsISO(baseDate, monthNumber)),
+        uploadedAt: String(existing.uploadedAt || ""),
+        fileName: String(existing.fileName || ""),
+        mimeType: String(existing.mimeType || ""),
+        size: Number(existing.size || 0),
+        note: String(existing.note || ""),
+      });
+    }
+    return proofs;
+  }
+
+  function normalizeLedgerEntry(entry) {
+    const normalized = Object.assign({}, entry);
+    normalized.commitmentType = normalized.commitmentType === "high-stakes" ? "high-stakes" : "dialogue";
+    normalized.startDate = String(normalized.startDate || "");
+    normalized.commitmentMonths = Math.max(1, Number(normalized.commitmentMonths) || 12);
+    normalized.endDate = String(normalized.endDate || (normalized.startDate ? addMonthsISO(normalized.startDate, normalized.commitmentMonths) : ""));
+    normalized.checkinDate = String(normalized.checkinDate || normalized.endDate || "");
+    normalized.monthlyProofs = buildMonthlyProofEntries(normalized.startDate, normalized.commitmentMonths, normalized.monthlyProofs);
+    const allProofsUploaded = normalized.monthlyProofs.every(function (proof) {
+      return Boolean(proof.uploadedAt);
+    });
+    normalized.status = allProofsUploaded ? String(normalized.status || "pending") : "pending";
+    return normalized;
+  }
+
+  function onLedgerProofUpload(ledgerId) {
+    const entry = state.ledger.find(function (row) {
+      return row.id === ledgerId;
+    });
+    if (!entry) return;
+    const normalized = normalizeLedgerEntry(entry);
+    const nextProof = normalized.monthlyProofs.find(function (proof) {
+      return !proof.uploadedAt;
+    });
+    if (!nextProof) {
+      renderLedger();
+      return;
+    }
+
+    const fileInput = el.ledgerList.querySelector('[data-ledger-proof-file="' + ledgerId + '"]');
+    const noteInput = el.ledgerList.querySelector('[data-ledger-proof-note="' + ledgerId + '"]');
+    const statusNode = el.ledgerList.querySelector('[data-ledger-proof-status="' + ledgerId + '"]');
+    const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
+    if (!file) {
+      if (statusNode) {
+        statusNode.textContent = "Select a proof file before uploading.";
+      }
+      return;
+    }
+
+    const note = noteInput ? String(noteInput.value || "").trim() : "";
+    normalized.monthlyProofs = normalized.monthlyProofs.map(function (proof) {
+      if (proof.monthNumber !== nextProof.monthNumber) return proof;
+      return Object.assign({}, proof, {
+        uploadedAt: new Date().toISOString(),
+        fileName: String(file.name || ""),
+        mimeType: String(file.type || ""),
+        size: Number(file.size || 0),
+        note: note,
+      });
+    });
+    Object.assign(entry, normalized);
+    if (normalized.monthlyProofs.every(function (proof) { return Boolean(proof.uploadedAt); })) {
+      entry.status = "done";
+      entry.updatedAt = new Date().toISOString();
+    }
+    saveState();
+    renderLedger();
+  }
+
   function createDefaultState() {
     const seededConvictions = mergeSeededDialogueRooms([]);
     return {
@@ -5791,7 +7228,11 @@
       convictions: seededConvictions,
       activeConvictionId: seededConvictions.length ? seededConvictions[0].id : null,
       selectedCounterpartId: null,
+      highStakes: [],
+      activeHighStakeId: null,
+      selectedHighStakeCounterpartId: null,
       sessions: [],
+      highStakeSessions: [],
       ledger: [],
     };
   }
@@ -5902,7 +7343,54 @@
         activeConvictionId: parsed.activeConvictionId || null,
         selectedCounterpartId: parsed.selectedCounterpartId || null,
         sessions: Array.isArray(parsed.sessions) ? parsed.sessions : [],
-        ledger: Array.isArray(parsed.ledger) ? parsed.ledger : [],
+        highStakes: Array.isArray(parsed.highStakes)
+          ? parsed.highStakes.map(function (item) {
+              const normalized = Object.assign({}, item);
+              normalized.type = "high-stakes";
+              normalized.facts = String(item.facts || "");
+              normalized.action = String(item.action || "");
+              normalized.claim = String(item.claim || buildHighStakeClaim(item.facts, item.action));
+              normalized.creatorBelief = item.creatorBelief === "false" ? "false" : "true";
+              normalized.creatorUserId = String(item.creatorUserId || "");
+              normalized.creatorHandle = String(item.creatorHandle || "");
+              normalized.creatorEligible = item.creatorEligible !== false;
+              normalized.confidence = clamp(Number(item.confidence || 50), 0, 100);
+              normalized.assumptions = Array.isArray(item.assumptions) ? item.assumptions : [];
+              normalized.creatorReason = String(item.creatorReason || "");
+              normalized.availability = Array.isArray(item.availability) ? item.availability : [];
+              normalized.slotCatalog =
+                Array.isArray(item.slotCatalog) && item.slotCatalog.length >= AVAILABILITY_SLOT_COUNT
+                  ? item.slotCatalog
+                  : availabilitySlots;
+              normalized.reservations = Array.isArray(item.reservations)
+                ? item.reservations.map(function (reservation) {
+                    return {
+                      id: String((reservation && reservation.id) || uid("hsr")),
+                      userId: String((reservation && reservation.userId) || ""),
+                      userHandle: String((reservation && reservation.userHandle) || ""),
+                      name: String((reservation && reservation.name) || ""),
+                      belief: reservation && reservation.belief === "false" ? "false" : "true",
+                      confidence: clamp(Number((reservation && reservation.confidence) || 50), 1, 100),
+                      reason: String((reservation && reservation.reason) || ""),
+                      eligible: reservation ? reservation.eligible !== false : true,
+                      availability: Array.isArray(reservation && reservation.availability)
+                        ? reservation.availability
+                        : [],
+                      createdAt: String((reservation && reservation.createdAt) || ""),
+                    };
+                  })
+                : [];
+              return normalized;
+            })
+          : [],
+        activeHighStakeId: parsed.activeHighStakeId || null,
+        selectedHighStakeCounterpartId: parsed.selectedHighStakeCounterpartId || null,
+        highStakeSessions: Array.isArray(parsed.highStakeSessions) ? parsed.highStakeSessions : [],
+        ledger: Array.isArray(parsed.ledger)
+          ? parsed.ledger.map(function (entry) {
+              return normalizeLedgerEntry(entry);
+            })
+          : [],
       };
       if (loaded.pledge.signed && loaded.pledgeRegistry.length === 0) {
         loaded.pledgeRegistry.push({
@@ -5923,6 +7411,14 @@
       if (!activeExists) {
         loaded.activeConvictionId = loaded.convictions.length ? loaded.convictions[0].id : null;
       }
+      const activeHighStakeExists =
+        loaded.activeHighStakeId &&
+        loaded.highStakes.some(function (item) {
+          return String(item.id) === String(loaded.activeHighStakeId);
+        });
+      if (!activeHighStakeExists) {
+        loaded.activeHighStakeId = loaded.highStakes.length ? loaded.highStakes[0].id : null;
+      }
       return loaded;
     } catch (error) {
       return createDefaultState();
@@ -5932,6 +7428,26 @@
   function saveState() {
     const storage = getStorageForUser();
     storage.setItem(getStorageKey(), JSON.stringify(state));
+  }
+
+  function resetPledgeModalForm() {
+    if (!el.pledgeModalForm) return;
+    el.pledgeModalForm.reset();
+    if (el.pledgeModalName) {
+      el.pledgeModalName.value = "";
+    }
+    if (el.pledgeModalRole) {
+      el.pledgeModalRole.value = "";
+    }
+    if (el.pledgeModalFocus) {
+      el.pledgeModalFocus.value = "";
+    }
+    if (el.pledgeModalFirstAction) {
+      el.pledgeModalFirstAction.value = "";
+    }
+    if (el.pledgeModalStatus) {
+      el.pledgeModalStatus.textContent = "";
+    }
   }
 
   function resetConvictionForm() {
@@ -5952,6 +7468,33 @@
     resetAvailability(el.roomAvailability);
   }
 
+  function resetHighStakeForm() {
+    if (el.highStakeFactsInput) {
+      el.highStakeFactsInput.value = "";
+    }
+    if (el.highStakeActionInput) {
+      el.highStakeActionInput.value = "";
+    }
+    if (el.highStakeAssumptionInput) {
+      el.highStakeAssumptionInput.value = "";
+    }
+    if (el.highStakeCreatorReasonInput) {
+      el.highStakeCreatorReasonInput.value = "";
+    }
+    if (el.highStakeTruthAptConfirm) {
+      el.highStakeTruthAptConfirm.checked = false;
+    }
+    if (el.highStakeEligibilityConfirm) {
+      el.highStakeEligibilityConfirm.checked = false;
+    }
+    if (el.highStakeConfidenceInput) {
+      el.highStakeConfidenceInput.value = "60";
+      updateConfidenceText(el.highStakeConfidenceInput, el.highStakeConfidenceValue);
+    }
+    resetAvailability(el.highStakeRoomAvailability);
+    updateHighStakePreview();
+  }
+
   function resetReservationForm() {
     if (el.reservationNameInput) {
       el.reservationNameInput.value = "";
@@ -5970,6 +7513,27 @@
     syncReservationIdentityField();
   }
 
+  function resetHighStakeReservationForm() {
+    if (el.highStakeReservationNameInput) {
+      el.highStakeReservationNameInput.value = "";
+    }
+    if (el.highStakeReservationBeliefInput) {
+      el.highStakeReservationBeliefInput.value = "true";
+    }
+    if (el.highStakeReservationConfidenceInput) {
+      el.highStakeReservationConfidenceInput.value = "50";
+      updateConfidenceText(el.highStakeReservationConfidenceInput, el.highStakeReservationConfidenceValue);
+    }
+    if (el.highStakeReservationReasonInput) {
+      el.highStakeReservationReasonInput.value = "";
+    }
+    if (el.highStakeReservationEligibilityConfirm) {
+      el.highStakeReservationEligibilityConfirm.checked = false;
+    }
+    resetAvailability(el.highStakeReservationAvailability);
+    syncHighStakeReservationIdentityField();
+  }
+
   function resetInviteForm() {
     if (el.inviteNameInput) {
       el.inviteNameInput.value = "";
@@ -5986,6 +7550,29 @@
     el.checkinDateInput.value = "";
     updateConfidenceText(el.postConfidenceInput, el.postConfidenceValue);
     updateThresholdState();
+  }
+
+  function resetHighStakeSessionForm() {
+    if (el.highStakeCounterArgumentInput) {
+      el.highStakeCounterArgumentInput.value = "";
+    }
+    if (el.highStakeReplyInput) {
+      el.highStakeReplyInput.value = "";
+    }
+    if (el.highStakePostConfidenceInput) {
+      el.highStakePostConfidenceInput.value = "50";
+      updateConfidenceText(el.highStakePostConfidenceInput, el.highStakePostConfidenceValue);
+    }
+    if (el.highStakePromiseNoteInput) {
+      el.highStakePromiseNoteInput.value = "";
+    }
+    if (el.highStakeStartDateInput) {
+      el.highStakeStartDateInput.value = "";
+    }
+    if (el.highStakeEndDateInput) {
+      el.highStakeEndDateInput.value = "";
+    }
+    updateHighStakeThresholdState();
   }
 
   function uid(prefix) {
@@ -6080,6 +7667,15 @@
     const now = new Date();
     now.setDate(now.getDate() + days);
     return localISODate(now);
+  }
+
+  function addMonthsISO(isoDate, months) {
+    const source = String(isoDate || "");
+    if (!source) return "";
+    const date = new Date(source + "T00:00:00");
+    if (Number.isNaN(date.getTime())) return "";
+    date.setMonth(date.getMonth() + Number(months || 0));
+    return localISODate(date);
   }
 
   function localISODate(date) {

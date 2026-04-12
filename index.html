@@ -365,6 +365,7 @@
           <h3>Participate</h3>
           <a href="#pledge">Pledge</a>
           <a href="#studio">Dialogues</a>
+          <a href="#high-stakes-dialogue">High-stakes dialogue</a>
           <a href="#ledger">Action Ledger</a>
           <a href="publication.html">Publications</a>
         </article>
@@ -839,6 +840,57 @@
               </div>
             </div>
 
+            <div id="pledgeModal" class="attendance-modal pledge-modal" hidden>
+              <div class="attendance-modal-backdrop" data-pledge-close="true"></div>
+              <div
+                class="attendance-modal-dialog pledge-modal-dialog"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="pledgeModalTitle"
+                aria-describedby="pledgeModalDescription"
+              >
+                <button id="pledgeModalCloseBtn" class="attendance-close-btn" type="button" aria-label="Close pledge prompt">×</button>
+                <h4 id="pledgeModalTitle">Sign The Pledge To Create A Dialogue</h4>
+                <p id="pledgeModalDescription" class="pledge-modal-copy">
+                  Read the pledge, confirm each commitment, and sign it here. You will stay on this page, and dialogue creation will continue immediately after signing.
+                </p>
+                <form id="pledgeModalForm" class="compact-form pledge-modal-form">
+                  <label class="check-row"><input type="checkbox" name="fearless" required> I commit to openly and honestly examining my beliefs.</label>
+                  <label class="check-row"><input type="checkbox" name="continuous" required> I commit to treating others with kindness and fairness.</label>
+                  <label class="check-row"><input type="checkbox" name="action" required> After considering my beliefs, I commit to avoiding actions I judge to have more than a 50% chance of being morally wrong, and choosing the action I judge least likely to be wrong.</label>
+
+                  <label class="field-row" for="pledgeModalName">
+                    Name or username
+                    <input id="pledgeModalName" name="pledgeName" type="text" maxlength="60" required placeholder="e.g., Mira K.">
+                  </label>
+                  <label class="field-row" for="pledgeModalRole">
+                    Role
+                    <select id="pledgeModalRole" name="pledgeRole" required>
+                      <option value="">Select role</option>
+                      <option value="student">Student</option>
+                      <option value="educator">Educator</option>
+                      <option value="researcher">Researcher</option>
+                      <option value="practitioner">Practitioner</option>
+                      <option value="citizen">Citizen participant</option>
+                    </select>
+                  </label>
+                  <label class="field-row" for="pledgeModalFocus">
+                    Normative focus area
+                    <input id="pledgeModalFocus" name="pledgeFocus" type="text" maxlength="100" required placeholder="e.g., animal welfare, distributive justice">
+                  </label>
+                  <label class="field-row" for="pledgeModalFirstAction">
+                    First accountability action (within 7 days)
+                    <textarea id="pledgeModalFirstAction" name="pledgeFirstAction" rows="3" maxlength="280" required placeholder="e.g., Track purchases and eliminate factory-farmed meat this week."></textarea>
+                  </label>
+                  <p id="pledgeModalStatus" class="status-line attendance-policy-status" role="status" aria-live="polite"></p>
+                  <div class="attendance-policy-actions">
+                    <button id="pledgeModalCancelBtn" class="btn btn-ghost" type="button">Cancel</button>
+                    <button class="btn btn-primary" type="submit">Sign Pledge And Continue</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
             <div class="subhead-row">
               <h4>Current Reservations</h4>
               <p class="hint">Opposing beliefs and overlapping times drive matching.</p>
@@ -882,23 +934,221 @@
 
               <div id="actionCommitmentBlock" class="action-block hidden">
                 <label class="field-row" for="actionPlanInput">
-                  Required action (because confidence is over 50%)
-                  <textarea id="actionPlanInput" name="actionPlan" rows="2" placeholder="State the concrete behavior change you will implement."></textarea>
+                  Required action for the next 12 months (because confidence is over 50%)
+                  <textarea id="actionPlanInput" name="actionPlan" rows="2" placeholder="State the concrete behavior change you will implement for the next 12 months."></textarea>
                 </label>
+                <p class="hint">If confidence stays above 50%, you must act according to the proposition for 12 months and upload proof every month.</p>
                 <div class="date-grid">
                   <label class="field-row" for="startDateInput">
                     Start date
                     <input id="startDateInput" name="startDate" type="date">
                   </label>
                   <label class="field-row" for="checkinDateInput">
-                    Accountability check-in
-                    <input id="checkinDateInput" name="checkinDate" type="date">
+                    Commitment end date (12 months)
+                    <input id="checkinDateInput" name="checkinDate" type="date" readonly>
                   </label>
                 </div>
               </div>
 
               <button class="btn btn-primary" type="submit">Log Dialogue Result</button>
               <p id="sessionStatus" class="status-line" role="status" aria-live="polite"></p>
+            </form>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section id="high-stakes-dialogue" class="section reveal">
+      <div class="section-head">
+        <p class="eyebrow">High-stakes dialogue</p>
+        <h2>Eligibility-gated commitments with one-year follow-through</h2>
+        <p class="hint">Use this when the debated proposition has the form “If you [facts], you must [action].” Only eligible participants can join, and crossing 50% credence activates a one-year promise in the action ledger.</p>
+      </div>
+      <p id="highStakeGateBanner" class="gate-banner">Browse high-stakes dialogues below. Sign the pledge to create, reserve, and log one-year commitments.</p>
+
+      <div id="highStakeContent" class="studio-content locked">
+        <div class="studio-grid">
+          <article class="panel">
+            <h3>Create A High-stakes Dialogue</h3>
+            <form id="highStakeForm" class="compact-form">
+              <label class="field-row" for="highStakeFactsInput">
+                Facts about the person
+                <textarea
+                  id="highStakeFactsInput"
+                  name="highStakeFacts"
+                  rows="2"
+                  required
+                  placeholder="e.g., make the equivalent of more than $60,000 in the United States per year"
+                ></textarea>
+              </label>
+              <label class="field-row" for="highStakeActionInput">
+                What that person must do
+                <textarea
+                  id="highStakeActionInput"
+                  name="highStakeAction"
+                  rows="2"
+                  required
+                  placeholder="e.g., donate at least 10% of your income to charities that evidence suggests are among the most effective"
+                ></textarea>
+              </label>
+              <div id="highStakePreview" class="mini-summary high-stake-preview">
+                Proposition preview: If you [facts], you must [action].
+              </div>
+              <label class="field-row" for="highStakeConfidenceInput">
+                Your confidence that the proposition is true: <span id="highStakeConfidenceValue">60%</span>
+                <input id="highStakeConfidenceInput" name="highStakeConfidence" type="range" min="1" max="100" step="1" value="60">
+              </label>
+              <label class="field-row" for="highStakeCreatorReasonInput">
+                Reasons for your confidence (10 sentences max)
+                <textarea
+                  id="highStakeCreatorReasonInput"
+                  name="highStakeCreatorReason"
+                  rows="3"
+                  required
+                  placeholder="Explain the main evidence, intuitions, or background premises supporting this requirement."
+                ></textarea>
+              </label>
+              <label class="field-row" for="highStakeAssumptionInput">
+                Shared premises (optional, one per line)
+                <textarea
+                  id="highStakeAssumptionInput"
+                  name="highStakeAssumptions"
+                  rows="3"
+                  placeholder="e.g., people with substantial disposable income have stronger positive duties to prevent severe suffering."
+                ></textarea>
+              </label>
+              <label class="field-row checkbox-row" for="highStakeTruthAptConfirm">
+                <input id="highStakeTruthAptConfirm" name="highStakeTruthAptConfirm" type="checkbox" required>
+                I affirm this proposition is truth-apt and that I believe it is more likely true than not true.
+              </label>
+              <label class="field-row checkbox-row" for="highStakeEligibilityConfirm">
+                <input id="highStakeEligibilityConfirm" name="highStakeEligibilityConfirm" type="checkbox" required>
+                I affirm that I currently meet the factual condition stated above and would be eligible to act on this proposition.
+              </label>
+              <div class="availability-block">
+                <p class="field-label">Your availability (select any half-hour slot in the next 30 days)</p>
+                <div id="highStakeRoomAvailability" class="availability-grid" role="group" aria-label="High-stakes dialogue creator availability"></div>
+              </div>
+              <p id="highStakeStatus" class="hint"></p>
+              <button class="btn btn-secondary" type="submit">Create High-stakes Dialogue</button>
+            </form>
+
+            <div class="subhead-row">
+              <h4>Your High-stakes Dialogues</h4>
+              <p class="hint">Only eligible participants with the opposite belief can be matched.</p>
+            </div>
+            <ul id="highStakeList" class="stack-list"></ul>
+          </article>
+
+          <article class="panel">
+            <h3>Reserve and Match</h3>
+            <p class="hint">
+              High-stakes dialogues require all participants to meet the factual condition. Matching still prioritizes shared time,
+              opposite beliefs, and the smallest confidence gap.
+            </p>
+            <div id="activeHighStakeSummary" class="mini-summary">No active high-stakes dialogue selected yet.</div>
+
+            <div class="subhead-row">
+              <h4>Writings for This High-stakes Dialogue</h4>
+              <a id="openHighStakePublicationLink" class="btn btn-ghost" href="publication.html">Open Dialogue Space</a>
+            </div>
+            <ul id="activeHighStakeWritings" class="stack-list"></ul>
+
+            <form id="highStakeReservationForm" class="compact-form">
+              <label class="field-row" for="highStakeReservationNameInput">
+                Participant username
+                <input id="highStakeReservationNameInput" name="highStakeReservationName" type="text" placeholder="e.g., jasmine" required>
+                <span class="hint">If signed in, this auto-fills with your username.</span>
+              </label>
+              <label class="field-row" for="highStakeReservationBeliefInput">
+                Belief about the proposition
+                <select id="highStakeReservationBeliefInput" name="highStakeReservationBelief" required>
+                  <option value="true">The proposition is true</option>
+                  <option value="false">The proposition is not true</option>
+                </select>
+              </label>
+              <label class="field-row" for="highStakeReservationConfidenceInput">
+                Confidence in that belief: <span id="highStakeReservationConfidenceValue">50%</span>
+                <input id="highStakeReservationConfidenceInput" name="highStakeReservationConfidence" type="range" min="1" max="100" step="1" value="50">
+              </label>
+              <label class="field-row" for="highStakeReservationReasonInput">
+                Reasons for your confidence (10 sentences max)
+                <textarea
+                  id="highStakeReservationReasonInput"
+                  name="highStakeReservationReason"
+                  rows="3"
+                  required
+                  placeholder="Explain the main evidence, intuitions, or background premises supporting your confidence."
+                ></textarea>
+              </label>
+              <label class="field-row checkbox-row" for="highStakeReservationEligibilityConfirm">
+                <input id="highStakeReservationEligibilityConfirm" name="highStakeReservationEligibilityConfirm" type="checkbox" required>
+                I affirm that I meet the factual condition stated in this proposition and would be eligible to act on it for one year.
+              </label>
+              <div class="availability-block">
+                <p class="field-label">Your availability (select any half-hour slot in the next 30 days)</p>
+                <div id="highStakeReservationAvailability" class="availability-grid" role="group" aria-label="High-stakes participant availability"></div>
+              </div>
+              <p id="highStakeReservationStatus" class="hint"></p>
+              <button class="btn btn-secondary" type="submit">Reserve A High-stakes Seat</button>
+            </form>
+
+            <div class="subhead-row">
+              <h4>Current Eligible Reservations</h4>
+              <p class="hint">Reservations are filtered to participants who attest that they meet the facts.</p>
+            </div>
+            <ul id="highStakeReservationList" class="stack-list reservation-list"></ul>
+
+            <h4>Suggested High-stakes Matches</h4>
+            <p id="highStakeMatchRationale" class="hint">Select a high-stakes dialogue to generate suggested matches.</p>
+            <div id="highStakeCounterpartList" class="counterpart-list"></div>
+
+            <h3 class="session-head">Log The High-stakes Outcome</h3>
+            <form id="highStakeSessionForm" class="compact-form">
+              <p id="highStakeSessionPartnerSummary" class="mini-summary">No participant selected yet.</p>
+              <label class="field-row" for="highStakeCounterArgumentInput">
+                Strongest argument you heard from your participant
+                <textarea id="highStakeCounterArgumentInput" name="highStakeCounterArgument" rows="3" required></textarea>
+              </label>
+              <label class="field-row" for="highStakeReplyInput">
+                Your strongest reply (or concession)
+                <textarea id="highStakeReplyInput" name="highStakeReply" rows="3" required></textarea>
+              </label>
+              <label class="field-row" for="highStakePostConfidenceInput">
+                After discussion, confidence that this proposition is true: <span id="highStakePostConfidenceValue">50%</span>
+                <input id="highStakePostConfidenceInput" name="highStakePostConfidence" type="range" min="0" max="100" step="1" value="50">
+              </label>
+
+              <p id="highStakeThresholdNotice" class="threshold-note" role="status" aria-live="polite"></p>
+
+              <div id="highStakePromiseBlock" class="action-block hidden">
+                <p id="highStakePromisePreview" class="mini-summary high-stake-promise-preview">
+                  If confidence rises above 50%, the one-year promise will appear here.
+                </p>
+                <p class="hint">The one-year promise also requires one proof upload every month for all 12 months.</p>
+                <label class="field-row" for="highStakePromiseNoteInput">
+                  Implementation note (optional)
+                  <textarea
+                    id="highStakePromiseNoteInput"
+                    name="highStakePromiseNote"
+                    rows="2"
+                    placeholder="Add practical details about how you will carry out the one-year commitment."
+                  ></textarea>
+                </label>
+                <div class="date-grid">
+                  <label class="field-row" for="highStakeStartDateInput">
+                    Start date
+                    <input id="highStakeStartDateInput" name="highStakeStartDate" type="date">
+                  </label>
+                  <label class="field-row" for="highStakeEndDateInput">
+                    Promise end date
+                    <input id="highStakeEndDateInput" name="highStakeEndDate" type="date" readonly>
+                  </label>
+                </div>
+              </div>
+
+              <button class="btn btn-primary" type="submit">Log High-stakes Result</button>
+              <p id="highStakeSessionStatus" class="status-line" role="status" aria-live="polite"></p>
             </form>
           </article>
         </div>
@@ -1241,7 +1491,7 @@
         </div>
         <button id="resetDemoBtn" class="btn btn-ghost" type="button">Reset Local Demo Data</button>
       </div>
-      <p class="hint">Every rule-triggered conviction appears here until marked completed.</p>
+      <p class="hint">Every rule-triggered conviction appears here as a 12-month commitment. Each month requires a proof upload before the entry can be completed.</p>
       <div id="ledgerList" class="ledger-list"></div>
     </section>
 
