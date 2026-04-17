@@ -98,7 +98,8 @@
 }
 
 .research-stack-layout,
-.research-public-layout {
+.research-public-layout,
+.research-urgency-layout {
   display: grid;
   grid-template-columns: minmax(0, 0.42fr) minmax(0, 0.58fr);
   gap: 0.9rem;
@@ -107,11 +108,20 @@
 
 .research-stack-copy,
 .research-public-copy,
+.research-urgency-copy,
 .research-checklist,
 .research-closing {
   display: grid;
   gap: 0.7rem;
   align-content: start;
+}
+
+.research-urgency-copy p {
+  margin: 0;
+}
+
+.research-urgency-graphic {
+  min-height: 100%;
 }
 
 .research-long-list {
@@ -233,6 +243,7 @@
   .research-hero-grid,
   .research-stack-layout,
   .research-public-layout,
+  .research-urgency-layout,
   .research-card-grid-3 {
     grid-template-columns: 1fr;
   }

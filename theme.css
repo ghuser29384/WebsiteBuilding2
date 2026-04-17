@@ -986,6 +986,7 @@ body.forethought-site .nav-dropdown-menu {
   body.forethought-site .main-nav .nav-dropdown > .nav-dropdown-trigger,
   body.forethought-site .top-nav a,
   body.forethought-site .top-nav .nav-dropdown > .nav-dropdown-trigger,
+  body.forethought-site .wre-nav .nav-dropdown > .nav-dropdown-trigger,
   body.forethought-site .wre-nav a {
     display: inline-flex;
     align-items: center;
@@ -1006,6 +1007,7 @@ body.forethought-site .nav-dropdown-menu {
   body.forethought-site .main-nav .nav-dropdown > .nav-dropdown-trigger::after,
   body.forethought-site .top-nav a::after,
   body.forethought-site .top-nav .nav-dropdown > .nav-dropdown-trigger::after,
+  body.forethought-site .wre-nav .nav-dropdown > .nav-dropdown-trigger::after,
   body.forethought-site .wre-nav a::after {
     content: "";
     position: absolute;
@@ -1031,7 +1033,9 @@ body.forethought-site .nav-dropdown-menu {
   body.forethought-site .top-nav .nav-dropdown:focus-within > .nav-dropdown-trigger::after,
   body.forethought-site .wre-nav a:hover::after,
   body.forethought-site .wre-nav a:focus-visible::after,
-  body.forethought-site .wre-nav a[aria-current="page"]::after {
+  body.forethought-site .wre-nav a[aria-current="page"]::after,
+  body.forethought-site .wre-nav .nav-dropdown:hover > .nav-dropdown-trigger::after,
+  body.forethought-site .wre-nav .nav-dropdown:focus-within > .nav-dropdown-trigger::after {
     transform: scaleX(1);
   }
 
@@ -1047,18 +1051,22 @@ body.forethought-site .nav-dropdown-menu {
   body.forethought-site .top-nav .nav-dropdown:focus-within > .nav-dropdown-trigger,
   body.forethought-site .wre-nav a:hover,
   body.forethought-site .wre-nav a:focus-visible,
-  body.forethought-site .wre-nav a[aria-current="page"] {
+  body.forethought-site .wre-nav a[aria-current="page"],
+  body.forethought-site .wre-nav .nav-dropdown:hover > .nav-dropdown-trigger,
+  body.forethought-site .wre-nav .nav-dropdown:focus-within > .nav-dropdown-trigger {
     color: var(--nm-ink) !important;
   }
 
   body.forethought-site .main-nav .nav-dropdown,
-  body.forethought-site .top-nav .nav-dropdown {
+  body.forethought-site .top-nav .nav-dropdown,
+  body.forethought-site .wre-nav .nav-dropdown {
     display: inline-flex;
     align-items: center;
   }
 
   body.forethought-site .main-nav .nav-dropdown-menu,
-  body.forethought-site .top-nav .nav-dropdown-menu {
+  body.forethought-site .top-nav .nav-dropdown-menu,
+  body.forethought-site .wre-nav .nav-dropdown-menu {
     position: absolute;
     top: calc(100% + 0.18rem);
     left: 50%;
@@ -1079,7 +1087,9 @@ body.forethought-site .nav-dropdown-menu {
   body.forethought-site .main-nav .nav-dropdown:hover .nav-dropdown-menu,
   body.forethought-site .main-nav .nav-dropdown:focus-within .nav-dropdown-menu,
   body.forethought-site .top-nav .nav-dropdown:hover .nav-dropdown-menu,
-  body.forethought-site .top-nav .nav-dropdown:focus-within .nav-dropdown-menu {
+  body.forethought-site .top-nav .nav-dropdown:focus-within .nav-dropdown-menu,
+  body.forethought-site .wre-nav .nav-dropdown:hover .nav-dropdown-menu,
+  body.forethought-site .wre-nav .nav-dropdown:focus-within .nav-dropdown-menu {
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
@@ -1087,7 +1097,8 @@ body.forethought-site .nav-dropdown-menu {
   }
 
   body.forethought-site .main-nav .nav-dropdown-menu a,
-  body.forethought-site .top-nav .nav-dropdown-menu a {
+  body.forethought-site .top-nav .nav-dropdown-menu a,
+  body.forethought-site .wre-nav .nav-dropdown-menu a {
     min-height: auto;
     justify-content: flex-start;
     padding: 0.62rem 0.72rem !important;
@@ -1100,14 +1111,17 @@ body.forethought-site .nav-dropdown-menu {
   }
 
   body.forethought-site .main-nav .nav-dropdown-menu a::after,
-  body.forethought-site .top-nav .nav-dropdown-menu a::after {
+  body.forethought-site .top-nav .nav-dropdown-menu a::after,
+  body.forethought-site .wre-nav .nav-dropdown-menu a::after {
     display: none;
   }
 
   body.forethought-site .main-nav .nav-dropdown-menu a:hover,
   body.forethought-site .main-nav .nav-dropdown-menu a:focus-visible,
   body.forethought-site .top-nav .nav-dropdown-menu a:hover,
-  body.forethought-site .top-nav .nav-dropdown-menu a:focus-visible {
+  body.forethought-site .top-nav .nav-dropdown-menu a:focus-visible,
+  body.forethought-site .wre-nav .nav-dropdown-menu a:hover,
+  body.forethought-site .wre-nav .nav-dropdown-menu a:focus-visible {
     border-color: var(--nm-line) !important;
     background: #f4f3ee !important;
     color: var(--nm-ink) !important;
@@ -1157,19 +1171,22 @@ body.forethought-site .nav-dropdown-menu {
 
 @media (max-width: 939px) {
   body.forethought-site .main-nav .nav-dropdown,
-  body.forethought-site .top-nav .nav-dropdown {
+  body.forethought-site .top-nav .nav-dropdown,
+  body.forethought-site .wre-nav .nav-dropdown {
     display: grid;
     gap: 0.28rem;
     width: 100%;
   }
 
   body.forethought-site .main-nav .nav-dropdown > .nav-dropdown-trigger,
-  body.forethought-site .top-nav .nav-dropdown > .nav-dropdown-trigger {
+  body.forethought-site .top-nav .nav-dropdown > .nav-dropdown-trigger,
+  body.forethought-site .wre-nav .nav-dropdown > .nav-dropdown-trigger {
     justify-content: flex-start;
   }
 
   body.forethought-site .main-nav .nav-dropdown-menu,
-  body.forethought-site .top-nav .nav-dropdown-menu {
+  body.forethought-site .top-nav .nav-dropdown-menu,
+  body.forethought-site .wre-nav .nav-dropdown-menu {
     gap: 0.18rem;
     padding-left: 0.9rem;
   }

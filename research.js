@@ -72,6 +72,32 @@
     };
   }
 
+  function buildUrgencyAnimation() {
+    var svg = document.getElementById("researchUrgencyGraphic");
+    if (!svg) return null;
+
+    var tracks = [
+      makeTrack(svg, "research-urgency-path-a", '[data-urgency-dot="a"]', 0.061, 0.12),
+      makeTrack(svg, "research-urgency-path-b", '[data-urgency-dot="b"]', 0.067, 0.34),
+      makeTrack(svg, "research-urgency-path-c", '[data-urgency-dot="c"]', 0.074, 0.5),
+      makeTrack(svg, "research-urgency-path-d", '[data-urgency-dot="d"]', 0.082, 0.68),
+      makeTrack(svg, "research-urgency-path-e", '[data-urgency-dot="e"]', 0.07, 0.82),
+    ].filter(Boolean);
+
+    return {
+      setStatic: function () {
+        tracks.forEach(function (track, index) {
+          animateDotOnPath(track.path, track.dot, 0.28 + index * 0.12);
+        });
+      },
+      update: function (seconds) {
+        tracks.forEach(function (track) {
+          animateDotOnPath(track.path, track.dot, (seconds * track.speed + track.phase) % 1);
+        });
+      },
+    };
+  }
+
   function buildPublicAnimation() {
     var svg = document.getElementById("researchPublicGraphic");
     if (!svg) return null;
@@ -102,7 +128,7 @@
     if (!page) return;
 
     var prefersReducedMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    var animations = [buildTargetsAnimation(), buildStackAnimation(), buildPublicAnimation()].filter(Boolean);
+    var animations = [buildTargetsAnimation(), buildStackAnimation(), buildUrgencyAnimation(), buildPublicAnimation()].filter(Boolean);
     if (!animations.length) return;
 
     if (prefersReducedMotion) {
