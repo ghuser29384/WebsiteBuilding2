@@ -1,0 +1,279 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum DeliberationStatus {
+  OPEN
+  MATCHED
+  CLOSED
+  CANCELLED
+}
+
+enum ParticipantStance {
+  TRUE
+  FALSE
+}
+
+enum SessionStatus {
+  SCHEDULED
+  ACTIVE
+  FINALIZED
+  EXPIRED
+  CANCELLED
+}
+
+enum CommitmentStatus {
+  PENDING
+  DONE
+  UNDER_REVIEW
+  REVOKED
+  CANCELLED
+}
+
+enum ProofReviewStatus {
+  SUBMITTED
+  ACCEPTED
+  REJECTED
+  NEEDS_REDACTION
+}
+
+enum DisputeStatus {
+  OPEN
+  UNDER_REVIEW
+  RESOLVED
+  REJECTED
+}
+
+model User {
+  id                String                    @id @default(uuid())
+  handle            String                    @unique
+  role              UserRole                  @default(USER)
+  pledgeSigned      Boolean                   @default(false)
+  privacySettings   Json?
+  authMethods       Json?
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+  pledgeSignatures  PledgeSignature[]
+  deliberations     Deliberation[]            @relation("DeliberationCreator")
+  participations    DeliberationParticipant[]
+  beliefStates      BeliefState[]
+  commitments       Commitment[]
+  proofSubmissions  ProofSubmission[]
+  disputesFiled     Dispute[]                 @relation("DisputeFiler")
+
+  @@index([handle])
+}
+
+model PledgeSignature {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  version        String
+  statementHash  String
+  consentPayload Json
+  contentHash    String
+  signatureJws   String
+  createdAt      DateTime @default(now())
+
+  @@unique([userId, version])
+  @@index([statementHash])
+}
+
+model Deliberation {
+  id                       String                    @id @default(uuid())
+  type                     String                    @default("one_on_one_commitment")
+  propositionText          String
+  propositionCanonicalText String
+  propositionHash          String
+  implicationProfile       Json
+  status                   DeliberationStatus        @default(OPEN)
+  ambiguityScore           Decimal?                  @db.Decimal(5, 4)
+  privacyLevel             String                    @default("private_to_participants")
+  consentVersion           String
+  createdById              String
+  createdBy                User                      @relation("DeliberationCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  participants             DeliberationParticipant[]
+  sessions                 Session[]
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+
+  @@index([propositionHash])
+  @@index([createdById])
+  @@index([status])
+}
+
+model DeliberationParticipant {
+  id                  String            @id @default(uuid())
+  deliberationId      String
+  deliberation        Deliberation      @relation(fields: [deliberationId], references: [id], onDelete: Cascade)
+  userId              String
+  user                User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stance              ParticipantStance
+  startingCredence    Decimal           @db.Decimal(6, 5)
+  reasons             String
+  availabilitySlots   Json
+  eligibilityAttested Boolean           @default(false)
+  consentSigned       Boolean           @default(false)
+  consentVersion      String
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  @@unique([deliberationId, userId])
+  @@index([deliberationId, stance])
+}
+
+model Session {
+  id             String        @id @default(uuid())
+  deliberationId String
+  deliberation   Deliberation  @relation(fields: [deliberationId], references: [id], onDelete: Cascade)
+  scheduledStart DateTime?
+  actualEnd      DateTime?
+  medium         String        @default("guided_video_or_text")
+  status         SessionStatus @default(SCHEDULED)
+  beliefStates   BeliefState[]
+  commitments    Commitment[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  @@index([deliberationId])
+  @@index([status])
+}
+
+model BeliefState {
+  id                         String       @id @default(uuid())
+  sessionId                  String
+  session                    Session      @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  userId                     String
+  user                       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  credence                   Decimal      @db.Decimal(6, 5)
+  strongestArgumentHeard     String
+  strongestReplyOrConcession String
+  rationale                  Json
+  signatureJws               String
+  contentHash                String
+  sealed                     Boolean      @default(true)
+  sealReleasePolicy          String       @default("both_submit_or_timer_expiry")
+  submittedAt                DateTime     @default(now())
+  commitments                Commitment[]
+
+  @@unique([sessionId, userId])
+  @@index([contentHash])
+}
+
+model Commitment {
+  id                String              @id @default(uuid())
+  sessionId         String
+  session           Session             @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  userId            String
+  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  beliefStateId     String
+  beliefState       BeliefState         @relation(fields: [beliefStateId], references: [id], onDelete: Restrict)
+  triggerCredence   Decimal             @db.Decimal(6, 5)
+  actionPlan        Json
+  startsOn          DateTime
+  endsOn            DateTime
+  status            CommitmentStatus    @default(PENDING)
+  signatureJws      String
+  commitmentHash    String
+  proofCadence      String              @default("monthly")
+  proofModesAllowed Json
+  privacyLevel      String              @default("private_to_participants")
+  consentVersion    String
+  proofSubmissions  ProofSubmission[]
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+
+  @@unique([sessionId, userId])
+  @@index([beliefStateId])
+  @@index([commitmentHash])
+  @@index([status])
+}
+
+model ProofSubmission {
+  id           String            @id @default(uuid())
+  commitmentId String
+  commitment   Commitment        @relation(fields: [commitmentId], references: [id], onDelete: Cascade)
+  userId       String
+  user         User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  proofType    String
+  metadata     Json
+  storageKey   String?
+  reviewStatus ProofReviewStatus @default(SUBMITTED)
+  submittedAt  DateTime          @default(now())
+
+  @@index([commitmentId])
+  @@index([userId])
+}
+
+model Dispute {
+  id          String        @id @default(uuid())
+  targetType  String
+  targetId    String
+  filedById   String
+  filedBy     User          @relation("DisputeFiler", fields: [filedById], references: [id], onDelete: Cascade)
+  disputeType String
+  status      DisputeStatus @default(OPEN)
+  resolution  Json?
+  filedAt     DateTime      @default(now())
+  resolvedAt  DateTime?
+
+  @@index([targetType, targetId])
+  @@index([filedById])
+  @@index([status])
+}
+
+model AuditEvent {
+  id             String   @id @default(uuid())
+  sequence       BigInt   @unique @default(autoincrement())
+  objectType     String
+  objectId       String
+  eventType      String
+  payload        Json
+  canonicalHash  String
+  merkleLeafHash String
+  merkleRoot     String?
+  jws            String
+  tsaTokenRef    String?
+  createdAt      DateTime @default(now())
+
+  @@index([objectType, objectId])
+  @@index([sequence])
+  @@index([canonicalHash])
+}
+
+model AuditCheckpoint {
+  id           String          @id @default(uuid())
+  fromSequence BigInt
+  toSequence   BigInt
+  treeSize     Int
+  rootHash     String
+  createdAt    DateTime        @default(now())
+  timestamp    AuditTimestamp?
+
+  @@index([toSequence])
+  @@index([rootHash])
+}
+
+model AuditTimestamp {
+  id                     String          @id @default(uuid())
+  checkpointId           String          @unique
+  checkpoint             AuditCheckpoint @relation(fields: [checkpointId], references: [id], onDelete: Cascade)
+  tsaUrl                 String
+  rootHash               String
+  timestampTokenDer      Bytes
+  verifiedAt             DateTime?
+  certificateFingerprint String?
+  createdAt              DateTime        @default(now())
+
+  @@index([rootHash])
+}

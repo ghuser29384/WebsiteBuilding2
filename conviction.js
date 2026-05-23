@@ -1159,6 +1159,56 @@
     return null;
   }
 
+  function getCommitmentApiBase() {
+    if (window.NORMATIVITY_COMMITMENT_API_BASE) {
+      return String(window.NORMATIVITY_COMMITMENT_API_BASE).replace(/\/+$/, "");
+    }
+    if (window.location && window.location.port === "3001") {
+      return "/api/commitments";
+    }
+    return "http://localhost:3001/api/commitments";
+  }
+
+  function getCommitmentApiHeaders() {
+    const user = getAuthUser();
+    if (!user || !user.id) {
+      throw new Error("Sign in before using server-backed deliberation commitments.");
+    }
+    return {
+      "Content-Type": "application/json",
+      "X-User-Id": String(user.id),
+      "X-User-Handle": String(user.handle || state.pledge.name || "member").replace(/^@+/, ""),
+      "X-User-Role": String(user.role || "user"),
+    };
+  }
+
+  async function commitmentApiRequest(path, options) {
+    const init = options || {};
+    const response = await fetch(getCommitmentApiBase() + path, {
+      method: init.method || "GET",
+      headers: Object.assign({}, getCommitmentApiHeaders(), init.headers || {}),
+      body: init.body === undefined ? undefined : JSON.stringify(init.body),
+    });
+    const text = await response.text();
+    let payload = null;
+    try {
+      payload = text ? JSON.parse(text) : null;
+    } catch (_error) {
+      payload = { raw: text };
+    }
+    if (!response.ok) {
+      const message = payload && payload.error ? String(payload.error) : "Commitment API request failed.";
+      throw new Error(message);
+    }
+    return payload;
+  }
+
+  function dateOnlyToIso(value) {
+    const source = String(value || "").trim();
+    if (!source) return "";
+    return new Date(source + "T00:00:00").toISOString();
+  }
+
   function getStorageKey() {
     const user = getAuthUser();
     if (!user) return GUEST_STORAGE_KEY;
@@ -2255,7 +2305,7 @@
     return { ok: true };
   }
 
-  function onHighStakeSubmit(event) {
+  async function onHighStakeSubmit(event) {
     event.preventDefault();
     if (!state.pledge.signed) {
       formStatus.highStakeCreate = "Sign the pledge first to create commitment dialogues.";
@@ -2332,28 +2382,67 @@
 
     const authUser = getAuthUser();
     const canonicalClaim = canonicalizePropositionText(propositionCheck.claim);
+    const implicationProfile = {
+      actionTemplate:
+        "If post-session credence > 0.50, " + propositionCheck.action + ".",
+      applicabilityFacts: [propositionCheck.facts],
+      proofModesAllowed: proofModesAllowed.slice(),
+    };
+    let serverDeliberationResult = null;
+    try {
+      formStatus.highStakeCreate = "Saving commitment dialogue to the server...";
+      renderHighStakeMatching();
+      serverDeliberationResult = await commitmentApiRequest("/deliberations", {
+        method: "POST",
+        body: {
+          proposition_text: propositionCheck.claim,
+          starting_credence: confidence / 100,
+          stance: "true",
+          reasons: creatorReason,
+          shared_premises: assumptions,
+          implication_profile: implicationProfile,
+          privacy_level: privacyLevel,
+          consent_version: DELIBERATION_COMMITMENT_CONSENT_VERSION,
+          availability_slots: availability,
+        },
+      });
+    } catch (error) {
+      formStatus.highStakeCreate =
+        "Server-backed commitment was not created: " +
+        (error && error.message ? error.message : "unknown error");
+      renderHighStakeMatching();
+      return;
+    }
+    const serverDeliberation = serverDeliberationResult && serverDeliberationResult.deliberation
+      ? serverDeliberationResult.deliberation
+      : null;
+    const serverAuditEvent = serverDeliberationResult && serverDeliberationResult.auditEvent
+      ? serverDeliberationResult.auditEvent
+      : null;
     const room = {
-      id: uid("hs"),
+      id: serverDeliberation && serverDeliberation.id ? String(serverDeliberation.id) : uid("hs"),
       type: "high-stakes",
       facts: propositionCheck.facts,
       action: propositionCheck.action,
       claim: propositionCheck.claim,
-      propositionCanonicalText: canonicalClaim,
-      propositionHash: buildLocalContentHash({
-        type: "deliberation_proposition",
-        canonicalText: canonicalClaim,
-        implication: propositionCheck.action,
-      }),
-      implicationProfile: {
-        actionTemplate:
-          "If post-session credence > 0.50, " + propositionCheck.action + ".",
-        applicabilityFacts: [propositionCheck.facts],
-        proofModesAllowed: proofModesAllowed.slice(),
-      },
+      propositionCanonicalText:
+        serverDeliberation && serverDeliberation.propositionCanonicalText
+          ? String(serverDeliberation.propositionCanonicalText)
+          : canonicalClaim,
+      propositionHash:
+        serverDeliberation && serverDeliberation.propositionHash
+          ? String(serverDeliberation.propositionHash)
+          : buildLocalContentHash({
+              type: "deliberation_proposition",
+              canonicalText: canonicalClaim,
+              implication: propositionCheck.action,
+            }),
+      implicationProfile: implicationProfile,
       privacyLevel: privacyLevel,
       proofModesAllowed: proofModesAllowed.slice(),
       consentVersion: DELIBERATION_COMMITMENT_CONSENT_VERSION,
       consent: featureConsent,
+      serverSynced: true,
       creatorBelief: "true",
       creatorUserId: authUser && authUser.id ? String(authUser.id) : "",
       creatorHandle:
@@ -2367,21 +2456,10 @@
       availability: availability,
       slotCatalog: availabilitySlots,
       reservations: [],
-      auditEventIds: [],
+      auditEventIds: serverAuditEvent && serverAuditEvent.id ? [String(serverAuditEvent.id)] : [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    const auditEvent = appendAuditEvent("deliberation", room.id, "deliberation_created", {
-      id: room.id,
-      propositionCanonicalText: room.propositionCanonicalText,
-      propositionHash: room.propositionHash,
-      implicationProfile: room.implicationProfile,
-      privacyLevel: room.privacyLevel,
-      consentVersion: room.consentVersion,
-      creatorHandle: room.creatorHandle,
-      startingCredence: confidence / 100,
-    });
-    room.auditEventIds.push(auditEvent.id);
 
     state.highStakes.unshift(room);
     state.activeHighStakeId = room.id;
@@ -2513,7 +2591,7 @@
     };
   }
 
-  function onHighStakeSessionSubmit(event) {
+  async function onHighStakeSessionSubmit(event) {
     event.preventDefault();
     if (!state.pledge.signed) {
       setHighStakeSessionStatus("Sign the pledge first.");
@@ -2560,8 +2638,65 @@
       return;
     }
 
-    const sessionId = uid("hss");
-    const beliefStateId = uid("bs");
+    const promiseClaim = buildHighStakeClaim(activeRoom.facts, activeRoom.action);
+    const actionPlan =
+      "For one year, act according to this proposition: " +
+      promiseClaim +
+      (promiseNote ? " Implementation note: " + promiseNote : "");
+
+    let serverSessionResult = null;
+    let serverBeliefResult = null;
+    let serverFinalizeResult = null;
+    try {
+      setHighStakeSessionStatus("Submitting sealed belief update to the commitment server...");
+      serverSessionResult = await commitmentApiRequest("/sessions", {
+        method: "POST",
+        body: {
+          deliberation_id: activeRoom.id,
+          medium: "guided_video_or_text",
+        },
+      });
+      const serverSession = serverSessionResult && serverSessionResult.session ? serverSessionResult.session : null;
+      const serverSessionId = serverSession && serverSession.id ? String(serverSession.id) : "";
+      if (!serverSessionId) {
+        throw new Error("Server did not return a session id.");
+      }
+      serverBeliefResult = await commitmentApiRequest("/sessions/" + encodeURIComponent(serverSessionId) + "/belief-states", {
+        method: "POST",
+        body: {
+          credence: postConfidence / 100,
+          strongest_argument_heard: counterArgument,
+          strongest_reply_or_concession: reply,
+          rationale: rationale,
+        },
+      });
+      serverFinalizeResult = await commitmentApiRequest("/sessions/" + encodeURIComponent(serverSessionId) + "/finalize", {
+        method: "POST",
+        body: {
+          starts_on: startDate ? dateOnlyToIso(startDate) : undefined,
+          ends_on: endDate ? dateOnlyToIso(endDate) : undefined,
+          action_plan: {
+            actionTemplate: actionPlan,
+            applicabilityFacts: [activeRoom.facts],
+            proofModesAllowed: activeRoom.proofModesAllowed || DEFAULT_COMMITMENT_PROOF_MODES,
+          },
+        },
+      });
+    } catch (error) {
+      setHighStakeSessionStatus(
+        "Server-backed sealed result was not saved: " +
+          (error && error.message ? error.message : "unknown error")
+      );
+      return;
+    }
+
+    const serverSession = serverSessionResult && serverSessionResult.session ? serverSessionResult.session : null;
+    const serverBeliefState = serverBeliefResult && serverBeliefResult.beliefState ? serverBeliefResult.beliefState : null;
+    const serverBeliefAuditEvent = serverBeliefResult && serverBeliefResult.auditEvent ? serverBeliefResult.auditEvent : null;
+    const serverCommitment = serverFinalizeResult && serverFinalizeResult.commitment ? serverFinalizeResult.commitment : null;
+    const serverCommitmentAuditEvent = serverFinalizeResult && serverFinalizeResult.auditEvent ? serverFinalizeResult.auditEvent : null;
+    const sessionId = serverSession && serverSession.id ? String(serverSession.id) : uid("hss");
+    const beliefStateId = serverBeliefState && serverBeliefState.id ? String(serverBeliefState.id) : uid("bs");
     const beliefPayload = {
       id: beliefStateId,
       sessionId: sessionId,
@@ -2574,8 +2709,10 @@
       consentVersion: String(activeRoom.consentVersion || DELIBERATION_COMMITMENT_CONSENT_VERSION),
       clientSubmittedAt: new Date().toISOString(),
     };
-    const beliefStateHash = buildLocalContentHash(beliefPayload);
-    const beliefAuditEvent = appendAuditEvent("belief_state", beliefStateId, "sealed_belief_state_submitted", beliefPayload);
+    const beliefStateHash =
+      serverBeliefState && serverBeliefState.contentHash
+        ? String(serverBeliefState.contentHash)
+        : buildLocalContentHash(beliefPayload);
     const session = {
       id: sessionId,
       roomId: activeRoom.id,
@@ -2591,10 +2728,13 @@
         id: beliefStateId,
         credence: postConfidence / 100,
         contentHash: beliefStateHash,
-        signatureJws: buildLocalSignature("belief_state", beliefStateHash),
+        signatureJws:
+          serverBeliefState && serverBeliefState.signatureJws
+            ? String(serverBeliefState.signatureJws)
+            : buildLocalSignature("belief_state", beliefStateHash),
         sealed: true,
         sealReleasePolicy: "both_submit_or_timer_expiry",
-        auditEventId: beliefAuditEvent.id,
+        auditEventId: serverBeliefAuditEvent && serverBeliefAuditEvent.id ? String(serverBeliefAuditEvent.id) : "",
       },
       consentVersion: String(activeRoom.consentVersion || DELIBERATION_COMMITMENT_CONSENT_VERSION),
       createdAt: new Date().toISOString(),
@@ -2608,12 +2748,7 @@
     }
 
     if (postConfidence > 50) {
-      const promiseClaim = buildHighStakeClaim(activeRoom.facts, activeRoom.action);
-      const actionPlan =
-        "For one year, act according to this proposition: " +
-        promiseClaim +
-        (promiseNote ? " Implementation note: " + promiseNote : "");
-      const commitmentId = uid("lg");
+      const commitmentId = serverCommitment && serverCommitment.id ? String(serverCommitment.id) : uid("lg");
       const commitmentPayload = {
         id: commitmentId,
         sessionId: session.id,
@@ -2629,8 +2764,10 @@
         privacyLevel: String(activeRoom.privacyLevel || "private_to_participants"),
         consentVersion: String(activeRoom.consentVersion || DELIBERATION_COMMITMENT_CONSENT_VERSION),
       };
-      const commitmentHash = buildLocalContentHash(commitmentPayload);
-      const commitmentAuditEvent = appendAuditEvent("commitment", commitmentId, "commitment_activated", commitmentPayload);
+      const commitmentHash =
+        serverCommitment && serverCommitment.commitmentHash
+          ? String(serverCommitment.commitmentHash)
+          : buildLocalContentHash(commitmentPayload);
       state.ledger.unshift({
         id: commitmentId,
         commitmentType: "high-stakes",
@@ -2658,8 +2795,14 @@
         privacyLevel: String(activeRoom.privacyLevel || "private_to_participants"),
         consentVersion: String(activeRoom.consentVersion || DELIBERATION_COMMITMENT_CONSENT_VERSION),
         commitmentHash: commitmentHash,
-        signatureJws: buildLocalSignature("commitment", commitmentHash),
-        auditEventIds: [beliefAuditEvent.id, commitmentAuditEvent.id],
+        signatureJws:
+          serverCommitment && serverCommitment.signatureJws
+            ? String(serverCommitment.signatureJws)
+            : buildLocalSignature("commitment", commitmentHash),
+        auditEventIds: [
+          serverBeliefAuditEvent && serverBeliefAuditEvent.id ? String(serverBeliefAuditEvent.id) : "",
+          serverCommitmentAuditEvent && serverCommitmentAuditEvent.id ? String(serverCommitmentAuditEvent.id) : "",
+        ].filter(Boolean),
         disputeStatus: "",
         confidenceAtDecision: postConfidence,
         status: "pending",
@@ -2781,7 +2924,7 @@
     };
   }
 
-  function onConfirmReservationWithAttendancePolicy() {
+  async function onConfirmReservationWithAttendancePolicy() {
     if (!pendingReservationSignup) {
       closeAttendancePolicyModal();
       return;
@@ -2805,6 +2948,35 @@
       return;
     }
 
+    let serverReservationResult = null;
+    if (isHighStake) {
+      try {
+        setAttendancePolicyStatus("Saving server-backed reservation...", false);
+        serverReservationResult = await commitmentApiRequest("/deliberations/" + encodeURIComponent(room.id) + "/reservations", {
+          method: "POST",
+          body: {
+            stance: pendingReservationSignup.reservation.belief === "false" ? "false" : "true",
+            starting_credence: Number(pendingReservationSignup.reservation.confidence || 0) / 100,
+            reasons: pendingReservationSignup.reservation.reason || "Reservation accepted.",
+            availability_slots: pendingReservationSignup.reservation.availability || [],
+            eligibility_attested: true,
+            consent_signed: true,
+            consent_version: pendingReservationSignup.reservation.acceptedConsentVersion || DELIBERATION_COMMITMENT_CONSENT_VERSION,
+          },
+        });
+        if (serverReservationResult && serverReservationResult.participant && serverReservationResult.participant.id) {
+          pendingReservationSignup.reservation.serverParticipantId = String(serverReservationResult.participant.id);
+        }
+      } catch (error) {
+        setAttendancePolicyStatus(
+          "Server-backed reservation was not saved: " +
+            (error && error.message ? error.message : "unknown error"),
+          true
+        );
+        return;
+      }
+    }
+
     if (!Array.isArray(room.reservations)) {
       room.reservations = [];
     }
@@ -2813,21 +2985,30 @@
     if (!Array.isArray(room.auditEventIds)) {
       room.auditEventIds = [];
     }
-    const reservationAuditEvent = appendAuditEvent(
-      isHighStake ? "deliberation_reservation" : "dialogue_reservation",
-      pendingReservationSignup.reservation.id,
-      isHighStake ? "commitment_preview_accepted" : "reservation_confirmed",
-      {
-        roomId: room.id,
-        reservationId: pendingReservationSignup.reservation.id,
-        participant: pendingReservationSignup.reservation.name,
-        belief: pendingReservationSignup.reservation.belief,
-        confidence: pendingReservationSignup.reservation.confidence,
-        sharedSlots: pendingReservationSignup.reservation.availability,
-        consentVersion: pendingReservationSignup.reservation.acceptedConsentVersion || "",
+    if (isHighStake) {
+      const serverAuditEvent = serverReservationResult && serverReservationResult.auditEvent
+        ? serverReservationResult.auditEvent
+        : null;
+      if (serverAuditEvent && serverAuditEvent.id) {
+        room.auditEventIds.push(String(serverAuditEvent.id));
       }
-    );
-    room.auditEventIds.push(reservationAuditEvent.id);
+    } else {
+      const reservationAuditEvent = appendAuditEvent(
+        "dialogue_reservation",
+        pendingReservationSignup.reservation.id,
+        "reservation_confirmed",
+        {
+          roomId: room.id,
+          reservationId: pendingReservationSignup.reservation.id,
+          participant: pendingReservationSignup.reservation.name,
+          belief: pendingReservationSignup.reservation.belief,
+          confidence: pendingReservationSignup.reservation.confidence,
+          sharedSlots: pendingReservationSignup.reservation.availability,
+          consentVersion: pendingReservationSignup.reservation.acceptedConsentVersion || "",
+        }
+      );
+      room.auditEventIds.push(reservationAuditEvent.id);
+    }
 
     if (isHighStake) {
       formStatus.highStakeReservation = "Reservation added. Eligible matches will update automatically.";
@@ -7578,7 +7759,7 @@
     return normalized;
   }
 
-  function onLedgerProofUpload(ledgerId) {
+  async function onLedgerProofUpload(ledgerId) {
     const entry = state.ledger.find(function (row) {
       return row.id === ledgerId;
     });
@@ -7606,6 +7787,35 @@
 
     const note = noteInput ? String(noteInput.value || "").trim() : "";
     const proofType = proofTypeInput ? String(proofTypeInput.value || "") : "";
+    let serverProofResult = null;
+    try {
+      serverProofResult = await commitmentApiRequest("/" + encodeURIComponent(normalized.id) + "/proofs", {
+        method: "POST",
+        body: {
+          proof_type: proofType || "weekly_attestation",
+          file_name: String(file.name || ""),
+          metadata: {
+            proofMonth: nextProof.monthNumber,
+            fileName: String(file.name || ""),
+            mimeType: String(file.type || ""),
+            size: Number(file.size || 0),
+            note: note,
+          },
+        },
+      });
+    } catch (error) {
+      status.textContent =
+        "Server-backed proof upload was not saved: " +
+        (error && error.message ? error.message : "unknown error");
+      return;
+    }
+    const serverProof = serverProofResult && serverProofResult.proofSubmission
+      ? serverProofResult.proofSubmission
+      : null;
+    const serverAuditEvent = serverProofResult && serverProofResult.auditEvent
+      ? serverProofResult.auditEvent
+      : null;
+
     normalized.monthlyProofs = normalized.monthlyProofs.map(function (proof) {
       if (proof.monthNumber !== nextProof.monthNumber) return proof;
       return Object.assign({}, proof, {
@@ -7615,6 +7825,7 @@
         size: Number(file.size || 0),
         note: note,
         proofType: proofType,
+        serverProofId: serverProof && serverProof.id ? String(serverProof.id) : "",
         reviewStatus: "submitted",
       });
     });
@@ -7622,15 +7833,9 @@
     if (!Array.isArray(entry.auditEventIds)) {
       entry.auditEventIds = [];
     }
-    const proofAuditEvent = appendAuditEvent("proof_submission", entry.id + "-month-" + nextProof.monthNumber, "proof_uploaded", {
-      commitmentId: entry.id,
-      proofMonth: nextProof.monthNumber,
-      proofType: proofType,
-      fileName: String(file.name || ""),
-      size: Number(file.size || 0),
-      note: note,
-    });
-    entry.auditEventIds.push(proofAuditEvent.id);
+    if (serverAuditEvent && serverAuditEvent.id) {
+      entry.auditEventIds.push(String(serverAuditEvent.id));
+    }
     if (normalized.monthlyProofs.every(function (proof) { return Boolean(proof.uploadedAt); })) {
       entry.status = "done";
       entry.updatedAt = new Date().toISOString();
@@ -7639,12 +7844,29 @@
     renderLedger();
   }
 
-  function onLedgerDisputeRequest(ledgerId) {
+  async function onLedgerDisputeRequest(ledgerId) {
     const entry = state.ledger.find(function (row) {
       return row.id === ledgerId;
     });
     if (!entry) return;
     const normalized = normalizeLedgerEntry(entry);
+    let serverDisputeResult = null;
+    try {
+      serverDisputeResult = await commitmentApiRequest("/" + encodeURIComponent(normalized.id) + "/revoke", {
+        method: "POST",
+        body: {
+          dispute_type: "prospective_revocation",
+        },
+      });
+    } catch (error) {
+      normalized.disputeStatus =
+        "server_review_failed: " +
+        (error && error.message ? error.message : "unknown error");
+      Object.assign(entry, normalized);
+      renderLedger();
+      return;
+    }
+
     normalized.status = "under_review";
     normalized.disputeStatus = "under_review";
     normalized.reviewRequestedAt = new Date().toISOString();
@@ -7653,13 +7875,12 @@
     if (!Array.isArray(normalized.auditEventIds)) {
       normalized.auditEventIds = [];
     }
-    const disputeAuditEvent = appendAuditEvent("dispute", normalized.id, "dispute_or_revocation_requested", {
-      commitmentId: normalized.id,
-      reason: normalized.reviewReason,
-      requestedAt: normalized.reviewRequestedAt,
-      currentStatus: normalized.status,
-    });
-    normalized.auditEventIds.push(disputeAuditEvent.id);
+    const serverAuditEvent = serverDisputeResult && serverDisputeResult.auditEvent
+      ? serverDisputeResult.auditEvent
+      : null;
+    if (serverAuditEvent && serverAuditEvent.id) {
+      normalized.auditEventIds.push(String(serverAuditEvent.id));
+    }
     Object.assign(entry, normalized);
     saveState();
     renderLedger();
