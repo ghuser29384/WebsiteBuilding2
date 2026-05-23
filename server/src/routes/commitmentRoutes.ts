@@ -388,14 +388,14 @@ export const createCommitmentRouter = (db: PrismaClient = prisma): Router => {
         });
         if (existing) throw new Error("Belief state already submitted for this session and user.");
 
-        const payload = {
+        const payload: Prisma.InputJsonObject = {
           sessionId: session.id,
           deliberationId: session.deliberationId,
           userId: user.id,
           credence: body.credence,
           strongestArgumentHeard,
           strongestReplyOrConcession,
-          rationale: body.rationale,
+          rationale: body.rationale as Prisma.InputJsonObject,
           sealReleasePolicy: "both_submit_or_timer_expiry",
         };
         const hash = contentHash(payload);

@@ -14,6 +14,7 @@ npm install
 
 ```bash
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/normativity?schema=public"
+DIRECT_URL="postgresql://postgres:postgres@localhost:5432/normativity?schema=public"
 COMMITMENT_JWS_SECRET="replace-with-a-high-entropy-secret"
 COMMITMENT_JWS_KEY_ID="local-dev-key"
 ```

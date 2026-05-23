@@ -76,12 +76,15 @@ export const timestampPendingCheckpoints = async (db: PrismaClient) => {
   let timestamped = 0;
   for (const checkpoint of checkpoints) {
     const token = await requestRfc3161Timestamp(checkpoint.rootHash);
+    const timestampTokenBuffer = new ArrayBuffer(token.byteLength);
+    const timestampTokenDer = new Uint8Array(timestampTokenBuffer);
+    timestampTokenDer.set(token);
     await db.auditTimestamp.create({
       data: {
         checkpointId: checkpoint.id,
         tsaUrl: String(process.env.TSA_URL),
         rootHash: checkpoint.rootHash,
-        timestampTokenDer: token,
+        timestampTokenDer,
         verifiedAt: process.env.TSA_CA_FILE ? new Date() : null,
         certificateFingerprint: process.env.TSA_CERT_FINGERPRINT || null,
       },

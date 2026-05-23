@@ -10,10 +10,10 @@
     "prisma:checkpoint": "ts-node src/scripts/createAuditCheckpoint.ts"
   },
   "dependencies": {
-    "@prisma/client": "^7.8.0",
+    "@prisma/client": "^6.19.0",
     "express": "^4.21.2",
     "jose": "^6.2.3",
-    "prisma": "^7.8.0",
+    "prisma": "^6.19.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
