@@ -4,6 +4,14 @@
   const STORAGE_KEY_BASE = "normativity-dialogue-state-v1";
   const GUEST_STORAGE_KEY = STORAGE_KEY_BASE + "--guest-session";
   const GUEST_RESERVER_KEY = STORAGE_KEY_BASE + "--guest-reserver-id";
+  const DELIBERATION_COMMITMENT_CONSENT_VERSION = "dc-v1";
+  const DEFAULT_COMMITMENT_PROOF_MODES = ["receipt_log", "photo_diary", "weekly_attestation"];
+  const COMMITMENT_PROOF_MODE_LABELS = {
+    receipt_log: "Receipt log",
+    photo_diary: "Photo diary",
+    weekly_attestation: "Weekly attestation",
+    redacted_attachment: "Redacted attachment",
+  };
 
   const TOPICS = {
     animal_welfare: {
@@ -1017,6 +1025,12 @@
     highStakeAssumptionInput: document.getElementById("highStakeAssumptionInput"),
     highStakeTruthAptConfirm: document.getElementById("highStakeTruthAptConfirm"),
     highStakeEligibilityConfirm: document.getElementById("highStakeEligibilityConfirm"),
+    highStakePrivacyInput: document.getElementById("highStakePrivacyInput"),
+    highStakeProofModeInputs: document.querySelectorAll('input[name="highStakeProofMode"]'),
+    highStakeConsentBeliefStates: document.getElementById("highStakeConsentBeliefStates"),
+    highStakeConsentActionTrigger: document.getElementById("highStakeConsentActionTrigger"),
+    highStakeConsentProofReview: document.getElementById("highStakeConsentProofReview"),
+    highStakeConsentDisputePolicy: document.getElementById("highStakeConsentDisputePolicy"),
     highStakeRoomAvailability: document.getElementById("highStakeRoomAvailability"),
     highStakePreview: document.getElementById("highStakePreview"),
     reservationForm: document.getElementById("reservationForm"),
@@ -1037,6 +1051,8 @@
     highStakeReservationBeliefInput: document.getElementById("highStakeReservationBeliefInput"),
     highStakeReservationReasonInput: document.getElementById("highStakeReservationReasonInput"),
     highStakeReservationEligibilityConfirm: document.getElementById("highStakeReservationEligibilityConfirm"),
+    highStakeCommitmentPreview: document.getElementById("highStakeCommitmentPreview"),
+    highStakeReservationPreviewConfirm: document.getElementById("highStakeReservationPreviewConfirm"),
     highStakeReservationAvailability: document.getElementById("highStakeReservationAvailability"),
     highStakeReservationStatus: document.getElementById("highStakeReservationStatus"),
     highStakeReservationList: document.getElementById("highStakeReservationList"),
@@ -1068,6 +1084,10 @@
     highStakeSessionPartnerSummary: document.getElementById("highStakeSessionPartnerSummary"),
     highStakeCounterArgumentInput: document.getElementById("highStakeCounterArgumentInput"),
     highStakeReplyInput: document.getElementById("highStakeReplyInput"),
+    highStakeCaseChangeInput: document.getElementById("highStakeCaseChangeInput"),
+    highStakePrincipleChangeInput: document.getElementById("highStakePrincipleChangeInput"),
+    highStakeBackgroundChangeInput: document.getElementById("highStakeBackgroundChangeInput"),
+    highStakeIndependentSubmitConfirm: document.getElementById("highStakeIndependentSubmitConfirm"),
     highStakePromiseBlock: document.getElementById("highStakePromiseBlock"),
     highStakePromisePreview: document.getElementById("highStakePromisePreview"),
     highStakePromiseNoteInput: document.getElementById("highStakePromiseNoteInput"),
@@ -1652,6 +1672,14 @@
     if (el.highStakeActionInput) {
       el.highStakeActionInput.addEventListener("input", updateHighStakePreview);
     }
+    if (el.highStakePrivacyInput) {
+      el.highStakePrivacyInput.addEventListener("change", updateHighStakePreview);
+    }
+    if (el.highStakeProofModeInputs && el.highStakeProofModeInputs.length > 0) {
+      el.highStakeProofModeInputs.forEach(function (input) {
+        input.addEventListener("change", updateHighStakePreview);
+      });
+    }
     if (el.reservationConfidenceInput) {
       el.reservationConfidenceInput.addEventListener("input", function () {
         updateConfidenceText(el.reservationConfidenceInput, el.reservationConfidenceValue);
@@ -1778,7 +1806,7 @@
         saveState();
         renderHighStakeMatching();
         renderHighStakeSessionPartner();
-        setHighStakeSessionStatus("Participant selected. Start your high-stakes dialogue and log the outcome.");
+        setHighStakeSessionStatus("Participant selected. Start your commitment dialogue and log the outcome.");
       });
     }
 
@@ -1788,6 +1816,14 @@
         const proofLedgerId = proofButton.getAttribute("data-ledger-proof-upload");
         if (!proofLedgerId) return;
         onLedgerProofUpload(proofLedgerId);
+        return;
+      }
+
+      const disputeButton = event.target.closest("button[data-ledger-dispute]");
+      if (disputeButton) {
+        const disputeLedgerId = disputeButton.getAttribute("data-ledger-dispute");
+        if (!disputeLedgerId) return;
+        onLedgerDisputeRequest(disputeLedgerId);
         return;
       }
 
@@ -1801,6 +1837,17 @@
       if (!entry) return;
       entry.status = entry.status === "done" ? "pending" : "done";
       entry.updatedAt = new Date().toISOString();
+      if (!Array.isArray(entry.auditEventIds)) {
+        entry.auditEventIds = [];
+      }
+      const ledgerAuditEvent = appendAuditEvent("commitment", entry.id, entry.status === "done" ? "commitment_completed" : "commitment_reopened", {
+        commitmentId: entry.id,
+        status: entry.status,
+        proofCount: Array.isArray(entry.monthlyProofs)
+          ? entry.monthlyProofs.filter(function (proof) { return Boolean(proof && proof.uploadedAt); }).length
+          : 0,
+      });
+      entry.auditEventIds.push(ledgerAuditEvent.id);
       saveState();
       renderLedger();
     });
@@ -2082,6 +2129,10 @@
     if (countSentences(normalizedAction) > 3) {
       return { ok: false, error: "Keep the required action concise enough to state as a single practical commitment." };
     }
+    const safetyCheck = validateCommitmentActionSafety(normalizedAction);
+    if (!safetyCheck.ok) {
+      return safetyCheck;
+    }
     const claim = buildHighStakeClaim(normalizedFacts, normalizedAction);
     const truthAptCheck = validateTruthAptProposition(claim);
     if (!truthAptCheck.ok) {
@@ -2095,26 +2146,119 @@
     };
   }
 
+  function validateCommitmentActionSafety(action) {
+    const source = String(action || "").toLowerCase();
+    const blockedPatterns = [
+      { pattern: /\b(suicide|self-harm|self harm|cut myself|kill myself)\b/, label: "self-harm related" },
+      { pattern: /\b(illegal|steal|fraud|blackmail|bribe|assault|vandalize)\b/, label: "illegal or abusive" },
+      { pattern: /\b(stop taking|quit taking|skip medication|refuse insulin|avoid doctor)\b/, label: "medically dangerous" },
+      { pattern: /\b(send money|wire money|pay me|crypto wallet|private key)\b/, label: "financially predatory" },
+      { pattern: /\b(harass|dox|stalk|threaten)\b/, label: "abusive toward another person" },
+    ];
+    const matched = blockedPatterns.find(function (item) {
+      return item.pattern.test(source);
+    });
+    if (matched) {
+      return {
+        ok: false,
+        error:
+          "This commitment action appears " +
+          matched.label +
+          ". Choose a safe, lawful, personally actionable commitment before creating the dialogue.",
+      };
+    }
+    return { ok: true };
+  }
+
   function updateHighStakePreview() {
     if (!el.highStakePreview) return;
     const claim = buildHighStakeClaim(
       el.highStakeFactsInput ? el.highStakeFactsInput.value : "",
       el.highStakeActionInput ? el.highStakeActionInput.value : ""
     );
-    el.highStakePreview.innerHTML = "<strong>Proposition preview:</strong> " + escapeHtml(claim);
+    const proofModes = getSelectedCommitmentProofModes();
+    const privacyLevel = getCommitmentPrivacyLevel();
+    el.highStakePreview.innerHTML =
+      "<strong>Proposition preview:</strong> " +
+      escapeHtml(claim) +
+      '<br><strong>Visibility:</strong> ' +
+      escapeHtml(privacyLevelLabel(privacyLevel)) +
+      '<br><strong>Allowed proof:</strong> ' +
+      escapeHtml(formatProofModeList(proofModes));
     if (el.highStakePromisePreview && !el.highStakePostConfidenceInput) {
       el.highStakePromisePreview.innerHTML =
-        "<strong>One-year promise:</strong> Act according to " + escapeHtml(claim) + " for one year.";
+        "<strong>One-year commitment:</strong> Act according to " + escapeHtml(claim) + " for one year.";
     }
     if (el.highStakePostConfidenceInput) {
       updateHighStakeThresholdState();
     }
   }
 
+  function getSelectedCommitmentProofModes() {
+    const inputs = el.highStakeProofModeInputs ? Array.from(el.highStakeProofModeInputs) : [];
+    const selected = inputs
+      .filter(function (input) {
+        return input && input.checked;
+      })
+      .map(function (input) {
+        return String(input.value || "").trim();
+      })
+      .filter(Boolean);
+    if (inputs.length === 0) return DEFAULT_COMMITMENT_PROOF_MODES.slice();
+    return selected;
+  }
+
+  function getCommitmentPrivacyLevel() {
+    const raw = el.highStakePrivacyInput ? String(el.highStakePrivacyInput.value || "") : "";
+    if (raw === "public" || raw === "pseudonymous_public" || raw === "private_to_participants") {
+      return raw;
+    }
+    return "private_to_participants";
+  }
+
+  function privacyLevelLabel(level) {
+    if (level === "public") return "Public profile commitment";
+    if (level === "pseudonymous_public") return "Pseudonymous public commitment";
+    return "Private to participants";
+  }
+
+  function proofModeLabel(mode) {
+    return COMMITMENT_PROOF_MODE_LABELS[mode] || String(mode || "Proof").replace(/_/g, " ");
+  }
+
+  function formatProofModeList(modes) {
+    if (Array.isArray(modes) && modes.length === 0) return "None selected";
+    const list = Array.isArray(modes) && modes.length ? modes : DEFAULT_COMMITMENT_PROOF_MODES;
+    return list.map(proofModeLabel).join(", ");
+  }
+
+  function buildCommitmentConsentRecord() {
+    return {
+      version: DELIBERATION_COMMITMENT_CONSENT_VERSION,
+      beliefStates: Boolean(el.highStakeConsentBeliefStates && el.highStakeConsentBeliefStates.checked),
+      actionTrigger: Boolean(el.highStakeConsentActionTrigger && el.highStakeConsentActionTrigger.checked),
+      proofReview: Boolean(el.highStakeConsentProofReview && el.highStakeConsentProofReview.checked),
+      disputePolicy: Boolean(el.highStakeConsentDisputePolicy && el.highStakeConsentDisputePolicy.checked),
+      signedAt: new Date().toISOString(),
+    };
+  }
+
+  function validateCommitmentConsent(consent) {
+    const item = consent || {};
+    if (!item.beliefStates || !item.actionTrigger || !item.proofReview || !item.disputePolicy) {
+      return {
+        ok: false,
+        error:
+          "Confirm all feature-specific consent items: belief-state storage, action trigger, proof review, and dispute policy.",
+      };
+    }
+    return { ok: true };
+  }
+
   function onHighStakeSubmit(event) {
     event.preventDefault();
     if (!state.pledge.signed) {
-      formStatus.highStakeCreate = "Sign the pledge first to create high-stakes dialogues.";
+      formStatus.highStakeCreate = "Sign the pledge first to create commitment dialogues.";
       renderHighStakeMatching();
       return;
     }
@@ -2125,6 +2269,9 @@
     const confidence = clamp(Number(formData.get("highStakeConfidence")), 1, 100);
     const creatorReason = String(formData.get("highStakeCreatorReason") || "").trim();
     const assumptionsRaw = String(formData.get("highStakeAssumptions") || "");
+    const proofModesAllowed = getSelectedCommitmentProofModes();
+    const privacyLevel = getCommitmentPrivacyLevel();
+    const featureConsent = buildCommitmentConsentRecord();
     const assumptions = assumptionsRaw
       .split(/\n+/)
       .map(function (line) {
@@ -2141,6 +2288,17 @@
       renderHighStakeMatching();
       return;
     }
+    if (!proofModesAllowed.length) {
+      formStatus.highStakeCreate = "Select at least one allowed proof method.";
+      renderHighStakeMatching();
+      return;
+    }
+    const consentCheck = validateCommitmentConsent(featureConsent);
+    if (!consentCheck.ok) {
+      formStatus.highStakeCreate = consentCheck.error;
+      renderHighStakeMatching();
+      return;
+    }
     if (!creatorReason) {
       formStatus.highStakeCreate = "Add your reasons for the confidence level.";
       renderHighStakeMatching();
@@ -2152,7 +2310,7 @@
       return;
     }
     if (confidence <= 50) {
-      formStatus.highStakeCreate = "High-stakes dialogue creators must believe the proposition is more likely than not (>50%).";
+      formStatus.highStakeCreate = "Commitment dialogue creators must believe the proposition is more likely than not (>50%).";
       renderHighStakeMatching();
       return;
     }
@@ -2173,12 +2331,29 @@
     }
 
     const authUser = getAuthUser();
+    const canonicalClaim = canonicalizePropositionText(propositionCheck.claim);
     const room = {
       id: uid("hs"),
       type: "high-stakes",
       facts: propositionCheck.facts,
       action: propositionCheck.action,
       claim: propositionCheck.claim,
+      propositionCanonicalText: canonicalClaim,
+      propositionHash: buildLocalContentHash({
+        type: "deliberation_proposition",
+        canonicalText: canonicalClaim,
+        implication: propositionCheck.action,
+      }),
+      implicationProfile: {
+        actionTemplate:
+          "If post-session credence > 0.50, " + propositionCheck.action + ".",
+        applicabilityFacts: [propositionCheck.facts],
+        proofModesAllowed: proofModesAllowed.slice(),
+      },
+      privacyLevel: privacyLevel,
+      proofModesAllowed: proofModesAllowed.slice(),
+      consentVersion: DELIBERATION_COMMITMENT_CONSENT_VERSION,
+      consent: featureConsent,
       creatorBelief: "true",
       creatorUserId: authUser && authUser.id ? String(authUser.id) : "",
       creatorHandle:
@@ -2192,14 +2367,26 @@
       availability: availability,
       slotCatalog: availabilitySlots,
       reservations: [],
+      auditEventIds: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
+    const auditEvent = appendAuditEvent("deliberation", room.id, "deliberation_created", {
+      id: room.id,
+      propositionCanonicalText: room.propositionCanonicalText,
+      propositionHash: room.propositionHash,
+      implicationProfile: room.implicationProfile,
+      privacyLevel: room.privacyLevel,
+      consentVersion: room.consentVersion,
+      creatorHandle: room.creatorHandle,
+      startingCredence: confidence / 100,
+    });
+    room.auditEventIds.push(auditEvent.id);
 
     state.highStakes.unshift(room);
     state.activeHighStakeId = room.id;
     state.selectedHighStakeCounterpartId = null;
-    formStatus.highStakeCreate = "High-stakes dialogue created. Collect eligible opposing reservations to generate matches.";
+    formStatus.highStakeCreate = "Commitment dialogue created. Collect eligible opposing reservations to generate matches.";
     saveState();
 
     resetHighStakeForm();
@@ -2212,13 +2399,13 @@
   function onHighStakeReservationSubmit(event) {
     event.preventDefault();
     if (!state.pledge.signed) {
-      formStatus.highStakeReservation = "Sign the pledge first to reserve a high-stakes dialogue.";
+      formStatus.highStakeReservation = "Sign the pledge first to reserve a commitment dialogue.";
       renderHighStakeMatching();
       return;
     }
     const activeRoom = getActiveHighStakeRoom();
     if (!activeRoom) {
-      formStatus.highStakeReservation = "Select a high-stakes dialogue first.";
+      formStatus.highStakeReservation = "Select a commitment dialogue first.";
       renderHighStakeMatching();
       return;
     }
@@ -2247,7 +2434,7 @@
 
   function buildHighStakeReservationSubmission(activeRoom, selectedAvailability) {
     if (!el.highStakeReservationForm) {
-      return { ok: false, error: "High-stakes reservation form is unavailable." };
+      return { ok: false, error: "Commitment reservation form is unavailable." };
     }
 
     const formData = new FormData(el.highStakeReservationForm);
@@ -2267,7 +2454,7 @@
     const eligible = Boolean(el.highStakeReservationEligibilityConfirm && el.highStakeReservationEligibilityConfirm.checked);
 
     if (!name) {
-      return { ok: false, error: "Add a username to reserve the high-stakes dialogue." };
+      return { ok: false, error: "Add a username to reserve the commitment dialogue." };
     }
     if (!reason) {
       return { ok: false, error: "Add your reasons for the confidence level." };
@@ -2276,7 +2463,14 @@
       return { ok: false, error: "Keep the reasons to ten sentences or fewer." };
     }
     if (!eligible) {
-      return { ok: false, error: "Only people who currently meet the factual condition can reserve this high-stakes dialogue." };
+      return { ok: false, error: "Only people who currently meet the factual condition can reserve this commitment dialogue." };
+    }
+    if (!el.highStakeReservationPreviewConfirm || !el.highStakeReservationPreviewConfirm.checked) {
+      return {
+        ok: false,
+        error:
+          "Accept the commitment preview before reserving: only your own sealed post-session credence above 50% can trigger your action commitment.",
+      };
     }
     if (!availability.length) {
       return { ok: false, error: "Select at least one availability slot." };
@@ -2290,7 +2484,7 @@
     if (sameCreatorAccount || sameParticipantHandle) {
       return {
         ok: false,
-        error: "You cannot reserve your own high-stakes dialogue as participant. Enter another participant username.",
+        error: "You cannot reserve your own commitment dialogue as participant. Enter another participant username.",
       };
     }
 
@@ -2308,6 +2502,10 @@
           confidence: confidence,
           reason: reason,
           eligible: true,
+          commitmentPreviewAccepted: true,
+          acceptedConsentVersion: String(activeRoom.consentVersion || DELIBERATION_COMMITMENT_CONSENT_VERSION),
+          acceptedPrivacyLevel: String(activeRoom.privacyLevel || "private_to_participants"),
+          acceptedImplicationProfile: Object.assign({}, activeRoom.implicationProfile || {}),
           availability: availability,
           createdAt: new Date().toISOString(),
         },
@@ -2323,16 +2521,16 @@
     }
     const activeRoom = getActiveHighStakeRoom();
     if (!activeRoom) {
-      setHighStakeSessionStatus("Create and select a high-stakes dialogue first.");
+      setHighStakeSessionStatus("Create and select a commitment dialogue first.");
       return;
     }
     if (!state.selectedHighStakeCounterpartId) {
-      setHighStakeSessionStatus("Select a participant before logging the high-stakes dialogue.");
+      setHighStakeSessionStatus("Select a participant before logging the commitment dialogue.");
       return;
     }
     const selectedCounterpart = getSelectedHighStakeCounterpart();
     if (!selectedCounterpart) {
-      setHighStakeSessionStatus("Re-select a participant from the current high-stakes match list before submitting.");
+      setHighStakeSessionStatus("Re-select a participant from the current commitment match list before submitting.");
       return;
     }
 
@@ -2343,18 +2541,43 @@
     const promiseNote = String(formData.get("highStakePromiseNote") || "").trim();
     const startDate = String(formData.get("highStakeStartDate") || "");
     const endDate = String(formData.get("highStakeEndDate") || "");
+    const rationale = {
+      caseLevelChange: Boolean(el.highStakeCaseChangeInput && el.highStakeCaseChangeInput.checked),
+      principleLevelChange: Boolean(el.highStakePrincipleChangeInput && el.highStakePrincipleChangeInput.checked),
+      backgroundTheoryChange: Boolean(el.highStakeBackgroundChangeInput && el.highStakeBackgroundChangeInput.checked),
+    };
 
     if (!counterArgument || !reply) {
       setHighStakeSessionStatus("Record both the strongest counterargument and your strongest reply.");
       return;
     }
+    if (!el.highStakeIndependentSubmitConfirm || !el.highStakeIndependentSubmitConfirm.checked) {
+      setHighStakeSessionStatus("Confirm that this is an independent sealed post-session belief update.");
+      return;
+    }
     if (postConfidence > 50 && (!startDate || !endDate)) {
-      setHighStakeSessionStatus("Confidence is over 50%, so the one-year promise dates are required.");
+      setHighStakeSessionStatus("Confidence is over 50%, so the one-year commitment dates are required.");
       return;
     }
 
+    const sessionId = uid("hss");
+    const beliefStateId = uid("bs");
+    const beliefPayload = {
+      id: beliefStateId,
+      sessionId: sessionId,
+      deliberationId: activeRoom.id,
+      userHandle: state.pledge.name || "Member",
+      credence: postConfidence / 100,
+      strongestArgumentHeard: counterArgument,
+      strongestReplyOrConcession: reply,
+      rationale: rationale,
+      consentVersion: String(activeRoom.consentVersion || DELIBERATION_COMMITMENT_CONSENT_VERSION),
+      clientSubmittedAt: new Date().toISOString(),
+    };
+    const beliefStateHash = buildLocalContentHash(beliefPayload);
+    const beliefAuditEvent = appendAuditEvent("belief_state", beliefStateId, "sealed_belief_state_submitted", beliefPayload);
     const session = {
-      id: uid("hss"),
+      id: sessionId,
       roomId: activeRoom.id,
       counterpartId: selectedCounterpart.id,
       counterpartName: selectedCounterpart.name,
@@ -2363,6 +2586,17 @@
       counterArgument: counterArgument,
       reply: reply,
       postConfidence: postConfidence,
+      rationale: rationale,
+      beliefState: {
+        id: beliefStateId,
+        credence: postConfidence / 100,
+        contentHash: beliefStateHash,
+        signatureJws: buildLocalSignature("belief_state", beliefStateHash),
+        sealed: true,
+        sealReleasePolicy: "both_submit_or_timer_expiry",
+        auditEventId: beliefAuditEvent.id,
+      },
+      consentVersion: String(activeRoom.consentVersion || DELIBERATION_COMMITMENT_CONSENT_VERSION),
       createdAt: new Date().toISOString(),
     };
     state.highStakeSessions.unshift(session);
@@ -2379,12 +2613,35 @@
         "For one year, act according to this proposition: " +
         promiseClaim +
         (promiseNote ? " Implementation note: " + promiseNote : "");
+      const commitmentId = uid("lg");
+      const commitmentPayload = {
+        id: commitmentId,
+        sessionId: session.id,
+        userHandle: state.pledge.name || "Member",
+        propositionHash: String(activeRoom.propositionHash || ""),
+        triggerCredence: postConfidence / 100,
+        actionPlan: actionPlan,
+        startsOn: startDate,
+        endsOn: endDate,
+        proofModesAllowed: Array.isArray(activeRoom.proofModesAllowed)
+          ? activeRoom.proofModesAllowed
+          : DEFAULT_COMMITMENT_PROOF_MODES,
+        privacyLevel: String(activeRoom.privacyLevel || "private_to_participants"),
+        consentVersion: String(activeRoom.consentVersion || DELIBERATION_COMMITMENT_CONSENT_VERSION),
+      };
+      const commitmentHash = buildLocalContentHash(commitmentPayload);
+      const commitmentAuditEvent = appendAuditEvent("commitment", commitmentId, "commitment_activated", commitmentPayload);
       state.ledger.unshift({
-        id: uid("lg"),
+        id: commitmentId,
         commitmentType: "high-stakes",
         convictionId: activeRoom.id,
         counterpartId: selectedCounterpart.id,
         claim: promiseClaim,
+        propositionHash: String(activeRoom.propositionHash || ""),
+        propositionCanonicalText: String(activeRoom.propositionCanonicalText || ""),
+        sessionId: session.id,
+        beliefStateId: beliefStateId,
+        beliefStateHash: beliefStateHash,
         assumptions: Array.isArray(activeRoom.assumptions) ? activeRoom.assumptions : [],
         participantName: selectedCounterpart.name,
         participantBelief: selectedCounterpart.belief,
@@ -2395,13 +2652,22 @@
         checkinDate: endDate,
         commitmentMonths: 12,
         monthlyProofs: buildMonthlyProofEntries(startDate, 12),
+        proofModesAllowed: Array.isArray(activeRoom.proofModesAllowed)
+          ? activeRoom.proofModesAllowed.slice()
+          : DEFAULT_COMMITMENT_PROOF_MODES.slice(),
+        privacyLevel: String(activeRoom.privacyLevel || "private_to_participants"),
+        consentVersion: String(activeRoom.consentVersion || DELIBERATION_COMMITMENT_CONSENT_VERSION),
+        commitmentHash: commitmentHash,
+        signatureJws: buildLocalSignature("commitment", commitmentHash),
+        auditEventIds: [beliefAuditEvent.id, commitmentAuditEvent.id],
+        disputeStatus: "",
         confidenceAtDecision: postConfidence,
         status: "pending",
         createdAt: new Date().toISOString(),
       });
-      setHighStakeSessionStatus("High-stakes dialogue logged. Confidence is above 50%, so the one-year promise with monthly proof uploads is now in your action ledger.");
+      setHighStakeSessionStatus("Commitment dialogue logged. Confidence is above 50%, so the one-year commitment with monthly proof uploads is now in your action ledger.");
     } else {
-      setHighStakeSessionStatus("High-stakes dialogue logged. Confidence is at or below 50%, so no one-year promise entry was created.");
+      setHighStakeSessionStatus("Commitment dialogue logged. Confidence is at or below 50%, so no one-year commitment entry was created.");
     }
 
     saveState();
@@ -2533,7 +2799,7 @@
       : getConvictionById(pendingReservationSignup.convictionId);
     if (!room) {
       setAttendancePolicyStatus(
-        isHighStake ? "This high-stakes dialogue is no longer available. Please reselect one." : "This dialogue is no longer available. Please reselect one.",
+        isHighStake ? "This commitment dialogue is no longer available. Please reselect one." : "This dialogue is no longer available. Please reselect one.",
         true
       );
       return;
@@ -2544,6 +2810,24 @@
     }
     room.reservations.unshift(pendingReservationSignup.reservation);
     room.updatedAt = new Date().toISOString();
+    if (!Array.isArray(room.auditEventIds)) {
+      room.auditEventIds = [];
+    }
+    const reservationAuditEvent = appendAuditEvent(
+      isHighStake ? "deliberation_reservation" : "dialogue_reservation",
+      pendingReservationSignup.reservation.id,
+      isHighStake ? "commitment_preview_accepted" : "reservation_confirmed",
+      {
+        roomId: room.id,
+        reservationId: pendingReservationSignup.reservation.id,
+        participant: pendingReservationSignup.reservation.name,
+        belief: pendingReservationSignup.reservation.belief,
+        confidence: pendingReservationSignup.reservation.confidence,
+        sharedSlots: pendingReservationSignup.reservation.availability,
+        consentVersion: pendingReservationSignup.reservation.acceptedConsentVersion || "",
+      }
+    );
+    room.auditEventIds.push(reservationAuditEvent.id);
 
     if (isHighStake) {
       formStatus.highStakeReservation = "Reservation added. Eligible matches will update automatically.";
@@ -5488,11 +5772,11 @@
         "Studio unlocked for " + name + " (" + role + "). Focus: " + focus + ". Pledge signed on " + dateLabel + ".";
       if (el.highStakeGateBanner) {
         el.highStakeGateBanner.textContent =
-          "High-stakes dialogue unlocked for " +
+          "Deliberation commitments unlocked for " +
           name +
           " (" +
           role +
-          "). You may create or reserve only if you meet the factual condition in the proposition.";
+          "). Create or reserve only when you meet the factual condition and accept the action trigger preview.";
       }
       if (!el.pledgeStatus.textContent.trim()) {
         el.pledgeStatus.textContent = name + " signed the pledge on " + dateLabel + ".";
@@ -5511,7 +5795,7 @@
       el.gateBanner.textContent = "Browse dialogues below. Sign the pledge to create, reserve, and log dialogue outcomes.";
       if (el.highStakeGateBanner) {
         el.highStakeGateBanner.textContent =
-          "Browse high-stakes dialogues below. Sign the pledge to create, reserve, and log one-year commitments.";
+          "Browse commitment dialogues below. Sign the pledge to create, reserve, and log one-year commitments.";
       }
       el.pledgeStatus.textContent = "";
     }
@@ -5620,7 +5904,7 @@
     if (!Array.isArray(state.highStakes) || state.highStakes.length === 0) {
       const empty = document.createElement("li");
       empty.className = "mini-summary";
-      empty.textContent = "No high-stakes dialogues yet. Create one to start eligibility-gated matching.";
+      empty.textContent = "No commitment dialogues yet. Create one to start eligibility-gated matching.";
       el.highStakeList.appendChild(empty);
       return;
     }
@@ -5637,7 +5921,11 @@
       meta.textContent =
         "Confidence: " +
         item.confidence +
-        "% | Shared premises: " +
+        "% | Privacy: " +
+        privacyLevelLabel(item.privacyLevel) +
+        " | Proof: " +
+        formatProofModeList(item.proofModesAllowed) +
+        " | Shared premises: " +
         (Array.isArray(item.assumptions) ? item.assumptions.length : 0) +
         " | Availability: " +
         (Array.isArray(item.availability) ? item.availability.length : 0) +
@@ -5651,11 +5939,19 @@
       action.className = "hint";
       action.textContent = "Required action: " + truncateText(item.action || "", 140);
 
+      const audit = document.createElement("p");
+      audit.className = "hint";
+      audit.textContent =
+        "Canonical hash: " +
+        truncateMiddle(String(item.propositionHash || "pending"), 28) +
+        " | Consent " +
+        String(item.consentVersion || DELIBERATION_COMMITMENT_CONSENT_VERSION);
+
       const button = document.createElement("button");
       button.type = "button";
       button.className = item.id === state.activeHighStakeId ? "btn btn-primary" : "btn btn-ghost";
       button.setAttribute("data-high-stake-id", item.id);
-      button.textContent = item.id === state.activeHighStakeId ? "Active High-stakes Dialogue" : "Use For Matching";
+      button.textContent = item.id === state.activeHighStakeId ? "Active Commitment Dialogue" : "Use For Matching";
 
       const writingLink = document.createElement("a");
       writingLink.className = "btn btn-ghost";
@@ -5674,6 +5970,7 @@
       li.appendChild(meta);
       li.appendChild(facts);
       li.appendChild(action);
+      li.appendChild(audit);
       li.appendChild(actionRow);
       el.highStakeList.appendChild(li);
     });
@@ -5864,7 +6161,7 @@
     if (!activeRoom) {
       currentHighStakeMatches = [];
       if (el.activeHighStakeSummary) {
-        el.activeHighStakeSummary.textContent = "No active high-stakes dialogue selected yet.";
+        el.activeHighStakeSummary.textContent = "No active commitment dialogue selected yet.";
       }
       renderActiveHighStakeWritings(null);
       if (el.highStakeCounterpartList) {
@@ -5875,8 +6172,9 @@
       }
       if (el.highStakeMatchRationale) {
         el.highStakeMatchRationale.textContent =
-          formStatus.highStakeCreate || "Create and select a high-stakes dialogue to generate suggested matches.";
+          formStatus.highStakeCreate || "Create and select a commitment dialogue to generate suggested matches.";
       }
+      renderHighStakeCommitmentPreview(null);
       renderHighStakeSessionPartner();
       return;
     }
@@ -5894,6 +6192,14 @@
         escapeHtml(activeRoom.facts) +
         "<br><strong>Required action:</strong> " +
         escapeHtml(activeRoom.action) +
+        "<br><strong>Visibility:</strong> " +
+        escapeHtml(privacyLevelLabel(activeRoom.privacyLevel)) +
+        " | <strong>Proof:</strong> " +
+        escapeHtml(formatProofModeList(activeRoom.proofModesAllowed)) +
+        " | <strong>Consent:</strong> " +
+        escapeHtml(String(activeRoom.consentVersion || DELIBERATION_COMMITMENT_CONSENT_VERSION)) +
+        "<br><strong>Canonical hash:</strong> " +
+        escapeHtml(truncateMiddle(String(activeRoom.propositionHash || "pending"), 36)) +
         "<br><strong>Confidence:</strong> " +
         activeRoom.confidence +
         "% | <strong>Shared premises:</strong> " +
@@ -5911,6 +6217,7 @@
       }
     }
     updateHighStakeThresholdState();
+    renderHighStakeCommitmentPreview(activeRoom);
 
     renderHighStakeReservationList(activeRoom);
     renderActiveHighStakeWritings(activeRoom);
@@ -5982,6 +6289,7 @@
       meta.appendChild(chip("Confidence: " + match.confidence + "%", "chip"));
       meta.appendChild(chip("Shared slots: " + match.sharedSlots.length, "chip"));
       meta.appendChild(chip("Eligible: yes", "chip"));
+      meta.appendChild(chip("Preview accepted", "chip"));
       meta.appendChild(chip("Dispute level: " + match.depthSummary, "chip"));
 
       const reason = document.createElement("p");
@@ -6029,6 +6337,28 @@
     });
   }
 
+  function renderHighStakeCommitmentPreview(activeRoom) {
+    if (!el.highStakeCommitmentPreview) return;
+    if (!activeRoom) {
+      el.highStakeCommitmentPreview.textContent =
+        "Select a commitment dialogue to review the action trigger before reserving.";
+      return;
+    }
+    const proofModes = Array.isArray(activeRoom.proofModesAllowed) && activeRoom.proofModesAllowed.length
+      ? activeRoom.proofModesAllowed
+      : DEFAULT_COMMITMENT_PROOF_MODES;
+    el.highStakeCommitmentPreview.innerHTML =
+      "<strong>Commitment preview:</strong> If your own sealed post-session credence is above 50%, you commit to " +
+      escapeHtml(activeRoom.action || "the stated action") +
+      ".<br><strong>Applicability facts:</strong> " +
+      escapeHtml(activeRoom.facts || "not listed") +
+      "<br><strong>Proof cadence:</strong> monthly for 12 months by " +
+      escapeHtml(formatProofModeList(proofModes)) +
+      ". <strong>Visibility:</strong> " +
+      escapeHtml(privacyLevelLabel(activeRoom.privacyLevel)) +
+      ".";
+  }
+
   function renderHighStakeReservationList(activeRoom) {
     if (!el.highStakeReservationList) return;
     el.highStakeReservationList.innerHTML = "";
@@ -6060,7 +6390,8 @@
         reservation.confidence +
         "% | Slots: " +
         (Array.isArray(reservation.availability) ? reservation.availability.length : 0) +
-        " | Eligible: yes";
+        " | Eligible: yes | Preview accepted: " +
+        (reservation.commitmentPreviewAccepted ? "yes" : "not recorded");
 
       const reason = document.createElement("p");
       reason.className = "hint";
@@ -6083,7 +6414,7 @@
       }
       const empty = document.createElement("li");
       empty.className = "mini-summary";
-      empty.textContent = "Select a high-stakes dialogue to view writings specifically published about it.";
+      empty.textContent = "Select a commitment dialogue to view writings specifically published about it.";
       el.activeHighStakeWritings.appendChild(empty);
       return;
     }
@@ -6104,7 +6435,7 @@
     if (linkedArticles.length === 0) {
       const empty = document.createElement("li");
       empty.className = "mini-summary";
-      empty.textContent = "No writings linked to this high-stakes dialogue yet. Publish one in the Dialogue Writing Space.";
+      empty.textContent = "No writings linked to this commitment dialogue yet. Publish one in the Dialogue Writing Space.";
       el.activeHighStakeWritings.appendChild(empty);
       return;
     }
@@ -6123,7 +6454,7 @@
         String(article.author || "user") +
         " | " +
         formatDate(article.createdAt) +
-        " | High-stakes dialogue-linked writing";
+        " | Commitment dialogue-linked writing";
 
       const excerpt = document.createElement("p");
       excerpt.className = "hint";
@@ -6369,14 +6700,17 @@
     state.ledger.forEach(function (entry) {
       const normalizedEntry = normalizeLedgerEntry(entry);
       const row = document.createElement("article");
-      row.className = "ledger-item" + (normalizedEntry.status === "done" ? " done" : "");
+      row.className =
+        "ledger-item" +
+        (normalizedEntry.status === "done" ? " done" : "") +
+        (normalizedEntry.status === "under_review" ? " under-review" : "");
 
       const title = document.createElement("h4");
       title.textContent = normalizedEntry.claim;
 
       const meta = document.createElement("p");
       meta.className = "ledger-meta";
-      const commitmentLabel = normalizedEntry.commitmentType === "high-stakes" ? "High-stakes promise" : "Dialogue action";
+      const commitmentLabel = normalizedEntry.commitmentType === "high-stakes" ? "Commitment dialogue" : "Dialogue action";
       meta.textContent =
         commitmentLabel +
         " | Confidence at commitment: " +
@@ -6384,8 +6718,22 @@
         "% | Start " +
         normalizedEntry.startDate +
         (normalizedEntry.endDate ? " | End " + normalizedEntry.endDate : " | Check-in " + normalizedEntry.checkinDate) +
+        " | Visibility " +
+        privacyLevelLabel(normalizedEntry.privacyLevel) +
         " | Logged " +
         formatDate(normalizedEntry.createdAt);
+
+      const auditLine = document.createElement("p");
+      auditLine.className = "ledger-audit-line";
+      auditLine.textContent =
+        "Audit package: commitment " +
+        truncateMiddle(normalizedEntry.commitmentHash, 32) +
+        " | belief " +
+        truncateMiddle(String(normalizedEntry.beliefStateHash || "not recorded"), 32) +
+        " | consent " +
+        normalizedEntry.consentVersion +
+        " | proof modes " +
+        formatProofModeList(normalizedEntry.proofModesAllowed);
 
       const assumptions = Array.isArray(normalizedEntry.assumptions) ? normalizedEntry.assumptions : [];
       const assumptionLine = document.createElement("p");
@@ -6417,7 +6765,8 @@
         uploadedProofCount +
         "/" +
         normalizedEntry.monthlyProofs.length +
-        " completed.";
+        " completed." +
+        (normalizedEntry.disputeStatus ? " Review status: " + normalizedEntry.disputeStatus.replace(/_/g, " ") + "." : "");
 
       const proofGrid = document.createElement("div");
       proofGrid.className = "proof-grid";
@@ -6436,7 +6785,11 @@
         const proofStatus = document.createElement("p");
         proofStatus.className = "proof-card-status";
         proofStatus.textContent = proof.uploadedAt
-          ? "Uploaded " + formatDate(proof.uploadedAt) + (proof.fileName ? " · " + proof.fileName : "")
+          ? "Uploaded " +
+            formatDate(proof.uploadedAt) +
+            (proof.proofType ? " | " + proofModeLabel(proof.proofType) : "") +
+            (proof.fileName ? " | " + proof.fileName : "") +
+            (proof.reviewStatus ? " | " + proof.reviewStatus : "")
           : "Pending";
 
         proofCard.appendChild(proofTitle);
@@ -6455,6 +6808,22 @@
         uploadIntro.className = "hint";
         uploadIntro.textContent =
           "Next required upload: month " + nextProof.monthNumber + " (due " + nextProof.dueDate + ").";
+
+        const proofTypeField = document.createElement("label");
+        proofTypeField.className = "field-row";
+        proofTypeField.htmlFor = "ledger-proof-type-" + normalizedEntry.id;
+        proofTypeField.textContent = "Proof method";
+
+        const proofTypeSelect = document.createElement("select");
+        proofTypeSelect.id = "ledger-proof-type-" + normalizedEntry.id;
+        proofTypeSelect.setAttribute("data-ledger-proof-type", normalizedEntry.id);
+        normalizedEntry.proofModesAllowed.forEach(function (mode) {
+          const option = document.createElement("option");
+          option.value = mode;
+          option.textContent = proofModeLabel(mode);
+          proofTypeSelect.appendChild(option);
+        });
+        proofTypeField.appendChild(proofTypeSelect);
 
         const uploadField = document.createElement("label");
         uploadField.className = "field-row";
@@ -6491,6 +6860,7 @@
         uploadButton.textContent = "Upload Monthly Proof";
 
         proofUploadBlock.appendChild(uploadIntro);
+        proofUploadBlock.appendChild(proofTypeField);
         proofUploadBlock.appendChild(uploadField);
         proofUploadBlock.appendChild(noteField);
         proofUploadBlock.appendChild(uploadStatus);
@@ -6508,20 +6878,38 @@
       button.className = normalizedEntry.status === "done" ? "btn btn-ghost" : "btn btn-primary";
       button.setAttribute("data-ledger-id", normalizedEntry.id);
       button.textContent = normalizedEntry.status === "done" ? "Mark As Pending" : (proofsComplete ? "Mark As Completed" : "Complete After 12 Proofs");
-      if (normalizedEntry.status !== "done" && !proofsComplete) {
+      if ((normalizedEntry.status !== "done" && !proofsComplete) || normalizedEntry.status === "under_review") {
         button.disabled = true;
-        button.title = "Upload all 12 monthly proofs before completing this commitment.";
+        button.title =
+          normalizedEntry.status === "under_review"
+            ? "Resolve the review before completing this commitment."
+            : "Upload all 12 monthly proofs before completing this commitment.";
+      }
+
+      const disputeButton = document.createElement("button");
+      disputeButton.type = "button";
+      disputeButton.className = "btn btn-ghost";
+      disputeButton.setAttribute("data-ledger-dispute", normalizedEntry.id);
+      disputeButton.textContent =
+        normalizedEntry.status === "under_review" ? "Review Requested" : "Request Review / Revoke";
+      if (normalizedEntry.status === "under_review") {
+        disputeButton.disabled = true;
       }
 
       row.appendChild(title);
       row.appendChild(meta);
+      row.appendChild(auditLine);
       row.appendChild(assumptionLine);
       row.appendChild(action);
       row.appendChild(source);
       row.appendChild(proofSummary);
       row.appendChild(proofGrid);
       row.appendChild(proofUploadBlock);
-      row.appendChild(button);
+      const ledgerActions = document.createElement("div");
+      ledgerActions.className = "ledger-actions";
+      ledgerActions.appendChild(button);
+      ledgerActions.appendChild(disputeButton);
+      row.appendChild(ledgerActions);
       el.ledgerList.appendChild(row);
     });
   }
@@ -6715,7 +7103,7 @@
     if (triggered) {
       el.highStakeThresholdNotice.className = "threshold-note triggered";
       el.highStakeThresholdNotice.textContent =
-        "Threshold crossed: because confidence is above 50%, you must promise to act according to the proposition for one year and upload proof every month.";
+        "Threshold crossed: because confidence is above 50%, you must act according to the proposition for one year and upload proof every month.";
       el.highStakePromiseBlock.classList.remove("hidden");
       el.highStakeStartDateInput.required = true;
       if (!el.highStakeStartDateInput.value) {
@@ -6724,18 +7112,18 @@
       syncHighStakePromiseEndDate();
       if (el.highStakePromisePreview) {
         el.highStakePromisePreview.innerHTML =
-          "<strong>One-year promise:</strong> " + escapeHtml(promiseClaim);
+          "<strong>One-year commitment:</strong> " + escapeHtml(promiseClaim);
       }
     } else {
       el.highStakeThresholdNotice.className = "threshold-note neutral";
       el.highStakeThresholdNotice.textContent =
-        "Threshold not crossed: the one-year promise activates only if confidence moves above 50%.";
+        "Threshold not crossed: the one-year commitment activates only if confidence moves above 50%.";
       el.highStakePromiseBlock.classList.add("hidden");
       el.highStakeStartDateInput.required = false;
       el.highStakeEndDateInput.value = "";
       if (el.highStakePromisePreview) {
         el.highStakePromisePreview.innerHTML =
-          "<strong>One-year promise:</strong> " + escapeHtml(promiseClaim);
+          "<strong>One-year commitment:</strong> " + escapeHtml(promiseClaim);
       }
     }
   }
@@ -7148,6 +7536,8 @@
         mimeType: String(existing.mimeType || ""),
         size: Number(existing.size || 0),
         note: String(existing.note || ""),
+        proofType: String(existing.proofType || ""),
+        reviewStatus: String(existing.reviewStatus || (existing.uploadedAt ? "submitted" : "")),
       });
     }
     return proofs;
@@ -7161,10 +7551,30 @@
     normalized.endDate = String(normalized.endDate || (normalized.startDate ? addMonthsISO(normalized.startDate, normalized.commitmentMonths) : ""));
     normalized.checkinDate = String(normalized.checkinDate || normalized.endDate || "");
     normalized.monthlyProofs = buildMonthlyProofEntries(normalized.startDate, normalized.commitmentMonths, normalized.monthlyProofs);
+    normalized.proofModesAllowed = Array.isArray(normalized.proofModesAllowed)
+      ? normalized.proofModesAllowed
+      : DEFAULT_COMMITMENT_PROOF_MODES.slice();
+    normalized.privacyLevel = String(normalized.privacyLevel || "private_to_participants");
+    normalized.consentVersion = String(normalized.consentVersion || DELIBERATION_COMMITMENT_CONSENT_VERSION);
+    normalized.commitmentHash = String(normalized.commitmentHash || buildLocalContentHash({
+      id: normalized.id || "",
+      claim: normalized.claim || "",
+      actionPlan: normalized.actionPlan || "",
+      startDate: normalized.startDate,
+      endDate: normalized.endDate,
+      confidenceAtDecision: normalized.confidenceAtDecision || 0,
+    }));
+    normalized.signatureJws = String(normalized.signatureJws || buildLocalSignature("commitment", normalized.commitmentHash));
+    normalized.auditEventIds = Array.isArray(normalized.auditEventIds) ? normalized.auditEventIds : [];
+    normalized.disputeStatus = String(normalized.disputeStatus || "");
     const allProofsUploaded = normalized.monthlyProofs.every(function (proof) {
       return Boolean(proof.uploadedAt);
     });
-    normalized.status = allProofsUploaded ? String(normalized.status || "pending") : "pending";
+    normalized.status = normalized.status === "under_review"
+      ? "under_review"
+      : allProofsUploaded
+        ? String(normalized.status || "pending")
+        : "pending";
     return normalized;
   }
 
@@ -7184,6 +7594,7 @@
 
     const fileInput = el.ledgerList.querySelector('[data-ledger-proof-file="' + ledgerId + '"]');
     const noteInput = el.ledgerList.querySelector('[data-ledger-proof-note="' + ledgerId + '"]');
+    const proofTypeInput = el.ledgerList.querySelector('[data-ledger-proof-type="' + ledgerId + '"]');
     const statusNode = el.ledgerList.querySelector('[data-ledger-proof-status="' + ledgerId + '"]');
     const file = fileInput && fileInput.files && fileInput.files[0] ? fileInput.files[0] : null;
     if (!file) {
@@ -7194,6 +7605,7 @@
     }
 
     const note = noteInput ? String(noteInput.value || "").trim() : "";
+    const proofType = proofTypeInput ? String(proofTypeInput.value || "") : "";
     normalized.monthlyProofs = normalized.monthlyProofs.map(function (proof) {
       if (proof.monthNumber !== nextProof.monthNumber) return proof;
       return Object.assign({}, proof, {
@@ -7202,13 +7614,53 @@
         mimeType: String(file.type || ""),
         size: Number(file.size || 0),
         note: note,
+        proofType: proofType,
+        reviewStatus: "submitted",
       });
     });
     Object.assign(entry, normalized);
+    if (!Array.isArray(entry.auditEventIds)) {
+      entry.auditEventIds = [];
+    }
+    const proofAuditEvent = appendAuditEvent("proof_submission", entry.id + "-month-" + nextProof.monthNumber, "proof_uploaded", {
+      commitmentId: entry.id,
+      proofMonth: nextProof.monthNumber,
+      proofType: proofType,
+      fileName: String(file.name || ""),
+      size: Number(file.size || 0),
+      note: note,
+    });
+    entry.auditEventIds.push(proofAuditEvent.id);
     if (normalized.monthlyProofs.every(function (proof) { return Boolean(proof.uploadedAt); })) {
       entry.status = "done";
       entry.updatedAt = new Date().toISOString();
     }
+    saveState();
+    renderLedger();
+  }
+
+  function onLedgerDisputeRequest(ledgerId) {
+    const entry = state.ledger.find(function (row) {
+      return row.id === ledgerId;
+    });
+    if (!entry) return;
+    const normalized = normalizeLedgerEntry(entry);
+    normalized.status = "under_review";
+    normalized.disputeStatus = "under_review";
+    normalized.reviewRequestedAt = new Date().toISOString();
+    normalized.reviewReason =
+      "User requested review for coercion, ambiguity, fraud, impossibility, or prospective revocation.";
+    if (!Array.isArray(normalized.auditEventIds)) {
+      normalized.auditEventIds = [];
+    }
+    const disputeAuditEvent = appendAuditEvent("dispute", normalized.id, "dispute_or_revocation_requested", {
+      commitmentId: normalized.id,
+      reason: normalized.reviewReason,
+      requestedAt: normalized.reviewRequestedAt,
+      currentStatus: normalized.status,
+    });
+    normalized.auditEventIds.push(disputeAuditEvent.id);
+    Object.assign(entry, normalized);
     saveState();
     renderLedger();
   }
@@ -7234,6 +7686,7 @@
       sessions: [],
       highStakeSessions: [],
       ledger: [],
+      auditEvents: [],
     };
   }
 
@@ -7350,6 +7803,45 @@
               normalized.facts = String(item.facts || "");
               normalized.action = String(item.action || "");
               normalized.claim = String(item.claim || buildHighStakeClaim(item.facts, item.action));
+              normalized.propositionCanonicalText = String(item.propositionCanonicalText || canonicalizePropositionText(normalized.claim));
+              normalized.propositionHash = String(
+                item.propositionHash ||
+                  buildLocalContentHash({
+                    type: "deliberation_proposition",
+                    canonicalText: normalized.propositionCanonicalText,
+                    implication: normalized.action,
+                  })
+              );
+              normalized.implicationProfile =
+                item.implicationProfile && typeof item.implicationProfile === "object"
+                  ? Object.assign({}, item.implicationProfile, {
+                      proofModesAllowed: Array.isArray(item.implicationProfile.proofModesAllowed)
+                        ? item.implicationProfile.proofModesAllowed
+                        : DEFAULT_COMMITMENT_PROOF_MODES.slice(),
+                    })
+                  : {
+                      actionTemplate: "If post-session credence > 0.50, " + normalized.action + ".",
+                      applicabilityFacts: normalized.facts ? [normalized.facts] : [],
+                      proofModesAllowed: DEFAULT_COMMITMENT_PROOF_MODES.slice(),
+                    };
+              normalized.privacyLevel = String(item.privacyLevel || "private_to_participants");
+              normalized.proofModesAllowed = Array.isArray(item.proofModesAllowed)
+                ? item.proofModesAllowed
+                : Array.isArray(normalized.implicationProfile.proofModesAllowed)
+                  ? normalized.implicationProfile.proofModesAllowed
+                  : DEFAULT_COMMITMENT_PROOF_MODES.slice();
+              normalized.consentVersion = String(item.consentVersion || DELIBERATION_COMMITMENT_CONSENT_VERSION);
+              normalized.consent =
+                item.consent && typeof item.consent === "object"
+                  ? Object.assign({}, item.consent)
+                  : {
+                      version: normalized.consentVersion,
+                      beliefStates: true,
+                      actionTrigger: true,
+                      proofReview: true,
+                      disputePolicy: true,
+                      signedAt: String(item.createdAt || ""),
+                    };
               normalized.creatorBelief = item.creatorBelief === "false" ? "false" : "true";
               normalized.creatorUserId = String(item.creatorUserId || "");
               normalized.creatorHandle = String(item.creatorHandle || "");
@@ -7373,6 +7865,17 @@
                       confidence: clamp(Number((reservation && reservation.confidence) || 50), 1, 100),
                       reason: String((reservation && reservation.reason) || ""),
                       eligible: reservation ? reservation.eligible !== false : true,
+                      commitmentPreviewAccepted: Boolean(reservation && reservation.commitmentPreviewAccepted),
+                      acceptedConsentVersion: String(
+                        (reservation && reservation.acceptedConsentVersion) ||
+                          normalized.consentVersion ||
+                          DELIBERATION_COMMITMENT_CONSENT_VERSION
+                      ),
+                      acceptedPrivacyLevel: String((reservation && reservation.acceptedPrivacyLevel) || normalized.privacyLevel || "private_to_participants"),
+                      acceptedImplicationProfile:
+                        reservation && reservation.acceptedImplicationProfile && typeof reservation.acceptedImplicationProfile === "object"
+                          ? Object.assign({}, reservation.acceptedImplicationProfile)
+                          : Object.assign({}, normalized.implicationProfile),
                       availability: Array.isArray(reservation && reservation.availability)
                         ? reservation.availability
                         : [],
@@ -7389,6 +7892,20 @@
         ledger: Array.isArray(parsed.ledger)
           ? parsed.ledger.map(function (entry) {
               return normalizeLedgerEntry(entry);
+            })
+          : [],
+        auditEvents: Array.isArray(parsed.auditEvents)
+          ? parsed.auditEvents.map(function (event) {
+              return {
+                id: String((event && event.id) || uid("ae")),
+                objectType: String((event && event.objectType) || ""),
+                objectId: String((event && event.objectId) || ""),
+                eventType: String((event && event.eventType) || ""),
+                canonicalHash: String((event && event.canonicalHash) || ""),
+                merkleLeafHash: String((event && event.merkleLeafHash) || ""),
+                jws: String((event && event.jws) || ""),
+                createdAt: String((event && event.createdAt) || ""),
+              };
             })
           : [],
       };
@@ -7487,6 +8004,22 @@
     if (el.highStakeEligibilityConfirm) {
       el.highStakeEligibilityConfirm.checked = false;
     }
+    if (el.highStakePrivacyInput) {
+      el.highStakePrivacyInput.value = "private_to_participants";
+    }
+    if (el.highStakeProofModeInputs && el.highStakeProofModeInputs.length > 0) {
+      el.highStakeProofModeInputs.forEach(function (input) {
+        input.checked = DEFAULT_COMMITMENT_PROOF_MODES.includes(String(input.value || ""));
+      });
+    }
+    [
+      el.highStakeConsentBeliefStates,
+      el.highStakeConsentActionTrigger,
+      el.highStakeConsentProofReview,
+      el.highStakeConsentDisputePolicy,
+    ].forEach(function (input) {
+      if (input) input.checked = false;
+    });
     if (el.highStakeConfidenceInput) {
       el.highStakeConfidenceInput.value = "60";
       updateConfidenceText(el.highStakeConfidenceInput, el.highStakeConfidenceValue);
@@ -7530,6 +8063,9 @@
     if (el.highStakeReservationEligibilityConfirm) {
       el.highStakeReservationEligibilityConfirm.checked = false;
     }
+    if (el.highStakeReservationPreviewConfirm) {
+      el.highStakeReservationPreviewConfirm.checked = false;
+    }
     resetAvailability(el.highStakeReservationAvailability);
     syncHighStakeReservationIdentityField();
   }
@@ -7566,6 +8102,14 @@
     if (el.highStakePromiseNoteInput) {
       el.highStakePromiseNoteInput.value = "";
     }
+    [
+      el.highStakeCaseChangeInput,
+      el.highStakePrincipleChangeInput,
+      el.highStakeBackgroundChangeInput,
+      el.highStakeIndependentSubmitConfirm,
+    ].forEach(function (input) {
+      if (input) input.checked = false;
+    });
     if (el.highStakeStartDateInput) {
       el.highStakeStartDateInput.value = "";
     }
@@ -7573,6 +8117,81 @@
       el.highStakeEndDateInput.value = "";
     }
     updateHighStakeThresholdState();
+  }
+
+  function canonicalizePropositionText(text) {
+    return String(text || "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .replace(/[.。]+$/, "")
+      .toLowerCase();
+  }
+
+  function stableSerialize(value) {
+    if (value === null || typeof value !== "object") {
+      return JSON.stringify(value);
+    }
+    if (Array.isArray(value)) {
+      return "[" + value.map(stableSerialize).join(",") + "]";
+    }
+    const keys = Object.keys(value).sort();
+    return (
+      "{" +
+      keys
+        .map(function (key) {
+          return JSON.stringify(key) + ":" + stableSerialize(value[key]);
+        })
+        .join(",") +
+      "}"
+    );
+  }
+
+  function buildLocalContentHash(payload) {
+    const serialized = stableSerialize(payload || {});
+    return "local-hash-v1-" + hashString(serialized).toString(16).padStart(8, "0");
+  }
+
+  function buildLocalSignature(objectType, contentHash) {
+    return "local-jws-demo." + buildLocalContentHash({
+      objectType: objectType,
+      contentHash: contentHash,
+      version: DELIBERATION_COMMITMENT_CONSENT_VERSION,
+    });
+  }
+
+  function appendAuditEvent(objectType, objectId, eventType, payload) {
+    if (!state || !Array.isArray(state.auditEvents)) {
+      state.auditEvents = [];
+    }
+    const canonicalHash = buildLocalContentHash(payload || {});
+    const previousEvent = state.auditEvents[state.auditEvents.length - 1] || null;
+    const merkleLeafHash = buildLocalContentHash({
+      previous: previousEvent ? previousEvent.merkleLeafHash || previousEvent.canonicalHash : "root",
+      canonicalHash: canonicalHash,
+      objectType: objectType,
+      objectId: objectId,
+      eventType: eventType,
+    });
+    const event = {
+      id: uid("ae"),
+      objectType: String(objectType || ""),
+      objectId: String(objectId || ""),
+      eventType: String(eventType || ""),
+      canonicalHash: canonicalHash,
+      merkleLeafHash: merkleLeafHash,
+      jws: buildLocalSignature(eventType, canonicalHash),
+      createdAt: new Date().toISOString(),
+    };
+    state.auditEvents.push(event);
+    return event;
+  }
+
+  function truncateMiddle(text, limit) {
+    const source = String(text || "");
+    const max = Math.max(8, Number(limit) || 28);
+    if (source.length <= max) return source;
+    const edge = Math.max(3, Math.floor((max - 3) / 2));
+    return source.slice(0, edge) + "..." + source.slice(source.length - edge);
   }
 
   function uid(prefix) {

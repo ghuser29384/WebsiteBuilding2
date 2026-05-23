@@ -65,7 +65,7 @@
             <a class="nav-dropdown-trigger" href="#studio" aria-haspopup="true">Dialogue</a>
             <div class="nav-dropdown-menu" aria-label="Dialogue submenu">
               <a href="#studio">Dialogues</a>
-              <a href="#high-stakes-dialogue">High-Stakes Dialogues</a>
+              <a href="#high-stakes-dialogue">Commitment Dialogues</a>
             </div>
           </div>
           <a href="publication.html">Publications</a>
@@ -366,7 +366,7 @@
           <h3>Participate</h3>
           <a href="#pledge">Pledge</a>
           <a href="#studio">Dialogues</a>
-          <a href="#high-stakes-dialogue">High-stakes dialogue</a>
+          <a href="#high-stakes-dialogue">Commitment dialogue</a>
           <a href="#ledger">Action Ledger</a>
           <a href="publication.html">Publications</a>
         </article>
@@ -961,39 +961,55 @@
 
     <section id="high-stakes-dialogue" class="section reveal">
       <div class="section-head">
-        <p class="eyebrow">High-stakes dialogue</p>
-        <h2>Eligibility-gated commitments with one-year follow-through</h2>
-        <p class="hint">Use this when the debated proposition has the form “If you [facts], you must [action].” Only eligible participants can join, and crossing 50% credence activates a one-year promise in the action ledger.</p>
+        <p class="eyebrow">Deliberation commitments</p>
+        <h2>One-on-one deliberation with auditable action thresholds</h2>
+        <p class="hint">Use this when a truth-apt proposition has a concrete implication profile: if your own sealed post-session credence ends above 50%, the platform creates a soft, proof-tracked commitment.</p>
       </div>
-      <p id="highStakeGateBanner" class="gate-banner">Browse high-stakes dialogues below. Sign the pledge to create, reserve, and log one-year commitments.</p>
+      <p id="highStakeGateBanner" class="gate-banner">Browse commitment dialogues below. Sign the pledge to create, reserve, and log one-year commitments.</p>
 
       <div id="highStakeContent" class="studio-content locked">
         <div class="studio-grid">
           <article class="panel">
-            <h3>Create A High-stakes Dialogue</h3>
+            <h3>Create A Deliberation Commitment</h3>
             <form id="highStakeForm" class="compact-form">
               <label class="field-row" for="highStakeFactsInput">
-                Facts about the person
+                Applicability facts
                 <textarea
                   id="highStakeFactsInput"
                   name="highStakeFacts"
                   rows="2"
                   required
-                  placeholder="e.g., make the equivalent of more than $60,000 in the United States per year"
+                  placeholder="e.g., I currently buy or consume factory-farmed animal products"
                 ></textarea>
               </label>
               <label class="field-row" for="highStakeActionInput">
-                What that person must do
+                If I end above 50%, I commit to
                 <textarea
                   id="highStakeActionInput"
                   name="highStakeAction"
                   rows="2"
                   required
-                  placeholder="e.g., donate at least 10% of your income to charities that evidence suggests are among the most effective"
+                  placeholder="e.g., avoid knowingly purchasing or consuming factory-farmed meat for 90 days"
                 ></textarea>
               </label>
               <div id="highStakePreview" class="mini-summary high-stake-preview">
                 Proposition preview: If you [facts], you must [action].
+              </div>
+              <div class="commitment-two-col">
+                <label class="field-row" for="highStakePrivacyInput">
+                  Commitment visibility
+                  <select id="highStakePrivacyInput" name="highStakePrivacy">
+                    <option value="private_to_participants">Private to participants</option>
+                    <option value="pseudonymous_public">Pseudonymous public commitment</option>
+                    <option value="public">Public profile commitment</option>
+                  </select>
+                </label>
+                <fieldset class="form-fieldset commitment-proof-fieldset">
+                  <legend>Allowed proof methods</legend>
+                  <label class="check-row"><input type="checkbox" name="highStakeProofMode" value="receipt_log" checked> Receipt log</label>
+                  <label class="check-row"><input type="checkbox" name="highStakeProofMode" value="photo_diary" checked> Photo diary</label>
+                  <label class="check-row"><input type="checkbox" name="highStakeProofMode" value="weekly_attestation" checked> Weekly attestation</label>
+                </fieldset>
               </div>
               <label class="field-row" for="highStakeConfidenceInput">
                 Your confidence that the proposition is true: <span id="highStakeConfidenceValue">60%</span>
@@ -1026,16 +1042,23 @@
                 <input id="highStakeEligibilityConfirm" name="highStakeEligibilityConfirm" type="checkbox" required>
                 I affirm that I currently meet the factual condition stated above and would be eligible to act on this proposition.
               </label>
+              <fieldset class="form-fieldset commitment-consent-fieldset">
+                <legend>Feature-specific consent</legend>
+                <label class="check-row"><input id="highStakeConsentBeliefStates" name="highStakeConsentBeliefStates" type="checkbox" required> Store timestamped belief states and credence updates for this module.</label>
+                <label class="check-row"><input id="highStakeConsentActionTrigger" name="highStakeConsentActionTrigger" type="checkbox" required> Link my own post-session credence above 50% to an action commitment.</label>
+                <label class="check-row"><input id="highStakeConsentProofReview" name="highStakeConsentProofReview" type="checkbox" required> Apply the proof cadence, redaction, and review rules to any activated commitment.</label>
+                <label class="check-row"><input id="highStakeConsentDisputePolicy" name="highStakeConsentDisputePolicy" type="checkbox" required> Use the prospective revocation and dispute policy for coercion, ambiguity, fraud, or impossibility claims.</label>
+              </fieldset>
               <div class="availability-block">
                 <p class="field-label">Your availability (select any half-hour slot in the next 30 days)</p>
-                <div id="highStakeRoomAvailability" class="availability-grid" role="group" aria-label="High-stakes dialogue creator availability"></div>
+                <div id="highStakeRoomAvailability" class="availability-grid" role="group" aria-label="Commitment dialogue creator availability"></div>
               </div>
               <p id="highStakeStatus" class="hint"></p>
-              <button class="btn btn-secondary" type="submit">Create High-stakes Dialogue</button>
+              <button class="btn btn-secondary" type="submit">Create Commitment Dialogue</button>
             </form>
 
             <div class="subhead-row">
-              <h4>Your High-stakes Dialogues</h4>
+              <h4>Your Commitment Dialogues</h4>
               <p class="hint">Only eligible participants with the opposite belief can be matched.</p>
             </div>
             <ul id="highStakeList" class="stack-list"></ul>
@@ -1044,13 +1067,12 @@
           <article class="panel">
             <h3>Reserve and Match</h3>
             <p class="hint">
-              High-stakes dialogues require all participants to meet the factual condition. Matching still prioritizes shared time,
-              opposite beliefs, and the smallest confidence gap.
+              Commitment dialogues require both participants to meet the factual condition and accept the same trigger preview. Matching still prioritizes shared time, opposite beliefs, and the smallest confidence gap.
             </p>
-            <div id="activeHighStakeSummary" class="mini-summary">No active high-stakes dialogue selected yet.</div>
+            <div id="activeHighStakeSummary" class="mini-summary">No active commitment dialogue selected yet.</div>
 
             <div class="subhead-row">
-              <h4>Writings for This High-stakes Dialogue</h4>
+              <h4>Writings for This Commitment Dialogue</h4>
               <a id="openHighStakePublicationLink" class="btn btn-ghost" href="publication.html">Open Dialogue Space</a>
             </div>
             <ul id="activeHighStakeWritings" class="stack-list"></ul>
@@ -1086,12 +1108,19 @@
                 <input id="highStakeReservationEligibilityConfirm" name="highStakeReservationEligibilityConfirm" type="checkbox" required>
                 I affirm that I meet the factual condition stated in this proposition and would be eligible to act on it for one year.
               </label>
+              <div id="highStakeCommitmentPreview" class="mini-summary commitment-preview">
+                Select a commitment dialogue to review the action trigger before reserving.
+              </div>
+              <label class="field-row checkbox-row" for="highStakeReservationPreviewConfirm">
+                <input id="highStakeReservationPreviewConfirm" name="highStakeReservationPreviewConfirm" type="checkbox" required>
+                I accept this commitment preview: only my own sealed post-session credence above 50% can trigger my action commitment.
+              </label>
               <div class="availability-block">
                 <p class="field-label">Your availability (select any half-hour slot in the next 30 days)</p>
-                <div id="highStakeReservationAvailability" class="availability-grid" role="group" aria-label="High-stakes participant availability"></div>
+                <div id="highStakeReservationAvailability" class="availability-grid" role="group" aria-label="Commitment dialogue participant availability"></div>
               </div>
               <p id="highStakeReservationStatus" class="hint"></p>
-              <button class="btn btn-secondary" type="submit">Reserve A High-stakes Seat</button>
+              <button class="btn btn-secondary" type="submit">Reserve A Commitment Seat</button>
             </form>
 
             <div class="subhead-row">
@@ -1100,11 +1129,11 @@
             </div>
             <ul id="highStakeReservationList" class="stack-list reservation-list"></ul>
 
-            <h4>Suggested High-stakes Matches</h4>
-            <p id="highStakeMatchRationale" class="hint">Select a high-stakes dialogue to generate suggested matches.</p>
+            <h4>Suggested Commitment Matches</h4>
+            <p id="highStakeMatchRationale" class="hint">Select a commitment dialogue to generate suggested matches.</p>
             <div id="highStakeCounterpartList" class="counterpart-list"></div>
 
-            <h3 class="session-head">Log The High-stakes Outcome</h3>
+            <h3 class="session-head">Log The Sealed Outcome</h3>
             <form id="highStakeSessionForm" class="compact-form">
               <p id="highStakeSessionPartnerSummary" class="mini-summary">No participant selected yet.</p>
               <label class="field-row" for="highStakeCounterArgumentInput">
@@ -1119,14 +1148,24 @@
                 After discussion, confidence that this proposition is true: <span id="highStakePostConfidenceValue">50%</span>
                 <input id="highStakePostConfidenceInput" name="highStakePostConfidence" type="range" min="0" max="100" step="1" value="50">
               </label>
+              <fieldset class="form-fieldset post-session-fieldset">
+                <legend>Confidence rationale tags</legend>
+                <label class="check-row"><input id="highStakeCaseChangeInput" name="highStakeCaseChange" type="checkbox"> Case-level change</label>
+                <label class="check-row"><input id="highStakePrincipleChangeInput" name="highStakePrincipleChange" type="checkbox"> Principle-level change</label>
+                <label class="check-row"><input id="highStakeBackgroundChangeInput" name="highStakeBackgroundChange" type="checkbox"> Background-theory change</label>
+              </fieldset>
+              <label class="field-row checkbox-row" for="highStakeIndependentSubmitConfirm">
+                <input id="highStakeIndependentSubmitConfirm" name="highStakeIndependentSubmitConfirm" type="checkbox" required>
+                I am submitting this post-session belief update independently; it is recorded as sealed until both participants submit or the timer expires.
+              </label>
 
               <p id="highStakeThresholdNotice" class="threshold-note" role="status" aria-live="polite"></p>
 
               <div id="highStakePromiseBlock" class="action-block hidden">
                 <p id="highStakePromisePreview" class="mini-summary high-stake-promise-preview">
-                  If confidence rises above 50%, the one-year promise will appear here.
+                  If confidence rises above 50%, the one-year commitment will appear here.
                 </p>
-                <p class="hint">The one-year promise also requires one proof upload every month for all 12 months.</p>
+                <p class="hint">The one-year commitment also requires one proof upload every month for all 12 months, plus a local audit digest for the belief state and commitment record.</p>
                 <label class="field-row" for="highStakePromiseNoteInput">
                   Implementation note (optional)
                   <textarea
@@ -1148,7 +1187,7 @@
                 </div>
               </div>
 
-              <button class="btn btn-primary" type="submit">Log High-stakes Result</button>
+              <button class="btn btn-primary" type="submit">Submit Sealed Result</button>
               <p id="highStakeSessionStatus" class="status-line" role="status" aria-live="polite"></p>
             </form>
           </article>
@@ -1492,7 +1531,7 @@
         </div>
         <button id="resetDemoBtn" class="btn btn-ghost" type="button">Reset Local Demo Data</button>
       </div>
-      <p class="hint">Every rule-triggered conviction appears here as a 12-month commitment. Each month requires a proof upload before the entry can be completed.</p>
+      <p class="hint">Every rule-triggered conviction appears here as a 12-month commitment. Each month requires a proof upload before completion, and users can request review for coercion, ambiguity, fraud, impossibility, or prospective revocation.</p>
       <div id="ledgerList" class="ledger-list"></div>
     </section>
 
