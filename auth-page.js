@@ -95,14 +95,17 @@
     window.location.assign(nextPath || "index.html");
   }
 
-  function onSignIn() {
+  async function onSignIn() {
     var payload = {
       identifier: dom.signinIdentifier && dom.signinIdentifier.value,
       password: dom.signinPassword && dom.signinPassword.value,
       acceptTerms: Boolean(dom.signinAcceptTerms && dom.signinAcceptTerms.checked),
     };
 
-    var result = auth.signIn(payload);
+    if (dom.signinBtn) dom.signinBtn.disabled = true;
+    setStatus("Signing in...", false);
+    var result = await auth.signIn(payload);
+    if (dom.signinBtn) dom.signinBtn.disabled = false;
     if (!result.ok) {
       setStatus(result.error || "Unable to sign in.", true);
       return;
@@ -112,7 +115,7 @@
     window.setTimeout(redirectAfterAuth, 160);
   }
 
-  function onSignUp() {
+  async function onSignUp() {
     var displayName = dom.signupDisplayName && dom.signupDisplayName.value ? String(dom.signupDisplayName.value).trim() : "";
     var password = dom.signupPassword && dom.signupPassword.value ? String(dom.signupPassword.value) : "";
     var passwordConfirm = dom.signupPasswordConfirm && dom.signupPasswordConfirm.value ? String(dom.signupPasswordConfirm.value) : "";
@@ -136,9 +139,16 @@
       acceptedTerms: Boolean(dom.signupAcceptTerms && dom.signupAcceptTerms.checked),
     };
 
-    var result = auth.signUp(payload);
+    if (dom.signupBtn) dom.signupBtn.disabled = true;
+    setStatus("Creating account...", false);
+    var result = await auth.signUp(payload);
+    if (dom.signupBtn) dom.signupBtn.disabled = false;
     if (!result.ok) {
       setStatus(result.error || "Unable to create account.", true);
+      return;
+    }
+    if (result.pendingConfirmation) {
+      setStatus(result.message || "Account created. Check your email to confirm the account, then sign in.", false);
       return;
     }
 
@@ -203,7 +213,10 @@
     dom.signupAvatarPreview.textContent = initial;
   }
 
-  document.addEventListener("DOMContentLoaded", function () {
+  document.addEventListener("DOMContentLoaded", async function () {
+    if (auth.ready) {
+      await auth.ready();
+    }
     if (dom.requiredAgreementText) {
       dom.requiredAgreementText.textContent = auth.requiredAgreementText;
     }

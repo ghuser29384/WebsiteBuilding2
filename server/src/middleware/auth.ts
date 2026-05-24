@@ -58,6 +58,35 @@ const parseBearerDevelopmentToken = (header: string | undefined): Partial<Authen
 
 let remoteJwks: unknown;
 
+const verifyWithSupabaseUserEndpoint = async (token: string): Promise<Partial<AuthenticatedUser>> => {
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseApiKey = process.env.SUPABASE_ANON_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const fetchImpl = (globalThis as any).fetch;
+  if (!supabaseUrl || !supabaseApiKey || !fetchImpl) return {};
+
+  const response = await fetchImpl(`${supabaseUrl.replace(/\/+$/, "")}/auth/v1/user`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+      apikey: supabaseApiKey,
+      Accept: "application/json",
+    },
+  });
+  if (!response.ok) return {};
+
+  const payload = (await response.json()) as Record<string, unknown>;
+  const metadata =
+    payload.user_metadata && typeof payload.user_metadata === "object"
+      ? (payload.user_metadata as Record<string, unknown>)
+      : {};
+  const id = String(payload.id || "").trim();
+  if (!id) return {};
+  return {
+    id,
+    handle: normalizeHandle(metadata.handle || payload.email || `user_${id.slice(0, 8)}`, `user_${id.slice(0, 8)}`),
+    role: normalizeRole(metadata.role || payload.role),
+  };
+};
+
 const verifyBearerJwt = async (header: string | undefined): Promise<Partial<AuthenticatedUser>> => {
   if (!header || !header.startsWith("Bearer ")) return {};
   const token = header.slice("Bearer ".length).trim();
@@ -69,16 +98,30 @@ const verifyBearerJwt = async (header: string | undefined): Promise<Partial<Auth
   if (process.env.AUTH_JWT_AUDIENCE) verifyOptions.audience = process.env.AUTH_JWT_AUDIENCE;
 
   let verification;
-  if (process.env.AUTH_JWKS_URL) {
-    if (!remoteJwks) {
-      remoteJwks = jose.createRemoteJWKSet(new URL(process.env.AUTH_JWKS_URL));
+  try {
+    if (process.env.AUTH_JWKS_URL) {
+      if (!remoteJwks) {
+        remoteJwks = jose.createRemoteJWKSet(new URL(process.env.AUTH_JWKS_URL));
+      }
+      verification = await jose.jwtVerify(token, remoteJwks, verifyOptions);
+    } else if (process.env.AUTH_JWT_SECRET) {
+      verification = await jose.jwtVerify(token, new TextEncoder().encode(process.env.AUTH_JWT_SECRET), verifyOptions);
     }
-    verification = await jose.jwtVerify(token, remoteJwks, verifyOptions);
-  } else if (process.env.AUTH_JWT_SECRET) {
-    verification = await jose.jwtVerify(token, new TextEncoder().encode(process.env.AUTH_JWT_SECRET), verifyOptions);
-  } else if (allowDevelopmentHeaders()) {
-    return parseBearerDevelopmentToken(header);
-  } else {
+  } catch (error) {
+    const supabaseUser = await verifyWithSupabaseUserEndpoint(token);
+    if (supabaseUser.id) return supabaseUser;
+    throw error;
+  }
+
+  if (!verification) {
+    const supabaseUser = await verifyWithSupabaseUserEndpoint(token);
+    if (supabaseUser.id) return supabaseUser;
+  }
+
+  if (!verification) {
+    if (allowDevelopmentHeaders()) {
+      return parseBearerDevelopmentToken(header);
+    }
     throw new Error("Authentication verifier is not configured for production.");
   }
 

@@ -59,7 +59,12 @@ AUTH_JWT_SECRET="your-provider-jwt-signing-secret"
 ```
 
 Then have the browser auth layer expose `window.NormativityAuth.getAccessToken()` so the commitment
-client can send `Authorization: Bearer <token>`.
+client can send `Authorization: Bearer <token>`. The static browser app reads public Supabase config
+from `/api/public-config`, so Vercel also needs:
+
+```bash
+SUPABASE_ANON_KEY="your-public-anon-key"
+```
 
 ## Proof Storage
 
