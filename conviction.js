@@ -1163,6 +1163,12 @@
     if (window.NORMATIVITY_COMMITMENT_API_BASE) {
       return String(window.NORMATIVITY_COMMITMENT_API_BASE).replace(/\/+$/, "");
     }
+    const hostname = window.location && window.location.hostname ? String(window.location.hostname) : "";
+    const protocol = window.location && window.location.protocol ? String(window.location.protocol) : "";
+    const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1" || hostname === "";
+    if ((protocol === "https:" || protocol === "http:") && !isLocalHost) {
+      return "/api/commitments";
+    }
     if (window.location && window.location.port === "3001") {
       return "/api/commitments";
     }
@@ -1174,12 +1180,26 @@
     if (!user || !user.id) {
       throw new Error("Sign in before using server-backed deliberation commitments.");
     }
-    return {
+    const headers = {
       "Content-Type": "application/json",
       "X-User-Id": String(user.id),
       "X-User-Handle": String(user.handle || state.pledge.name || "member").replace(/^@+/, ""),
       "X-User-Role": String(user.role || "user"),
     };
+    let accessToken = "";
+    try {
+      if (window.NormativityAuth && typeof window.NormativityAuth.getAccessToken === "function") {
+        accessToken = String(window.NormativityAuth.getAccessToken() || "");
+      } else if (user.accessToken) {
+        accessToken = String(user.accessToken);
+      }
+    } catch (_error) {
+      accessToken = "";
+    }
+    if (accessToken) {
+      headers.Authorization = "Bearer " + accessToken;
+    }
+    return headers;
   }
 
   async function commitmentApiRequest(path, options) {
@@ -2647,6 +2667,8 @@
     let serverSessionResult = null;
     let serverBeliefResult = null;
     let serverFinalizeResult = null;
+    let serverSessionId = "";
+    let finalizePending = false;
     try {
       setHighStakeSessionStatus("Submitting sealed belief update to the commitment server...");
       serverSessionResult = await commitmentApiRequest("/sessions", {
@@ -2657,7 +2679,7 @@
         },
       });
       const serverSession = serverSessionResult && serverSessionResult.session ? serverSessionResult.session : null;
-      const serverSessionId = serverSession && serverSession.id ? String(serverSession.id) : "";
+      serverSessionId = serverSession && serverSession.id ? String(serverSession.id) : "";
       if (!serverSessionId) {
         throw new Error("Server did not return a session id.");
       }
@@ -2670,6 +2692,15 @@
           rationale: rationale,
         },
       });
+    } catch (error) {
+      setHighStakeSessionStatus(
+        "Server-backed sealed result was not saved: " +
+          (error && error.message ? error.message : "unknown error")
+      );
+      return;
+    }
+
+    try {
       serverFinalizeResult = await commitmentApiRequest("/sessions/" + encodeURIComponent(serverSessionId) + "/finalize", {
         method: "POST",
         body: {
@@ -2683,11 +2714,13 @@
         },
       });
     } catch (error) {
-      setHighStakeSessionStatus(
-        "Server-backed sealed result was not saved: " +
-          (error && error.message ? error.message : "unknown error")
-      );
-      return;
+      const finalizeMessage = error && error.message ? String(error.message) : "unknown error";
+      if (/sealed until|remain sealed|timer expires/i.test(finalizeMessage)) {
+        finalizePending = true;
+      } else {
+        setHighStakeSessionStatus("Server-backed commitment finalization failed: " + finalizeMessage);
+        return;
+      }
     }
 
     const serverSession = serverSessionResult && serverSessionResult.session ? serverSessionResult.session : null;
@@ -2732,7 +2765,7 @@
           serverBeliefState && serverBeliefState.signatureJws
             ? String(serverBeliefState.signatureJws)
             : buildLocalSignature("belief_state", beliefStateHash),
-        sealed: true,
+        sealed: serverBeliefState && serverBeliefState.sealed !== undefined ? Boolean(serverBeliefState.sealed) : true,
         sealReleasePolicy: "both_submit_or_timer_expiry",
         auditEventId: serverBeliefAuditEvent && serverBeliefAuditEvent.id ? String(serverBeliefAuditEvent.id) : "",
       },
@@ -2747,8 +2780,8 @@
       roomRef.updatedAt = new Date().toISOString();
     }
 
-    if (postConfidence > 50) {
-      const commitmentId = serverCommitment && serverCommitment.id ? String(serverCommitment.id) : uid("lg");
+    if (postConfidence > 50 && serverCommitment) {
+      const commitmentId = String(serverCommitment.id);
       const commitmentPayload = {
         id: commitmentId,
         sessionId: session.id,
@@ -2809,6 +2842,10 @@
         createdAt: new Date().toISOString(),
       });
       setHighStakeSessionStatus("Commitment dialogue logged. Confidence is above 50%, so the one-year commitment with monthly proof uploads is now in your action ledger.");
+    } else if (postConfidence > 50 && finalizePending) {
+      setHighStakeSessionStatus("Sealed belief update saved. Commitment activation is pending until both participants submit or the timer expires.");
+    } else if (postConfidence > 50) {
+      setHighStakeSessionStatus("Sealed belief update saved, but the server did not activate a commitment yet.");
     } else {
       setHighStakeSessionStatus("Commitment dialogue logged. Confidence is at or below 50%, so no one-year commitment entry was created.");
     }
@@ -7789,11 +7826,52 @@
     const proofType = proofTypeInput ? String(proofTypeInput.value || "") : "";
     let serverProofResult = null;
     try {
+      if (statusNode) {
+        statusNode.textContent = "Hashing proof file and reserving private upload storage...";
+      }
+      const fileHash = await buildFileContentHash(file);
+      const reservationResult = await commitmentApiRequest("/" + encodeURIComponent(normalized.id) + "/proofs/upload-url", {
+        method: "POST",
+        body: {
+          file_name: String(file.name || ""),
+          content_type: String(file.type || "application/octet-stream"),
+          content_hash: fileHash,
+          metadata: {
+            proofMonth: nextProof.monthNumber,
+            fileName: String(file.name || ""),
+            mimeType: String(file.type || ""),
+            size: Number(file.size || 0),
+          },
+        },
+      });
+      const reservation = reservationResult && reservationResult.reservation ? reservationResult.reservation : {};
+      if (reservation.uploadUrl) {
+        if (statusNode) {
+          statusNode.textContent = "Uploading proof file to private storage...";
+        }
+        const uploadResponse = await fetch(String(reservation.uploadUrl), {
+          method: String(reservation.uploadMethod || "PUT"),
+          headers: reservation.headers && typeof reservation.headers === "object" ? reservation.headers : {},
+          body: file,
+        });
+        if (!uploadResponse.ok) {
+          throw new Error("Proof storage upload failed with HTTP " + uploadResponse.status + ".");
+        }
+      }
+      if (statusNode) {
+        statusNode.textContent = "Recording proof submission on the commitment server...";
+      }
       serverProofResult = await commitmentApiRequest("/" + encodeURIComponent(normalized.id) + "/proofs", {
         method: "POST",
         body: {
           proof_type: proofType || "weekly_attestation",
+          storage_key: reservation.storageKey ? String(reservation.storageKey) : undefined,
+          content_hash: fileHash,
           file_name: String(file.name || ""),
+          redaction_metadata: {
+            privateByDefault: true,
+            clientRedacted: false,
+          },
           metadata: {
             proofMonth: nextProof.monthNumber,
             fileName: String(file.name || ""),
@@ -7804,9 +7882,11 @@
         },
       });
     } catch (error) {
-      status.textContent =
-        "Server-backed proof upload was not saved: " +
-        (error && error.message ? error.message : "unknown error");
+      if (statusNode) {
+        statusNode.textContent =
+          "Server-backed proof upload was not saved: " +
+          (error && error.message ? error.message : "unknown error");
+      }
       return;
     }
     const serverProof = serverProofResult && serverProofResult.proofSubmission
@@ -7825,6 +7905,8 @@
         size: Number(file.size || 0),
         note: note,
         proofType: proofType,
+        contentHash: serverProof && serverProof.contentHash ? String(serverProof.contentHash) : "",
+        storageKey: serverProof && serverProof.storageKey ? String(serverProof.storageKey) : "",
         serverProofId: serverProof && serverProof.id ? String(serverProof.id) : "",
         reviewStatus: "submitted",
       });
@@ -8370,6 +8452,22 @@
   function buildLocalContentHash(payload) {
     const serialized = stableSerialize(payload || {});
     return "local-hash-v1-" + hashString(serialized).toString(16).padStart(8, "0");
+  }
+
+  async function buildFileContentHash(file) {
+    if (window.crypto && window.crypto.subtle && file && typeof file.arrayBuffer === "function") {
+      const buffer = await file.arrayBuffer();
+      const digest = await window.crypto.subtle.digest("SHA-256", buffer);
+      return Array.prototype.map.call(new Uint8Array(digest), function (byte) {
+        return byte.toString(16).padStart(2, "0");
+      }).join("");
+    }
+    return buildLocalContentHash({
+      fileName: file && file.name ? String(file.name) : "",
+      fileSize: file && file.size ? Number(file.size) : 0,
+      fileType: file && file.type ? String(file.type) : "",
+      hashedAt: new Date().toISOString(),
+    });
   }
 
   function buildLocalSignature(objectType, contentHash) {

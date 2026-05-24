@@ -53,12 +53,27 @@ export const createMerkleCheckpoint = async (db: PrismaClient) => {
   if (existing) return existing;
 
   const rootHash = merkleRoot(events.map((event) => event.merkleLeafHash));
+  const priorCheckpoint = await db.auditCheckpoint.findFirst({
+    where: { toSequence: { lt: toSequence } },
+    orderBy: { toSequence: "desc" },
+  });
+  const checkpointHash = contentHash({
+    fromSequence: events[0].sequence.toString(),
+    toSequence: toSequence.toString(),
+    treeSize: events.length,
+    rootHash,
+    priorCheckpointId: priorCheckpoint?.id || null,
+    priorRootHash: priorCheckpoint?.rootHash || null,
+  });
   return db.auditCheckpoint.create({
     data: {
       fromSequence: events[0].sequence,
       toSequence,
       treeSize: events.length,
       rootHash,
+      priorCheckpointId: priorCheckpoint?.id || null,
+      priorRootHash: priorCheckpoint?.rootHash || null,
+      checkpointHash,
     },
   });
 };
@@ -69,6 +84,12 @@ export const buildAuditPackage = async (
   objectId: string
 ) => {
   const checkpoint = await createMerkleCheckpoint(db);
+  const checkpointWithTimestamp = checkpoint
+    ? await db.auditCheckpoint.findUnique({
+        where: { id: checkpoint.id },
+        include: { timestamp: true },
+      })
+    : null;
   const allEvents = await db.auditEvent.findMany({
     orderBy: { sequence: "asc" },
   });
@@ -76,18 +97,43 @@ export const buildAuditPackage = async (
     (event) => event.objectType === objectType && event.objectId === objectId
   );
   const leaves = allEvents.map((event) => event.merkleLeafHash);
+  const tombstone = await db.privacyTombstone.findFirst({
+    where: { objectType, objectId },
+    orderBy: { createdAt: "desc" },
+  });
 
   return {
     objectType,
     objectId,
-    checkpoint: checkpoint
+    redacted: Boolean(tombstone),
+    tombstone: tombstone
       ? {
-          id: checkpoint.id,
-          fromSequence: checkpoint.fromSequence.toString(),
-          toSequence: checkpoint.toSequence.toString(),
-          treeSize: checkpoint.treeSize,
-          rootHash: checkpoint.rootHash,
-          createdAt: checkpoint.createdAt.toISOString(),
+          id: tombstone.id,
+          reason: tombstone.reason,
+          createdAt: tombstone.createdAt.toISOString(),
+        }
+      : null,
+    checkpoint: checkpointWithTimestamp
+      ? {
+          id: checkpointWithTimestamp.id,
+          fromSequence: checkpointWithTimestamp.fromSequence.toString(),
+          toSequence: checkpointWithTimestamp.toSequence.toString(),
+          treeSize: checkpointWithTimestamp.treeSize,
+          rootHash: checkpointWithTimestamp.rootHash,
+          priorCheckpointId: checkpointWithTimestamp.priorCheckpointId,
+          priorRootHash: checkpointWithTimestamp.priorRootHash,
+          checkpointHash: checkpointWithTimestamp.checkpointHash,
+          timestamp: checkpointWithTimestamp.timestamp
+            ? {
+                id: checkpointWithTimestamp.timestamp.id,
+                tsaUrl: checkpointWithTimestamp.timestamp.tsaUrl,
+                rootHash: checkpointWithTimestamp.timestamp.rootHash,
+                verifiedAt: checkpointWithTimestamp.timestamp.verifiedAt?.toISOString() || null,
+                certificateFingerprint: checkpointWithTimestamp.timestamp.certificateFingerprint,
+                createdAt: checkpointWithTimestamp.timestamp.createdAt.toISOString(),
+              }
+            : null,
+          createdAt: checkpointWithTimestamp.createdAt.toISOString(),
         }
       : null,
     events: targetEvents.map((event) => {
@@ -98,8 +144,8 @@ export const buildAuditPackage = async (
         objectType: event.objectType,
         objectId: event.objectId,
         eventType: event.eventType,
-        payload: event.payload,
-        canonicalPayload: canonicalJson(event.payload),
+        payload: tombstone ? { tombstoned: true, originalCanonicalHash: event.canonicalHash } : event.payload,
+        canonicalPayload: tombstone ? null : canonicalJson(event.payload),
         canonicalHash: event.canonicalHash,
         merkleLeafHash: event.merkleLeafHash,
         jws: event.jws,

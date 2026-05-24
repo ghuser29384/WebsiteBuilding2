@@ -28,6 +28,7 @@ export const requestRfc3161Timestamp = async (rootHash: string): Promise<Buffer>
   const workdir = await mkdtemp(path.join(tmpdir(), "normativity-tsa-"));
   const queryPath = path.join(workdir, "request.tsq");
   const responsePath = path.join(workdir, "response.tsr");
+  const caFilePath = path.join(workdir, "tsa-ca.pem");
 
   try {
     await run("openssl", ["ts", "-query", "-sha256", "-digest", rootHash, "-cert", "-out", queryPath]);
@@ -45,7 +46,12 @@ export const requestRfc3161Timestamp = async (rootHash: string): Promise<Buffer>
     const token = Buffer.from(await response.arrayBuffer());
     await writeFile(responsePath, token);
 
-    if (process.env.TSA_CA_FILE) {
+    const caFile = process.env.TSA_CA_FILE || (process.env.TSA_CA_PEM ? caFilePath : "");
+    if (process.env.TSA_CA_PEM) {
+      await writeFile(caFilePath, process.env.TSA_CA_PEM);
+    }
+
+    if (caFile) {
       await run("openssl", [
         "ts",
         "-verify",
@@ -54,7 +60,7 @@ export const requestRfc3161Timestamp = async (rootHash: string): Promise<Buffer>
         "-queryfile",
         queryPath,
         "-CAfile",
-        process.env.TSA_CA_FILE,
+        caFile,
       ]);
     }
 
@@ -66,6 +72,7 @@ export const requestRfc3161Timestamp = async (rootHash: string): Promise<Buffer>
 
 export const timestampPendingCheckpoints = async (db: PrismaClient) => {
   if (!process.env.TSA_URL) return { timestamped: 0, skipped: "TSA_URL is not configured." };
+  const verifiesTimestamp = Boolean(process.env.TSA_CA_FILE || process.env.TSA_CA_PEM);
 
   const checkpoints = await db.auditCheckpoint.findMany({
     where: { timestamp: null },
@@ -85,7 +92,7 @@ export const timestampPendingCheckpoints = async (db: PrismaClient) => {
         tsaUrl: String(process.env.TSA_URL),
         rootHash: checkpoint.rootHash,
         timestampTokenDer,
-        verifiedAt: process.env.TSA_CA_FILE ? new Date() : null,
+        verifiedAt: verifiesTimestamp ? new Date() : null,
         certificateFingerprint: process.env.TSA_CERT_FINGERPRINT || null,
       },
     });

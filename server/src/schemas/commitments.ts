@@ -83,8 +83,31 @@ export const proofSubmissionSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).default({}),
   storageKey: z.string().max(500).optional(),
   storage_key: z.string().max(500).optional(),
+  contentHash: z.string().min(16).max(256).optional(),
+  content_hash: z.string().min(16).max(256).optional(),
   fileName: z.string().max(240).optional(),
   file_name: z.string().max(240).optional(),
+  redactionMetadata: z.record(z.string(), z.unknown()).optional(),
+  redaction_metadata: z.record(z.string(), z.unknown()).optional(),
+});
+
+export const proofUploadReservationSchema = z.object({
+  fileName: z.string().min(1).max(240).optional(),
+  file_name: z.string().min(1).max(240).optional(),
+  contentType: z.string().min(1).max(160).optional(),
+  content_type: z.string().min(1).max(160).optional(),
+  contentHash: z.string().min(16).max(256).optional(),
+  content_hash: z.string().min(16).max(256).optional(),
+  metadata: z.record(z.string(), z.unknown()).default({}),
+});
+
+export const proofReviewSchema = z.object({
+  reviewStatus: z.enum(["ACCEPTED", "REJECTED", "NEEDS_REDACTION"]).optional(),
+  review_status: z.enum(["ACCEPTED", "REJECTED", "NEEDS_REDACTION"]).optional(),
+  reviewNote: z.string().max(2000).optional(),
+  review_note: z.string().max(2000).optional(),
+  redactionMetadata: z.record(z.string(), z.unknown()).optional(),
+  redaction_metadata: z.record(z.string(), z.unknown()).optional(),
 });
 
 export const disputeSchema = z.object({
@@ -95,4 +118,19 @@ export const disputeSchema = z.object({
   disputeType: z.string().min(1).max(120).optional(),
   dispute_type: z.string().min(1).max(120).optional(),
   resolution: z.record(z.string(), z.unknown()).optional(),
+});
+
+export const disputeResolutionSchema = z.object({
+  status: z.enum(["RESOLVED", "REJECTED"]).default("RESOLVED"),
+  resolution: z.record(z.string(), z.unknown()).default({}),
+  revokeCommitment: z.boolean().optional(),
+  revoke_commitment: z.boolean().optional(),
+});
+
+export const privacyTombstoneSchema = z.object({
+  objectType: z.enum(["user", "deliberation", "belief_state", "commitment", "proof_submission", "dispute"]).optional(),
+  object_type: z.enum(["user", "deliberation", "belief_state", "commitment", "proof_submission", "dispute"]).optional(),
+  objectId: z.string().min(1).max(120).optional(),
+  object_id: z.string().min(1).max(120).optional(),
+  reason: z.string().min(1).max(1000),
 });

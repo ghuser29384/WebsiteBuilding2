@@ -62,6 +62,8 @@ model User {
   pledgeSigned      Boolean                   @default(false)
   privacySettings   Json?
   authMethods       Json?
+  deletedAt         DateTime?
+  tombstoneReason   String?
   createdAt         DateTime                  @default(now())
   updatedAt         DateTime                  @updatedAt
   pledgeSignatures  PledgeSignature[]
@@ -105,6 +107,8 @@ model Deliberation {
   createdBy                User                      @relation("DeliberationCreator", fields: [createdById], references: [id], onDelete: Restrict)
   participants             DeliberationParticipant[]
   sessions                 Session[]
+  contentDeletedAt         DateTime?
+  privacyTombstonedAt      DateTime?
   createdAt                DateTime                  @default(now())
   updatedAt                DateTime                  @updatedAt
 
@@ -164,6 +168,7 @@ model BeliefState {
   contentHash                String
   sealed                     Boolean      @default(true)
   sealReleasePolicy          String       @default("both_submit_or_timer_expiry")
+  contentDeletedAt           DateTime?
   submittedAt                DateTime     @default(now())
   commitments                Commitment[]
 
@@ -191,6 +196,11 @@ model Commitment {
   privacyLevel      String              @default("private_to_participants")
   consentVersion    String
   proofSubmissions  ProofSubmission[]
+  reviewedAt        DateTime?
+  reviewNote        String?
+  revokedAt         DateTime?
+  contentDeletedAt  DateTime?
+  privacyTombstonedAt DateTime?
   createdAt         DateTime            @default(now())
   updatedAt         DateTime            @updatedAt
 
@@ -209,11 +219,17 @@ model ProofSubmission {
   proofType    String
   metadata     Json
   storageKey   String?
+  contentHash  String?
+  redactionMetadata Json?
   reviewStatus ProofReviewStatus @default(SUBMITTED)
+  reviewedById String?
+  reviewedAt   DateTime?
+  reviewNote   String?
   submittedAt  DateTime          @default(now())
 
   @@index([commitmentId])
   @@index([userId])
+  @@index([contentHash])
 }
 
 model Dispute {
@@ -225,6 +241,7 @@ model Dispute {
   disputeType String
   status      DisputeStatus @default(OPEN)
   resolution  Json?
+  reviewedById String?
   filedAt     DateTime      @default(now())
   resolvedAt  DateTime?
 
@@ -258,11 +275,27 @@ model AuditCheckpoint {
   toSequence   BigInt
   treeSize     Int
   rootHash     String
+  priorCheckpointId String?
+  priorRootHash String?
+  checkpointHash String?
   createdAt    DateTime        @default(now())
   timestamp    AuditTimestamp?
 
   @@index([toSequence])
   @@index([rootHash])
+  @@index([priorCheckpointId])
+}
+
+model PrivacyTombstone {
+  id         String   @id @default(uuid())
+  objectType String
+  objectId   String
+  requestedById String
+  reason     String
+  createdAt  DateTime @default(now())
+
+  @@index([objectType, objectId])
+  @@index([requestedById])
 }
 
 model AuditTimestamp {

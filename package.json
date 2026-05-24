@@ -4,6 +4,7 @@
   "description": "",
   "main": "conviction.js",
   "scripts": {
+    "postinstall": "npm --prefix server install && npm --prefix server run prisma:generate",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -20,5 +21,13 @@
   "homepage": "https://github.com/ghuser29384/WebsiteBuilding2#readme",
   "devDependencies": {
     "eslint": "^10.0.2"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "express": "^4.22.2",
+    "jose": "^6.2.3",
+    "prisma": "^6.19.3",
+    "typescript": "^5.9.3",
+    "zod": "^4.4.3"
   }
 }

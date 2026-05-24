@@ -52,6 +52,10 @@ export interface SignJwsInput {
   createdAt?: string;
 }
 
+const isProductionRuntime = (): boolean => {
+  return process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+};
+
 export const signJws = async (payload: SignJwsInput): Promise<string> => {
   const jose = await importJose();
   const kid = process.env.COMMITMENT_JWS_KEY_ID || "local-dev-key";
@@ -61,6 +65,9 @@ export const signJws = async (payload: SignJwsInput): Promise<string> => {
   if (process.env.COMMITMENT_JWS_PRIVATE_KEY_PKCS8) {
     key = await jose.importPKCS8(process.env.COMMITMENT_JWS_PRIVATE_KEY_PKCS8, alg);
   } else {
+    if (!process.env.COMMITMENT_JWS_SECRET && isProductionRuntime()) {
+      throw new Error("COMMITMENT_JWS_SECRET or COMMITMENT_JWS_PRIVATE_KEY_PKCS8 is required in production.");
+    }
     key = new TextEncoder().encode(process.env.COMMITMENT_JWS_SECRET || "development-only-commitment-secret");
   }
 

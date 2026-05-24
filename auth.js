@@ -83,6 +83,12 @@
     return data;
   }
 
+  function getAccessToken() {
+    var session = getSession();
+    if (!session || !session.accessToken) return "";
+    return String(session.accessToken || "");
+  }
+
   function getCurrentUser() {
     var session = getSession();
     if (!session || !session.userId) return null;
@@ -340,6 +346,8 @@
     termsVersion: TERMS_VERSION,
     requiredAgreementText: REQUIRED_AGREEMENT_TEXT,
     getUsers: getUsers,
+    getSession: getSession,
+    getAccessToken: getAccessToken,
     getCurrentUser: getCurrentUser,
     signUp: signUp,
     signIn: signIn,

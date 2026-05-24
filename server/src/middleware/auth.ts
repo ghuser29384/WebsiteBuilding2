@@ -28,6 +28,20 @@ const normalizeHandle = (value: unknown, fallback: string): string => {
   return handle || fallback;
 };
 
+const importJose = async (): Promise<any> => {
+  return new Function("specifier", "return import(specifier)")("jose");
+};
+
+const isProductionRuntime = (): boolean => {
+  return process.env.NODE_ENV === "production" || process.env.VERCEL === "1";
+};
+
+const allowDevelopmentHeaders = (): boolean => {
+  if (process.env.ALLOW_DEVELOPMENT_AUTH_HEADERS === "true") return true;
+  if (process.env.ALLOW_DEVELOPMENT_AUTH_HEADERS === "false") return false;
+  return !isProductionRuntime();
+};
+
 const parseBearerDevelopmentToken = (header: string | undefined): Partial<AuthenticatedUser> => {
   if (!header || !header.startsWith("Bearer ")) return {};
   const token = header.slice("Bearer ".length).trim();
@@ -42,23 +56,89 @@ const parseBearerDevelopmentToken = (header: string | undefined): Partial<Authen
   }
 };
 
-export const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
-  const bearer = parseBearerDevelopmentToken(req.header("authorization"));
-  const id = String(req.header("x-user-id") || bearer.id || "").trim();
-  if (!id) {
-    res.status(401).json({
-      error:
-        "Authentication required. Send X-User-Id and X-User-Handle from the current signed-in session.",
-    });
-    return;
+let remoteJwks: unknown;
+
+const verifyBearerJwt = async (header: string | undefined): Promise<Partial<AuthenticatedUser>> => {
+  if (!header || !header.startsWith("Bearer ")) return {};
+  const token = header.slice("Bearer ".length).trim();
+  if (!token) return {};
+
+  const jose = await importJose();
+  const verifyOptions: Record<string, unknown> = {};
+  if (process.env.AUTH_JWT_ISSUER) verifyOptions.issuer = process.env.AUTH_JWT_ISSUER;
+  if (process.env.AUTH_JWT_AUDIENCE) verifyOptions.audience = process.env.AUTH_JWT_AUDIENCE;
+
+  let verification;
+  if (process.env.AUTH_JWKS_URL) {
+    if (!remoteJwks) {
+      remoteJwks = jose.createRemoteJWKSet(new URL(process.env.AUTH_JWKS_URL));
+    }
+    verification = await jose.jwtVerify(token, remoteJwks, verifyOptions);
+  } else if (process.env.AUTH_JWT_SECRET) {
+    verification = await jose.jwtVerify(token, new TextEncoder().encode(process.env.AUTH_JWT_SECRET), verifyOptions);
+  } else if (allowDevelopmentHeaders()) {
+    return parseBearerDevelopmentToken(header);
+  } else {
+    throw new Error("Authentication verifier is not configured for production.");
   }
 
-  req.user = {
+  const payload = verification.payload || {};
+  const appMetadata =
+    payload.app_metadata && typeof payload.app_metadata === "object"
+      ? (payload.app_metadata as Record<string, unknown>)
+      : {};
+  const userMetadata =
+    payload.user_metadata && typeof payload.user_metadata === "object"
+      ? (payload.user_metadata as Record<string, unknown>)
+      : {};
+  const id = String(payload.sub || payload.user_id || payload.id || "").trim();
+  return {
     id,
-    handle: normalizeHandle(req.header("x-user-handle") || bearer.handle, `user_${id.slice(0, 8)}`),
-    role: normalizeRole(req.header("x-user-role") || bearer.role),
+    handle: normalizeHandle(
+      payload.preferred_username ||
+        payload.handle ||
+        userMetadata.handle ||
+        payload.email ||
+        (id ? `user_${id.slice(0, 8)}` : "member"),
+      id ? `user_${id.slice(0, 8)}` : "member"
+    ),
+    role: normalizeRole(payload.role || appMetadata.role || userMetadata.role),
   };
-  next();
+};
+
+const authenticateRequest = async (req: Request): Promise<AuthenticatedUser> => {
+  const bearer = await verifyBearerJwt(req.header("authorization"));
+  const allowHeaderFallback = allowDevelopmentHeaders();
+  const id = String((allowHeaderFallback ? req.header("x-user-id") : "") || bearer.id || "").trim();
+  if (!id) {
+    throw new Error("Authentication required.");
+  }
+
+  return {
+    id,
+    handle: normalizeHandle(
+      (allowHeaderFallback ? req.header("x-user-handle") : "") || bearer.handle,
+      `user_${id.slice(0, 8)}`
+    ),
+    role: normalizeRole((allowHeaderFallback ? req.header("x-user-role") : "") || bearer.role),
+  };
+};
+
+export const requireAuth = (req: Request, res: Response, next: NextFunction): void => {
+  authenticateRequest(req)
+    .then((user) => {
+      req.user = user;
+      next();
+    })
+    .catch((error) => {
+      const message = error instanceof Error ? error.message : "Authentication required.";
+      res.status(message.includes("not configured") ? 500 : 401).json({
+        error:
+          message === "Authentication required."
+            ? "Authentication required. Send a verified Bearer token, or enable development auth headers outside production."
+            : message,
+      });
+    });
 };
 
 export const requireAdmin = (req: Request, res: Response, next: NextFunction): void => {

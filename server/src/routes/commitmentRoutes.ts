@@ -2,7 +2,7 @@ import { Router } from "express";
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { z } from "zod";
 import { prisma } from "../db/prisma";
-import { requireAuth, type AuthenticatedUser } from "../middleware/auth";
+import { requireAdmin, requireAuth, type AuthenticatedUser } from "../middleware/auth";
 import { appendAuditEvent, buildAuditPackage, createMerkleCheckpoint } from "../services/auditLog";
 import { contentHash, signJws } from "../services/cryptoSigning";
 import { reserveProofUpload } from "../services/storage";
@@ -11,10 +11,14 @@ import {
   beliefStateSchema,
   createDeliberationSchema,
   createSessionSchema,
+  disputeResolutionSchema,
   disputeSchema,
   finalizeSessionSchema,
   pledgeSignatureSchema,
+  privacyTombstoneSchema,
+  proofReviewSchema,
   proofSubmissionSchema,
+  proofUploadReservationSchema,
   reserveDeliberationSchema,
 } from "../schemas/commitments";
 
@@ -71,9 +75,15 @@ const handleRouteError = (res: import("express").Response, error: unknown): void
   const status =
     message.includes("not found") || message.includes("No ")
       ? 404
-      : message.includes("already submitted") || message.includes("already exists")
-        ? 409
-        : 500;
+      : message.includes("Admin access")
+        ? 403
+        : message.includes("required") || message.includes("requires")
+          ? 400
+          : message.includes("sealed until") || message.includes("already submitted") || message.includes("already exists")
+            ? 409
+            : message.includes("not configured")
+              ? 500
+              : 500;
   res.status(status).json({ error: message });
 };
 
@@ -106,6 +116,46 @@ const getDeliberationForUser = async (tx: Tx, deliberationId: string, userId: st
   const participates = deliberation.createdById === userId || deliberation.participants.some((row) => row.userId === userId);
   if (!participates) throw new Error("Deliberation not found for this user.");
   return deliberation;
+};
+
+const assertCanReadAuditObject = async (
+  db: PrismaClient,
+  actor: AuthenticatedUser,
+  objectType: string,
+  objectId: string
+): Promise<void> => {
+  if (actor.role === "admin") return;
+
+  if (objectType === "commitment") {
+    const row = await db.commitment.findFirst({ where: { id: objectId, userId: actor.id }, select: { id: true } });
+    if (row) return;
+  } else if (objectType === "belief_state") {
+    const row = await db.beliefState.findFirst({ where: { id: objectId, userId: actor.id }, select: { id: true } });
+    if (row) return;
+  } else if (objectType === "proof_submission") {
+    const row = await db.proofSubmission.findFirst({ where: { id: objectId, userId: actor.id }, select: { id: true } });
+    if (row) return;
+  } else if (objectType === "deliberation") {
+    const row = await db.deliberation.findFirst({
+      where: { id: objectId, OR: [{ createdById: actor.id }, { participants: { some: { userId: actor.id } } }] },
+      select: { id: true },
+    });
+    if (row) return;
+  } else if (objectType === "session") {
+    const row = await db.session.findFirst({
+      where: { id: objectId, deliberation: { participants: { some: { userId: actor.id } } } },
+      select: { id: true },
+    });
+    if (row) return;
+  } else if (objectType === "pledge_signature") {
+    const row = await db.pledgeSignature.findFirst({ where: { id: objectId, userId: actor.id }, select: { id: true } });
+    if (row) return;
+  } else if (objectType === "dispute") {
+    const row = await db.dispute.findFirst({ where: { id: objectId, filedById: actor.id }, select: { id: true } });
+    if (row) return;
+  }
+
+  throw new Error("Audit object not found for this user.");
 };
 
 const buildActionPlan = (
@@ -474,6 +524,7 @@ export const createCommitmentRouter = (db: PrismaClient = prisma): Router => {
         if (submittedCount < expectedCount && new Date() < timerExpiresAt) {
           throw new Error("Belief states remain sealed until both participants submit or the timer expires.");
         }
+        await tx.beliefState.updateMany({ where: { sessionId: session.id }, data: { sealed: false } });
         await tx.session.update({ where: { id: session.id }, data: { status: "FINALIZED", actualEnd: new Date() } });
 
         const shouldActivate = Number(beliefState.credence) > 0.5;
@@ -554,15 +605,50 @@ export const createCommitmentRouter = (db: PrismaClient = prisma): Router => {
     }
   });
 
+  router.post("/:id/proofs/upload-url", async (req, res) => {
+    try {
+      const actor = requireRequestUser(req);
+      const body = parseOrThrow(proofUploadReservationSchema, req.body);
+      const fileName = body.fileName || body.file_name || "proof";
+      const contentType = body.contentType || body.content_type || "application/octet-stream";
+      const contentHashValue = body.contentHash || body.content_hash || null;
+      const reservation = await reserveProofUpload(req.params.id, fileName, contentType);
+      const result = await db.$transaction(async (tx) => {
+        const user = await ensureUser(tx, actor);
+        const commitment = await tx.commitment.findFirst({ where: { id: req.params.id, userId: user.id } });
+        if (!commitment) throw new Error("Commitment not found.");
+        const auditEvent = await appendAuditEvent(tx, {
+          objectType: "commitment",
+          objectId: commitment.id,
+          eventType: "proof_upload_reserved",
+          payload: {
+            commitmentId: commitment.id,
+            storageKey: reservation.storageKey,
+            storageProvider: reservation.storageProvider,
+            configured: reservation.configured,
+            contentHash: contentHashValue,
+            metadata: body.metadata as Prisma.InputJsonObject,
+          },
+        });
+        return { reservation, auditEvent };
+      });
+      sendJson(res.status(201), result);
+    } catch (error) {
+      handleRouteError(res, error);
+    }
+  });
+
   router.post("/:id/proofs", async (req, res) => {
     try {
       const actor = requireRequestUser(req);
       const body = parseOrThrow(proofSubmissionSchema, req.body);
       const proofType = body.proofType || body.proof_type || "weekly_attestation";
+      const contentHashValue = body.contentHash || body.content_hash || null;
+      const redactionMetadata = body.redactionMetadata || body.redaction_metadata || null;
       const storageKey =
         body.storageKey ||
         body.storage_key ||
-        reserveProofUpload(req.params.id, body.fileName || body.file_name || "proof").storageKey;
+        (await reserveProofUpload(req.params.id, body.fileName || body.file_name || "proof")).storageKey;
       const result = await db.$transaction(async (tx) => {
         const user = await ensureUser(tx, actor);
         const commitment = await tx.commitment.findFirst({ where: { id: req.params.id, userId: user.id } });
@@ -574,17 +660,71 @@ export const createCommitmentRouter = (db: PrismaClient = prisma): Router => {
             proofType,
             metadata: body.metadata as Prisma.InputJsonObject,
             storageKey,
+            contentHash: contentHashValue,
+            redactionMetadata: redactionMetadata as Prisma.InputJsonObject | undefined,
           },
         });
         const auditEvent = await appendAuditEvent(tx, {
           objectType: "proof_submission",
           objectId: proofSubmission.id,
           eventType: "proof_uploaded",
-          payload: { proofSubmissionId: proofSubmission.id, commitmentId: commitment.id, proofType, storageKey },
+          payload: {
+            proofSubmissionId: proofSubmission.id,
+            commitmentId: commitment.id,
+            proofType,
+            storageKey,
+            contentHash: contentHashValue,
+          },
         });
         return { proofSubmission, auditEvent };
       });
       sendJson(res.status(201), result);
+    } catch (error) {
+      handleRouteError(res, error);
+    }
+  });
+
+  router.post("/:id/proofs/:proofId/review", requireAdmin, async (req, res) => {
+    try {
+      const actor = requireRequestUser(req);
+      const commitmentId = String(req.params.id);
+      const proofId = String(req.params.proofId);
+      const body = parseOrThrow(proofReviewSchema, req.body);
+      const reviewStatus = body.reviewStatus || body.review_status;
+      if (!reviewStatus) throw new Error("review_status is required.");
+      const reviewNote = body.reviewNote || body.review_note || "";
+      const redactionMetadata = body.redactionMetadata || body.redaction_metadata || undefined;
+      const result = await db.$transaction(async (tx) => {
+        const user = await ensureUser(tx, actor);
+        const proofSubmission = await tx.proofSubmission.findFirst({
+          where: { id: proofId, commitmentId },
+        });
+        if (!proofSubmission) throw new Error("Proof submission not found.");
+        const reviewedProof = await tx.proofSubmission.update({
+          where: { id: proofSubmission.id },
+          data: {
+            reviewStatus,
+            reviewedById: user.id,
+            reviewedAt: new Date(),
+            reviewNote,
+            redactionMetadata: redactionMetadata as Prisma.InputJsonObject | undefined,
+          },
+        });
+        const auditEvent = await appendAuditEvent(tx, {
+          objectType: "proof_submission",
+          objectId: reviewedProof.id,
+          eventType: "proof_reviewed",
+          payload: {
+            proofSubmissionId: reviewedProof.id,
+            commitmentId,
+            reviewStatus,
+            reviewedById: user.id,
+            redactionMetadata: redactionMetadata as Prisma.InputJsonObject | undefined,
+          },
+        });
+        return { proofSubmission: reviewedProof, auditEvent };
+      });
+      sendJson(res, result);
     } catch (error) {
       handleRouteError(res, error);
     }
@@ -616,6 +756,56 @@ export const createCommitmentRouter = (db: PrismaClient = prisma): Router => {
         return { dispute, auditEvent };
       });
       sendJson(res.status(201), result);
+    } catch (error) {
+      handleRouteError(res, error);
+    }
+  });
+
+  router.post("/disputes/:id/resolve", requireAdmin, async (req, res) => {
+    try {
+      const actor = requireRequestUser(req);
+      const disputeId = String(req.params.id);
+      const body = parseOrThrow(disputeResolutionSchema, req.body);
+      const revokeCommitment = body.revokeCommitment ?? body.revoke_commitment ?? false;
+      const result = await db.$transaction(async (tx) => {
+        const user = await ensureUser(tx, actor);
+        const dispute = await tx.dispute.findUnique({ where: { id: disputeId } });
+        if (!dispute) throw new Error("Dispute not found.");
+        const resolution = body.resolution as Prisma.InputJsonObject;
+        const updatedDispute = await tx.dispute.update({
+          where: { id: dispute.id },
+          data: {
+            status: body.status,
+            resolution,
+            reviewedById: user.id,
+            resolvedAt: new Date(),
+          },
+        });
+        let commitment = null;
+        if (dispute.targetType === "commitment") {
+          commitment = await tx.commitment.update({
+            where: { id: dispute.targetId },
+            data: revokeCommitment
+              ? { status: "REVOKED", revokedAt: new Date(), reviewNote: JSON.stringify(resolution) }
+              : { status: body.status === "REJECTED" ? "PENDING" : "UNDER_REVIEW", reviewedAt: new Date(), reviewNote: JSON.stringify(resolution) },
+          });
+        }
+        const auditEvent = await appendAuditEvent(tx, {
+          objectType: "dispute",
+          objectId: updatedDispute.id,
+          eventType: "review_resolved",
+          payload: {
+            disputeId: updatedDispute.id,
+            targetType: updatedDispute.targetType,
+            targetId: updatedDispute.targetId,
+            status: updatedDispute.status,
+            reviewedById: user.id,
+            revokeCommitment,
+          },
+        });
+        return { dispute: updatedDispute, commitment, auditEvent };
+      });
+      sendJson(res, result);
     } catch (error) {
       handleRouteError(res, error);
     }
@@ -655,8 +845,73 @@ export const createCommitmentRouter = (db: PrismaClient = prisma): Router => {
     }
   });
 
+  router.post("/privacy/tombstone", async (req, res) => {
+    try {
+      const actor = requireRequestUser(req);
+      const body = parseOrThrow(privacyTombstoneSchema, req.body);
+      const objectType = body.objectType || body.object_type;
+      const objectId = body.objectId || body.object_id || actor.id;
+      if (!objectType) throw new Error("object_type is required.");
+      const result = await db.$transaction(async (tx) => {
+        const user = await ensureUser(tx, actor);
+        const isOwnUserRecord = objectType === "user" && objectId === user.id;
+        if (!isOwnUserRecord && user.role !== "ADMIN") {
+          throw new Error("Admin access required for tombstoning another object.");
+        }
+        const tombstone = await tx.privacyTombstone.create({
+          data: {
+            objectType,
+            objectId,
+            requestedById: user.id,
+            reason: body.reason,
+          },
+        });
+        if (objectType === "user") {
+          await tx.user.update({ where: { id: objectId }, data: { deletedAt: new Date(), tombstoneReason: body.reason } });
+        } else if (objectType === "deliberation") {
+          await tx.deliberation.update({
+            where: { id: objectId },
+            data: { contentDeletedAt: new Date(), privacyTombstonedAt: new Date(), propositionText: "[tombstoned]" },
+          });
+        } else if (objectType === "belief_state") {
+          await tx.beliefState.update({
+            where: { id: objectId },
+            data: {
+              contentDeletedAt: new Date(),
+              strongestArgumentHeard: "[tombstoned]",
+              strongestReplyOrConcession: "[tombstoned]",
+              rationale: { tombstoned: true, reason: body.reason },
+            },
+          });
+        } else if (objectType === "commitment") {
+          await tx.commitment.update({
+            where: { id: objectId },
+            data: { contentDeletedAt: new Date(), privacyTombstonedAt: new Date(), actionPlan: { tombstoned: true, reason: body.reason } },
+          });
+        } else if (objectType === "proof_submission") {
+          await tx.proofSubmission.update({
+            where: { id: objectId },
+            data: { metadata: { tombstoned: true, reason: body.reason }, storageKey: null, redactionMetadata: { tombstoned: true } },
+          });
+        }
+        const auditEvent = await appendAuditEvent(tx, {
+          objectType: "privacy_tombstone",
+          objectId: tombstone.id,
+          eventType: "privacy_tombstone_applied",
+          payload: { tombstoneId: tombstone.id, objectType, objectId, requestedById: user.id, reason: body.reason },
+        });
+        return { tombstone, auditEvent };
+      });
+      sendJson(res.status(201), result);
+    } catch (error) {
+      handleRouteError(res, error);
+    }
+  });
+
   router.get("/audit/:objectType/:id", async (req, res) => {
     try {
+      const actor = requireRequestUser(req);
+      await assertCanReadAuditObject(db, actor, req.params.objectType, req.params.id);
       const auditPackage = await buildAuditPackage(db, req.params.objectType, req.params.id);
       sendJson(res, auditPackage);
     } catch (error) {
@@ -664,7 +919,7 @@ export const createCommitmentRouter = (db: PrismaClient = prisma): Router => {
     }
   });
 
-  router.post("/audit/checkpoints", async (_req, res) => {
+  router.post("/audit/checkpoints", requireAdmin, async (_req, res) => {
     try {
       const checkpoint = await createMerkleCheckpoint(db);
       sendJson(res.status(checkpoint ? 201 : 200), { checkpoint });
@@ -673,7 +928,7 @@ export const createCommitmentRouter = (db: PrismaClient = prisma): Router => {
     }
   });
 
-  router.post("/audit/timestamps", async (_req, res) => {
+  router.post("/audit/timestamps", requireAdmin, async (_req, res) => {
     try {
       const result = await timestampPendingCheckpoints(db);
       sendJson(res, result);
