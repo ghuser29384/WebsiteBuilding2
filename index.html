@@ -1154,6 +1154,15 @@
                 <label class="check-row"><input id="highStakePrincipleChangeInput" name="highStakePrincipleChange" type="checkbox"> Principle-level change</label>
                 <label class="check-row"><input id="highStakeBackgroundChangeInput" name="highStakeBackgroundChange" type="checkbox"> Background-theory change</label>
               </fieldset>
+              <label class="field-row" for="highStakeTranscriptInput">
+                Private transcript excerpt or session notes (optional)
+                <textarea
+                  id="highStakeTranscriptInput"
+                  name="highStakeTranscript"
+                  rows="3"
+                  placeholder="Add only the excerpt needed for the audit record or later review."
+                ></textarea>
+              </label>
               <label class="field-row checkbox-row" for="highStakeIndependentSubmitConfirm">
                 <input id="highStakeIndependentSubmitConfirm" name="highStakeIndependentSubmitConfirm" type="checkbox" required>
                 I am submitting this post-session belief update independently; it is recorded as sealed until both participants submit or the timer expires.
@@ -1533,6 +1542,19 @@
       </div>
       <p class="hint">Every rule-triggered conviction appears here as a 12-month commitment. Each month requires a proof upload before completion, and users can request review for coercion, ambiguity, fraud, impossibility, or prospective revocation.</p>
       <div id="ledgerList" class="ledger-list"></div>
+    </section>
+
+    <section id="commitment-admin" class="section reveal">
+      <div class="section-head ledger-head">
+        <div>
+          <p class="eyebrow">Reviewer Console</p>
+          <h2>Commitment Review</h2>
+        </div>
+        <button id="adminLoadBtn" class="btn btn-ghost" type="button">Load Review Queue</button>
+      </div>
+      <p id="adminStatus" class="status-line" role="status" aria-live="polite"></p>
+      <div id="adminHealthSummary" class="admin-health-grid" aria-live="polite"></div>
+      <div id="adminReviewQueue" class="admin-review-queue"></div>
     </section>
 
     <section class="section reveal">

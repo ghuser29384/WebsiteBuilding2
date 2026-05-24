@@ -5,6 +5,7 @@ import { prisma } from "../db/prisma";
 import { requireAdmin, requireAuth, type AuthenticatedUser } from "../middleware/auth";
 import { appendAuditEvent, buildAuditPackage, createMerkleCheckpoint } from "../services/auditLog";
 import { contentHash, signJws } from "../services/cryptoSigning";
+import { recordCommitmentMetric } from "../services/monitoring";
 import { reserveProofUpload } from "../services/storage";
 import { timestampPendingCheckpoints } from "../services/tsa";
 import {
@@ -20,6 +21,7 @@ import {
   proofSubmissionSchema,
   proofUploadReservationSchema,
   reserveDeliberationSchema,
+  transcriptChunkSchema,
 } from "../schemas/commitments";
 
 type Tx = Prisma.TransactionClient;
@@ -67,6 +69,7 @@ const parseOrThrow = <T>(schema: z.ZodType<T>, body: unknown): T => {
 
 const handleRouteError = (res: import("express").Response, error: unknown): void => {
   if (error instanceof z.ZodError) {
+    recordCommitmentMetric("route_error", { status: 400, error: "Invalid request body." });
     res.status(400).json({ error: "Invalid request body.", issues: error.issues });
     return;
   }
@@ -84,6 +87,7 @@ const handleRouteError = (res: import("express").Response, error: unknown): void
             : message.includes("not configured")
               ? 500
               : 500;
+  recordCommitmentMetric("route_error", { status, error: message });
   res.status(status).json({ error: message });
 };
 
@@ -144,6 +148,18 @@ const assertCanReadAuditObject = async (
   } else if (objectType === "session") {
     const row = await db.session.findFirst({
       where: { id: objectId, deliberation: { participants: { some: { userId: actor.id } } } },
+      select: { id: true },
+    });
+    if (row) return;
+  } else if (objectType === "session_transcript_chunk") {
+    const row = await db.sessionTranscriptChunk.findFirst({
+      where: {
+        id: objectId,
+        OR: [
+          { userId: actor.id },
+          { session: { deliberation: { participants: { some: { userId: actor.id } } } } },
+        ],
+      },
       select: { id: true },
     });
     if (row) return;
@@ -407,6 +423,69 @@ export const createCommitmentRouter = (db: PrismaClient = prisma): Router => {
           payload: { sessionId: session.id, deliberationId, scheduledStart: session.scheduledStart?.toISOString() || null },
         });
         return { session, auditEvent };
+      });
+      sendJson(res.status(201), result);
+    } catch (error) {
+      handleRouteError(res, error);
+    }
+  });
+
+  router.post("/sessions/:id/transcript-chunks", async (req, res) => {
+    try {
+      const actor = requireRequestUser(req);
+      const body = parseOrThrow(transcriptChunkSchema, req.body);
+      const speakerLabel = body.speakerLabel || body.speaker_label || actor.handle;
+      const result = await db.$transaction(async (tx) => {
+        const user = await ensureUser(tx, actor);
+        const session = await tx.session.findUnique({
+          where: { id: req.params.id },
+          include: { deliberation: { include: { participants: true } } },
+        });
+        if (!session) throw new Error("Session not found.");
+        const participates = session.deliberation.participants.some((participant) => participant.userId === user.id);
+        if (!participates) throw new Error("Session not found for this user.");
+        const nextChunkIndex =
+          body.chunkIndex ?? body.chunk_index ??
+          (await tx.sessionTranscriptChunk.count({ where: { sessionId: session.id, userId: user.id } }));
+        const payload: Prisma.InputJsonObject = {
+          sessionId: session.id,
+          deliberationId: session.deliberationId,
+          userId: user.id,
+          chunkIndex: nextChunkIndex,
+          speakerLabel,
+          text: body.text,
+          visibility: body.visibility || "private_to_participants",
+        };
+        const hash = contentHash(payload);
+        const signatureJws = await signJws({
+          objectType: "session_transcript_chunk",
+          objectId: session.id,
+          eventType: "transcript_chunk_recorded",
+          canonicalHash: hash,
+        });
+        const transcriptChunk = await tx.sessionTranscriptChunk.create({
+          data: {
+            sessionId: session.id,
+            userId: user.id,
+            chunkIndex: nextChunkIndex,
+            speakerLabel,
+            text: body.text,
+            visibility: body.visibility || "private_to_participants",
+            contentHash: hash,
+            signatureJws,
+          },
+        });
+        const auditEvent = await appendAuditEvent(tx, {
+          objectType: "session_transcript_chunk",
+          objectId: transcriptChunk.id,
+          eventType: "transcript_chunk_recorded",
+          payload: {
+            transcriptChunkId: transcriptChunk.id,
+            ...payload,
+            contentHash: hash,
+          },
+        });
+        return { transcriptChunk, auditEvent };
       });
       sendJson(res.status(201), result);
     } catch (error) {
@@ -893,6 +972,11 @@ export const createCommitmentRouter = (db: PrismaClient = prisma): Router => {
             where: { id: objectId },
             data: { metadata: { tombstoned: true, reason: body.reason }, storageKey: null, redactionMetadata: { tombstoned: true } },
           });
+        } else if (objectType === "session_transcript_chunk") {
+          await tx.sessionTranscriptChunk.update({
+            where: { id: objectId },
+            data: { text: "[tombstoned]", visibility: "redacted_audit_only" },
+          });
         }
         const auditEvent = await appendAuditEvent(tx, {
           objectType: "privacy_tombstone",
@@ -903,6 +987,95 @@ export const createCommitmentRouter = (db: PrismaClient = prisma): Router => {
         return { tombstone, auditEvent };
       });
       sendJson(res.status(201), result);
+    } catch (error) {
+      handleRouteError(res, error);
+    }
+  });
+
+  router.get("/admin/health", requireAdmin, async (_req, res) => {
+    try {
+      const [latestEvent, latestCheckpoint, pendingProofCount, openDisputeCount, untimestampedCheckpointCount] =
+        await Promise.all([
+          db.auditEvent.findFirst({ orderBy: { sequence: "desc" } }),
+          db.auditCheckpoint.findFirst({ orderBy: { createdAt: "desc" }, include: { timestamp: true } }),
+          db.proofSubmission.count({ where: { reviewStatus: { in: ["SUBMITTED", "NEEDS_REDACTION"] } } }),
+          db.dispute.count({ where: { status: { in: ["OPEN", "UNDER_REVIEW"] } } }),
+          db.auditCheckpoint.count({ where: { timestamp: null } }),
+        ]);
+      const health = {
+        config: {
+          jwsConfigured: Boolean(process.env.COMMITMENT_JWS_SECRET),
+          storageConfigured: Boolean(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.SUPABASE_PROOF_BUCKET),
+          tsaConfigured: Boolean(process.env.TSA_URL),
+          tsaVerificationConfigured: Boolean(process.env.TSA_CA_FILE || process.env.TSA_CA_PEM),
+          structuredLogsEnabled: process.env.COMMITMENT_STRUCTURED_LOGS !== "false",
+        },
+        queues: {
+          pendingProofCount,
+          openDisputeCount,
+          untimestampedCheckpointCount,
+        },
+        latestEvent: latestEvent
+          ? {
+              id: latestEvent.id,
+              sequence: latestEvent.sequence.toString(),
+              eventType: latestEvent.eventType,
+              objectType: latestEvent.objectType,
+              createdAt: latestEvent.createdAt.toISOString(),
+            }
+          : null,
+        latestCheckpoint: latestCheckpoint
+          ? {
+              id: latestCheckpoint.id,
+              toSequence: latestCheckpoint.toSequence.toString(),
+              treeSize: latestCheckpoint.treeSize,
+              rootHash: latestCheckpoint.rootHash,
+              timestamped: Boolean(latestCheckpoint.timestamp),
+              createdAt: latestCheckpoint.createdAt.toISOString(),
+            }
+          : null,
+      };
+      recordCommitmentMetric("admin_health_checked", {
+        pendingProofCount,
+        openDisputeCount,
+        untimestampedCheckpointCount,
+      });
+      sendJson(res, { health });
+    } catch (error) {
+      handleRouteError(res, error);
+    }
+  });
+
+  router.get("/admin/review-queue", requireAdmin, async (_req, res) => {
+    try {
+      const [proofSubmissions, disputes] = await Promise.all([
+        db.proofSubmission.findMany({
+          where: { reviewStatus: { in: ["SUBMITTED", "NEEDS_REDACTION"] } },
+          include: {
+            user: { select: { id: true, handle: true } },
+            commitment: {
+              select: {
+                id: true,
+                userId: true,
+                actionPlan: true,
+                commitmentHash: true,
+                status: true,
+                privacyLevel: true,
+                proofModesAllowed: true,
+              },
+            },
+          },
+          orderBy: { submittedAt: "asc" },
+          take: 50,
+        }),
+        db.dispute.findMany({
+          where: { status: { in: ["OPEN", "UNDER_REVIEW"] } },
+          include: { filedBy: { select: { id: true, handle: true } } },
+          orderBy: { filedAt: "asc" },
+          take: 50,
+        }),
+      ]);
+      sendJson(res, { proofSubmissions, disputes });
     } catch (error) {
       handleRouteError(res, error);
     }

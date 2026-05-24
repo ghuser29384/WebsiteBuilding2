@@ -1,6 +1,7 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { auditLeafHash, merkleInclusionProof, merkleRoot } from "./merkle";
 import { canonicalJson, contentHash, signJws } from "./cryptoSigning";
+import { recordCommitmentMetric } from "./monitoring";
 
 type TransactionClient = Prisma.TransactionClient | PrismaClient;
 
@@ -24,7 +25,7 @@ export const appendAuditEvent = async (
     canonicalHash,
   });
 
-  return tx.auditEvent.create({
+  const event = await tx.auditEvent.create({
     data: {
       objectType: input.objectType,
       objectId: input.objectId,
@@ -35,6 +36,13 @@ export const appendAuditEvent = async (
       jws,
     },
   });
+  recordCommitmentMetric("audit_event_appended", {
+    eventType: input.eventType,
+    objectType: input.objectType,
+    objectId: input.objectId,
+    canonicalHash,
+  });
+  return event;
 };
 
 export const createMerkleCheckpoint = async (db: PrismaClient) => {
@@ -65,7 +73,7 @@ export const createMerkleCheckpoint = async (db: PrismaClient) => {
     priorCheckpointId: priorCheckpoint?.id || null,
     priorRootHash: priorCheckpoint?.rootHash || null,
   });
-  return db.auditCheckpoint.create({
+  const checkpoint = await db.auditCheckpoint.create({
     data: {
       fromSequence: events[0].sequence,
       toSequence,
@@ -76,6 +84,14 @@ export const createMerkleCheckpoint = async (db: PrismaClient) => {
       checkpointHash,
     },
   });
+  recordCommitmentMetric("audit_checkpoint_created", {
+    checkpointId: checkpoint.id,
+    fromSequence: checkpoint.fromSequence.toString(),
+    toSequence: checkpoint.toSequence.toString(),
+    treeSize: checkpoint.treeSize,
+    rootHash: checkpoint.rootHash,
+  });
+  return checkpoint;
 };
 
 export const buildAuditPackage = async (

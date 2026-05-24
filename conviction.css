@@ -2360,6 +2360,65 @@ body.attendance-modal-open {
   background: rgba(248, 242, 231, 0.55);
 }
 
+.audit-export-status {
+  min-height: 1.15rem;
+  margin: 0.2rem 0 0;
+}
+
+.admin-health-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.56rem;
+  margin-bottom: 0.9rem;
+}
+
+.admin-health-item,
+.admin-review-item {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #fffdfa;
+  padding: 0.68rem;
+}
+
+.admin-health-item p,
+.admin-review-item p {
+  margin: 0;
+}
+
+.admin-health-label,
+.admin-review-meta {
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+}
+
+.admin-health-value {
+  margin-top: 0.18rem;
+  color: var(--ink);
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.admin-review-queue {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.admin-review-section {
+  display: grid;
+  gap: 0.56rem;
+}
+
+.admin-review-section h3 {
+  margin-bottom: 0;
+}
+
+.admin-review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.42rem;
+  margin-top: 0.55rem;
+}
+
 .site-footer {
   border-top: 1px solid rgba(198, 189, 172, 0.72);
   color: var(--ink-soft);
@@ -2484,6 +2543,8 @@ html[data-theme="light"] .progress-era-list li,
 html[data-theme="light"] .counterpart-card,
 html[data-theme="light"] .conviction-item,
 html[data-theme="light"] .ledger-item,
+html[data-theme="light"] .admin-health-item,
+html[data-theme="light"] .admin-review-item,
 html:not([data-theme]) .hero-main,
 html:not([data-theme]) .hero-card,
 html:not([data-theme]) .panel,
@@ -2495,7 +2556,9 @@ html:not([data-theme]) .comparison-metrics p,
 html:not([data-theme]) .progress-era-list li,
 html:not([data-theme]) .counterpart-card,
 html:not([data-theme]) .conviction-item,
-html:not([data-theme]) .ledger-item {
+html:not([data-theme]) .ledger-item,
+html:not([data-theme]) .admin-health-item,
+html:not([data-theme]) .admin-review-item {
   background: #ffffff !important;
   border-color: #dfe6ee !important;
   box-shadow: var(--shadow-sm);
@@ -2829,7 +2892,8 @@ html:not([data-theme]) .normative-inline-dotted {
   .featured-market-prices,
   .progress-metrics,
   .comparison-metrics,
-  .pledge-metrics {
+  .pledge-metrics,
+  .admin-health-grid {
     grid-template-columns: 1fr;
   }
 

@@ -1087,6 +1087,7 @@
     highStakeCaseChangeInput: document.getElementById("highStakeCaseChangeInput"),
     highStakePrincipleChangeInput: document.getElementById("highStakePrincipleChangeInput"),
     highStakeBackgroundChangeInput: document.getElementById("highStakeBackgroundChangeInput"),
+    highStakeTranscriptInput: document.getElementById("highStakeTranscriptInput"),
     highStakeIndependentSubmitConfirm: document.getElementById("highStakeIndependentSubmitConfirm"),
     highStakePromiseBlock: document.getElementById("highStakePromiseBlock"),
     highStakePromisePreview: document.getElementById("highStakePromisePreview"),
@@ -1095,6 +1096,10 @@
     highStakeEndDateInput: document.getElementById("highStakeEndDateInput"),
     highStakeSessionStatus: document.getElementById("highStakeSessionStatus"),
     ledgerList: document.getElementById("ledgerList"),
+    adminLoadBtn: document.getElementById("adminLoadBtn"),
+    adminStatus: document.getElementById("adminStatus"),
+    adminHealthSummary: document.getElementById("adminHealthSummary"),
+    adminReviewQueue: document.getElementById("adminReviewQueue"),
     resetDemoBtn: document.getElementById("resetDemoBtn"),
     statValues: document.querySelectorAll(".stat-value[data-count-to]"),
     deliberationChart: document.getElementById("deliberationChart"),
@@ -1728,6 +1733,9 @@
       el.inviteForm.addEventListener("submit", onInviteSubmit);
     }
     el.sessionForm.addEventListener("submit", onSessionSubmit);
+    if (el.highStakeSessionForm) {
+      el.highStakeSessionForm.addEventListener("submit", onHighStakeSessionSubmit);
+    }
     el.confidenceInput.addEventListener("input", function () {
       updateConfidenceText(el.confidenceInput, el.confidenceValue);
     });
@@ -1889,6 +1897,14 @@
         return;
       }
 
+      const auditButton = event.target.closest("button[data-ledger-audit-export]");
+      if (auditButton) {
+        const auditLedgerId = auditButton.getAttribute("data-ledger-audit-export");
+        if (!auditLedgerId) return;
+        onLedgerAuditExport(auditLedgerId);
+        return;
+      }
+
       const disputeButton = event.target.closest("button[data-ledger-dispute]");
       if (disputeButton) {
         const disputeLedgerId = disputeButton.getAttribute("data-ledger-dispute");
@@ -1921,6 +1937,13 @@
       saveState();
       renderLedger();
     });
+
+    if (el.adminLoadBtn) {
+      el.adminLoadBtn.addEventListener("click", loadAdminReviewConsole);
+    }
+    if (el.adminReviewQueue) {
+      el.adminReviewQueue.addEventListener("click", onAdminReviewAction);
+    }
 
     el.resetDemoBtn.addEventListener("click", function () {
       const storage = getStorageForUser();
@@ -2636,6 +2659,7 @@
     const counterArgument = String(formData.get("highStakeCounterArgument") || "").trim();
     const reply = String(formData.get("highStakeReply") || "").trim();
     const postConfidence = clamp(Number(formData.get("highStakePostConfidence")), 0, 100);
+    const transcriptText = String(formData.get("highStakeTranscript") || "").trim();
     const promiseNote = String(formData.get("highStakePromiseNote") || "").trim();
     const startDate = String(formData.get("highStakeStartDate") || "");
     const endDate = String(formData.get("highStakeEndDate") || "");
@@ -2665,6 +2689,7 @@
       (promiseNote ? " Implementation note: " + promiseNote : "");
 
     let serverSessionResult = null;
+    let serverTranscriptResult = null;
     let serverBeliefResult = null;
     let serverFinalizeResult = null;
     let serverSessionId = "";
@@ -2682,6 +2707,17 @@
       serverSessionId = serverSession && serverSession.id ? String(serverSession.id) : "";
       if (!serverSessionId) {
         throw new Error("Server did not return a session id.");
+      }
+      if (transcriptText) {
+        serverTranscriptResult = await commitmentApiRequest("/sessions/" + encodeURIComponent(serverSessionId) + "/transcript-chunks", {
+          method: "POST",
+          body: {
+            chunk_index: 0,
+            speaker_label: "private_session_notes",
+            text: transcriptText,
+            visibility: "private_to_participants",
+          },
+        });
       }
       serverBeliefResult = await commitmentApiRequest("/sessions/" + encodeURIComponent(serverSessionId) + "/belief-states", {
         method: "POST",
@@ -2724,6 +2760,8 @@
     }
 
     const serverSession = serverSessionResult && serverSessionResult.session ? serverSessionResult.session : null;
+    const serverTranscriptChunk = serverTranscriptResult && serverTranscriptResult.transcriptChunk ? serverTranscriptResult.transcriptChunk : null;
+    const serverTranscriptAuditEvent = serverTranscriptResult && serverTranscriptResult.auditEvent ? serverTranscriptResult.auditEvent : null;
     const serverBeliefState = serverBeliefResult && serverBeliefResult.beliefState ? serverBeliefResult.beliefState : null;
     const serverBeliefAuditEvent = serverBeliefResult && serverBeliefResult.auditEvent ? serverBeliefResult.auditEvent : null;
     const serverCommitment = serverFinalizeResult && serverFinalizeResult.commitment ? serverFinalizeResult.commitment : null;
@@ -2757,6 +2795,13 @@
       reply: reply,
       postConfidence: postConfidence,
       rationale: rationale,
+      transcriptChunk: serverTranscriptChunk
+        ? {
+            id: String(serverTranscriptChunk.id || ""),
+            contentHash: String(serverTranscriptChunk.contentHash || ""),
+            auditEventId: serverTranscriptAuditEvent && serverTranscriptAuditEvent.id ? String(serverTranscriptAuditEvent.id) : "",
+          }
+        : null,
       beliefState: {
         id: beliefStateId,
         credence: postConfidence / 100,
@@ -2833,6 +2878,7 @@
             ? String(serverCommitment.signatureJws)
             : buildLocalSignature("commitment", commitmentHash),
         auditEventIds: [
+          serverTranscriptAuditEvent && serverTranscriptAuditEvent.id ? String(serverTranscriptAuditEvent.id) : "",
           serverBeliefAuditEvent && serverBeliefAuditEvent.id ? String(serverBeliefAuditEvent.id) : "",
           serverCommitmentAuditEvent && serverCommitmentAuditEvent.id ? String(serverCommitmentAuditEvent.id) : "",
         ].filter(Boolean),
@@ -7114,6 +7160,17 @@
         disputeButton.disabled = true;
       }
 
+      const auditButton = document.createElement("button");
+      auditButton.type = "button";
+      auditButton.className = "btn btn-ghost";
+      auditButton.setAttribute("data-ledger-audit-export", normalizedEntry.id);
+      auditButton.textContent = "Export Audit Package";
+
+      const auditStatus = document.createElement("p");
+      auditStatus.className = "hint audit-export-status";
+      auditStatus.setAttribute("data-ledger-audit-status", normalizedEntry.id);
+      auditStatus.textContent = "";
+
       row.appendChild(title);
       row.appendChild(meta);
       row.appendChild(auditLine);
@@ -7127,7 +7184,9 @@
       ledgerActions.className = "ledger-actions";
       ledgerActions.appendChild(button);
       ledgerActions.appendChild(disputeButton);
+      ledgerActions.appendChild(auditButton);
       row.appendChild(ledgerActions);
+      row.appendChild(auditStatus);
       el.ledgerList.appendChild(row);
     });
   }
@@ -7968,6 +8027,250 @@
     renderLedger();
   }
 
+  function setLedgerAuditStatus(ledgerId, text) {
+    if (!el.ledgerList) return;
+    const statusNode = el.ledgerList.querySelector('[data-ledger-audit-status="' + ledgerId + '"]');
+    if (statusNode) {
+      statusNode.textContent = text;
+    }
+  }
+
+  function downloadJsonFile(fileName, payload) {
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(function () {
+      URL.revokeObjectURL(url);
+    }, 0);
+  }
+
+  async function onLedgerAuditExport(ledgerId) {
+    const entry = state.ledger.find(function (row) {
+      return row.id === ledgerId;
+    });
+    if (!entry) return;
+    setLedgerAuditStatus(ledgerId, "Building server audit package...");
+    try {
+      const auditPackage = await commitmentApiRequest("/audit/commitment/" + encodeURIComponent(ledgerId));
+      downloadJsonFile("normativity-commitment-audit-" + ledgerId + ".json", auditPackage);
+      const checkpoint = auditPackage && auditPackage.checkpoint ? auditPackage.checkpoint : null;
+      setLedgerAuditStatus(
+        ledgerId,
+        "Audit package exported" +
+          (checkpoint && checkpoint.rootHash ? " with Merkle root " + truncateMiddle(checkpoint.rootHash, 28) + "." : ".")
+      );
+    } catch (error) {
+      setLedgerAuditStatus(
+        ledgerId,
+        "Audit export failed: " + (error && error.message ? error.message : "unknown error")
+      );
+    }
+  }
+
+  function setAdminStatus(text) {
+    if (el.adminStatus) {
+      el.adminStatus.textContent = text || "";
+    }
+  }
+
+  function renderAdminHealth(health) {
+    if (!el.adminHealthSummary) return;
+    const item = health || {};
+    const config = item.config || {};
+    const queues = item.queues || {};
+    const checkpoint = item.latestCheckpoint || {};
+    const cells = [
+      ["Proof queue", String(queues.pendingProofCount || 0)],
+      ["Open disputes", String(queues.openDisputeCount || 0)],
+      ["Merkle checkpoint", checkpoint.rootHash ? truncateMiddle(checkpoint.rootHash, 26) : "None"],
+      ["TSA", config.tsaConfigured ? (config.tsaVerificationConfigured ? "Configured + verified" : "Configured") : "Missing"],
+    ];
+    el.adminHealthSummary.innerHTML = cells
+      .map(function (cell) {
+        return (
+          '<article class="admin-health-item">' +
+          '<p class="admin-health-label">' +
+          escapeHtml(cell[0]) +
+          "</p>" +
+          '<p class="admin-health-value">' +
+          escapeHtml(cell[1]) +
+          "</p>" +
+          "</article>"
+        );
+      })
+      .join("");
+  }
+
+  function stringifyAdminValue(value) {
+    if (value == null) return "";
+    if (typeof value === "string") return value;
+    try {
+      return JSON.stringify(value);
+    } catch (_error) {
+      return String(value);
+    }
+  }
+
+  function renderAdminReviewQueue(queue) {
+    if (!el.adminReviewQueue) return;
+    const proofSubmissions = Array.isArray(queue && queue.proofSubmissions) ? queue.proofSubmissions : [];
+    const disputes = Array.isArray(queue && queue.disputes) ? queue.disputes : [];
+    const proofRows = proofSubmissions.length
+      ? proofSubmissions
+          .map(function (proof) {
+            const commitment = proof.commitment || {};
+            const metadata = proof.metadata || {};
+            return (
+              '<article class="admin-review-item">' +
+              "<p><strong>Proof " +
+              escapeHtml(truncateMiddle(proof.id || "", 30)) +
+              "</strong></p>" +
+              '<p class="admin-review-meta">Commitment ' +
+              escapeHtml(truncateMiddle(commitment.id || proof.commitmentId || "", 28)) +
+              " | " +
+              escapeHtml(proof.reviewStatus || "SUBMITTED") +
+              " | " +
+              escapeHtml(formatDate(proof.submittedAt)) +
+              "</p>" +
+              "<p>" +
+              escapeHtml(truncateText(stringifyAdminValue(metadata), 180)) +
+              "</p>" +
+              '<div class="admin-review-actions">' +
+              '<button class="btn btn-secondary" type="button" data-admin-proof-id="' +
+              escapeHtml(proof.id || "") +
+              '" data-admin-proof-commitment-id="' +
+              escapeHtml(commitment.id || proof.commitmentId || "") +
+              '" data-admin-proof-status="ACCEPTED">Accept</button>' +
+              '<button class="btn btn-ghost" type="button" data-admin-proof-id="' +
+              escapeHtml(proof.id || "") +
+              '" data-admin-proof-commitment-id="' +
+              escapeHtml(commitment.id || proof.commitmentId || "") +
+              '" data-admin-proof-status="NEEDS_REDACTION">Needs Redaction</button>' +
+              '<button class="btn btn-ghost" type="button" data-admin-proof-id="' +
+              escapeHtml(proof.id || "") +
+              '" data-admin-proof-commitment-id="' +
+              escapeHtml(commitment.id || proof.commitmentId || "") +
+              '" data-admin-proof-status="REJECTED">Reject</button>' +
+              "</div>" +
+              "</article>"
+            );
+          })
+          .join("")
+      : '<article class="mini-summary">No proof submissions need review.</article>';
+    const disputeRows = disputes.length
+      ? disputes
+          .map(function (dispute) {
+            return (
+              '<article class="admin-review-item">' +
+              "<p><strong>Dispute " +
+              escapeHtml(truncateMiddle(dispute.id || "", 30)) +
+              "</strong></p>" +
+              '<p class="admin-review-meta">' +
+              escapeHtml(dispute.targetType || "") +
+              " " +
+              escapeHtml(truncateMiddle(dispute.targetId || "", 28)) +
+              " | " +
+              escapeHtml(dispute.disputeType || "") +
+              " | " +
+              escapeHtml(dispute.status || "OPEN") +
+              "</p>" +
+              '<div class="admin-review-actions">' +
+              '<button class="btn btn-secondary" type="button" data-admin-dispute-id="' +
+              escapeHtml(dispute.id || "") +
+              '" data-admin-dispute-status="RESOLVED" data-admin-dispute-revoke="false">Resolve</button>' +
+              '<button class="btn btn-ghost" type="button" data-admin-dispute-id="' +
+              escapeHtml(dispute.id || "") +
+              '" data-admin-dispute-status="RESOLVED" data-admin-dispute-revoke="true">Revoke Commitment</button>' +
+              '<button class="btn btn-ghost" type="button" data-admin-dispute-id="' +
+              escapeHtml(dispute.id || "") +
+              '" data-admin-dispute-status="REJECTED" data-admin-dispute-revoke="false">Reject</button>' +
+              "</div>" +
+              "</article>"
+            );
+          })
+          .join("")
+      : '<article class="mini-summary">No disputes need review.</article>';
+    el.adminReviewQueue.innerHTML =
+      '<div class="admin-review-section"><h3>Proof Review</h3>' +
+      proofRows +
+      '</div><div class="admin-review-section"><h3>Dispute Review</h3>' +
+      disputeRows +
+      "</div>";
+  }
+
+  async function loadAdminReviewConsole() {
+    setAdminStatus("Loading reviewer console...");
+    try {
+      const healthResult = await commitmentApiRequest("/admin/health");
+      const queueResult = await commitmentApiRequest("/admin/review-queue");
+      renderAdminHealth(healthResult && healthResult.health ? healthResult.health : {});
+      renderAdminReviewQueue(queueResult || {});
+      setAdminStatus("Review queue loaded.");
+    } catch (error) {
+      setAdminStatus(
+        "Reviewer console unavailable: " + (error && error.message ? error.message : "unknown error")
+      );
+      if (el.adminHealthSummary) el.adminHealthSummary.innerHTML = "";
+      if (el.adminReviewQueue) el.adminReviewQueue.innerHTML = "";
+    }
+  }
+
+  async function onAdminReviewAction(event) {
+    const proofButton = event.target.closest("button[data-admin-proof-id]");
+    if (proofButton) {
+      const proofId = proofButton.getAttribute("data-admin-proof-id");
+      const commitmentId = proofButton.getAttribute("data-admin-proof-commitment-id");
+      const reviewStatus = proofButton.getAttribute("data-admin-proof-status");
+      if (!proofId || !commitmentId || !reviewStatus) return;
+      setAdminStatus("Saving proof review...");
+      try {
+        await commitmentApiRequest(
+          "/" + encodeURIComponent(commitmentId) + "/proofs/" + encodeURIComponent(proofId) + "/review",
+          {
+            method: "POST",
+            body: {
+              review_status: reviewStatus,
+              review_note: "Reviewed from the commitment review console.",
+            },
+          }
+        );
+        await loadAdminReviewConsole();
+      } catch (error) {
+        setAdminStatus("Proof review failed: " + (error && error.message ? error.message : "unknown error"));
+      }
+      return;
+    }
+
+    const disputeButton = event.target.closest("button[data-admin-dispute-id]");
+    if (!disputeButton) return;
+    const disputeId = disputeButton.getAttribute("data-admin-dispute-id");
+    const status = disputeButton.getAttribute("data-admin-dispute-status") || "RESOLVED";
+    const revokeCommitment = disputeButton.getAttribute("data-admin-dispute-revoke") === "true";
+    if (!disputeId) return;
+    setAdminStatus("Saving dispute resolution...");
+    try {
+      await commitmentApiRequest("/disputes/" + encodeURIComponent(disputeId) + "/resolve", {
+        method: "POST",
+        body: {
+          status: status,
+          revoke_commitment: revokeCommitment,
+          resolution: {
+            source: "commitment_review_console",
+            note: revokeCommitment ? "Commitment revoked by reviewer." : "Dispute reviewed by reviewer.",
+          },
+        },
+      });
+      await loadAdminReviewConsole();
+    } catch (error) {
+      setAdminStatus("Dispute resolution failed: " + (error && error.message ? error.message : "unknown error"));
+    }
+  }
+
   function createDefaultState() {
     const seededConvictions = mergeSeededDialogueRooms([]);
     return {
@@ -8404,6 +8707,9 @@
     }
     if (el.highStakePromiseNoteInput) {
       el.highStakePromiseNoteInput.value = "";
+    }
+    if (el.highStakeTranscriptInput) {
+      el.highStakeTranscriptInput.value = "";
     }
     [
       el.highStakeCaseChangeInput,

@@ -3,6 +3,7 @@ import { tmpdir } from "os";
 import path from "path";
 import { spawn } from "child_process";
 import type { PrismaClient } from "@prisma/client";
+import { recordCommitmentMetric } from "./monitoring";
 
 const run = (command: string, args: string[]): Promise<void> => {
   return new Promise((resolve, reject) => {
@@ -71,7 +72,10 @@ export const requestRfc3161Timestamp = async (rootHash: string): Promise<Buffer>
 };
 
 export const timestampPendingCheckpoints = async (db: PrismaClient) => {
-  if (!process.env.TSA_URL) return { timestamped: 0, skipped: "TSA_URL is not configured." };
+  if (!process.env.TSA_URL) {
+    recordCommitmentMetric("tsa_timestamp_skipped", { reason: "TSA_URL is not configured." });
+    return { timestamped: 0, skipped: "TSA_URL is not configured." };
+  }
   const verifiesTimestamp = Boolean(process.env.TSA_CA_FILE || process.env.TSA_CA_PEM);
 
   const checkpoints = await db.auditCheckpoint.findMany({
@@ -95,6 +99,11 @@ export const timestampPendingCheckpoints = async (db: PrismaClient) => {
         verifiedAt: verifiesTimestamp ? new Date() : null,
         certificateFingerprint: process.env.TSA_CERT_FINGERPRINT || null,
       },
+    });
+    recordCommitmentMetric("tsa_timestamp_created", {
+      checkpointId: checkpoint.id,
+      rootHash: checkpoint.rootHash,
+      verified: verifiesTimestamp,
     });
     timestamped += 1;
   }

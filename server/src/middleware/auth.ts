@@ -78,12 +78,16 @@ const verifyWithSupabaseUserEndpoint = async (token: string): Promise<Partial<Au
     payload.user_metadata && typeof payload.user_metadata === "object"
       ? (payload.user_metadata as Record<string, unknown>)
       : {};
+  const appMetadata =
+    payload.app_metadata && typeof payload.app_metadata === "object"
+      ? (payload.app_metadata as Record<string, unknown>)
+      : {};
   const id = String(payload.id || "").trim();
   if (!id) return {};
   return {
     id,
     handle: normalizeHandle(metadata.handle || payload.email || `user_${id.slice(0, 8)}`, `user_${id.slice(0, 8)}`),
-    role: normalizeRole(metadata.role || payload.role),
+    role: normalizeRole(appMetadata.role || metadata.role || payload.role),
   };
 };
 

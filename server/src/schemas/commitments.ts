@@ -68,6 +68,18 @@ export const beliefStateSchema = z.object({
   rationale: z.record(z.string(), z.unknown()).default({}),
 });
 
+export const transcriptChunkSchema = z.object({
+  chunkIndex: z.coerce.number().int().min(0).max(10000).optional(),
+  chunk_index: z.coerce.number().int().min(0).max(10000).optional(),
+  speakerLabel: z.string().min(1).max(120).optional(),
+  speaker_label: z.string().min(1).max(120).optional(),
+  text: z.string().min(1).max(12000),
+  visibility: z
+    .enum(["private_to_participants", "private_to_submitter", "redacted_audit_only"])
+    .default("private_to_participants")
+    .optional(),
+});
+
 export const finalizeSessionSchema = z.object({
   startsOn: z.string().datetime().optional(),
   starts_on: z.string().datetime().optional(),
@@ -128,8 +140,8 @@ export const disputeResolutionSchema = z.object({
 });
 
 export const privacyTombstoneSchema = z.object({
-  objectType: z.enum(["user", "deliberation", "belief_state", "commitment", "proof_submission", "dispute"]).optional(),
-  object_type: z.enum(["user", "deliberation", "belief_state", "commitment", "proof_submission", "dispute"]).optional(),
+  objectType: z.enum(["user", "deliberation", "belief_state", "commitment", "proof_submission", "session_transcript_chunk", "dispute"]).optional(),
+  object_type: z.enum(["user", "deliberation", "belief_state", "commitment", "proof_submission", "session_transcript_chunk", "dispute"]).optional(),
   objectId: z.string().min(1).max(120).optional(),
   object_id: z.string().min(1).max(120).optional(),
   reason: z.string().min(1).max(1000),

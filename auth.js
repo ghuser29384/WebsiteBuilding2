@@ -199,6 +199,9 @@
     var metadata = record && record.user_metadata && typeof record.user_metadata === "object"
       ? record.user_metadata
       : {};
+    var appMetadata = record && record.app_metadata && typeof record.app_metadata === "object"
+      ? record.app_metadata
+      : {};
     var email = normalizeEmail((record && record.email) || (fallback && fallback.email));
     var handle = normalizeHandle(metadata.handle || (fallback && fallback.handle) || (email ? email.split("@")[0] : ""));
     var now = new Date().toISOString();
@@ -210,6 +213,7 @@
       email: email,
       passwordHash: "supabase-managed",
       provider: "supabase",
+      role: String(appMetadata.role || metadata.role || (fallback && fallback.role) || "user").toLowerCase() === "admin" ? "admin" : "user",
       acceptedTerms: Boolean(metadata.accepted_terms || (fallback && fallback.acceptedTerms)),
       termsVersion: String(metadata.terms_version || TERMS_VERSION),
       acceptedAt: String(metadata.accepted_at || now),

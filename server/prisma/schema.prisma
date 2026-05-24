@@ -72,6 +72,7 @@ model User {
   beliefStates      BeliefState[]
   commitments       Commitment[]
   proofSubmissions  ProofSubmission[]
+  transcriptChunks  SessionTranscriptChunk[]
   disputesFiled     Dispute[]                 @relation("DisputeFiler")
 
   @@index([handle])
@@ -147,6 +148,7 @@ model Session {
   status         SessionStatus @default(SCHEDULED)
   beliefStates   BeliefState[]
   commitments    Commitment[]
+  transcriptChunks SessionTranscriptChunk[]
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
@@ -173,6 +175,26 @@ model BeliefState {
   commitments                Commitment[]
 
   @@unique([sessionId, userId])
+  @@index([contentHash])
+}
+
+model SessionTranscriptChunk {
+  id            String   @id @default(uuid())
+  sessionId     String
+  session       Session  @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  chunkIndex    Int
+  speakerLabel  String
+  text          String
+  visibility    String   @default("private_to_participants")
+  contentHash   String
+  signatureJws  String
+  createdAt     DateTime @default(now())
+
+  @@unique([sessionId, userId, chunkIndex])
+  @@index([sessionId])
+  @@index([userId])
   @@index([contentHash])
 }
 
