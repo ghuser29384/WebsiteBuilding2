@@ -127,31 +127,39 @@ svg {
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
   min-width: 0;
   padding: 0 20px;
   color: var(--green-dark);
   text-decoration: none;
 }
 
-.brand-mark {
-  width: 34px;
-  height: 29px;
+.brand-logo {
+  display: block;
+  width: 242px;
+  height: 50px;
   flex: 0 0 auto;
-  color: var(--green);
-  fill: currentColor;
+  overflow: visible;
   stroke: none;
 }
 
-.brand-name {
-  overflow: hidden;
-  color: var(--green-dark);
-  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
-  font-size: 31px;
-  font-weight: 500;
-  line-height: 1;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.brand-logo .mark-dark {
+  fill: var(--green-dark);
+}
+
+.brand-logo .mark-light {
+  fill: #5f9b75;
+}
+
+.brand-logo .mark-cut {
+  fill: #ffffff;
+}
+
+.brand-logo-text {
+  fill: var(--green-dark);
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 57px;
+  font-weight: 700;
+  letter-spacing: 0;
 }
 
 .top-nav {
@@ -1516,15 +1524,9 @@ svg {
 }
 
 @media (max-width: 640px) {
-  .brand-name {
-    font-size: 23px;
-  }
-
-  .brand-mark {
-    width: 30px;
-    height: 30px;
-    transform: scale(0.86);
-    transform-origin: left center;
+  .brand-logo {
+    width: 185px;
+    height: 40px;
   }
 
   .topbar {
