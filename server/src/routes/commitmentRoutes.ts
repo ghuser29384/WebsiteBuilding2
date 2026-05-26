@@ -5,6 +5,7 @@ import { prisma } from "../db/prisma";
 import { requireAdmin, requireAuth, type AuthenticatedUser } from "../middleware/auth";
 import { appendAuditEvent, buildAuditPackage, createMerkleCheckpoint } from "../services/auditLog";
 import { contentHash, signJws } from "../services/cryptoSigning";
+import { validateCommitmentPayloadSafety } from "../services/commitmentSafety";
 import { recordCommitmentMetric } from "../services/monitoring";
 import { reserveProofUpload } from "../services/storage";
 import { timestampPendingCheckpoints } from "../services/tsa";
@@ -252,6 +253,8 @@ export const createCommitmentRouter = (db: PrismaClient = prisma): Router => {
       const startingCredence = body.startingCredence ?? body.starting_credence ?? 0.5;
       const implicationProfile = body.implicationProfile || body.implication_profile;
       if (!implicationProfile) throw new Error("implication_profile is required.");
+      const safetyCheck = validateCommitmentPayloadSafety(implicationProfile);
+      if (!safetyCheck.ok) throw new Error(safetyCheck.message || "Commitment implication is not allowed.");
       const consentVersion = body.consentVersion || body.consent_version || "dc-v1";
       const privacyLevel = body.privacyLevel || body.privacy_level || "private_to_participants";
       const availabilitySlots = body.availabilitySlots || body.availability_slots || [];
@@ -620,6 +623,8 @@ export const createCommitmentRouter = (db: PrismaClient = prisma): Router => {
         const startDate = startsOn ? new Date(startsOn) : new Date();
         const endDate = endsOn ? new Date(endsOn) : oneYearFrom(startDate);
         const actionPlan = buildActionPlan(deliberation, body.actionPlan || body.action_plan);
+        const safetyCheck = validateCommitmentPayloadSafety(actionPlan);
+        if (!safetyCheck.ok) throw new Error(safetyCheck.message || "Commitment action plan is not allowed.");
         const proofModesAllowed = (actionPlan.proofModesAllowed || ["receipt_log"]) as Prisma.InputJsonValue;
         const payload = {
           sessionId: session.id,

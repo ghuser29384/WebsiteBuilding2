@@ -78,6 +78,14 @@ SUPABASE_PROOF_BUCKET="commitment-proofs"
 SUPABASE_PROOF_UPLOAD_EXPIRES_IN="900"
 ```
 
+## Commitment Safety
+
+The browser blocks unsafe implication profiles before submission, and the commitment API repeats that
+check at the server boundary. Deliberation creation and session finalization reject action templates
+that appear self-harm related, illegal or abusive, medically dangerous, financially predatory, or
+abusive toward another person. This keeps direct API calls aligned with the product rule that
+deliberation commitments are soft platform-native obligations, not coercive external enforcement.
+
 ## Audit and Timestamping
 
 Every commitment write route inserts a domain record and an `AuditEvent` in the same transaction.
