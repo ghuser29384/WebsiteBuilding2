@@ -1979,7 +1979,7 @@
       return !checkbox.checked;
     });
     if (uncheckedRequired) {
-      return { ok: false, error: "Confirm all three pledge commitments before signing." };
+      return { ok: false, error: "Confirm all three pledge commitments before opting in." };
     }
 
     const formData = new FormData(formEl);
@@ -2046,7 +2046,7 @@
 
     const signedAt = applyPledgeSignature(validation.value);
     const successText =
-      validation.value.name + " signed the pledge on " + formatDate(signedAt) + ". Studio unlocked.";
+      validation.value.name + " opted into the pledge on " + formatDate(signedAt) + ". Studio unlocked.";
     if (el.pledgeStatus) {
       el.pledgeStatus.textContent = successText;
     }
@@ -2082,7 +2082,7 @@
 
   function processConvictionSubmission() {
     if (!state.pledge.signed) {
-      formStatus.conviction = "Sign the pledge first to create dialogues.";
+      formStatus.conviction = "Opt in first to create dialogues.";
       renderMatching();
       openPledgeModal({
         pendingAction: "create-dialogue",
@@ -2129,7 +2129,7 @@
       return;
     }
     if (confidence <= 50) {
-      formStatus.conviction = "Dialogue creators must believe the proposition is more likely than not (>50%).";
+      formStatus.conviction = "Dialogue creators need to begin above 50% confidence in the proposition.";
       renderMatching();
       return;
     }
@@ -2194,17 +2194,17 @@
 
   function buildHighStakeClaim(facts, action) {
     const normalizedFacts = normalizeHighStakeFragment(facts).replace(/^if you\b/i, "").trim();
-    const normalizedAction = normalizeHighStakeFragment(action).replace(/^you must\b/i, "").trim();
+    const normalizedAction = normalizeHighStakeFragment(action).replace(/^you (must|should)\b/i, "").trim();
     if (!normalizedFacts && !normalizedAction) {
-      return "If you [facts], you must [action].";
+      return "If you [facts], you should [action].";
     }
     if (!normalizedFacts) {
-      return "If you [facts], you must " + normalizedAction + ".";
+      return "If you [facts], you should " + normalizedAction + ".";
     }
     if (!normalizedAction) {
-      return "If you " + normalizedFacts + ", you must [action].";
+      return "If you " + normalizedFacts + ", you should [action].";
     }
-    return "If you " + normalizedFacts + ", you must " + normalizedAction + ".";
+    return "If you " + normalizedFacts + ", you should " + normalizedAction + ".";
   }
 
   function validateHighStakeComponents(facts, action) {
@@ -2214,13 +2214,13 @@
       return { ok: false, error: "Describe the factual condition that determines who is eligible for this dialogue." };
     }
     if (!normalizedAction) {
-      return { ok: false, error: "Describe the action the eligible person would be required to take." };
+      return { ok: false, error: "Describe the bounded action the eligible person would voluntarily commit to." };
     }
     if (countSentences(normalizedFacts) > 2) {
       return { ok: false, error: "Keep the factual condition concise enough to state as eligibility facts." };
     }
     if (countSentences(normalizedAction) > 3) {
-      return { ok: false, error: "Keep the required action concise enough to state as a single practical commitment." };
+      return { ok: false, error: "Keep the bounded action concise enough to state as a single practical commitment." };
     }
     const safetyCheck = validateCommitmentActionSafety(normalizedAction);
     if (!safetyCheck.ok) {
@@ -2234,7 +2234,7 @@
     return {
       ok: true,
       facts: normalizedFacts.replace(/^if you\b/i, "").trim(),
-      action: normalizedAction.replace(/^you must\b/i, "").trim(),
+      action: normalizedAction.replace(/^you (must|should)\b/i, "").trim(),
       claim: claim,
     };
   }
@@ -2351,7 +2351,7 @@
   async function onHighStakeSubmit(event) {
     event.preventDefault();
     if (!state.pledge.signed) {
-      formStatus.highStakeCreate = "Sign the pledge first to create commitment dialogues.";
+      formStatus.highStakeCreate = "Opt in first to create commitment dialogues.";
       renderHighStakeMatching();
       return;
     }
@@ -2403,7 +2403,7 @@
       return;
     }
     if (confidence <= 50) {
-      formStatus.highStakeCreate = "Commitment dialogue creators must believe the proposition is more likely than not (>50%).";
+      formStatus.highStakeCreate = "Commitment dialogue creators need to begin above 50% confidence in the proposition.";
       renderHighStakeMatching();
       return;
     }
@@ -2520,7 +2520,7 @@
   function onHighStakeReservationSubmit(event) {
     event.preventDefault();
     if (!state.pledge.signed) {
-      formStatus.highStakeReservation = "Sign the pledge first to reserve a commitment dialogue.";
+      formStatus.highStakeReservation = "Opt in first to reserve a commitment dialogue.";
       renderHighStakeMatching();
       return;
     }
@@ -2590,7 +2590,7 @@
       return {
         ok: false,
         error:
-          "Accept the commitment preview before reserving: only your own sealed post-session credence above 50% can trigger your action commitment.",
+          "Accept the commitment preview before reserving: only your own sealed post-session credence above 50% can activate this bounded commitment.",
       };
     }
     if (!availability.length) {
@@ -2637,7 +2637,7 @@
   async function onHighStakeSessionSubmit(event) {
     event.preventDefault();
     if (!state.pledge.signed) {
-      setHighStakeSessionStatus("Sign the pledge first.");
+      setHighStakeSessionStatus("Opt in first.");
       return;
     }
     const activeRoom = getActiveHighStakeRoom();
@@ -2678,13 +2678,13 @@
       return;
     }
     if (postConfidence > 50 && (!startDate || !endDate)) {
-      setHighStakeSessionStatus("Confidence is over 50%, so the one-year commitment dates are required.");
+      setHighStakeSessionStatus("Confidence is over 50%, so choose dates for the bounded one-year commitment.");
       return;
     }
 
     const promiseClaim = buildHighStakeClaim(activeRoom.facts, activeRoom.action);
     const actionPlan =
-      "For one year, act according to this proposition: " +
+      "For one year, follow this bounded commitment: " +
       promiseClaim +
       (promiseNote ? " Implementation note: " + promiseNote : "");
 
@@ -2887,13 +2887,13 @@
         status: "pending",
         createdAt: new Date().toISOString(),
       });
-      setHighStakeSessionStatus("Commitment dialogue logged. Confidence is above 50%, so the one-year commitment with monthly proof uploads is now in your action ledger.");
+      setHighStakeSessionStatus("Commitment dialogue logged. Confidence is above 50%, so the bounded one-year commitment with monthly proof uploads is now in your action ledger.");
     } else if (postConfidence > 50 && finalizePending) {
       setHighStakeSessionStatus("Sealed belief update saved. Commitment activation is pending until both participants submit or the timer expires.");
     } else if (postConfidence > 50) {
       setHighStakeSessionStatus("Sealed belief update saved, but the server did not activate a commitment yet.");
     } else {
-      setHighStakeSessionStatus("Commitment dialogue logged. Confidence is at or below 50%, so no one-year commitment entry was created.");
+      setHighStakeSessionStatus("Commitment dialogue logged. Confidence is at or below 50%, so no commitment entry was created.");
     }
 
     saveState();
@@ -2907,7 +2907,7 @@
   function onReservationSubmit(event) {
     event.preventDefault();
     if (!state.pledge.signed) {
-      formStatus.reservation = "Sign the pledge first to reserve a dialogue.";
+      formStatus.reservation = "Opt in first to reserve a dialogue.";
       renderMatching();
       return;
     }
@@ -3294,7 +3294,7 @@
   function onInviteSubmit(event) {
     event.preventDefault();
     if (!state.pledge.signed) {
-      formStatus.invite = "Sign the pledge first to send invites.";
+      formStatus.invite = "Opt in first to send invites.";
       renderMatching();
       return;
     }
@@ -3343,7 +3343,7 @@
   function onSessionSubmit(event) {
     event.preventDefault();
     if (!state.pledge.signed) {
-      setSessionStatus("Sign the pledge first.");
+      setSessionStatus("Opt in first.");
       return;
     }
     const activeConviction = getActiveConviction();
@@ -3376,7 +3376,7 @@
     }
     if (postConfidence > 50) {
       if (!actionPlan || !startDate) {
-        setSessionStatus("Confidence is over 50%, so a 12-month action plan and start date are required.");
+        setSessionStatus("Confidence is over 50%, so choose a bounded 12-month action plan and start date.");
         return;
       }
     }
@@ -3424,9 +3424,9 @@
         status: "pending",
         createdAt: new Date().toISOString(),
       });
-      setSessionStatus("Dialogue logged. You crossed 50%, so a 12-month commitment with monthly proof uploads is now in your ledger.");
+      setSessionStatus("Dialogue logged. Confidence crossed 50%, so a bounded 12-month commitment with monthly proof uploads is now in your ledger.");
     } else {
-      setSessionStatus("Dialogue logged. Confidence is at or below 50%, so no mandatory action entry was created.");
+      setSessionStatus("Dialogue logged. Confidence is at or below 50%, so no commitment entry was created.");
     }
 
     saveState();
@@ -5927,7 +5927,7 @@
 
     if (el.pledgeChecklistProgress) {
       el.pledgeChecklistProgress.textContent =
-        "Commitments confirmed: " + checkedCount + " / " + totalChecks + " • Profile fields: " + completedDraftFields + " / 4";
+        "Commitments confirmed: " + checkedCount + " / " + totalChecks + " | Detail fields: " + completedDraftFields + " / 4";
     }
 
     if (!el.pledgeMetrics || !el.pledgeRegistryList) return;
@@ -5959,7 +5959,7 @@
     const actionRate = registry.length === 0 ? 0 : Math.round((withActionCount / registry.length) * 100);
     el.pledgeMetrics.innerHTML =
       '<article class="pledge-metric-card">' +
-      '<p class="pledge-metric-label">Total Signatures</p>' +
+      '<p class="pledge-metric-label">Total Opt-Ins</p>' +
       '<p class="pledge-metric-value">' +
       registry.length +
       "</p>" +
@@ -5972,7 +5972,7 @@
       '<p class="pledge-metric-value">' +
       recent30Count +
       "</p>" +
-      '<p class="pledge-metric-sub">Recent pledge signings</p>' +
+      '<p class="pledge-metric-sub">Recent pledge opt-ins</p>' +
       "</article>" +
       '<article class="pledge-metric-card">' +
       '<p class="pledge-metric-label">Focus Diversity</p>' +
@@ -5986,12 +5986,12 @@
       '<p class="pledge-metric-value">' +
       actionRate +
       "%</p>" +
-      '<p class="pledge-metric-sub">Signed pledges with concrete first action</p>' +
+      '<p class="pledge-metric-sub">Opt-ins with a concrete first action</p>' +
       "</article>";
 
     if (registry.length === 0) {
       el.pledgeRegistryList.innerHTML =
-        '<li class="pledge-registry-item"><p class="hint">No signatories yet. Sign the pledge to initialize the registry.</p></li>';
+        '<li class="pledge-registry-item"><p class="hint">No opt-ins yet. Record an opt-in to initialize the registry.</p></li>';
       return;
     }
 
@@ -6033,17 +6033,17 @@
       const focus = state.pledge.focus || "general inquiry";
       const dateLabel = state.pledge.signedAt ? formatDate(state.pledge.signedAt) : "today";
       el.gateBanner.textContent =
-        "Studio unlocked for " + name + " (" + role + "). Focus: " + focus + ". Pledge signed on " + dateLabel + ".";
+        "Studio unlocked for " + name + " (" + role + "). Focus: " + focus + ". Opt-in recorded on " + dateLabel + ".";
       if (el.highStakeGateBanner) {
         el.highStakeGateBanner.textContent =
-          "Deliberation commitments unlocked for " +
+          "Bounded deliberation commitments unlocked for " +
           name +
           " (" +
           role +
           "). Create or reserve only when you meet the factual condition and accept the action trigger preview.";
       }
       if (!el.pledgeStatus.textContent.trim()) {
-        el.pledgeStatus.textContent = name + " signed the pledge on " + dateLabel + ".";
+        el.pledgeStatus.textContent = name + " opted into the pledge on " + dateLabel + ".";
       }
       el.pledgeName.value = state.pledge.name || "";
       if (el.pledgeRole) {
@@ -6056,10 +6056,10 @@
         el.pledgeFirstAction.value = state.pledge.firstAction || "";
       }
     } else {
-      el.gateBanner.textContent = "Browse dialogues below. Sign the pledge to create, reserve, and log dialogue outcomes.";
+      el.gateBanner.textContent = "Browse dialogues below. Opt in to create, reserve, and log dialogue outcomes.";
       if (el.highStakeGateBanner) {
         el.highStakeGateBanner.textContent =
-          "Browse commitment dialogues below. Sign the pledge to create, reserve, and log one-year commitments.";
+          "Browse commitment dialogues below. Opt in to create, reserve, and log bounded commitments.";
       }
       el.pledgeStatus.textContent = "";
     }
@@ -6168,7 +6168,7 @@
     if (!Array.isArray(state.highStakes) || state.highStakes.length === 0) {
       const empty = document.createElement("li");
       empty.className = "mini-summary";
-      empty.textContent = "No commitment dialogues yet. Create one to start eligibility-gated matching.";
+      empty.textContent = "No commitment dialogues yet. Create one to start eligibility-gated matching with safeguards.";
       el.highStakeList.appendChild(empty);
       return;
     }
@@ -6201,7 +6201,7 @@
 
       const action = document.createElement("p");
       action.className = "hint";
-      action.textContent = "Required action: " + truncateText(item.action || "", 140);
+      action.textContent = "Bounded action: " + truncateText(item.action || "", 140);
 
       const audit = document.createElement("p");
       audit.className = "hint";
@@ -6454,7 +6454,7 @@
         escapeHtml(activeRoom.claim) +
         "<br><strong>Eligibility facts:</strong> " +
         escapeHtml(activeRoom.facts) +
-        "<br><strong>Required action:</strong> " +
+        "<br><strong>Bounded action:</strong> " +
         escapeHtml(activeRoom.action) +
         "<br><strong>Visibility:</strong> " +
         escapeHtml(privacyLevelLabel(activeRoom.privacyLevel)) +
@@ -6612,7 +6612,7 @@
       ? activeRoom.proofModesAllowed
       : DEFAULT_COMMITMENT_PROOF_MODES;
     el.highStakeCommitmentPreview.innerHTML =
-      "<strong>Commitment preview:</strong> If your own sealed post-session credence is above 50%, you commit to " +
+      "<strong>Commitment preview:</strong> If your own sealed post-session credence is above 50%, you may commit to " +
       escapeHtml(activeRoom.action || "the stated action") +
       ".<br><strong>Applicability facts:</strong> " +
       escapeHtml(activeRoom.facts || "not listed") +
@@ -6956,7 +6956,7 @@
     if (state.ledger.length === 0) {
       const empty = document.createElement("article");
       empty.className = "mini-summary";
-      empty.textContent = "No action commitments yet. Once post-dialogue confidence goes above 50%, entries appear here.";
+      empty.textContent = "No action commitments yet. If post-dialogue confidence goes above 50% and you activate a bounded plan, entries appear here.";
       el.ledgerList.appendChild(empty);
       return;
     }
@@ -7338,7 +7338,7 @@
     if (triggered) {
       el.thresholdNotice.className = "threshold-note triggered";
       el.thresholdNotice.textContent =
-        "Threshold crossed: because confidence is above 50%, a concrete 12-month action commitment with monthly proof uploads is required.";
+        "Threshold crossed: confidence is above 50%, so you can activate a bounded 12-month commitment with monthly proof uploads.";
       el.actionCommitmentBlock.classList.remove("hidden");
       el.actionPlanInput.required = true;
       el.startDateInput.required = true;
@@ -7349,7 +7349,7 @@
     } else {
       el.thresholdNotice.className = "threshold-note neutral";
       el.thresholdNotice.textContent =
-        "Threshold not crossed: the 12-month commitment and monthly proof uploads activate only if confidence moves above 50%.";
+        "Threshold not crossed: the bounded commitment and monthly proof uploads activate only if confidence moves above 50%.";
       el.actionCommitmentBlock.classList.add("hidden");
       el.actionPlanInput.required = false;
       el.startDateInput.required = false;
@@ -7380,7 +7380,7 @@
     if (triggered) {
       el.highStakeThresholdNotice.className = "threshold-note triggered";
       el.highStakeThresholdNotice.textContent =
-        "Threshold crossed: because confidence is above 50%, you must act according to the proposition for one year and upload proof every month.";
+        "Threshold crossed: confidence is above 50%, so you can activate the bounded one-year commitment and upload monthly proof.";
       el.highStakePromiseBlock.classList.remove("hidden");
       el.highStakeStartDateInput.required = true;
       if (!el.highStakeStartDateInput.value) {
@@ -7394,7 +7394,7 @@
     } else {
       el.highStakeThresholdNotice.className = "threshold-note neutral";
       el.highStakeThresholdNotice.textContent =
-        "Threshold not crossed: the one-year commitment activates only if confidence moves above 50%.";
+        "Threshold not crossed: the bounded one-year commitment activates only if confidence moves above 50%.";
       el.highStakePromiseBlock.classList.add("hidden");
       el.highStakeStartDateInput.required = false;
       el.highStakeEndDateInput.value = "";

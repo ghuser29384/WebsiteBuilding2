@@ -3006,11 +3006,11 @@ html:not([data-theme]) .normative-inline-dotted {
 
 .forethought-intro-inner {
   position: relative;
-  min-height: 680px;
+  min-height: 520px;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   align-items: start;
-  padding: 6.2rem 0 3.8rem;
+  padding: 1rem 0 2.2rem;
 }
 
 .forethought-intro-card {
@@ -3151,6 +3151,161 @@ html:not([data-theme]) .normative-inline-dotted {
   letter-spacing: 0.11em;
   text-transform: uppercase;
   color: #ff5f35;
+}
+
+.intro-cta-row {
+  margin-top: 1.25rem;
+  gap: 0.55rem;
+}
+
+.research-catalogue-section,
+.agenda-section,
+.tools-section,
+.safeguards-section,
+.governance-section {
+  scroll-margin-top: 118px;
+}
+
+.research-card-grid,
+.tool-card-grid,
+.governance-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.research-card,
+.tool-card,
+.governance-card {
+  min-height: 100%;
+  display: grid;
+  align-content: start;
+  gap: 0.42rem;
+}
+
+.research-card p,
+.tool-card p,
+.governance-card p {
+  margin: 0;
+}
+
+.research-card-meta {
+  width: fit-content;
+  border: 1px solid #d5dcd6;
+  background: #eef1ec;
+  color: #4d5650 !important;
+  padding: 0.12rem 0.44rem;
+  border-radius: 6px;
+  font-size: 0.75rem !important;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.research-card a,
+.tool-action-row a,
+.governance-card a {
+  color: #2f3d53;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.research-card a:hover,
+.research-card a:focus-visible,
+.tool-action-row a:hover,
+.tool-action-row a:focus-visible,
+.governance-card a:hover,
+.governance-card a:focus-visible {
+  color: #ff5f35;
+  text-decoration: underline;
+}
+
+.agenda-list {
+  display: grid;
+  gap: 0;
+  border-top: 1px solid #dfe3e1;
+  border-bottom: 1px solid #dfe3e1;
+}
+
+.agenda-item {
+  display: grid;
+  grid-template-columns: 3.2rem minmax(0, 1fr);
+  gap: 1rem;
+  align-items: start;
+  padding: 1.05rem 0;
+  border-bottom: 1px solid #dfe3e1;
+}
+
+.agenda-item:last-child {
+  border-bottom: 0;
+}
+
+.agenda-item span {
+  display: inline-grid;
+  place-items: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border: 1px solid #d8ddd8;
+  border-radius: 50%;
+  color: #ff5f35;
+  font-weight: 700;
+  background: #f7f7f4;
+}
+
+.agenda-item p {
+  margin: 0;
+  color: #303637;
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Garamond, serif;
+  font-size: clamp(1.25rem, 2.25vw, 2rem);
+  line-height: 1.18;
+}
+
+.tool-action-row {
+  margin-top: 0.2rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.38rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.safeguards-section {
+  position: relative;
+  left: 50%;
+  width: 100vw;
+  margin-left: -50vw;
+  margin-right: -50vw;
+  padding: 2.4rem max(1.2rem, calc((100vw - 1160px) / 2)) !important;
+  background: #f7f7f4;
+  border-top: 1px solid #dfe3e1;
+  border-bottom: 1px solid #dfe3e1;
+}
+
+.safeguards-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.safeguard-item {
+  border-left: 2px solid #ff5f35;
+  padding-left: 0.86rem;
+}
+
+.safeguard-item h3 {
+  margin-bottom: 0.36rem;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+  font-size: 1.02rem;
+  font-weight: 700;
+}
+
+.safeguard-item p {
+  margin: 0;
+  color: #59605d;
+}
+
+.governance-card a {
+  margin-top: 0.2rem;
+  width: fit-content;
 }
 
 .forethought-intro-lines {
@@ -3305,8 +3460,8 @@ html:not([data-theme]) .normative-inline-dotted {
 
 @media (max-width: 1100px) {
   .forethought-intro-inner {
-    min-height: 560px;
-    padding-top: 4.8rem;
+    min-height: 490px;
+    padding-top: 1.6rem;
   }
 
   .forethought-intro-card {
@@ -3321,12 +3476,19 @@ html:not([data-theme]) .normative-inline-dotted {
   .research-stack-list {
     font-size: 0.9rem;
   }
+
+  .research-card-grid,
+  .tool-card-grid,
+  .governance-grid,
+  .safeguards-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 860px) {
   .forethought-intro-inner {
     min-height: 0;
-    padding: 2.6rem 0 2rem;
+    padding: 1.4rem 0 1.6rem;
   }
 
   .forethought-intro-card {
@@ -3335,11 +3497,10 @@ html:not([data-theme]) .normative-inline-dotted {
   }
 
   .forethought-intro-lines {
-    position: relative;
-    right: auto;
-    width: calc(100% - 1rem);
-    margin: 1rem auto 0;
-    display: block;
+    display: none;
+    visibility: hidden;
+    width: 0;
+    height: 0;
   }
 
   .research-flow-text text {
@@ -3348,6 +3509,41 @@ html:not([data-theme]) .normative-inline-dotted {
 
   .research-flow-loop {
     font-size: 10px;
+  }
+
+  .intro-cta-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+  }
+
+  .intro-cta-row .btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .intro-cta-row .btn:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .forethought-intro-card .research-portal-card {
+    display: none;
+  }
+
+  .research-card-grid,
+  .tool-card-grid,
+  .governance-grid,
+  .safeguards-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .agenda-item {
+    grid-template-columns: 2.7rem minmax(0, 1fr);
+    gap: 0.7rem;
+  }
+
+  .agenda-item p {
+    font-size: clamp(1.08rem, 6vw, 1.55rem);
   }
 
   .forethought-footer-grid {
@@ -3367,7 +3563,7 @@ html:not([data-theme]) .normative-inline-dotted {
 /* Layout organization improvements */
 .forethought-page main#main-content {
   display: grid;
-  gap: 2.25rem;
+  gap: 1.4rem;
   padding-top: 1.5rem;
 }
 
