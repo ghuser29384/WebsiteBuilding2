@@ -1,32 +1,33 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#ffffff" />
-  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
-  <meta name="description" content="Interactive Wide Reflective Equilibrium lessons with coherence tracking, graph visualization, and explainable updates." />
-  <title>Wide Reflective Equilibrium Lessons | Normativity</title>
-  <link rel="canonical" href="https://normativity.org/wre/index.html" />
-  <meta property="og:locale" content="en_US" />
-  <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="Normativity" />
-  <meta property="og:title" content="Wide Reflective Equilibrium Lessons | Normativity" />
-  <meta property="og:description" content="Interactive Wide Reflective Equilibrium lessons with coherence tracking, graph visualization, and explainable updates." />
-  <meta property="og:url" content="https://normativity.org/wre/index.html" />
-  <meta property="og:image" content="https://normativity.org/assets/Normativity%20Logo.png" />
-  <meta property="og:image:alt" content="Normativity logo" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Wide Reflective Equilibrium Lessons | Normativity" />
-  <meta name="twitter:description" content="Interactive Wide Reflective Equilibrium lessons with coherence tracking, graph visualization, and explainable updates." />
-  <meta name="twitter:image" content="https://normativity.org/assets/Normativity%20Logo.png" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="description" content="A low-cost Wide Reflective Equilibrium dashboard for agents and human reviewers to capture beliefs, find tensions, repair locally, and replay revisions.">
+  <title>Low-Cost WRE Tool for Agents | Normativity</title>
+  <link rel="canonical" href="https://normativity.org/wre/index.html">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Normativity">
+  <meta property="og:title" content="Low-Cost WRE Tool for Agents | Normativity">
+  <meta property="og:description" content="Capture judgments, principles, and background theories, then inspect tensions and auditable repair actions.">
+  <meta property="og:url" content="https://normativity.org/wre/index.html">
+  <meta property="og:image" content="https://normativity.org/assets/Normativity%20Logo.png">
+  <meta property="og:image:alt" content="Normativity logo">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Low-Cost WRE Tool for Agents | Normativity">
+  <meta name="twitter:description" content="Capture judgments, principles, and background theories, then inspect tensions and auditable repair actions.">
+  <meta name="twitter:image" content="https://normativity.org/assets/Normativity%20Logo.png">
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebPage",
-      "name": "Wide Reflective Equilibrium Lessons | Normativity",
+      "@type": "WebApplication",
+      "name": "Low-Cost Wide Reflective Equilibrium Tool for Agents",
       "url": "https://normativity.org/wre/index.html",
-      "description": "Interactive Wide Reflective Equilibrium lessons with coherence tracking, graph visualization, and explainable updates.",
+      "applicationCategory": "ProductivityApplication",
+      "description": "A static MVP interface for belief intake, conflict review, guided repair, and revision replay.",
       "isPartOf": {
         "@type": "WebSite",
         "name": "Normativity",
@@ -34,89 +35,248 @@
       }
     }
   </script>
-  <link rel="stylesheet" href="/wre/styles.css" />
-  <link rel="stylesheet" href="../theme.css" />
+  <link rel="icon" type="image/png" href="../assets/Normativity%20Favicon.png">
+  <link rel="stylesheet" href="../theme.css">
+  <link rel="stylesheet" href="/wre/styles.css">
 </head>
-<body class="forethought-site">
-  <a class="skip-link" href="#wreApp">Skip to main content</a>
-  <header class="wre-topbar">
-    <div class="wre-shell">
-      <a class="wre-home-link" href="/" aria-label="Return to home">← normativity.org</a>
-      <h1 class="wre-title">Wide Reflective Equilibrium Lessons</h1>
-      <div class="lesson-picker-wrap">
-        <label for="lessonPicker">Lesson</label>
-        <select id="lessonPicker" aria-label="Select lesson"></select>
-      </div>
+<body class="wre-tool">
+  <a class="skip-link" href="#mainWorkspace">Skip to main content</a>
+
+  <header class="app-header">
+    <a class="brand-link" href="/" aria-label="Normativity home">
+      <img src="../assets/Normativity%20Logo.png" alt="Normativity">
+      <span>WRE Agent Tool</span>
+    </a>
+    <nav class="top-tabs" aria-label="Primary workflow">
+      <button class="top-tab is-active" type="button" data-stage="preparation">Intake</button>
+      <button class="top-tab" type="button" data-stage="integration">Conflicts</button>
+      <button class="top-tab" type="button" data-stage="reflection">Repair</button>
+      <button class="top-tab" type="button" data-stage="action">Replay</button>
+    </nav>
+    <div class="header-actions">
+      <label class="icon-button" for="importInput" title="Import JSON" aria-label="Import JSON">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 19h14" /></svg>
+      </label>
+      <input id="importInput" class="visually-hidden" type="file" accept="application/json,.json">
+      <button id="exportBtn" class="primary-action" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 21h14a2 2 0 0 0 2-2v-4M3 15v4a2 2 0 0 0 2 2" /></svg>
+        Export API
+      </button>
     </div>
   </header>
 
-  <main class="wre-shell wre-main" id="wreApp" tabindex="-1">
-    <section class="progress-card">
-      <div class="progress-head">
-        <p id="progressLabel">Step 1 / 1</p>
-        <p id="progressTitle">Loading lesson...</p>
+  <div class="app-layout">
+    <aside class="left-rail" aria-label="Session workflow">
+      <div class="rail-section">
+        <p class="rail-label">Cycle</p>
+        <div id="stageList" class="stage-list"></div>
       </div>
-      <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Lesson progress">
-        <span id="progressFill"></span>
-      </div>
-    </section>
 
-    <section class="session-card" aria-label="Lesson session controls and diagnostics">
-      <div class="session-row">
-        <p id="sessionLabel">Fresh lesson session.</p>
-        <div class="session-actions">
-          <button id="resetLessonBtn" class="btn btn-ghost" type="button">Reset Lesson</button>
-          <button id="resetAllLessonsBtn" class="btn btn-ghost" type="button">Reset All Lessons</button>
+      <div class="rail-section session-compact">
+        <p class="rail-label">Workspace</p>
+        <strong>Agent policy review</strong>
+        <span id="sessionStamp">Local session</span>
+      </div>
+
+      <div class="rail-section cost-panel" aria-label="Six month maintenance budget">
+        <div class="cost-head">
+          <p class="rail-label">Six month cap</p>
+          <strong>$4,330</strong>
         </div>
+        <div class="cost-meter"><span style="width: 86.6%"></span></div>
+        <dl>
+          <div><dt>Hosting</dt><dd>Workers/Pages</dd></div>
+          <div><dt>Store</dt><dd>Postgres/Auth</dd></div>
+          <div><dt>Checks</dt><dd>SHACL + SAT/SMT</dd></div>
+          <div><dt>Retrieval</dt><dd>pgvector</dd></div>
+        </dl>
       </div>
-      <div class="coherence-meta-row" aria-live="polite">
-        <span id="coherenceDeltaChip" class="coherence-chip">Delta: 0.0 pts</span>
-        <span id="edgeResolvedChip" class="coherence-chip">Resolved edges: 0</span>
-        <span id="edgeTensionChip" class="coherence-chip">Active tensions: 0</span>
-      </div>
-      <p class="lesson-hint keyboard-hint">Tip: Tab to a node or edge and press Enter/Space to inspect or toggle.</p>
-    </section>
+    </aside>
 
-    <section class="sep-method-card" aria-label="method anchors">
-      <p class="sep-method-title">Method anchors</p>
-      <p>
-        These lessons are structured as reflective-equilibrium cycles with disagreement pressure and confidence calibration.
-      </p>
-      <p class="sep-method-links">
-        <a href="/normative-issues.html#reference-library" >Reflective Equilibrium</a> ·
-        <a href="/normative-issues.html#reference-library" >Moral Epistemology</a> ·
-        <a href="/normative-issues.html#reference-library" >Moral Disagreement</a> ·
-        <a href="/normative-issues.html#reference-library" >Moral Reasoning</a> ·
-        <a href="/normative-issues.html#reference-library" >Moral Skepticism</a> ·
-        <a href="/normative-issues.html#reference-library" >Ethical Intuitionism</a>
-      </p>
-    </section>
-
-    <section class="workspace">
-      <div class="workspace-left">
-        <div id="lessonCardHost"></div>
-      </div>
-      <aside class="workspace-right">
-        <div class="graph-card">
-          <div class="graph-card-head">
-            <h2>Reasoning Graph</h2>
-            <button id="expandGraphBtn" class="btn btn-ghost" type="button">Expand graph</button>
+    <main id="mainWorkspace" class="main-column" tabindex="-1">
+      <section class="workspace-hero" aria-labelledby="workspaceTitle">
+        <div>
+          <p id="stageKicker" class="stage-kicker">Preparation</p>
+          <h1 id="workspaceTitle">Wide Reflective Equilibrium</h1>
+          <p id="stageSummary" class="hero-copy">Scope the belief base before revision: users, source policy, privacy limits, and what counts as an acceptable tension.</p>
+        </div>
+        <div class="metric-strip" aria-label="Workspace metrics">
+          <div>
+            <span>Claims</span>
+            <strong id="claimCount">0</strong>
           </div>
-          <div id="graphHost"></div>
+          <div>
+            <span>Active tensions</span>
+            <strong id="conflictCount">0</strong>
+          </div>
+          <div>
+            <span>Coherence</span>
+            <strong id="coherenceScore">0%</strong>
+          </div>
+          <div>
+            <span>Resolved</span>
+            <strong id="resolvedCount">0</strong>
+          </div>
         </div>
-        <div class="gauge-card">
-          <h2>Coherence</h2>
-          <div id="gaugeHost"></div>
+      </section>
+
+      <section class="belief-board" aria-label="Canonical proposition graph">
+        <div class="board-head">
+          <div>
+            <h2>Canonical Belief Store</h2>
+            <p>Judgments, principles, and background commitments stay separable, typed, and reversible.</p>
+          </div>
+          <button id="runDetectorsBtn" class="secondary-action" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h4l2-7 4 14 2-7h4" /></svg>
+            Run detectors
+          </button>
         </div>
-      </aside>
-    </section>
+        <div class="claim-lanes">
+          <article class="claim-lane" aria-labelledby="judgmentsTitle">
+            <div class="lane-head">
+              <span class="layer-dot judgment"></span>
+              <h3 id="judgmentsTitle">Judgments</h3>
+            </div>
+            <div id="judgmentClaims" class="claim-list"></div>
+          </article>
+          <article class="claim-lane" aria-labelledby="principlesTitle">
+            <div class="lane-head">
+              <span class="layer-dot principle"></span>
+              <h3 id="principlesTitle">Principles</h3>
+            </div>
+            <div id="principleClaims" class="claim-list"></div>
+          </article>
+          <article class="claim-lane" aria-labelledby="backgroundTitle">
+            <div class="lane-head">
+              <span class="layer-dot background"></span>
+              <h3 id="backgroundTitle">Background Theories</h3>
+            </div>
+            <div id="backgroundClaims" class="claim-list"></div>
+          </article>
+        </div>
+      </section>
 
-    <section class="explanation-card">
-      <h2>Explanation</h2>
-      <div id="inspectorHost"></div>
-    </section>
-  </main>
+      <section class="composer-panel" aria-labelledby="composerTitle">
+        <div class="composer-head">
+          <h2 id="composerTitle">Belief Intake</h2>
+          <p id="composerStatus" aria-live="polite">Ready for a typed claim.</p>
+        </div>
+        <form id="claimForm" class="claim-form">
+          <label>
+            <span>Claim text</span>
+            <textarea id="claimText" name="claimText" rows="3" placeholder="I preserve user autonomy except under severe, documented safety risk." required></textarea>
+          </label>
+          <div class="form-grid">
+            <label>
+              <span>Layer</span>
+              <select id="claimLayer" name="claimLayer">
+                <option value="judgment">Judgment</option>
+                <option value="principle">Principle</option>
+                <option value="background">Background theory</option>
+              </select>
+            </label>
+            <label>
+              <span>Scope</span>
+              <input id="claimScope" name="claimScope" type="text" value="agent policy review">
+            </label>
+            <label>
+              <span>Source</span>
+              <input id="claimSource" name="claimSource" type="text" value="manual entry">
+            </label>
+            <label class="confidence-label">
+              <span>Confidence <b id="confidenceValue">72%</b></span>
+              <input id="claimConfidence" name="claimConfidence" type="range" min="1" max="99" value="72">
+            </label>
+          </div>
+          <div class="form-actions">
+            <button class="secondary-action" type="button" id="loadScenarioBtn">Load coding-agent case</button>
+            <button class="primary-action" type="submit">Add claim</button>
+          </div>
+        </form>
+      </section>
 
-  <script type="module" src="/wre/app.js"></script>
+      <section class="pipeline-panel" aria-labelledby="pipelineTitle">
+        <div class="pipeline-head">
+          <h2 id="pipelineTitle">Symbolic-First Detection Pipeline</h2>
+          <p>NLI proposes candidates. Hard checks and provenance decide what gets surfaced.</p>
+        </div>
+        <ol class="pipeline-list">
+          <li><span>1</span><strong>Intake API</strong><small>Agent or human claim</small></li>
+          <li><span>2</span><strong>Normalizer</strong><small>Typed proposition</small></li>
+          <li><span>3</span><strong>Canonical Store</strong><small>Graph + PROV</small></li>
+          <li><span>4</span><strong>Retrieval</strong><small>pgvector candidates</small></li>
+          <li><span>5</span><strong>Detectors</strong><small>NLI, SHACL, SMT, LP</small></li>
+          <li><span>6</span><strong>Conflict Graph</strong><small>Severity + attribution</small></li>
+          <li><span>7</span><strong>Repair</strong><small>Local revision set</small></li>
+        </ol>
+      </section>
+
+      <section class="replay-panel" aria-labelledby="replayTitle">
+        <div class="replay-head">
+          <h2 id="replayTitle">Revision Replay</h2>
+          <button id="resetBtn" class="secondary-action danger-soft" type="button">Reset session</button>
+        </div>
+        <div id="revisionTimeline" class="timeline"></div>
+      </section>
+    </main>
+
+    <aside class="review-column" aria-label="Conflict review and repair">
+      <section class="queue-panel" aria-labelledby="queueTitle">
+        <div class="queue-head">
+          <h2 id="queueTitle">Conflict Queue</h2>
+          <span id="queueState">0 open</span>
+        </div>
+        <div id="conflictQueue" class="conflict-queue"></div>
+      </section>
+
+      <section class="conflict-detail" aria-labelledby="detailTitle">
+        <div class="detail-head">
+          <h2 id="detailTitle">Conflict Card</h2>
+          <span id="detailSeverity">Severity 0</span>
+        </div>
+        <div class="five-pane">
+          <article>
+            <span>Claim A</span>
+            <p id="detailClaimA"></p>
+          </article>
+          <article>
+            <span>Claim B</span>
+            <p id="detailClaimB"></p>
+          </article>
+          <article>
+            <span>Linked principle/background</span>
+            <p id="detailLinked"></p>
+          </article>
+          <article>
+            <span>Why flagged</span>
+            <p id="detailWhy"></p>
+          </article>
+          <article>
+            <span>Lowest-cost repair</span>
+            <div id="repairOptions" class="repair-options"></div>
+          </article>
+        </div>
+        <div class="detail-actions">
+          <button id="deferBtn" class="secondary-action" type="button">Defer</button>
+          <button id="acceptBtn" class="secondary-action" type="button">Accept tension</button>
+          <button id="applyRepairBtn" class="primary-action" type="button">Apply repair</button>
+        </div>
+      </section>
+
+      <section class="detector-panel" aria-labelledby="detectorTitle">
+        <h2 id="detectorTitle">Detector Mix</h2>
+        <div class="detector-grid">
+          <div><strong>NLI</strong><span>Screening</span></div>
+          <div><strong>SHACL</strong><span>Validation</span></div>
+          <div><strong>SAT/SMT</strong><span>Hard constraints</span></div>
+          <div><strong>LP</strong><span>Confidence coherence</span></div>
+          <div><strong>Argumentation</strong><span>Explanation</span></div>
+          <div><strong>Revision</strong><span>Local repair</span></div>
+        </div>
+      </section>
+    </aside>
+  </div>
+
+  <script type="module" src="/wre/wre-tool.js"></script>
 </body>
 </html>
