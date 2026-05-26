@@ -20,6 +20,10 @@ const run = (command: string, args: string[]): Promise<void> => {
   });
 };
 
+const normalizePem = (value: string): string => {
+  return value.includes("\\n") ? value.replace(/\\n/g, "\n") : value;
+};
+
 export const requestRfc3161Timestamp = async (rootHash: string): Promise<Buffer> => {
   const tsaUrl = process.env.TSA_URL;
   if (!tsaUrl) {
@@ -49,7 +53,7 @@ export const requestRfc3161Timestamp = async (rootHash: string): Promise<Buffer>
 
     const caFile = process.env.TSA_CA_FILE || (process.env.TSA_CA_PEM ? caFilePath : "");
     if (process.env.TSA_CA_PEM) {
-      await writeFile(caFilePath, process.env.TSA_CA_PEM);
+      await writeFile(caFilePath, normalizePem(process.env.TSA_CA_PEM));
     }
 
     if (caFile) {
