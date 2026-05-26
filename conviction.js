@@ -12,6 +12,14 @@
     weekly_attestation: "Weekly attestation",
     redacted_attachment: "Redacted attachment",
   };
+  const HIGH_STAKE_PROTOCOL_PHASES = [
+    { value: "opening_statement", label: "Opening statement" },
+    { value: "clarifying_questions", label: "Clarifying questions" },
+    { value: "steelman_round", label: "Steelman round" },
+    { value: "evidence_round", label: "Evidence round" },
+    { value: "implication_round", label: "Implication round" },
+    { value: "closing_reflection", label: "Closing reflection" },
+  ];
 
   const TOPICS = {
     animal_welfare: {
@@ -1082,6 +1090,8 @@
     sessionStatus: document.getElementById("sessionStatus"),
     highStakeSessionForm: document.getElementById("highStakeSessionForm"),
     highStakeSessionPartnerSummary: document.getElementById("highStakeSessionPartnerSummary"),
+    highStakeProtocolPhaseInputs: document.querySelectorAll('input[name="highStakeProtocolPhase"]'),
+    highStakeProtocolNotesInput: document.getElementById("highStakeProtocolNotesInput"),
     highStakeCounterArgumentInput: document.getElementById("highStakeCounterArgumentInput"),
     highStakeReplyInput: document.getElementById("highStakeReplyInput"),
     highStakeCaseChangeInput: document.getElementById("highStakeCaseChangeInput"),
@@ -2348,6 +2358,66 @@
     return { ok: true };
   }
 
+  function protocolPhaseLabel(value) {
+    const phase = HIGH_STAKE_PROTOCOL_PHASES.find(function (item) {
+      return item.value === value;
+    });
+    return phase ? phase.label : String(value || "").replace(/_/g, " ");
+  }
+
+  function formatProtocolPhaseList(values) {
+    const list = Array.isArray(values) ? values : [];
+    return list.map(protocolPhaseLabel).join(", ");
+  }
+
+  function getHighStakeProtocolRecord() {
+    const inputs = el.highStakeProtocolPhaseInputs ? Array.from(el.highStakeProtocolPhaseInputs) : [];
+    const completedPhases = inputs
+      .filter(function (input) {
+        return Boolean(input && input.checked);
+      })
+      .map(function (input) {
+        return String(input.value || "").trim();
+      })
+      .filter(Boolean);
+    const requiredPhases = HIGH_STAKE_PROTOCOL_PHASES.map(function (phase) {
+      return phase.value;
+    });
+    const missingPhases = requiredPhases.filter(function (value) {
+      return completedPhases.indexOf(value) === -1;
+    });
+
+    return {
+      version: "guided-session-v1",
+      requiredPhases: HIGH_STAKE_PROTOCOL_PHASES.map(function (phase) {
+        return {
+          value: phase.value,
+          label: phase.label,
+        };
+      }),
+      completedPhases: completedPhases,
+      missingPhases: missingPhases,
+      completed: missingPhases.length === 0 && requiredPhases.length > 0,
+      notes: el.highStakeProtocolNotesInput ? String(el.highStakeProtocolNotesInput.value || "").trim() : "",
+    };
+  }
+
+  function buildHighStakeTranscriptText(transcriptText, protocolRecord) {
+    const sections = [];
+    const transcript = String(transcriptText || "").trim();
+    const protocol = protocolRecord || {};
+    if (transcript) {
+      sections.push(transcript);
+    }
+    if ((transcript || protocol.notes) && Array.isArray(protocol.completedPhases) && protocol.completedPhases.length > 0) {
+      sections.push("Completed guided phases: " + formatProtocolPhaseList(protocol.completedPhases) + ".");
+    }
+    if (protocol.notes) {
+      sections.push("Guided protocol notes: " + protocol.notes);
+    }
+    return sections.join("\n\n").trim();
+  }
+
   async function onHighStakeSubmit(event) {
     event.preventDefault();
     if (!state.pledge.signed) {
@@ -2663,14 +2733,25 @@
     const promiseNote = String(formData.get("highStakePromiseNote") || "").trim();
     const startDate = String(formData.get("highStakeStartDate") || "");
     const endDate = String(formData.get("highStakeEndDate") || "");
+    const protocolRecord = getHighStakeProtocolRecord();
     const rationale = {
       caseLevelChange: Boolean(el.highStakeCaseChangeInput && el.highStakeCaseChangeInput.checked),
       principleLevelChange: Boolean(el.highStakePrincipleChangeInput && el.highStakePrincipleChangeInput.checked),
       backgroundTheoryChange: Boolean(el.highStakeBackgroundChangeInput && el.highStakeBackgroundChangeInput.checked),
+      guidedProtocol: protocolRecord,
     };
 
     if (!counterArgument || !reply) {
       setHighStakeSessionStatus("Record both the strongest counterargument and your strongest reply.");
+      return;
+    }
+    if (!protocolRecord.completed) {
+      setHighStakeSessionStatus(
+        "Complete each guided deliberation phase before sealed submission" +
+          (protocolRecord.missingPhases.length
+            ? ": " + formatProtocolPhaseList(protocolRecord.missingPhases) + "."
+            : ".")
+      );
       return;
     }
     if (!el.highStakeIndependentSubmitConfirm || !el.highStakeIndependentSubmitConfirm.checked) {
@@ -2708,13 +2789,14 @@
       if (!serverSessionId) {
         throw new Error("Server did not return a session id.");
       }
-      if (transcriptText) {
+      const transcriptPayload = buildHighStakeTranscriptText(transcriptText, protocolRecord);
+      if (transcriptPayload) {
         serverTranscriptResult = await commitmentApiRequest("/sessions/" + encodeURIComponent(serverSessionId) + "/transcript-chunks", {
           method: "POST",
           body: {
             chunk_index: 0,
             speaker_label: "private_session_notes",
-            text: transcriptText,
+            text: transcriptPayload,
             visibility: "private_to_participants",
           },
         });
@@ -2795,6 +2877,7 @@
       reply: reply,
       postConfidence: postConfidence,
       rationale: rationale,
+      guidedProtocol: protocolRecord,
       transcriptChunk: serverTranscriptChunk
         ? {
             id: String(serverTranscriptChunk.id || ""),
@@ -8710,6 +8793,14 @@
     }
     if (el.highStakeTranscriptInput) {
       el.highStakeTranscriptInput.value = "";
+    }
+    if (el.highStakeProtocolNotesInput) {
+      el.highStakeProtocolNotesInput.value = "";
+    }
+    if (el.highStakeProtocolPhaseInputs && el.highStakeProtocolPhaseInputs.length > 0) {
+      el.highStakeProtocolPhaseInputs.forEach(function (input) {
+        if (input) input.checked = false;
+      });
     }
     [
       el.highStakeCaseChangeInput,

@@ -1994,8 +1994,19 @@ input[type="range"] {
 
 .commitment-proof-fieldset,
 .commitment-consent-fieldset,
-.post-session-fieldset {
+.post-session-fieldset,
+.guided-protocol-fieldset {
   background: #f8f5ee;
+}
+
+.guided-protocol-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.22rem 0.72rem;
+}
+
+.protocol-notes-row {
+  margin: 0.6rem 0 0;
 }
 
 .commitment-preview {
@@ -2885,6 +2896,7 @@ html:not([data-theme]) .normative-inline-dotted {
   .score-grid,
   .date-grid,
   .commitment-two-col,
+  .guided-protocol-grid,
   .proof-grid,
   .hero-stats,
   .deliberation-metrics,

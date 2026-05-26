@@ -49,7 +49,7 @@
 </head>
 <body class="forethought-page forethought-site">
   <a class="skip-link" href="#main-content">Skip to main content</a>
-  <p id="wre-banner" class="wre-banner"><a href="/wre/index.html">Learn WRE — Reflective Equilibrium lessons</a></p>
+  <p id="wre-banner" class="wre-banner"><a href="/wre/index.html">Open WRE Agent Tool — belief intake, conflict review, and repair</a></p>
   <header class="site-header">
     <div class="container header-inner">
       <a class="brand" href="index.html" aria-label="Normativity home"><img src="assets/Normativity%20Logo.png" alt="Normativity"></a>
@@ -79,7 +79,7 @@
           </p>
           <div class="button-row intro-cta-row">
             <a class="btn btn-primary" href="#research-agenda">Read the research agenda</a>
-            <a class="btn btn-secondary" href="wre-module.html">Try the WRE case loop</a>
+            <a class="btn btn-secondary" href="/wre/index.html">Open the WRE agent tool</a>
             <a class="btn btn-ghost" href="#footerNewsletter">Subscribe</a>
           </div>
           <a class="research-portal-card" href="research.html" aria-label="Open the full research page on faster moral discovery">
@@ -125,7 +125,7 @@
           <p class="research-card-meta">Protocol</p>
           <h3>Reflective Equilibrium at Scale</h3>
           <p>A workflow for comparing case judgments, principles, and background theories while recording where confidence actually changes.</p>
-          <a href="wre-module.html">Try protocol</a>
+          <a href="/wre/index.html">Open tool</a>
         </article>
         <article class="panel research-card">
           <p class="research-card-meta">Experiment</p>
@@ -169,10 +169,10 @@
       </div>
       <div class="tool-card-grid">
         <article class="panel tool-card">
-          <h3>WRE Case Loop</h3>
-          <p>Test moral principles against cases and revise under structured pressure.</p>
+          <h3>WRE Agent Tool</h3>
+          <p>Capture judgments, principles, and background theories, then review tensions and repair actions.</p>
           <div class="tool-action-row">
-            <a href="wre-module.html">Try demo</a>
+            <a href="/wre/index.html">Open dashboard</a>
             <a href="normative-issues.html#reference-library">Read method</a>
           </div>
         </article>
@@ -511,7 +511,7 @@
           <a href="#re-lab">Reflective Equilibrium Lab</a>
           <a href="#rule">Voluntary Accountability</a>
           <a href="#matching">Matching Logic</a>
-          <a href="wre-module.html">WRE Case Loop Module</a>
+          <a href="/wre/index.html">WRE Agent Tool</a>
         </article>
         <article class="layout-cluster">
           <h3>Participate</h3>
@@ -1286,6 +1286,26 @@
             <h3 class="session-head">Log The Sealed Outcome</h3>
             <form id="highStakeSessionForm" class="compact-form">
               <p id="highStakeSessionPartnerSummary" class="mini-summary">No participant selected yet.</p>
+              <fieldset class="form-fieldset guided-protocol-fieldset">
+                <legend>Guided deliberation phases</legend>
+                <div class="guided-protocol-grid">
+                  <label class="check-row"><input name="highStakeProtocolPhase" type="checkbox" value="opening_statement"> Opening statement</label>
+                  <label class="check-row"><input name="highStakeProtocolPhase" type="checkbox" value="clarifying_questions"> Clarifying questions</label>
+                  <label class="check-row"><input name="highStakeProtocolPhase" type="checkbox" value="steelman_round"> Steelman round</label>
+                  <label class="check-row"><input name="highStakeProtocolPhase" type="checkbox" value="evidence_round"> Evidence round</label>
+                  <label class="check-row"><input name="highStakeProtocolPhase" type="checkbox" value="implication_round"> Implication round</label>
+                  <label class="check-row"><input name="highStakeProtocolPhase" type="checkbox" value="closing_reflection"> Closing reflection</label>
+                </div>
+                <label class="field-row protocol-notes-row" for="highStakeProtocolNotesInput">
+                  Phase notes (optional)
+                  <textarea
+                    id="highStakeProtocolNotesInput"
+                    name="highStakeProtocolNotes"
+                    rows="2"
+                    placeholder="Briefly note any unresolved ambiguity, eligibility concern, or evidence disagreement."
+                  ></textarea>
+                </label>
+              </fieldset>
               <label class="field-row" for="highStakeCounterArgumentInput">
                 Strongest argument you heard from your participant
                 <textarea id="highStakeCounterArgumentInput" name="highStakeCounterArgument" rows="3" required></textarea>
@@ -1371,8 +1391,8 @@
           <a class="btn btn-secondary" href="reflective_equilibrium.html" >
             Open Full Screen Lab
           </a>
-          <a class="btn btn-ghost" href="wre-module.html">
-            Open WRE Case Loop Module
+          <a class="btn btn-ghost" href="/wre/index.html">
+            Open WRE Agent Tool
           </a>
         </article>
         <article class="panel re-lab-frame-card">
