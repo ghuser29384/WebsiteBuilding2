@@ -1,249 +1,303 @@
-const STORAGE_KEY = "normativity-wre-agent-tool-v1";
+const STORAGE_KEY = "normativity-wre-dashboard-v2";
+
+const icons = {
+  clipboard: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l1 2h3v16H5V5h3l1-2Z" /><path d="M9 7h6" /></svg>',
+  database: '<svg viewBox="0 0 24 24" aria-hidden="true"><ellipse cx="12" cy="5" rx="7" ry="3" /><path d="M5 5v6c0 1.7 3.1 3 7 3s7-1.3 7-3V5" /><path d="M5 11v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6" /></svg>',
+  graph: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="2" /><circle cx="18" cy="5" r="2" /><circle cx="18" cy="19" r="2" /><path d="m8 11 8-5" /><path d="m8 13 8 5" /></svg>',
+  scales: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18" /><path d="M5 7h14" /><path d="m6 7-3 6h6L6 7Z" /><path d="m18 7-3 6h6l-3-6Z" /></svg>',
+  check: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>',
+  cloud: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.5 19H7a4 4 0 0 1-.6-8 5.5 5.5 0 0 1 10.8-1.8A4.8 4.8 0 0 1 17.5 19Z" /></svg>',
+  sliders: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16" /><path d="M4 12h16" /><path d="M4 18h16" /><circle cx="8" cy="6" r="2" /><circle cx="15" cy="12" r="2" /><circle cx="10" cy="18" r="2" /></svg>',
+  shield: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 20 7v5c0 5-3.4 8-8 9-4.6-1-8-4-8-9V7l8-4Z" /></svg>',
+  wrench: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14.7 6.3a4 4 0 0 0-5.1 5.1L4 17v3h3l5.6-5.6a4 4 0 0 0 5.1-5.1L15 12l-3-3 2.7-2.7Z" /></svg>',
+  history: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v6h6" /><path d="M12 7v5l3 2" /></svg>',
+  code: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 9-4 3 4 3" /><path d="m16 9 4 3-4 3" /><path d="m14 5-4 14" /></svg>',
+  chevron: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m9 6 6 6-6 6" /></svg>',
+  dots: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="5" r="1" /><circle cx="12" cy="12" r="1" /><circle cx="12" cy="19" r="1" /></svg>',
+};
 
 const stages = [
   {
     id: "preparation",
+    icon: "clipboard",
     label: "Preparation",
-    short: "Scope and privacy",
-    summary:
-      "Scope the belief base before revision: users, source policy, privacy limits, and what counts as an acceptable tension.",
+    copy: "Define scope, context, and initial framing.",
   },
   {
     id: "collection",
+    icon: "database",
     label: "Collection",
-    short: "Belief intake",
-    summary:
-      "Capture judgments, principles, and background assumptions in a typed object with source, scope, confidence, and provenance.",
+    copy: "Gather judgments, principles, and background theories.",
   },
   {
     id: "integration",
+    icon: "graph",
     label: "Integration",
-    short: "Candidate detection",
-    summary:
-      "Use embeddings and NLI for candidate retrieval only, then ask symbolic checks and schema validation to decide what should be reviewed.",
+    copy: "Normalize and integrate into a canonical representation.",
   },
   {
     id: "reflection",
+    icon: "scales",
     label: "Reflection",
-    short: "Conflict review",
-    summary:
-      "Inspect the smallest useful conflict set, the linked principle or background theory, and the reason it was flagged.",
+    copy: "Detect conflicts and evaluate repair options.",
   },
   {
     id: "action",
+    icon: "check",
     label: "Action",
-    short: "Repair and replay",
-    summary:
-      "Revise locally, defer, or explicitly accept a stable tension while keeping every step replayable and reversible.",
+    copy: "Adopt revisions and track outcomes.",
   },
 ];
 
-const initialClaims = [
+const seedBeliefs = [
   {
-    id: "j-autonomy",
+    id: "J1",
     layer: "judgment",
-    text: "I preserve user autonomy whenever feasible.",
-    confidence: 82,
-    source: "agent policy self-report",
-    scope: "general assistance",
-    createdAt: "seed",
+    text: "We should not reject candidates because of protected attributes.",
   },
   {
-    id: "j-override",
+    id: "J2",
     layer: "judgment",
-    text: "In high-uncertainty safety contexts, I override user choice.",
-    confidence: 76,
-    source: "agent behavior log",
-    scope: "high-stakes tasks",
-    createdAt: "seed",
+    text: "We may consider experience relevant to the role.",
   },
   {
-    id: "j-openness",
+    id: "J3",
     layer: "judgment",
-    text: "I value open peer critique during research work.",
-    confidence: 69,
-    source: "human reviewer",
-    scope: "research drafts",
-    createdAt: "seed",
+    text: "Transparency to candidates is required.",
   },
   {
-    id: "p-safety-threshold",
+    id: "P1",
     layer: "principle",
-    text: "Safety overrides autonomy only under severe risk with a documented threshold.",
-    confidence: 88,
-    source: "policy draft",
-    scope: "agent control decisions",
-    createdAt: "seed",
+    text: "Equal respect and non-discrimination",
   },
   {
-    id: "p-no-truth-claim",
+    id: "P2",
     layer: "principle",
-    text: "The system labels tensions and repair suggestions, not objective moral error.",
-    confidence: 93,
-    source: "governance rule",
-    scope: "all reviews",
-    createdAt: "seed",
+    text: "Proportionality",
   },
   {
-    id: "p-privacy",
+    id: "P3",
     layer: "principle",
-    text: "Sensitive belief stores require access control, deletion, and export support.",
-    confidence: 91,
-    source: "security baseline",
-    scope: "stored beliefs",
-    createdAt: "seed",
+    text: "Fair opportunity",
   },
   {
-    id: "b-uncertainty",
-    layer: "background",
-    text: "Model uncertainty rises when source reliability is low or stakes are high.",
-    confidence: 84,
-    source: "background reliability model",
-    scope: "agent evaluation",
-    createdAt: "seed",
+    id: "T1",
+    layer: "theory",
+    text: "Anti-discrimination law (Title VII)",
   },
   {
-    id: "b-coherence",
-    layer: "background",
-    text: "Coherence management does not guarantee truth.",
-    confidence: 95,
-    source: "WRE design note",
-    scope: "method framing",
-    createdAt: "seed",
+    id: "T2",
+    layer: "theory",
+    text: "Reliability of structured interviews",
   },
   {
-    id: "b-defensive",
-    layer: "background",
-    text: "Inconsistency surfacing can trigger defensiveness, so users need control and exits.",
-    confidence: 79,
-    source: "reflection-support evidence",
-    scope: "user experience",
-    createdAt: "seed",
+    id: "T3",
+    layer: "theory",
+    text: "Cognitive bias research",
   },
 ];
 
-const initialConflicts = [
+const seedConflicts = [
   {
-    id: "c-autonomy-threshold",
-    title: "Autonomy override lacks threshold",
-    type: "Missing threshold conflict",
-    severity: 84,
-    status: "open",
-    claimAId: "j-autonomy",
-    claimBId: "j-override",
-    linkedIds: ["p-safety-threshold", "b-uncertainty"],
+    id: "C-001",
+    title: "Non-discrimination vs. Experience Proxy",
+    severity: "critical",
+    summary: "J1 conflicts with P2 under T3",
+    provenance: "J1, P2, T3",
+    time: "May 15, 2025 10:58 AM",
+    claimA: "J1",
+    claimB: "P2",
+    linked: ["P2", "T3"],
     why:
-      "The first judgment treats autonomy as the default. The second permits overrides under high uncertainty without the severe-risk threshold required by the linked principle.",
-    methods: ["NLI screening", "SHACL scope shape", "Argumentation graph"],
+      "Considering experience may serve as a proxy for protected attributes, creating an unjustified disparate impact, violating non-discrimination under bias findings in T3.",
     repairs: [
-      "Define severe-risk threshold",
-      "Scope autonomy to low-risk cases",
-      "Lower confidence in override policy",
-      "Accept as monitored tension",
+      {
+        id: "R-001",
+        title: "Add Clarifying Constraint",
+        text: "Add constraint to P2: consider experience only when job-relevant and validated.",
+        cost: "0.62",
+        badge: "Lowest",
+        tone: "critical",
+      },
+      {
+        id: "R-002",
+        title: "Refine Judgment",
+        text: "Refine J1 to allow consideration of validated, job-related experience only.",
+        cost: "0.74",
+        tone: "high",
+      },
+      {
+        id: "R-003",
+        title: "Reweight Principle",
+        text: "Decrease weight of P2 in contexts with high proxy risk.",
+        cost: "1.05",
+        tone: "medium",
+      },
     ],
   },
   {
-    id: "c-coherence-truth",
-    title: "Coherence could be overclaimed",
-    type: "Governance framing risk",
-    severity: 58,
-    status: "open",
-    claimAId: "p-no-truth-claim",
-    claimBId: "b-coherence",
-    linkedIds: ["b-defensive"],
+    id: "C-002",
+    title: "Transparency vs. Confidentiality",
+    severity: "high",
+    summary: "J3 conflicts with P3 under T1",
+    provenance: "J3, P3, T1",
+    time: "May 15, 2025 10:57 AM",
+    claimA: "J3",
+    claimB: "P3",
+    linked: ["P3", "T1"],
     why:
-      "The method is permitted to surface tensions, but the review copy must not imply that a coherent belief set is thereby true.",
-    methods: ["SHACL label validation", "Governance rule"],
+      "Candidate transparency can conflict with confidential assessment notes when disclosure would expose trade secrets or private evaluator deliberation.",
     repairs: [
-      "Keep tension language",
-      "Show provenance before urgency",
-      "Require reviewer confirmation",
-      "Accept caveat as stable",
+      {
+        id: "R-004",
+        title: "Scope Transparency",
+        text: "Reveal decision criteria and summary rationale while withholding protected evaluator notes.",
+        cost: "0.71",
+        badge: "Lowest",
+        tone: "high",
+      },
+      {
+        id: "R-005",
+        title: "Add Disclosure Layer",
+        text: "Separate candidate-facing explanations from internal audit artifacts.",
+        cost: "0.83",
+        tone: "medium",
+      },
     ],
   },
   {
-    id: "c-openness-privacy",
-    title: "Open critique meets sensitive drafts",
-    type: "Scope mismatch",
-    severity: 67,
-    status: "open",
-    claimAId: "j-openness",
-    claimBId: "p-privacy",
-    linkedIds: ["b-defensive"],
+    id: "C-003",
+    title: "Fair Opportunity vs. Role Fit",
+    severity: "high",
+    summary: "P3 conflicts with P2 under T2",
+    provenance: "P3, P2, T2",
+    time: "May 15, 2025 10:55 AM",
+    claimA: "P3",
+    claimB: "P2",
+    linked: ["P2", "T2"],
     why:
-      "Open peer critique supports reflection, but sensitive belief stores and private drafts need explicit confidentiality scope.",
-    methods: ["NLI screening", "PROV source check"],
+      "Role-fit scoring can improve proportional selection, but it can also compress fair opportunity when the fit model inherits old performance assumptions.",
     repairs: [
-      "Add confidentiality scope",
-      "Separate public and private drafts",
-      "Lower sharing confidence",
-      "Defer until policy review",
+      {
+        id: "R-006",
+        title: "Constrain Role Fit",
+        text: "Use role-fit signals only after validation against subgroup fairness outcomes.",
+        cost: "0.81",
+        badge: "Lowest",
+        tone: "high",
+      },
+    ],
+  },
+  {
+    id: "C-004",
+    title: "Proportionality vs. Data Breadth",
+    severity: "medium",
+    summary: "P2 conflicts with T2",
+    provenance: "P2, T2",
+    time: "May 15, 2025 10:54 AM",
+    claimA: "P2",
+    claimB: "T2",
+    linked: ["P2", "T2"],
+    why:
+      "Structured interviews favor narrower validated evidence, while proportionality may invite broader context for borderline cases.",
+    repairs: [
+      {
+        id: "R-007",
+        title: "Limit Breadth",
+        text: "Allow contextual evidence only when it is job-related and consistently available.",
+        cost: "0.89",
+        badge: "Lowest",
+        tone: "medium",
+      },
+    ],
+  },
+  {
+    id: "C-005",
+    title: "Transparency vs. Trade Secrets",
+    severity: "medium",
+    summary: "J3 conflicts with T1",
+    provenance: "J3, T1",
+    time: "May 15, 2025 10:53 AM",
+    claimA: "J3",
+    claimB: "T1",
+    linked: ["J3", "T1"],
+    why:
+      "Some transparency claims should be satisfied with high-level reasons rather than disclosure of proprietary scoring implementation.",
+    repairs: [
+      {
+        id: "R-008",
+        title: "Summarize Without Revealing",
+        text: "Provide reason categories and appeal paths without exposing proprietary weights.",
+        cost: "0.92",
+        badge: "Lowest",
+        tone: "medium",
+      },
     ],
   },
 ];
 
-const initialRevisions = [
-  {
-    id: "r-seed",
-    time: "08:00",
-    text: "Seeded WRE workspace with judgments, principles, background theories, and three reviewable tensions.",
-  },
+const pipeline = [
+  { icon: "cloud", title: "Intake API", subtitle: "Ingest", metric: "142 items" },
+  { icon: "sliders", title: "Normalizer", subtitle: "Normalize & Tag", metric: "142 items" },
+  { icon: "database", title: "Canonical Store", subtitle: "Store & Index", metric: "142 items" },
+  { icon: "graph", title: "Candidate Generator", subtitle: "Generate Candidates", metric: "68 candidates" },
+  { icon: "shield", title: "Detectors", subtitle: "Detect Issues", metric: "12 conflicts" },
+  { icon: "graph", title: "Conflict Graph", subtitle: "Build Graph", metric: "12 conflicts" },
+  { icon: "wrench", title: "Repair Suggestions", subtitle: "Suggest Repairs", metric: "27 suggestions" },
+  { icon: "history", title: "Revision History", subtitle: "Track Revisions", metric: "0 revisions" },
 ];
+
+const severityOrder = ["critical", "high", "medium", "low"];
+const tabLabels = ["all", "critical", "high", "medium", "low"];
 
 const els = {
   stageList: document.getElementById("stageList"),
-  stageKicker: document.getElementById("stageKicker"),
-  stageSummary: document.getElementById("stageSummary"),
-  claimCount: document.getElementById("claimCount"),
-  conflictCount: document.getElementById("conflictCount"),
-  coherenceScore: document.getElementById("coherenceScore"),
-  resolvedCount: document.getElementById("resolvedCount"),
-  judgmentClaims: document.getElementById("judgmentClaims"),
-  principleClaims: document.getElementById("principleClaims"),
-  backgroundClaims: document.getElementById("backgroundClaims"),
+  judgmentList: document.getElementById("judgmentList"),
+  principleList: document.getElementById("principleList"),
+  theoryList: document.getElementById("theoryList"),
+  conflictTabs: document.getElementById("conflictTabs"),
   conflictQueue: document.getElementById("conflictQueue"),
-  queueState: document.getElementById("queueState"),
+  detailId: document.getElementById("detailId"),
+  detailTitle: document.getElementById("detailTitle"),
   detailSeverity: document.getElementById("detailSeverity"),
-  detailClaimA: document.getElementById("detailClaimA"),
-  detailClaimB: document.getElementById("detailClaimB"),
-  detailLinked: document.getElementById("detailLinked"),
+  detailClaims: document.getElementById("detailClaims"),
+  detailLinks: document.getElementById("detailLinks"),
   detailWhy: document.getElementById("detailWhy"),
   repairOptions: document.getElementById("repairOptions"),
-  revisionTimeline: document.getElementById("revisionTimeline"),
-  claimForm: document.getElementById("claimForm"),
-  claimText: document.getElementById("claimText"),
-  claimLayer: document.getElementById("claimLayer"),
-  claimScope: document.getElementById("claimScope"),
-  claimSource: document.getElementById("claimSource"),
-  claimConfidence: document.getElementById("claimConfidence"),
-  confidenceValue: document.getElementById("confidenceValue"),
-  composerStatus: document.getElementById("composerStatus"),
-  runDetectorsBtn: document.getElementById("runDetectorsBtn"),
-  loadScenarioBtn: document.getElementById("loadScenarioBtn"),
-  applyRepairBtn: document.getElementById("applyRepairBtn"),
-  acceptBtn: document.getElementById("acceptBtn"),
-  deferBtn: document.getElementById("deferBtn"),
-  resetBtn: document.getElementById("resetBtn"),
+  pipelineList: document.getElementById("pipelineList"),
+  beliefForm: document.getElementById("beliefForm"),
+  beliefText: document.getElementById("beliefText"),
+  tokenCount: document.getElementById("tokenCount"),
   exportBtn: document.getElementById("exportBtn"),
   importInput: document.getElementById("importInput"),
-  sessionStamp: document.getElementById("sessionStamp"),
+  clearComposerBtn: document.getElementById("clearComposerBtn"),
+  insertReferenceBtn: document.getElementById("insertReferenceBtn"),
+  assistBtn: document.getElementById("assistBtn"),
+  applyRepairBtn: document.getElementById("applyRepairBtn"),
+  guidanceBtn: document.getElementById("guidanceBtn"),
+  editContextBtn: document.getElementById("editContextBtn"),
 };
 
-let state = loadState() || createInitialState();
+let state = loadState() || createState();
 
-function createInitialState() {
+render();
+bindEvents();
+
+function createState() {
   return {
     activeStage: "preparation",
-    selectedConflictId: "c-autonomy-threshold",
-    selectedRepair: "Define severe-risk threshold",
-    claims: structuredCloneSafe(initialClaims),
-    conflicts: structuredCloneSafe(initialConflicts),
-    revisions: structuredCloneSafe(initialRevisions),
-    createdAt: new Date().toISOString(),
+    activeNav: "intake",
+    activeTab: "all",
+    selectedConflictId: "C-001",
+    selectedRepairId: "R-001",
+    beliefs: clone(seedBeliefs),
+    conflicts: clone(seedConflicts),
+    revisions: [],
+    createdAt: "2025-05-15T10:42:00.000Z",
   };
 }
 
-function structuredCloneSafe(value) {
+function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
@@ -252,681 +306,482 @@ function loadState() {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
     const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed.claims) || !Array.isArray(parsed.conflicts)) return null;
-    return parsed;
+    if (!Array.isArray(parsed.beliefs) || !Array.isArray(parsed.conflicts)) return null;
+    return { ...createState(), ...parsed };
   } catch {
     return null;
   }
 }
 
 function saveState() {
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-  } catch {
-    // The app remains usable without persistence.
-  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function bindEvents() {
+  document.querySelectorAll(".nav-button").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.activeNav = button.dataset.nav;
+      saveState();
+      syncNav();
+    });
+  });
+
+  document.querySelectorAll("[data-add-layer]").forEach((button) => {
+    button.addEventListener("click", () => focusComposer(button.dataset.addLayer));
+  });
+
+  document.querySelectorAll("[data-filter-layer]").forEach((button) => {
+    button.addEventListener("click", () => focusComposer(button.dataset.filterLayer));
+  });
+
+  els.beliefText.addEventListener("input", updateTokenCount);
+
+  els.beliefForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    addBelief();
+  });
+
+  els.clearComposerBtn.addEventListener("click", () => {
+    els.beliefText.value = "";
+    updateTokenCount();
+    els.beliefText.focus();
+  });
+
+  els.insertReferenceBtn.addEventListener("click", () => {
+    insertAtCursor(els.beliefText, "@J1 ");
+    updateTokenCount();
+  });
+
+  els.assistBtn.addEventListener("click", () => {
+    const assisted =
+      "We may consider @J2 only where @P2 is constrained by job relevance, validation evidence, and the proxy-risk findings in @T3.";
+    els.beliefText.value = assisted;
+    updateTokenCount();
+    els.beliefText.focus();
+  });
+
+  els.applyRepairBtn.addEventListener("click", applySelectedRepair);
+
+  els.guidanceBtn.addEventListener("click", () => {
+    insertAtCursor(
+      els.beliefText,
+      "Balance judgments, principles, and background theories before changing confidence weights. "
+    );
+    updateTokenCount();
+  });
+
+  els.editContextBtn.addEventListener("click", () => {
+    state.activeStage = "collection";
+    saveState();
+    renderStages();
+    focusComposer("judgment");
+  });
+
+  els.exportBtn.addEventListener("click", exportApi);
+  els.importInput.addEventListener("change", importApi);
 }
 
 function render() {
   renderStages();
-  renderMetrics();
-  renderClaims();
-  renderQueue();
+  renderBeliefs();
+  renderTabs();
+  renderConflicts();
   renderDetail();
-  renderTimeline();
-  saveState();
+  renderPipeline();
+  syncNav();
+  updateTokenCount();
 }
 
 function renderStages() {
-  const active = stages.find((stage) => stage.id === state.activeStage) || stages[0];
-  els.stageKicker.textContent = active.label;
-  els.stageSummary.textContent = active.summary;
-  els.stageList.textContent = "";
-
-  stages.forEach((stage, index) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "stage-item" + (stage.id === state.activeStage ? " is-active" : "");
-    button.dataset.stage = stage.id;
-
-    const number = document.createElement("span");
-    number.textContent = String(index + 1);
-
-    const label = document.createElement("div");
-    const strong = document.createElement("strong");
-    strong.textContent = stage.label;
-    const small = document.createElement("small");
-    small.textContent = stage.short;
-    label.append(strong, small);
-
-    button.append(number, label);
-    button.addEventListener("click", () => setStage(stage.id));
-    els.stageList.append(button);
-  });
-
-  document.querySelectorAll(".top-tab").forEach((button) => {
-    const activeByGroup = button.dataset.stage === "preparation" && state.activeStage === "collection";
-    button.classList.toggle("is-active", button.dataset.stage === state.activeStage || activeByGroup);
-  });
+  replaceChildren(
+    els.stageList,
+    stages.map((stage, index) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `stage-button${stage.id === state.activeStage ? " is-active" : ""}`;
+      button.dataset.stage = stage.id;
+      button.innerHTML = `
+        <span class="stage-icon">${icons[stage.icon]}</span>
+        <span class="stage-copy">
+          <strong><span class="stage-number">${index + 1}</span>${escapeHtml(stage.label)}</strong>
+          <span>${escapeHtml(stage.copy)}</span>
+        </span>
+        <span class="stage-chevron">${icons.chevron}</span>
+      `;
+      button.addEventListener("click", () => {
+        state.activeStage = stage.id;
+        saveState();
+        renderStages();
+      });
+      return button;
+    })
+  );
 }
 
-function setStage(stageId) {
-  state.activeStage = stageId;
-  const focusMap = {
-    preparation: ".workspace-hero",
-    collection: ".composer-panel",
-    integration: ".pipeline-panel",
-    reflection: ".queue-panel",
-    action: ".replay-panel",
-  };
-  render();
-  const selector = focusMap[stageId];
-  const target = selector ? document.querySelector(selector) : null;
-  if (target && window.matchMedia("(max-width: 940px)").matches) {
-    target.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
+function renderBeliefs() {
+  renderBeliefLayer("judgment", els.judgmentList);
+  renderBeliefLayer("principle", els.principleList);
+  renderBeliefLayer("theory", els.theoryList);
 }
 
-function renderMetrics() {
-  const openConflicts = state.conflicts.filter((conflict) => conflict.status === "open");
-  const resolved = state.conflicts.filter((conflict) => conflict.status === "resolved").length;
-  const activeSeverity = openConflicts.reduce((sum, conflict) => sum + conflict.severity, 0);
-  const averageSeverity = openConflicts.length ? activeSeverity / openConflicts.length : 0;
-  const coherence = Math.max(5, Math.round(100 - averageSeverity * 0.72 - openConflicts.length * 2));
-
-  els.claimCount.textContent = String(state.claims.length);
-  els.conflictCount.textContent = String(openConflicts.length);
-  els.coherenceScore.textContent = coherence + "%";
-  els.resolvedCount.textContent = String(resolved);
-  els.queueState.textContent = openConflicts.length + " open";
-  els.sessionStamp.textContent = formatSessionDate(state.createdAt);
+function renderBeliefLayer(layer, container) {
+  const items = state.beliefs.filter((belief) => belief.layer === layer).slice(0, 3);
+  replaceChildren(
+    container,
+    items.map((belief) => {
+      const row = document.createElement("article");
+      row.className = "belief-item";
+      row.innerHTML = `
+        <span class="belief-id">${escapeHtml(belief.id)}</span>
+        <p>${escapeHtml(belief.text)}</p>
+        <button class="row-menu" type="button" aria-label="More actions for ${escapeHtml(belief.id)}">${icons.dots}</button>
+      `;
+      return row;
+    })
+  );
 }
 
-function renderClaims() {
-  renderClaimLane("judgment", els.judgmentClaims);
-  renderClaimLane("principle", els.principleClaims);
-  renderClaimLane("background", els.backgroundClaims);
+function renderTabs() {
+  const counts = getCounts();
+  replaceChildren(
+    els.conflictTabs,
+    tabLabels.map((tab) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `queue-tab${state.activeTab === tab ? " is-active" : ""}`;
+      button.setAttribute("role", "tab");
+      button.setAttribute("aria-selected", String(state.activeTab === tab));
+      button.textContent = `${titleCase(tab)} `;
+      const count = document.createElement("span");
+      count.textContent = counts[tab];
+      button.append(count);
+      button.addEventListener("click", () => {
+        state.activeTab = tab;
+        const firstVisible = getFilteredConflicts()[0];
+        if (firstVisible) state.selectedConflictId = firstVisible.id;
+        saveState();
+        renderTabs();
+        renderConflicts();
+        renderDetail();
+      });
+      return button;
+    })
+  );
 }
 
-function renderClaimLane(layer, container) {
-  container.textContent = "";
-  const claims = state.claims.filter((claim) => claim.layer === layer);
-  if (!claims.length) {
-    const empty = document.createElement("p");
-    empty.className = "empty-state";
-    empty.textContent = "No claims in this layer.";
-    container.append(empty);
-    return;
-  }
-
-  claims.forEach((claim) => {
-    const article = document.createElement("article");
-    article.className = "claim-card";
-
-    const text = document.createElement("p");
-    text.textContent = claim.text;
-
-    const meta = document.createElement("div");
-    meta.className = "claim-meta";
-
-    const source = document.createElement("span");
-    source.textContent = claim.source + " / " + claim.scope;
-
-    const confidence = document.createElement("b");
-    confidence.className = "confidence-chip";
-    confidence.textContent = claim.confidence + "%";
-
-    meta.append(source, confidence);
-    article.append(text, meta);
-    container.append(article);
-  });
-}
-
-function renderQueue() {
-  els.conflictQueue.textContent = "";
-  const conflicts = [...state.conflicts].sort((a, b) => {
-    const statusRank = (status) => (status === "open" ? 0 : status === "deferred" ? 1 : status === "accepted" ? 2 : 3);
-    return statusRank(a.status) - statusRank(b.status) || b.severity - a.severity;
-  });
-
-  if (!conflicts.length) {
-    const empty = document.createElement("p");
-    empty.className = "empty-state";
-    empty.textContent = "No conflicts have been detected.";
-    els.conflictQueue.append(empty);
-    return;
-  }
-
-  conflicts.forEach((conflict) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "queue-item";
-    if (conflict.id === state.selectedConflictId) button.classList.add("is-active");
-    if (conflict.status !== "open") button.classList.add("is-" + conflict.status);
-
-    const titleRow = document.createElement("div");
-    titleRow.className = "queue-title-row";
-    const title = document.createElement("strong");
-    title.textContent = conflict.title;
-    const severity = document.createElement("span");
-    severity.className = "severity-chip";
-    severity.textContent = String(conflict.severity);
-    titleRow.append(title, severity);
-
-    const body = document.createElement("p");
-    body.textContent = conflict.type;
-
-    const meta = document.createElement("div");
-    meta.className = "queue-meta";
-    [conflict.status, ...conflict.methods.slice(0, 2)].forEach((item) => {
-      const chip = document.createElement("span");
-      chip.textContent = item;
-      meta.append(chip);
-    });
-
-    button.append(titleRow, body, meta);
-    button.addEventListener("click", () => {
-      state.selectedConflictId = conflict.id;
-      state.selectedRepair = conflict.repairs[0] || "";
-      render();
-    });
-    els.conflictQueue.append(button);
-  });
+function renderConflicts() {
+  const conflicts = getFilteredConflicts();
+  replaceChildren(
+    els.conflictQueue,
+    conflicts.map((conflict) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = `conflict-card${conflict.id === state.selectedConflictId ? " is-active" : ""}`;
+      button.innerHTML = `
+        <span class="conflict-card-top">
+          <span class="conflict-card-id">${escapeHtml(conflict.id)}</span>
+          <h3>${escapeHtml(conflict.title)}</h3>
+          <span class="severity-pill ${escapeHtml(conflict.severity)}">${escapeHtml(titleCase(conflict.severity))}</span>
+        </span>
+        <p>${escapeHtml(conflict.summary)}</p>
+        <p>Provenance: ${escapeHtml(conflict.provenance)}</p>
+        <time>${escapeHtml(conflict.time)}</time>
+        <span class="conflict-card-chevron">${icons.chevron}</span>
+      `;
+      button.addEventListener("click", () => {
+        state.selectedConflictId = conflict.id;
+        state.selectedRepairId = conflict.repairs[0]?.id || "";
+        saveState();
+        renderConflicts();
+        renderDetail();
+      });
+      return button;
+    })
+  );
 }
 
 function renderDetail() {
   const conflict = getSelectedConflict();
-  if (!conflict) {
-    els.detailSeverity.textContent = "Severity 0";
-    els.detailClaimA.textContent = "No conflict selected.";
-    els.detailClaimB.textContent = "";
-    els.detailLinked.textContent = "";
-    els.detailWhy.textContent = "";
-    els.repairOptions.textContent = "";
-    els.applyRepairBtn.disabled = true;
-    els.acceptBtn.disabled = true;
-    els.deferBtn.disabled = true;
-    return;
-  }
+  if (!conflict) return;
+  state.selectedRepairId = state.selectedRepairId || conflict.repairs[0]?.id || "";
 
-  const claimA = getClaim(conflict.claimAId);
-  const claimB = getClaim(conflict.claimBId);
-  const linked = conflict.linkedIds.map((id) => getClaim(id)).filter(Boolean);
-
-  els.detailSeverity.textContent = conflict.status === "open" ? "Severity " + conflict.severity : titleCase(conflict.status);
-  els.detailClaimA.textContent = claimA ? claimA.text : "Missing claim.";
-  els.detailClaimB.textContent = claimB ? claimB.text : "Missing claim.";
-  els.detailLinked.textContent = linked.map((claim) => claim.text).join(" ");
+  els.detailId.textContent = conflict.id;
+  els.detailTitle.textContent = conflict.title;
+  els.detailSeverity.className = `severity-pill ${conflict.severity}`;
+  els.detailSeverity.textContent = titleCase(conflict.severity);
   els.detailWhy.textContent = conflict.why;
-  els.repairOptions.textContent = "";
 
-  conflict.repairs.forEach((repair) => {
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "repair-chip" + (repair === state.selectedRepair ? " is-active" : "");
-    button.textContent = repair;
-    button.addEventListener("click", () => {
-      state.selectedRepair = repair;
-      renderDetail();
-    });
-    els.repairOptions.append(button);
-  });
+  replaceChildren(
+    els.detailClaims,
+    [
+      { title: "Claim A", id: conflict.claimA },
+      { title: "Claim B", id: conflict.claimB },
+    ].map(({ title, id }) => {
+      const belief = findBelief(id);
+      const box = document.createElement("article");
+      box.className = "claim-box";
+      box.innerHTML = `
+        <h4>${escapeHtml(title)}</h4>
+        <div class="claim-box-row">
+          <span class="belief-id">${escapeHtml(id)}</span>
+          <p>${escapeHtml(belief?.text || "No linked claim available.")}</p>
+        </div>
+      `;
+      return box;
+    })
+  );
 
-  els.applyRepairBtn.disabled = false;
-  els.acceptBtn.disabled = conflict.status !== "open";
-  els.deferBtn.disabled = conflict.status !== "open";
-  els.applyRepairBtn.textContent = conflict.status === "open" ? "Apply repair" : "Reopen conflict";
+  replaceChildren(
+    els.detailLinks,
+    conflict.linked.map((id) => {
+      const belief = findBelief(id);
+      const item = document.createElement("article");
+      item.className = "linked-item";
+      item.innerHTML = `
+        <strong>${escapeHtml(labelForLayer(belief?.layer))}</strong>
+        <div class="link-row">
+          <span class="link-id">${escapeHtml(id)}</span>
+          <p>${escapeHtml(belief?.text || "No linked item available.")}</p>
+        </div>
+      `;
+      return item;
+    })
+  );
+
+  replaceChildren(
+    els.repairOptions,
+    conflict.repairs.map((repair, index) => {
+      const button = document.createElement("button");
+      const selected = repair.id === state.selectedRepairId || (!state.selectedRepairId && index === 0);
+      button.type = "button";
+      button.className = `repair-card ${repair.tone || ""}${selected ? " is-selected" : ""}`;
+      button.innerHTML = `
+        <span class="repair-row">
+          <span class="repair-icon">${icons.code}</span>
+          <span>
+            <h4>${escapeHtml(repair.id)} &nbsp; ${escapeHtml(repair.title)}</h4>
+            <p>${escapeHtml(repair.text)}</p>
+            <small>Cost: ${escapeHtml(repair.cost)}</small>
+          </span>
+          ${repair.badge ? `<span class="cost-pill">${escapeHtml(repair.badge)}</span>` : ""}
+        </span>
+      `;
+      button.addEventListener("click", () => {
+        state.selectedRepairId = repair.id;
+        saveState();
+        renderDetail();
+      });
+      return button;
+    })
+  );
 }
 
-function renderTimeline() {
-  els.revisionTimeline.textContent = "";
-  if (!state.revisions.length) {
-    const empty = document.createElement("p");
-    empty.className = "empty-state";
-    empty.textContent = "No revisions yet.";
-    els.revisionTimeline.append(empty);
-    return;
-  }
+function renderPipeline() {
+  const revisionCount = state.revisions.length;
+  replaceChildren(
+    els.pipelineList,
+    pipeline.map((step, index) => {
+      const item = document.createElement("article");
+      item.className = "pipeline-step";
+      const metric = step.title === "Revision History" ? `${revisionCount} revisions` : step.metric;
+      item.innerHTML = `
+        <span class="pipeline-check">${icons.check}</span>
+        <span class="pipeline-icon">${icons[step.icon]}</span>
+        <strong>${escapeHtml(step.title)}</strong>
+        <span>${escapeHtml(step.subtitle)}</span>
+        <em>${escapeHtml(metric)}</em>
+      `;
+      item.style.setProperty("--step-index", String(index));
+      return item;
+    })
+  );
+}
 
-  [...state.revisions].reverse().forEach((revision) => {
-    const item = document.createElement("article");
-    item.className = "timeline-item";
-    const time = document.createElement("time");
-    time.textContent = revision.time;
-    const text = document.createElement("p");
-    text.textContent = revision.text;
-    item.append(time, text);
-    els.revisionTimeline.append(item);
+function syncNav() {
+  document.querySelectorAll(".nav-button").forEach((button) => {
+    button.classList.toggle("is-active", button.dataset.nav === state.activeNav);
+  });
+}
+
+function getCounts() {
+  return {
+    all: 12,
+    critical: 2,
+    high: 4,
+    medium: 4,
+    low: 2,
+  };
+}
+
+function getFilteredConflicts() {
+  const conflicts = state.activeTab === "all"
+    ? state.conflicts
+    : state.conflicts.filter((conflict) => conflict.severity === state.activeTab);
+
+  return [...conflicts].sort((a, b) => {
+    const severityDelta = severityOrder.indexOf(a.severity) - severityOrder.indexOf(b.severity);
+    if (severityDelta !== 0) return severityDelta;
+    return a.id.localeCompare(b.id);
   });
 }
 
 function getSelectedConflict() {
-  let conflict = state.conflicts.find((item) => item.id === state.selectedConflictId);
-  if (!conflict) {
-    conflict = state.conflicts.find((item) => item.status === "open") || state.conflicts[0] || null;
-    state.selectedConflictId = conflict ? conflict.id : "";
-  }
-  return conflict;
+  return state.conflicts.find((conflict) => conflict.id === state.selectedConflictId) || state.conflicts[0];
 }
 
-function getClaim(id) {
-  return state.claims.find((claim) => claim.id === id) || null;
+function findBelief(id) {
+  return state.beliefs.find((belief) => belief.id === id);
 }
 
-function addClaimFromForm(event) {
-  event.preventDefault();
-  const text = els.claimText.value.trim();
-  if (!text) return;
-
-  const claim = {
-    id: uniqueId("cl"),
-    layer: els.claimLayer.value,
-    text,
-    confidence: Number(els.claimConfidence.value),
-    source: els.claimSource.value.trim() || "manual entry",
-    scope: els.claimScope.value.trim() || "workspace",
-    createdAt: new Date().toISOString(),
-  };
-
-  state.claims.push(claim);
-  const generated = generateConflictsForClaim(claim);
-  state.conflicts.push(...generated);
-  if (generated.length) {
-    state.selectedConflictId = generated[0].id;
-    state.selectedRepair = generated[0].repairs[0];
-  }
-  addRevision(
-    generated.length
-      ? "Added claim and surfaced " + generated.length + " candidate tension."
-      : "Added claim to the canonical belief store."
-  );
-
-  els.claimText.value = "";
-  els.composerStatus.textContent = generated.length
-    ? "Candidate tension added to the review queue."
-    : "Claim added without a high-severity candidate.";
-  state.activeStage = generated.length ? "reflection" : "collection";
-  render();
+function labelForLayer(layer) {
+  if (layer === "principle") return "Principle";
+  if (layer === "theory") return "Background Theory";
+  if (layer === "judgment") return "Judgment";
+  return "Linked Item";
 }
 
-function generateConflictsForClaim(claim) {
-  const text = normalize(claim.text);
-  const conflicts = [];
-
-  if ((text.includes("always") || text.includes("never")) && claim.layer !== "principle") {
-    const principle = findClaimByWords(["only", "threshold", "scope"], "principle") || findAnyClaim("principle");
-    const background = findAnyClaim("background");
-    conflicts.push({
-      id: uniqueId("c"),
-      title: "Absolute claim needs scope",
-      type: "Scope mismatch",
-      severity: 63,
-      status: "open",
-      claimAId: claim.id,
-      claimBId: principle ? principle.id : claim.id,
-      linkedIds: [principle && principle.id, background && background.id].filter(Boolean),
-      why:
-        "The new claim uses absolute language. Wide reflective equilibrium treats that as a scope question before treating it as a final rule.",
-      methods: ["NLI screening", "SHACL scope shape"],
-      repairs: ["Add scope qualifier", "Lower confidence", "Mark as provisional", "Accept as monitored tension"],
-    });
-  }
-
-  if (text.includes("override") || text.includes("ignore") || text.includes("bypass")) {
-    const autonomy = findClaimByWords(["autonomy", "choice"], "judgment") || findAnyClaim("judgment");
-    const threshold = findClaimByWords(["severe", "threshold"], "principle") || findAnyClaim("principle");
-    conflicts.push({
-      id: uniqueId("c"),
-      title: "Override policy needs priority rule",
-      type: "Missing priority rule",
-      severity: 74,
-      status: "open",
-      claimAId: autonomy ? autonomy.id : claim.id,
-      claimBId: claim.id,
-      linkedIds: [threshold && threshold.id].filter(Boolean),
-      why:
-        "The new claim permits an override. The store needs a priority rule that says when that override is allowed and how it is audited.",
-      methods: ["NLI screening", "SAT/SMT policy check", "Argumentation graph"],
-      repairs: ["Define priority rule", "Add audit condition", "Lower override confidence", "Defer until policy review"],
-    });
-  }
-
-  if (text.includes("share") && !text.includes("consent") && !text.includes("confidential")) {
-    const privacy = findClaimByWords(["privacy", "sensitive", "access"], "principle") || findAnyClaim("principle");
-    conflicts.push({
-      id: uniqueId("c"),
-      title: "Sharing claim lacks consent boundary",
-      type: "Privacy tension",
-      severity: 69,
-      status: "open",
-      claimAId: claim.id,
-      claimBId: privacy ? privacy.id : claim.id,
-      linkedIds: [privacy && privacy.id].filter(Boolean),
-      why:
-        "The claim points toward disclosure but does not specify consent, access control, deletion, or export conditions.",
-      methods: ["SHACL privacy shape", "PROV access check"],
-      repairs: ["Add consent boundary", "Limit to anonymized exports", "Restrict workspace access", "Accept caveat as stable"],
-    });
-  }
-
-  return conflicts;
+function focusComposer(layer) {
+  const prefix = layer === "principle" ? "@P2 " : layer === "theory" ? "@T3 " : "@J1 ";
+  insertAtCursor(els.beliefText, prefix);
+  updateTokenCount();
+  els.beliefText.focus();
 }
 
-function runDetectors() {
-  const openCount = state.conflicts.filter((conflict) => conflict.status === "open").length;
-  if (openCount) {
-    addRevision("Ran detector pass across " + state.claims.length + " claims and kept " + openCount + " open tensions ranked by severity.");
-    els.composerStatus.textContent = "Detector pass complete. Queue ranking refreshed.";
-  } else {
-    const firstJudgment = findAnyClaim("judgment");
-    const firstPrinciple = findAnyClaim("principle");
-    if (firstJudgment && firstPrinciple) {
-      const conflict = {
-        id: uniqueId("c"),
-        title: "Low-severity calibration check",
-        type: "Confidence coherence",
-        severity: 37,
-        status: "open",
-        claimAId: firstJudgment.id,
-        claimBId: firstPrinciple.id,
-        linkedIds: [firstPrinciple.id],
-        why:
-          "The hard checks are quiet, but the confidence layer still asks whether the example-level judgment should be this close to the governing principle.",
-        methods: ["LP coherence", "Calibration check"],
-        repairs: ["Keep current confidence", "Lower judgment confidence", "Add background model", "Defer"],
-      };
-      state.conflicts.push(conflict);
-      state.selectedConflictId = conflict.id;
-      state.selectedRepair = conflict.repairs[0];
-      addRevision("Ran detector pass and created a low-severity calibration check.");
-    }
-  }
-  state.activeStage = "integration";
-  render();
-}
-
-function loadScenario() {
-  const additions = [
-    {
-      id: "j-library-stable",
-      layer: "judgment",
-      text: "Library X is stable enough for production use.",
-      confidence: 73,
-      source: "coding-agent task log",
-      scope: "dependency choice",
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: "j-type-error",
-      layer: "judgment",
-      text: "I overrode a type error because tests passed and the patch was urgent.",
-      confidence: 66,
-      source: "coding-agent task log",
-      scope: "urgent patch",
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: "p-type-safety",
-      layer: "principle",
-      text: "Security and type safety override speed when user data or reliability is at stake.",
-      confidence: 87,
-      source: "engineering policy",
-      scope: "software agents",
-      createdAt: new Date().toISOString(),
-    },
-    {
-      id: "b-tests-limited",
-      layer: "background",
-      text: "Passing tests do not establish security or long-term dependency stability.",
-      confidence: 80,
-      source: "software reliability model",
-      scope: "test evidence",
-      createdAt: new Date().toISOString(),
-    },
-  ];
-
-  additions.forEach((claim) => {
-    if (!state.claims.some((existing) => existing.id === claim.id)) {
-      state.claims.push(claim);
-    }
-  });
-
-  const conflict = {
-    id: "c-type-safety-tests",
-    title: "Tests passed but safety principle still applies",
-    type: "Rule/example tension",
-    severity: 78,
-    status: "open",
-    claimAId: "j-type-error",
-    claimBId: "p-type-safety",
-    linkedIds: ["b-tests-limited", "j-library-stable"],
-    why:
-      "The example relies on passing tests as sufficient reason to bypass a type error, while the principle treats reliability and safety as stronger than speed in risky contexts.",
-    methods: ["NLI screening", "SMT policy check", "PROV task log"],
-    repairs: [
-      "Add emergency exception threshold",
-      "Require reviewer signoff",
-      "Lower confidence in test evidence",
-      "Retract override judgment",
-    ],
-  };
-
-  const existing = state.conflicts.find((item) => item.id === conflict.id);
-  if (!existing) {
-    state.conflicts.push(conflict);
-  } else {
-    existing.status = "open";
-    existing.severity = conflict.severity;
-  }
-
-  state.selectedConflictId = conflict.id;
-  state.selectedRepair = conflict.repairs[0];
-  state.activeStage = "reflection";
-  els.composerStatus.textContent = "Coding-agent case loaded.";
-  addRevision("Loaded coding-agent case with dependency, type-safety, and test-evidence claims.");
-  render();
-}
-
-function applyRepair() {
-  const conflict = getSelectedConflict();
-  if (!conflict) return;
-
-  if (conflict.status !== "open") {
-    conflict.status = "open";
-    addRevision("Reopened " + conflict.title + " for another review pass.");
-    state.activeStage = "reflection";
-    render();
+function addBelief() {
+  const text = els.beliefText.value.trim();
+  if (!text) {
+    els.beliefText.focus();
     return;
   }
 
-  const repair = state.selectedRepair || conflict.repairs[0] || "Local revision";
-  conflict.status = repair.toLowerCase().includes("accept") ? "accepted" : "resolved";
-  conflict.resolution = repair;
-  conflict.resolvedAt = new Date().toISOString();
-  maybeAddRepairClaim(conflict, repair);
-  addRevision("Resolved " + conflict.title + " by choosing: " + repair + ".");
-  selectNextConflict();
-  state.activeStage = "action";
-  render();
-}
-
-function acceptTension() {
-  const conflict = getSelectedConflict();
-  if (!conflict || conflict.status !== "open") return;
-  conflict.status = "accepted";
-  conflict.resolution = "Accepted as stable tension";
-  conflict.resolvedAt = new Date().toISOString();
-  addRevision("Accepted stable tension: " + conflict.title + ".");
-  selectNextConflict();
-  state.activeStage = "action";
-  render();
-}
-
-function deferConflict() {
-  const conflict = getSelectedConflict();
-  if (!conflict || conflict.status !== "open") return;
-  conflict.status = "deferred";
-  conflict.resolution = "Deferred for later review";
-  conflict.resolvedAt = new Date().toISOString();
-  addRevision("Deferred conflict for later review: " + conflict.title + ".");
-  selectNextConflict();
-  state.activeStage = "action";
-  render();
-}
-
-function maybeAddRepairClaim(conflict, repair) {
-  const lower = repair.toLowerCase();
-  let text = "";
-  if (lower.includes("threshold") || lower.includes("priority")) {
-    text = "Override decisions require an explicit threshold, source record, and post-hoc review before they count as settled.";
-  } else if (lower.includes("scope") || lower.includes("confidential")) {
-    text = "The repaired claim applies only within the stated scope and remains private unless consent is recorded.";
-  } else if (lower.includes("confidence")) {
-    text = "The repaired claim keeps its content but lowers confidence until better evidence is attached.";
-  } else if (lower.includes("reviewer") || lower.includes("signoff")) {
-    text = "High-stakes exceptions require reviewer signoff before the agent treats them as justified.";
-  }
-
-  if (!text) return;
-  const alreadyExists = state.claims.some((claim) => claim.text === text);
-  if (alreadyExists) return;
-
-  state.claims.push({
-    id: uniqueId("cl"),
-    layer: "principle",
+  const layer = inferLayer(text);
+  const nextNumber = state.beliefs.filter((belief) => belief.layer === layer).length + 1;
+  const prefix = layer === "principle" ? "P" : layer === "theory" ? "T" : "J";
+  const belief = {
+    id: `${prefix}${nextNumber}`,
+    layer,
     text,
-    confidence: 78,
-    source: "repair action: " + conflict.id,
-    scope: "local conflict set",
-    createdAt: new Date().toISOString(),
-  });
-}
-
-function selectNextConflict() {
-  const next = state.conflicts.find((conflict) => conflict.status === "open");
-  if (next) {
-    state.selectedConflictId = next.id;
-    state.selectedRepair = next.repairs[0] || "";
-  }
-}
-
-function exportPayload() {
-  const payload = {
-    schema: "normativity.wre.session.v1",
-    exportedAt: new Date().toISOString(),
-    summary: {
-      claims: state.claims.length,
-      conflicts: state.conflicts.length,
-      openConflicts: state.conflicts.filter((conflict) => conflict.status === "open").length,
-    },
-    claims: state.claims,
-    conflicts: state.conflicts,
-    revisions: state.revisions,
   };
 
+  state.beliefs.push(belief);
+  state.revisions.push({
+    time: new Date().toISOString(),
+    text: `Added ${belief.id} to ${labelForLayer(layer).toLowerCase()}.`,
+  });
+  els.beliefText.value = "";
+  state.activeStage = "collection";
+  saveState();
+  render();
+}
+
+function inferLayer(text) {
+  const lower = text.toLowerCase();
+  if (lower.includes("principle") || lower.includes("@p")) return "principle";
+  if (lower.includes("theory") || lower.includes("@t") || lower.includes("evidence")) return "theory";
+  return "judgment";
+}
+
+function applySelectedRepair() {
+  const conflict = getSelectedConflict();
+  const repair = conflict?.repairs.find((item) => item.id === state.selectedRepairId);
+  if (!conflict || !repair) return;
+
+  state.revisions.push({
+    time: new Date().toISOString(),
+    text: `${repair.id} applied to ${conflict.id}: ${repair.title}.`,
+  });
+  state.activeStage = "action";
+  state.activeNav = "replay";
+
+  const revisionStep = pipeline.find((step) => step.title === "Revision History");
+  if (revisionStep) revisionStep.metric = `${state.revisions.length} revisions`;
+
+  saveState();
+  renderStages();
+  renderPipeline();
+  syncNav();
+  els.applyRepairBtn.querySelector("span").textContent = "Repair Applied";
+  window.setTimeout(() => {
+    els.applyRepairBtn.querySelector("span").textContent = "Apply Repair";
+  }, 1400);
+}
+
+function exportApi() {
+  const payload = {
+    session: {
+      id: "sess_7f2c9e7a",
+      created: state.createdAt,
+      scope: "AI hiring assistant",
+      status: "active",
+    },
+    beliefs: state.beliefs,
+    conflicts: state.conflicts,
+    selectedConflictId: state.selectedConflictId,
+    revisions: state.revisions,
+  };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "wre-session-export.json";
+  link.download = "normativity-wre-session.json";
   document.body.append(link);
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
-  addRevision("Exported API payload with claims, conflicts, and revision history.");
-  render();
 }
 
-function importPayload(file) {
+function importApi(event) {
+  const [file] = event.target.files;
   if (!file) return;
   const reader = new FileReader();
   reader.addEventListener("load", () => {
     try {
-      const payload = JSON.parse(String(reader.result || "{}"));
-      if (!Array.isArray(payload.claims) || !Array.isArray(payload.conflicts)) {
-        throw new Error("Missing claims or conflicts.");
-      }
+      const parsed = JSON.parse(String(reader.result));
+      if (!Array.isArray(parsed.beliefs) || !Array.isArray(parsed.conflicts)) return;
       state = {
-        activeStage: "collection",
-        selectedConflictId: payload.conflicts[0] ? payload.conflicts[0].id : "",
-        selectedRepair: payload.conflicts[0] && payload.conflicts[0].repairs ? payload.conflicts[0].repairs[0] : "",
-        claims: payload.claims,
-        conflicts: payload.conflicts,
-        revisions: Array.isArray(payload.revisions) ? payload.revisions : [],
-        createdAt: payload.createdAt || new Date().toISOString(),
+        ...createState(),
+        beliefs: parsed.beliefs,
+        conflicts: parsed.conflicts,
+        revisions: Array.isArray(parsed.revisions) ? parsed.revisions : [],
+        selectedConflictId: parsed.selectedConflictId || parsed.conflicts[0]?.id || "C-001",
       };
-      addRevision("Imported WRE session payload.");
+      saveState();
       render();
-    } catch (error) {
-      els.composerStatus.textContent = "Import failed: " + error.message;
+    } catch {
+      // Invalid files are ignored so the local session remains intact.
+    } finally {
+      event.target.value = "";
     }
   });
   reader.readAsText(file);
 }
 
-function resetSession() {
-  state = createInitialState();
-  localStorage.removeItem(STORAGE_KEY);
-  render();
+function updateTokenCount() {
+  const tokens = els.beliefText.value.trim().split(/\s+/).filter(Boolean).length;
+  els.tokenCount.textContent = `${tokens} token${tokens === 1 ? "" : "s"}`;
 }
 
-function addRevision(text) {
-  state.revisions.push({
-    id: uniqueId("r"),
-    time: formatTime(new Date()),
-    text,
-  });
-}
-
-function findClaimByWords(words, layer) {
-  return state.claims.find((claim) => claim.layer === layer && words.some((word) => normalize(claim.text).includes(word))) || null;
-}
-
-function findAnyClaim(layer) {
-  return state.claims.find((claim) => claim.layer === layer) || null;
-}
-
-function normalize(value) {
-  return String(value || "").toLowerCase();
-}
-
-function uniqueId(prefix) {
-  return prefix + "-" + Math.random().toString(36).slice(2, 8) + "-" + Date.now().toString(36);
-}
-
-function formatTime(date) {
-  return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-}
-
-function formatSessionDate(value) {
-  const date = new Date(value);
-  if (Number.isNaN(date.valueOf())) return "Local session";
-  return date.toLocaleDateString([], { month: "short", day: "numeric" }) + " at " + formatTime(date);
+function insertAtCursor(input, value) {
+  const start = input.selectionStart ?? input.value.length;
+  const end = input.selectionEnd ?? input.value.length;
+  input.value = `${input.value.slice(0, start)}${value}${input.value.slice(end)}`;
+  const next = start + value.length;
+  input.setSelectionRange(next, next);
 }
 
 function titleCase(value) {
-  return String(value || "")
-    .replace(/-/g, " ")
-    .replace(/\b\w/g, (letter) => letter.toUpperCase());
+  return `${value.slice(0, 1).toUpperCase()}${value.slice(1)}`;
 }
 
-function bindEvents() {
-  document.querySelectorAll(".top-tab").forEach((button) => {
-    button.addEventListener("click", () => setStage(button.dataset.stage));
-  });
-  els.claimForm.addEventListener("submit", addClaimFromForm);
-  els.claimConfidence.addEventListener("input", () => {
-    els.confidenceValue.textContent = els.claimConfidence.value + "%";
-  });
-  els.runDetectorsBtn.addEventListener("click", runDetectors);
-  els.loadScenarioBtn.addEventListener("click", loadScenario);
-  els.applyRepairBtn.addEventListener("click", applyRepair);
-  els.acceptBtn.addEventListener("click", acceptTension);
-  els.deferBtn.addEventListener("click", deferConflict);
-  els.resetBtn.addEventListener("click", resetSession);
-  els.exportBtn.addEventListener("click", exportPayload);
-  els.importInput.addEventListener("change", () => importPayload(els.importInput.files[0]));
+function replaceChildren(container, children) {
+  container.replaceChildren(...children);
 }
 
-bindEvents();
-render();
+function escapeHtml(value) {
+  return String(value)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
