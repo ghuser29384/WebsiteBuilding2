@@ -1,16 +1,16 @@
 :root {
   --bg: #ffffff;
   --panel: #ffffff;
-  --soft: #f7f9f8;
-  --soft-2: #f3f6f4;
-  --line: #dfe5e2;
-  --line-strong: #cfd8d3;
-  --ink: #141a21;
+  --soft: #f8faf9;
+  --soft-2: #f5f7f6;
+  --line: #e0e6e3;
+  --line-strong: #d3dcd7;
+  --ink: #151923;
   --muted: #65717b;
   --muted-2: #8a949d;
-  --green: #006f43;
-  --green-dark: #004f31;
-  --green-soft: #dff2e7;
+  --green: #006b43;
+  --green-dark: #00482e;
+  --green-soft: #d9f1e2;
   --red: #c92b26;
   --red-soft: #fde7e5;
   --orange: #e07a26;
@@ -19,7 +19,7 @@
   --yellow-soft: #fff5cf;
   --blue: #2c74bd;
   --blue-soft: #e9f3ff;
-  --shadow: 0 14px 34px rgba(18, 30, 26, 0.08);
+  --shadow: 0 10px 28px rgba(18, 30, 26, 0.06);
   --radius: 8px;
   --radius-sm: 6px;
   --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -49,6 +49,8 @@ body.wre-dashboard {
   color: var(--ink);
   font-family: var(--font);
   line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
 }
 
 button,
@@ -115,7 +117,7 @@ svg {
   top: 0;
   z-index: 40;
   display: grid;
-  grid-template-columns: 300px minmax(420px, 1fr) 320px;
+  grid-template-columns: 270px minmax(420px, 1fr) 320px;
   align-items: center;
   height: 74px;
   border-bottom: 1px solid var(--line);
@@ -125,7 +127,7 @@ svg {
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
   min-width: 0;
   padding: 0 20px;
   color: var(--green-dark);
@@ -133,45 +135,20 @@ svg {
 }
 
 .brand-mark {
-  position: relative;
-  display: inline-block;
-  width: 38px;
-  height: 32px;
+  width: 34px;
+  height: 29px;
   flex: 0 0 auto;
-}
-
-.brand-mark::before,
-.brand-mark::after {
-  content: "";
-  position: absolute;
-  top: 4px;
-  width: 15px;
-  height: 28px;
-  border-radius: 16px 3px 16px 3px;
-  background: var(--green);
-  transform: rotate(-43deg);
-  transform-origin: 50% 50%;
-}
-
-.brand-mark::before {
-  left: 2px;
-}
-
-.brand-mark::after {
-  left: 19px;
-}
-
-.brand-mark span:first-child,
-.brand-mark span:last-child {
-  display: none;
+  color: var(--green);
+  fill: currentColor;
+  stroke: none;
 }
 
 .brand-name {
   overflow: hidden;
   color: var(--green-dark);
-  font-family: var(--serif);
+  font-family: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   font-size: 31px;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -195,7 +172,7 @@ svg {
   background: transparent;
   color: #1e2530;
   font-size: 16px;
-  font-weight: 640;
+  font-weight: 560;
 }
 
 .nav-button svg {
@@ -248,11 +225,11 @@ svg {
   gap: 10px;
   min-height: 40px;
   border: 1px solid var(--green);
-  background: linear-gradient(180deg, #007a48, var(--green));
+  background: linear-gradient(180deg, #00744a, #00663f);
   color: #ffffff;
-  box-shadow: 0 10px 20px rgba(0, 111, 67, 0.18);
+  box-shadow: 0 10px 24px rgba(0, 95, 59, 0.16);
   font-size: 13px;
-  font-weight: 780;
+  font-weight: 700;
 }
 
 .export-button {
@@ -334,7 +311,7 @@ svg {
   gap: 10px;
   overflow: auto;
   border-right: 1px solid var(--line);
-  background: #fbfcfb;
+  background: #fbfcfc;
   padding: 24px 15px 16px;
 }
 
@@ -345,7 +322,7 @@ svg {
   margin: 0;
   color: #65717b;
   font-size: 12px;
-  font-weight: 780;
+  font-weight: 700;
   letter-spacing: 0;
   text-transform: uppercase;
 }
@@ -388,9 +365,9 @@ svg {
 }
 
 .stage-button.is-active {
-  background: linear-gradient(145deg, #003c27, #00683f);
+  background: linear-gradient(145deg, #003b27, #00633e);
   color: #ffffff;
-  box-shadow: 0 12px 28px rgba(0, 76, 49, 0.2);
+  box-shadow: 0 16px 30px rgba(0, 74, 47, 0.14);
 }
 
 .stage-icon {
@@ -428,7 +405,7 @@ svg {
   margin-bottom: 6px;
   color: inherit;
   font-size: 13px;
-  font-weight: 760;
+  font-weight: 700;
 }
 
 .stage-number {
@@ -454,7 +431,7 @@ svg {
   display: block;
   color: var(--muted);
   font-size: 12px;
-  line-height: 1.5;
+  line-height: 1.45;
 }
 
 .stage-button.is-active .stage-copy span:last-child {
@@ -574,9 +551,9 @@ svg {
 
 .workspace-heading h1 {
   margin: 0 0 8px;
-  color: #151c28;
+  color: #171c27;
   font-size: clamp(25px, 2vw, 30px);
-  font-weight: 760;
+  font-weight: 700;
   line-height: 1.12;
 }
 
@@ -601,6 +578,7 @@ svg {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: #ffffff;
+  box-shadow: 0 1px 0 rgba(17, 24, 39, 0.02);
   padding: 16px 12px 14px;
 }
 
@@ -619,7 +597,7 @@ svg {
   margin: 0 0 10px;
   color: #1f2937;
   font-size: 13px;
-  font-weight: 760;
+  font-weight: 700;
 }
 
 .family-head h2 svg {
@@ -642,7 +620,7 @@ svg {
   background: transparent;
   color: var(--green);
   font-size: 12px;
-  font-weight: 780;
+  font-weight: 700;
   white-space: nowrap;
 }
 
@@ -693,7 +671,7 @@ svg {
   background: var(--green-soft);
   color: var(--green);
   font-size: 11px;
-  font-weight: 760;
+  font-weight: 700;
 }
 
 .belief-item p {
@@ -732,6 +710,7 @@ svg {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: #ffffff;
+  box-shadow: 0 1px 0 rgba(17, 24, 39, 0.02);
   overflow: hidden;
 }
 
@@ -747,7 +726,7 @@ svg {
   margin: 0 0 9px;
   color: #111827;
   font-size: 14px;
-  font-weight: 760;
+  font-weight: 700;
 }
 
 .compose-head p {
@@ -907,7 +886,7 @@ svg {
   background: transparent;
   color: #27303a;
   font-size: 12px;
-  font-weight: 760;
+  font-weight: 700;
   white-space: nowrap;
 }
 
@@ -942,13 +921,14 @@ svg {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: #ffffff;
+  box-shadow: 0 1px 0 rgba(17, 24, 39, 0.015);
   padding: 14px 11px 12px;
   text-align: left;
 }
 
 .conflict-card.is-active {
   border-color: #e2b0ac;
-  box-shadow: var(--shadow);
+  box-shadow: 0 12px 30px rgba(28, 37, 44, 0.05);
 }
 
 .conflict-card.is-active::before {
@@ -982,7 +962,7 @@ svg {
   overflow: hidden;
   color: #222b36;
   font-size: 10px;
-  font-weight: 760;
+  font-weight: 700;
   line-height: 1.4;
   text-overflow: clip;
   white-space: normal;
@@ -1010,7 +990,7 @@ svg {
   padding: 0 8px;
   border-radius: 6px;
   font-size: 11px;
-  font-weight: 760;
+  font-weight: 700;
   white-space: nowrap;
 }
 
@@ -1077,7 +1057,7 @@ svg {
   margin: 0 10px 0 0;
   color: #111827;
   font-size: 15px;
-  font-weight: 780;
+  font-weight: 700;
 }
 
 .detail-head h2 {
@@ -1085,7 +1065,7 @@ svg {
   margin: 0;
   color: #111827;
   font-size: 15px;
-  font-weight: 780;
+  font-weight: 700;
   line-height: 1.28;
 }
 
@@ -1116,7 +1096,7 @@ svg {
   margin: 0 0 9px;
   color: #1f2937;
   font-size: 12px;
-  font-weight: 780;
+  font-weight: 700;
 }
 
 .detail-section h3 svg {
@@ -1305,6 +1285,7 @@ svg {
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background: #ffffff;
+  box-shadow: 0 1px 0 rgba(17, 24, 39, 0.015);
   padding: 13px 8px 10px;
   text-align: center;
 }
@@ -1396,19 +1377,11 @@ svg {
   }
 
   .topbar {
-    grid-template-columns: 250px 1fr 260px;
-  }
-
-  .brand-name {
-    font-size: 27px;
+    grid-template-columns: 270px minmax(360px, 1fr) 300px;
   }
 
   .top-nav {
     gap: 24px;
-  }
-
-  .nav-button span {
-    display: none;
   }
 
   .app-shell {

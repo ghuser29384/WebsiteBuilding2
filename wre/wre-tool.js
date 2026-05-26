@@ -1,4 +1,4 @@
-const STORAGE_KEY = "normativity-wre-dashboard-v2";
+const STORAGE_KEY = "normativity-wre-dashboard-v3";
 
 const icons = {
   clipboard: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l1 2h3v16H5V5h3l1-2Z" /><path d="M9 7h6" /></svg>',
