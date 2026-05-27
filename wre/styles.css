@@ -918,6 +918,93 @@ svg {
   color: var(--red);
 }
 
+.security-controls-panel {
+  border-top: 1px solid var(--line);
+  background: #ffffff;
+}
+
+.security-controls-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+}
+
+.security-controls-head h3 {
+  margin: 0 0 5px;
+  color: #17231f;
+  font-size: 14px;
+  font-weight: 760;
+}
+
+.security-controls-head p {
+  margin: 0;
+  color: #5c6872;
+  font-size: 11px;
+  line-height: 1.42;
+}
+
+.security-controls-form {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(92px, 1fr)) minmax(120px, 1fr) minmax(120px, 1fr);
+  gap: 8px;
+  align-items: end;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 12px;
+}
+
+.security-controls-form label {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.security-controls-form label span {
+  color: #58656f;
+  font-size: 10px;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
+.security-controls-form input,
+.security-controls-form select {
+  min-height: 32px;
+  width: 100%;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: #26313d;
+  padding: 0 9px;
+  font: inherit;
+  font-size: 12px;
+}
+
+.security-toggle {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  align-self: center;
+  gap: 8px;
+}
+
+.security-toggle input {
+  width: auto;
+}
+
+.security-submit {
+  grid-column: 1 / -1;
+  justify-self: start;
+  min-height: 36px;
+}
+
+.security-control-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  padding: 12px;
+}
+
 .analysis-panel {
   margin: 0 0 18px;
   border: 1px solid var(--line);
@@ -963,7 +1050,7 @@ svg {
 
 .analysis-summary {
   display: grid;
-  grid-template-columns: repeat(6, minmax(90px, 1fr));
+  grid-template-columns: repeat(7, minmax(88px, 1fr));
   border-bottom: 1px solid var(--line);
 }
 
@@ -1088,6 +1175,143 @@ svg {
   color: #17231f;
   font-size: 16px;
   line-height: 1.05;
+}
+
+.constraint-workbench {
+  border-top: 1px solid var(--line);
+  background: #fbfcfb;
+}
+
+.constraint-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+}
+
+.constraint-head h3 {
+  margin: 0 0 5px;
+  color: #17231f;
+  font-size: 13px;
+  font-weight: 780;
+}
+
+.constraint-head p {
+  margin: 0;
+  color: #5c6872;
+  font-size: 11px;
+  line-height: 1.42;
+}
+
+.constraint-form {
+  display: grid;
+  grid-template-columns: minmax(160px, 1.1fr) minmax(120px, 0.7fr) minmax(120px, 0.7fr) minmax(240px, 2fr) auto;
+  gap: 10px;
+  align-items: end;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  padding: 12px 14px;
+}
+
+.constraint-form label {
+  display: grid;
+  gap: 5px;
+}
+
+.constraint-form label span {
+  color: #51605b;
+  font-size: 10px;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
+.constraint-form input,
+.constraint-form select,
+.constraint-form textarea {
+  width: 100%;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: #17231f;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.35;
+  padding: 8px 9px;
+}
+
+.constraint-form textarea {
+  resize: vertical;
+}
+
+.constraint-submit {
+  min-height: 38px;
+  white-space: nowrap;
+}
+
+.constraint-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 12px;
+}
+
+.constraint-item,
+.constraint-empty {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-left: 4px solid #64748b;
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  padding: 10px;
+}
+
+.constraint-item {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: start;
+}
+
+.constraint-item.severity-critical {
+  border-left-color: var(--red);
+}
+
+.constraint-item.severity-high {
+  border-left-color: #b45309;
+}
+
+.constraint-item.severity-medium {
+  border-left-color: var(--yellow);
+}
+
+.constraint-item.is-disabled {
+  opacity: 0.62;
+}
+
+.constraint-meta,
+.constraint-empty span {
+  display: block;
+  color: #64717b;
+  font-size: 10px;
+  font-weight: 720;
+}
+
+.constraint-item strong,
+.constraint-empty strong {
+  display: block;
+  margin: 4px 0;
+  color: #17231f;
+  font-size: 12px;
+  line-height: 1.18;
+}
+
+.constraint-item p {
+  margin: 0;
+  color: #4b5b55;
+  font-size: 11px;
+  line-height: 1.38;
 }
 
 .calibration-panel {
@@ -3196,10 +3420,14 @@ svg {
   .privacy-grid,
   .data-rights-grid,
   .receipt-list,
+  .security-controls-form,
+  .security-control-list,
   .metadata-grid,
   .analysis-summary,
   .benchmark-list,
   .evaluation-list,
+  .constraint-list,
+  .constraint-form,
   .calibration-form,
   .calibration-log,
   .replay-contract-grid,
@@ -3277,6 +3505,8 @@ svg {
   .workspace-heading,
   .data-rights-head,
   .analysis-head,
+  .constraint-head,
+  .security-controls-head,
   .calibration-head,
   .compose-head,
   .composer-footer,

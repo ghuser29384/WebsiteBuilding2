@@ -187,6 +187,7 @@
           </div>
           <div class="data-rights-actions">
             <button id="exportPrivacyBtn" class="utility-button compact" type="button">Export Receipt</button>
+            <button id="exportLocalStoreBtn" class="utility-button compact" type="button">Export Local Store</button>
             <button id="deleteLocalDataBtn" class="danger-button compact" type="button">Delete Local Data</button>
           </div>
         </div>
@@ -216,6 +217,59 @@
           </div>
           <p id="encryptedArchiveStatus" class="encrypted-archive-status" aria-live="polite">Encrypted archive not exported this session.</p>
         </section>
+        <section class="security-controls-panel" aria-labelledby="securityControlsTitle">
+          <div class="security-controls-head">
+            <div>
+              <h3 id="securityControlsTitle">Security & API Abuse Controls</h3>
+              <p>Map production-readiness evidence to OWASP ASVS, API abuse limits, DPIA review, and budget caps before cloud sync is enabled.</p>
+            </div>
+            <button id="exportSecurityBtn" class="utility-button compact" type="button">Export Security Report</button>
+          </div>
+          <form id="securityControlsForm" class="security-controls-form">
+            <label for="quotaPerHourInput">
+              <span>Quota / hr</span>
+              <input id="quotaPerHourInput" name="quotaPerHour" type="number" min="1" max="1000" step="1">
+            </label>
+            <label for="bodyLimitInput">
+              <span>Body KB</span>
+              <input id="bodyLimitInput" name="bodyLimitKb" type="number" min="16" max="2048" step="16">
+            </label>
+            <label for="analysisCapInput">
+              <span>Claim cap</span>
+              <input id="analysisCapInput" name="analysisClaimCap" type="number" min="10" max="5000" step="10">
+            </label>
+            <label for="nliCapInput">
+              <span>NLI pairs</span>
+              <input id="nliCapInput" name="nliPairCap" type="number" min="0" max="250" step="5">
+            </label>
+            <label for="budgetCapInput">
+              <span>Budget $</span>
+              <input id="budgetCapInput" name="monthlyBudgetUsd" type="number" min="0" max="500" step="5">
+            </label>
+            <label for="telemetryModeInput">
+              <span>Telemetry</span>
+              <select id="telemetryModeInput" name="telemetryMode">
+                <option value="off">Off</option>
+                <option value="local">Local-only</option>
+                <option value="otlp-ready">OTLP ready</option>
+              </select>
+            </label>
+            <label for="complianceStatusInput">
+              <span>Review</span>
+              <select id="complianceStatusInput" name="complianceStatus">
+                <option value="draft">Draft</option>
+                <option value="mapped">Mapped</option>
+                <option value="launch-ready">Launch ready</option>
+              </select>
+            </label>
+            <label class="security-toggle" for="syncAuthRequiredInput">
+              <input id="syncAuthRequiredInput" name="syncAuthRequired" type="checkbox">
+              <span>Require auth for sync</span>
+            </label>
+            <button class="primary-button security-submit" type="submit">Save Controls</button>
+          </form>
+          <div id="securityControlList" class="security-control-list" aria-label="Security readiness evidence"></div>
+        </section>
       </section>
 
       <section id="analysisPanel" class="analysis-panel" tabindex="-1" aria-labelledby="analysisTitle">
@@ -236,6 +290,44 @@
         <div id="analysisSummary" class="analysis-summary"></div>
         <div id="benchmarkList" class="benchmark-list" aria-label="Evaluation targets"></div>
         <div id="evaluationList" class="evaluation-list" aria-label="Latest local evaluation evidence"></div>
+        <section class="constraint-workbench" aria-labelledby="constraintTitle">
+          <div class="constraint-head">
+            <div>
+              <h3 id="constraintTitle">Constraint Workbench</h3>
+              <p>Keep hard rules visible as local rule, SHACL, or SMT templates before they become conflicts.</p>
+            </div>
+            <button id="exportConstraintsBtn" class="utility-button compact" type="button">Export Constraints</button>
+          </div>
+          <form id="constraintForm" class="constraint-form">
+            <label for="constraintNameInput">
+              <span>Name</span>
+              <input id="constraintNameInput" name="name" type="text" placeholder="Validated proxy rule">
+            </label>
+            <label for="constraintLanguageInput">
+              <span>Language</span>
+              <select id="constraintLanguageInput" name="language">
+                <option value="rule">Rule</option>
+                <option value="smt">SMT</option>
+                <option value="shacl">SHACL</option>
+              </select>
+            </label>
+            <label for="constraintSeverityInput">
+              <span>Severity</span>
+              <select id="constraintSeverityInput" name="severity">
+                <option value="critical">Critical</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+            </label>
+            <label class="constraint-body-field" for="constraintBodyInput">
+              <span>Body</span>
+              <textarea id="constraintBodyInput" name="body" rows="2" placeholder="If @J1 and @P2 are both active, require validated and job-related scope before analysis passes."></textarea>
+            </label>
+            <button class="primary-button constraint-submit" type="submit">Add Constraint</button>
+          </form>
+          <div id="constraintList" class="constraint-list" aria-label="Active local constraints"></div>
+        </section>
       </section>
 
       <section id="calibrationPanel" class="calibration-panel" tabindex="-1" aria-labelledby="calibrationTitle">
@@ -466,6 +558,8 @@
             <div class="agent-contract-actions">
               <button id="copyContractBtn" class="utility-button compact" type="button">Copy JSON</button>
               <button id="exportOpenApiBtn" class="utility-button compact" type="button">Export OpenAPI</button>
+              <button id="exportJsonLdBtn" class="utility-button compact" type="button">Export JSON-LD</button>
+              <button id="exportCsvBtn" class="utility-button compact" type="button">Export CSV</button>
             </div>
           </div>
           <div id="agentContractList" class="agent-contract-list"></div>

@@ -1,8 +1,26 @@
 const STORAGE_KEY = "normativity-wre-dashboard-v4";
+const INDEXED_DB_NAME = "normativity-wre-local-first";
+const INDEXED_DB_VERSION = 1;
+const INDEXED_DB_STORE = "sessions";
+const INDEXED_DB_SESSION_ID = "sess_7f2c9e7a";
 const DEFAULT_PRIVACY = {
   cloudSync: false,
   nliTriage: false,
   retention: "until-deleted",
+};
+
+const DEFAULT_SECURITY_CONTROLS = {
+  quotaPerHour: 60,
+  bodyLimitKb: 256,
+  analysisClaimCap: 250,
+  nliPairCap: 25,
+  monthlyBudgetUsd: 50,
+  telemetryMode: "otlp-ready",
+  complianceStatus: "mapped",
+  syncAuthRequired: true,
+  restoreDrillCadence: "monthly",
+  dpiaReview: "DPIA-style privacy review mapped before sync or third-party processing.",
+  asvsMapping: "OWASP ASVS control map drafted for auth, session handling, uploads, secrets, and logging.",
 };
 
 const icons = {
@@ -190,6 +208,36 @@ const seedRelations = [
   },
 ];
 
+const seedConstraints = [
+  {
+    id: "K-001",
+    name: "Protected Attribute Proxy Rule",
+    language: "rule",
+    severity: "critical",
+    body:
+      "If a selection criterion risks acting as a protected-attribute proxy, require validated and job-related scope before it can support a hiring principle.",
+    enabled: true,
+  },
+  {
+    id: "K-002",
+    name: "Transparency Boundary Rule",
+    language: "smt",
+    severity: "high",
+    body:
+      "Transparency duties and confidentiality duties are jointly satisfiable only when candidate-facing reasons are separated from protected internal notes.",
+    enabled: true,
+  },
+  {
+    id: "K-003",
+    name: "Fair Opportunity Validation Rule",
+    language: "shacl",
+    severity: "medium",
+    body:
+      "Role-fit or experience claims need validation evidence before they can outweigh fair-opportunity principles.",
+    enabled: true,
+  },
+];
+
 const seedConflicts = [
   {
     id: "C-001",
@@ -364,17 +412,20 @@ const agentContract = {
   schemaVersion: "wre-2.5",
   claimFields: ["id", "layer", "text", "domain", "confidence", "timeScope", "provenance", "sensitivity"],
   relationFields: ["id", "source", "target", "type", "weight", "rationale"],
+  constraintFields: ["id", "name", "language", "body", "severity", "enabled"],
   repairOptionFields: ["id", "conflictId", "actionType", "affectedClaims", "predictedResolutionScore", "disruptionCost", "explanation"],
+  exportFormats: ["application/json", "application/ld+json", "text/csv"],
   relationTypes: ["supports", "conflicts", "neutral", "implies", "depends_on", "undercuts"],
   conflictKinds: ["hard", "soft", "nlp"],
   endpoints: [
     ["POST", "/v1/sessions", "Create a local or synced WRE session with explicit privacy mode."],
     ["POST", "/v1/beliefs", "Add or batch import typed judgments, principles, and background theories."],
     ["POST", "/v1/relations", "Add or batch import support, conflict, neutral, implication, dependency, and undercut links."],
+    ["POST", "/v1/constraints", "Add rule, SHACL, or SMT templates for deterministic hard-conflict checks."],
     ["POST", "/v1/analyze", "Run rule, SMT, graph, NLI, and probabilistic checks."],
     ["GET", "/v1/conflicts", "Read explanation-first conflict reports."],
     ["POST", "/v1/conflicts/{id}/repair", "Preview or apply a ranked repair option."],
-    ["GET", "/v1/export", "Export a portable JSON session archive."],
+    ["GET", "/v1/export", "Export a portable JSON, JSON-LD, or CSV session archive."],
     ["GET", "/v1/benchmarks/latest", "Read evaluation targets and the latest local analysis run."],
     ["GET", "/v1/calibration-rounds", "Read case-loop calibration and disagreement rounds."],
     ["DELETE", "/v1/sessions/{id}", "Delete a synced or local session record."],
@@ -457,6 +508,7 @@ const els = {
   commandStatus: document.getElementById("commandStatus"),
   exportBtn: document.getElementById("exportBtn"),
   exportPrivacyBtn: document.getElementById("exportPrivacyBtn"),
+  exportLocalStoreBtn: document.getElementById("exportLocalStoreBtn"),
   deleteLocalDataBtn: document.getElementById("deleteLocalDataBtn"),
   archivePassphraseInput: document.getElementById("archivePassphraseInput"),
   exportEncryptedBtn: document.getElementById("exportEncryptedBtn"),
@@ -473,6 +525,7 @@ const els = {
   runEvaluationBtn: document.getElementById("runEvaluationBtn"),
   exportBenchmarkBtn: document.getElementById("exportBenchmarkBtn"),
   exportEvaluationBtn: document.getElementById("exportEvaluationBtn"),
+  exportConstraintsBtn: document.getElementById("exportConstraintsBtn"),
   editContextBtn: document.getElementById("editContextBtn"),
   cloudSyncToggle: document.getElementById("cloudSyncToggle"),
   llmTriageToggle: document.getElementById("llmTriageToggle"),
@@ -494,6 +547,8 @@ const els = {
   reviewLatestBtn: document.getElementById("reviewLatestBtn"),
   copyContractBtn: document.getElementById("copyContractBtn"),
   exportOpenApiBtn: document.getElementById("exportOpenApiBtn"),
+  exportJsonLdBtn: document.getElementById("exportJsonLdBtn"),
+  exportCsvBtn: document.getElementById("exportCsvBtn"),
   revisionReplay: document.getElementById("revisionReplay"),
   revisionList: document.getElementById("revisionList"),
   agentContractPanel: document.getElementById("agentContractPanel"),
@@ -503,9 +558,26 @@ const els = {
   analysisSummary: document.getElementById("analysisSummary"),
   benchmarkList: document.getElementById("benchmarkList"),
   evaluationList: document.getElementById("evaluationList"),
+  constraintForm: document.getElementById("constraintForm"),
+  constraintNameInput: document.getElementById("constraintNameInput"),
+  constraintLanguageInput: document.getElementById("constraintLanguageInput"),
+  constraintSeverityInput: document.getElementById("constraintSeverityInput"),
+  constraintBodyInput: document.getElementById("constraintBodyInput"),
+  constraintList: document.getElementById("constraintList"),
   dataRightsPanel: document.getElementById("dataRightsPanel"),
   privacyReceiptList: document.getElementById("privacyReceiptList"),
   migrationReportList: document.getElementById("migrationReportList"),
+  exportSecurityBtn: document.getElementById("exportSecurityBtn"),
+  securityControlsForm: document.getElementById("securityControlsForm"),
+  quotaPerHourInput: document.getElementById("quotaPerHourInput"),
+  bodyLimitInput: document.getElementById("bodyLimitInput"),
+  analysisCapInput: document.getElementById("analysisCapInput"),
+  nliCapInput: document.getElementById("nliCapInput"),
+  budgetCapInput: document.getElementById("budgetCapInput"),
+  telemetryModeInput: document.getElementById("telemetryModeInput"),
+  complianceStatusInput: document.getElementById("complianceStatusInput"),
+  syncAuthRequiredInput: document.getElementById("syncAuthRequiredInput"),
+  securityControlList: document.getElementById("securityControlList"),
   calibrationPanel: document.getElementById("calibrationPanel"),
   calibrationForm: document.getElementById("calibrationForm"),
   casePrincipleInput: document.getElementById("casePrincipleInput"),
@@ -524,11 +596,19 @@ const els = {
 };
 
 let state = loadState() || createState();
+let storageInfo = {
+  indexedDb: "pending",
+  primary: state.privacy?.retention === "session-only" ? "sessionStorage" : "localStorage",
+  fallback: "webStorage",
+  lastSavedAt: state.updatedAt || "",
+  lastHydratedAt: "",
+};
 let activeCommandIndex = 0;
 let lastCommandFocus = null;
 
 render();
 bindEvents();
+hydrateIndexedDbState();
 
 function createState() {
   return {
@@ -539,6 +619,7 @@ function createState() {
     selectedRepairId: "R-001",
     beliefs: clone(seedBeliefs),
     relations: clone(seedRelations),
+    constraints: clone(seedConstraints),
     conflicts: clone(seedConflicts),
     revisions: [],
     analysisRuns: [],
@@ -547,10 +628,12 @@ function createState() {
     repairApplications: [],
     migrationReport: null,
     privacy: { ...DEFAULT_PRIVACY },
+    securityControls: { ...DEFAULT_SECURITY_CONTROLS },
     viewMode: "table",
     workbenchFilter: "all",
     graphFocusConflictId: "",
     createdAt: "2025-05-15T10:42:00.000Z",
+    updatedAt: new Date().toISOString(),
   };
 }
 
@@ -558,44 +641,158 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+function normalizeStatePayload(parsed) {
+  if (!parsed || !Array.isArray(parsed.beliefs) || !Array.isArray(parsed.conflicts)) return null;
+  const beliefs = parsed.beliefs.map(normalizeBelief);
+  return {
+    ...createState(),
+    ...parsed,
+    beliefs,
+    relations: normalizeRelationSet(parsed.relations, beliefs, parsed.conflicts),
+    constraints: Array.isArray(parsed.constraints) ? parsed.constraints.map(normalizeConstraint) : clone(seedConstraints),
+    conflicts: parsed.conflicts.map(normalizeConflict),
+    revisions: Array.isArray(parsed.revisions) ? parsed.revisions.map(normalizeRevision) : [],
+    analysisRuns: Array.isArray(parsed.analysisRuns) ? parsed.analysisRuns.map(normalizeAnalysisRun) : [],
+    evaluationRuns: Array.isArray(parsed.evaluationRuns) ? parsed.evaluationRuns.map(normalizeEvaluationRun) : [],
+    calibrationRounds: Array.isArray(parsed.calibrationRounds) ? parsed.calibrationRounds.map(normalizeCalibrationRound) : [],
+    repairApplications: Array.isArray(parsed.repairApplications) ? parsed.repairApplications.map(normalizeRepairApplication) : [],
+    migrationReport: parsed.migrationReport || null,
+    privacy: { ...DEFAULT_PRIVACY, ...(parsed.privacy || {}) },
+    securityControls: normalizeSecurityControls(parsed.securityControls),
+    viewMode: parsed.viewMode === "graph" ? "graph" : "table",
+    workbenchFilter: ["judgment", "principle", "theory"].includes(parsed.workbenchFilter) ? parsed.workbenchFilter : "all",
+    graphFocusConflictId: parsed.graphFocusConflictId || "",
+    updatedAt: parsed.updatedAt || parsed.savedAt || parsed.createdAt || new Date().toISOString(),
+  };
+}
+
 function loadState() {
   try {
     const raw = localStorage.getItem(STORAGE_KEY) || sessionStorage.getItem(STORAGE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed.beliefs) || !Array.isArray(parsed.conflicts)) return null;
-    const beliefs = parsed.beliefs.map(normalizeBelief);
-    return {
-      ...createState(),
-      ...parsed,
-      beliefs,
-      relations: normalizeRelationSet(parsed.relations, beliefs, parsed.conflicts),
-      conflicts: parsed.conflicts.map(normalizeConflict),
-      revisions: Array.isArray(parsed.revisions) ? parsed.revisions.map(normalizeRevision) : [],
-      analysisRuns: Array.isArray(parsed.analysisRuns) ? parsed.analysisRuns.map(normalizeAnalysisRun) : [],
-      evaluationRuns: Array.isArray(parsed.evaluationRuns) ? parsed.evaluationRuns.map(normalizeEvaluationRun) : [],
-      calibrationRounds: Array.isArray(parsed.calibrationRounds) ? parsed.calibrationRounds.map(normalizeCalibrationRound) : [],
-      repairApplications: Array.isArray(parsed.repairApplications) ? parsed.repairApplications.map(normalizeRepairApplication) : [],
-      migrationReport: parsed.migrationReport || null,
-      privacy: { ...DEFAULT_PRIVACY, ...(parsed.privacy || {}) },
-      viewMode: parsed.viewMode === "graph" ? "graph" : "table",
-      workbenchFilter: ["judgment", "principle", "theory"].includes(parsed.workbenchFilter) ? parsed.workbenchFilter : "all",
-      graphFocusConflictId: parsed.graphFocusConflictId || "",
-    };
+    return normalizeStatePayload(JSON.parse(raw));
   } catch {
     return null;
   }
 }
 
 function saveState() {
+  state.updatedAt = new Date().toISOString();
   const serialized = JSON.stringify(state);
   if (state.privacy?.retention === "session-only") {
     sessionStorage.setItem(STORAGE_KEY, serialized);
     localStorage.removeItem(STORAGE_KEY);
+    storageInfo.primary = "sessionStorage";
+    storageInfo.lastSavedAt = state.updatedAt;
+    deleteIndexedDbState().then(() => {
+      storageInfo.indexedDb = "session-bypassed";
+      syncStorageStatus();
+    }).catch(() => {
+      storageInfo.indexedDb = "unavailable";
+      syncStorageStatus();
+    });
     return;
   }
   localStorage.setItem(STORAGE_KEY, serialized);
   sessionStorage.removeItem(STORAGE_KEY);
+  storageInfo.primary = storageInfo.indexedDb === "active" ? "IndexedDB" : "localStorage";
+  storageInfo.lastSavedAt = state.updatedAt;
+  writeIndexedDbState(state).then(() => {
+    storageInfo.indexedDb = "active";
+    storageInfo.primary = "IndexedDB";
+    storageInfo.lastSavedAt = state.updatedAt;
+    syncStorageStatus();
+  }).catch(() => {
+    storageInfo.indexedDb = "unavailable";
+    storageInfo.primary = "localStorage";
+    syncStorageStatus();
+  });
+}
+
+async function hydrateIndexedDbState() {
+  if (!window.indexedDB || state.privacy?.retention === "session-only") {
+    storageInfo.indexedDb = window.indexedDB ? "session-bypassed" : "unavailable";
+    storageInfo.primary = state.privacy?.retention === "session-only" ? "sessionStorage" : "localStorage";
+    syncStorageStatus();
+    renderDataRightsPanel();
+    return;
+  }
+
+  try {
+    const indexedState = await readIndexedDbState();
+    const normalized = normalizeStatePayload(indexedState);
+    const currentTime = Date.parse(state.updatedAt || state.createdAt || 0) || 0;
+    const indexedTime = normalized ? Date.parse(normalized.updatedAt || normalized.createdAt || 0) || 0 : 0;
+    if (normalized && indexedTime > currentTime) {
+      state = normalized;
+      storageInfo.lastHydratedAt = new Date().toISOString();
+      storageInfo.lastSavedAt = normalized.updatedAt || "";
+      storageInfo.indexedDb = "active";
+      storageInfo.primary = "IndexedDB";
+      render();
+      return;
+    }
+
+    await writeIndexedDbState(state);
+    storageInfo.indexedDb = "active";
+    storageInfo.primary = "IndexedDB";
+    storageInfo.lastSavedAt = state.updatedAt || "";
+    syncStorageStatus();
+    renderDataRightsPanel();
+  } catch {
+    storageInfo.indexedDb = "unavailable";
+    storageInfo.primary = state.privacy?.retention === "session-only" ? "sessionStorage" : "localStorage";
+    syncStorageStatus();
+    renderDataRightsPanel();
+  }
+}
+
+function openWreDatabase() {
+  return new Promise((resolve, reject) => {
+    if (!window.indexedDB) {
+      reject(new Error("IndexedDB unavailable"));
+      return;
+    }
+    const request = indexedDB.open(INDEXED_DB_NAME, INDEXED_DB_VERSION);
+    request.addEventListener("upgradeneeded", () => {
+      const db = request.result;
+      if (!db.objectStoreNames.contains(INDEXED_DB_STORE)) db.createObjectStore(INDEXED_DB_STORE, { keyPath: "id" });
+    });
+    request.addEventListener("success", () => resolve(request.result));
+    request.addEventListener("error", () => reject(request.error));
+  });
+}
+
+function withWreStore(mode, action) {
+  return openWreDatabase().then((db) => new Promise((resolve, reject) => {
+    const transaction = db.transaction(INDEXED_DB_STORE, mode);
+    const store = transaction.objectStore(INDEXED_DB_STORE);
+    const request = action(store);
+    request.addEventListener("success", () => resolve(request.result));
+    request.addEventListener("error", () => reject(request.error));
+    transaction.addEventListener("complete", () => db.close());
+    transaction.addEventListener("abort", () => {
+      db.close();
+      reject(transaction.error);
+    });
+  }));
+}
+
+function readIndexedDbState() {
+  return withWreStore("readonly", (store) => store.get(INDEXED_DB_SESSION_ID)).then((record) => record?.payload || null);
+}
+
+function writeIndexedDbState(payload) {
+  return withWreStore("readwrite", (store) => store.put({
+    id: INDEXED_DB_SESSION_ID,
+    savedAt: payload.updatedAt || new Date().toISOString(),
+    payload,
+  }));
+}
+
+function deleteIndexedDbState() {
+  if (!window.indexedDB) return Promise.resolve();
+  return withWreStore("readwrite", (store) => store.delete(INDEXED_DB_SESSION_ID));
 }
 
 function normalizeBelief(belief) {
@@ -619,6 +816,7 @@ function normalizeConflict(conflict) {
     confidence: Number.isFinite(Number(conflict.confidence)) ? Number(conflict.confidence) : 0.7,
     core: Array.isArray(conflict.core) ? conflict.core : [conflict.claimA, conflict.claimB].filter(Boolean),
     engine: Array.isArray(conflict.engine) ? conflict.engine : ["Rule constraint", "Human review"],
+    constraintId: conflict.constraintId || "",
     repairs: Array.isArray(conflict.repairs) ? conflict.repairs : [],
     linked: Array.isArray(conflict.linked) ? conflict.linked : [],
   };
@@ -635,6 +833,20 @@ function normalizeRelation(relation, fallbackIndex = 0) {
     type,
     weight: Number.isFinite(Number(relation.weight)) ? clamp(Number(relation.weight), 0, 1) : 0.5,
     rationale: relation.rationale || relation.reason || "",
+  };
+}
+
+function normalizeConstraint(constraint, fallbackIndex = 0) {
+  const language = ["rule", "smt", "shacl"].includes(constraint.language) ? constraint.language : "rule";
+  const severity = severityOrder.includes(constraint.severity) ? constraint.severity : "medium";
+  return {
+    id: constraint.id || constraint.constraint_id || `K-${String(fallbackIndex + 1).padStart(3, "0")}`,
+    name: constraint.name || constraint.title || "Untitled constraint",
+    language,
+    body: constraint.body || constraint.formula || constraint.description || "",
+    severity,
+    enabled: constraint.enabled !== false,
+    createdAt: constraint.createdAt || constraint.created_at || new Date().toISOString(),
   };
 }
 
@@ -691,6 +903,8 @@ function normalizeAnalysisRun(run) {
     time: run.time || new Date().toISOString(),
     claimCount: Number.isFinite(Number(run.claimCount)) ? Number(run.claimCount) : seedBeliefs.length,
     candidatePairs: Number.isFinite(Number(run.candidatePairs)) ? Number(run.candidatePairs) : 0,
+    constraintCount: Number.isFinite(Number(run.constraintCount)) ? Number(run.constraintCount) : 0,
+    constraintMatches: Number.isFinite(Number(run.constraintMatches)) ? Number(run.constraintMatches) : 0,
     hardCount: Number.isFinite(Number(run.hardCount)) ? Number(run.hardCount) : 0,
     softCount: Number.isFinite(Number(run.softCount)) ? Number(run.softCount) : 0,
     generatedCount: Number.isFinite(Number(run.generatedCount)) ? Number(run.generatedCount) : 0,
@@ -716,6 +930,23 @@ function normalizeEvaluationRun(run) {
     metrics: Array.isArray(run.metrics) ? run.metrics : [],
     launchReadiness: Array.isArray(run.launchReadiness) ? run.launchReadiness : [],
     evidence: run.evidence || {},
+  };
+}
+
+function normalizeSecurityControls(controls = {}) {
+  const source = { ...DEFAULT_SECURITY_CONTROLS, ...(controls || {}) };
+  return {
+    quotaPerHour: clampInteger(source.quotaPerHour, 1, 1000, DEFAULT_SECURITY_CONTROLS.quotaPerHour),
+    bodyLimitKb: clampInteger(source.bodyLimitKb, 16, 2048, DEFAULT_SECURITY_CONTROLS.bodyLimitKb),
+    analysisClaimCap: clampInteger(source.analysisClaimCap, 10, 5000, DEFAULT_SECURITY_CONTROLS.analysisClaimCap),
+    nliPairCap: clampInteger(source.nliPairCap, 0, 250, DEFAULT_SECURITY_CONTROLS.nliPairCap),
+    monthlyBudgetUsd: clampInteger(source.monthlyBudgetUsd, 0, 500, DEFAULT_SECURITY_CONTROLS.monthlyBudgetUsd),
+    telemetryMode: ["off", "local", "otlp-ready"].includes(source.telemetryMode) ? source.telemetryMode : DEFAULT_SECURITY_CONTROLS.telemetryMode,
+    complianceStatus: ["draft", "mapped", "launch-ready"].includes(source.complianceStatus) ? source.complianceStatus : DEFAULT_SECURITY_CONTROLS.complianceStatus,
+    syncAuthRequired: source.syncAuthRequired !== false,
+    restoreDrillCadence: source.restoreDrillCadence || DEFAULT_SECURITY_CONTROLS.restoreDrillCadence,
+    dpiaReview: source.dpiaReview || DEFAULT_SECURITY_CONTROLS.dpiaReview,
+    asvsMapping: source.asvsMapping || DEFAULT_SECURITY_CONTROLS.asvsMapping,
   };
 }
 
@@ -806,6 +1037,11 @@ function bindEvents() {
   els.runEvaluationBtn.addEventListener("click", runLocalEvaluation);
   els.exportBenchmarkBtn.addEventListener("click", exportBenchmark);
   els.exportEvaluationBtn.addEventListener("click", exportEvaluationReport);
+  els.exportConstraintsBtn.addEventListener("click", exportConstraints);
+  els.constraintForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    addConstraintFromForm();
+  });
 
   els.graphBtn.addEventListener("click", () => {
     state.viewMode = "graph";
@@ -839,7 +1075,13 @@ function bindEvents() {
 
   els.exportBtn.addEventListener("click", exportApi);
   els.exportPrivacyBtn.addEventListener("click", exportPrivacyReceipt);
+  els.exportLocalStoreBtn.addEventListener("click", exportLocalStoreExtractor);
   els.deleteLocalDataBtn.addEventListener("click", deleteLocalData);
+  els.exportSecurityBtn.addEventListener("click", exportSecurityReport);
+  els.securityControlsForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    updateSecurityControls();
+  });
   els.exportEncryptedBtn.addEventListener("click", exportEncryptedArchive);
   els.encryptedArchiveInput.addEventListener("change", importEncryptedArchive);
   els.exportCalibrationBtn.addEventListener("click", exportCalibrationRounds);
@@ -856,6 +1098,8 @@ function bindEvents() {
 
   els.copyContractBtn.addEventListener("click", copyAgentContract);
   els.exportOpenApiBtn.addEventListener("click", exportOpenApiContract);
+  els.exportJsonLdBtn.addEventListener("click", exportJsonLd);
+  els.exportCsvBtn.addEventListener("click", exportCsvSummary);
   els.seedCalibrationBtn.addEventListener("click", seedCalibrationFromConflict);
   els.clearCalibrationBtn.addEventListener("click", clearCalibrationForm);
 }
@@ -1040,9 +1284,16 @@ function getCommandDefinitions() {
     { id: "analyze-session", label: "Analyze session", group: "Analysis", keywords: "rule smt nli", run: runLocalAnalysis },
     { id: "run-evaluation", label: "Run local evaluation", group: "Analysis", keywords: "benchmark readiness launch", run: runLocalEvaluation },
     { id: "export-evaluation", label: "Export evaluation report", group: "Export", keywords: "benchmark readiness launch", run: exportEvaluationReport },
+    { id: "focus-constraints", label: "Edit constraints", group: "Analysis", keywords: "rule shacl smt hard conflict", run: focusConstraintWorkbench },
+    { id: "export-constraints", label: "Export constraints", group: "Export", keywords: "rule shacl smt schema", run: exportConstraints },
     { id: "replay", label: "Review replay", group: "Replay", keywords: "revision audit log", run: reviewReplay },
     { id: "calibration", label: "Open calibration loop", group: "Calibration", keywords: "case disagreement confidence", run: focusCalibrationLoop },
     { id: "export-session", label: "Export session JSON", group: "Export", keywords: "api archive", run: exportApi },
+    { id: "export-jsonld", label: "Export JSON-LD graph", group: "Export", keywords: "linked data archive agent", run: exportJsonLd },
+    { id: "export-csv", label: "Export CSV summary", group: "Export", keywords: "spreadsheet archive summary", run: exportCsvSummary },
+    { id: "export-security", label: "Export security report", group: "Privacy", keywords: "owasp asvs quota abuse dpia", run: exportSecurityReport },
+    { id: "export-local-store", label: "Export local store", group: "Privacy", keywords: "indexeddb localstorage migration extractor", run: exportLocalStoreExtractor },
+    { id: "security-controls", label: "Open security controls", group: "Privacy", keywords: "quota abuse body size budget", run: focusSecurityControls },
     { id: "encrypted-archive", label: "Focus encrypted archive", group: "Privacy", keywords: "backup sync passphrase", run: focusEncryptedArchive },
     { id: "export-openapi", label: "Export OpenAPI contract", group: "Export", keywords: "agent schema endpoint json", run: exportOpenApiContract },
     { id: "export-accessibility", label: "Export accessibility report", group: "Export", keywords: "wcag keyboard screen reader", run: exportAccessibilityReport },
@@ -1059,10 +1310,12 @@ function buildAccessibleSummaryText() {
   const hardCount = state.conflicts.filter((conflict) => conflict.kind === "hard").length;
   const repairedCount = state.conflicts.filter((conflict) => conflict.status === "repaired").length;
   const latestRun = getLatestAnalysisRun();
+  const security = buildSecurityReportPayload();
   return [
-    `WRE session has ${state.beliefs.length} claims, ${state.relations.length} relations, and ${state.conflicts.length} conflicts.`,
+    `WRE session has ${state.beliefs.length} claims, ${state.relations.length} relations, ${state.constraints.length} constraints, and ${state.conflicts.length} conflicts.`,
     `${hardCount} hard conflicts and ${state.conflicts.length - hardCount} soft tensions are currently tracked.`,
     `${repairedCount} conflicts are marked repaired.`,
+    `Security launch gate is ${security.summary.launchGate}.`,
     `Selected conflict ${selectedConflict?.id || "none"}: ${selectedConflict?.title || "none selected"}.`,
     `Workspace view is ${state.viewMode}.`,
     latestRun ? `Latest analysis ${latestRun.id} reviewed ${latestRun.candidatePairs} candidate pairs.` : "No analysis run has been recorded in this session.",
@@ -1351,6 +1604,7 @@ function renderPipeline() {
   const revisionCount = state.revisions.length;
   const claimCount = state.beliefs.length;
   const relationCount = state.relations.length;
+  const constraintCount = state.constraints.filter((constraint) => constraint.enabled).length;
   const hardCount = state.conflicts.filter((conflict) => conflict.kind === "hard").length;
   const softCount = state.conflicts.length - hardCount;
   const latestRun = getLatestAnalysisRun();
@@ -1361,7 +1615,7 @@ function renderPipeline() {
       item.className = "pipeline-step";
       let metric = step.metric;
       if (step.title === "Local Store") metric = `${claimCount} claims`;
-      if (step.title === "Rule Checks") metric = latestRun ? `${latestRun.hardCount} hard` : `${hardCount} hard`;
+      if (step.title === "Rule Checks") metric = latestRun ? `${latestRun.constraintMatches} hits` : `${constraintCount} rules`;
       if (step.title === "SMT Core") metric = latestRun ? `${latestRun.generatedCount} new` : "1 core";
       if (step.title === "Argument Graph") metric = latestRun ? `${latestRun.candidatePairs} pairs` : `${relationCount} links`;
       if (step.title === "NLI Triage") metric = state.privacy.nliTriage ? `${latestRun?.nliQueued || softCount} queued` : "off";
@@ -1635,7 +1889,10 @@ function renderAgentContract() {
     [
       renderContractGroup("Claim fields", agentContract.claimFields),
       renderContractGroup("Relation fields", agentContract.relationFields),
+      renderContractGroup("Constraint fields", agentContract.constraintFields),
       renderContractGroup("Repair option fields", agentContract.repairOptionFields),
+      renderContractGroup("Export formats", agentContract.exportFormats),
+      renderContractGroup("Local storage", [buildStorageReportPayload().summary]),
       renderContractGroup("Relation types", agentContract.relationTypes),
       renderContractGroup("Conflict kinds", agentContract.conflictKinds),
       renderContractGroup("JSON schemas", Object.keys(buildJsonSchemasPayload().schemas)),
@@ -1686,6 +1943,7 @@ function renderAnalysisPanel() {
   const summary = [
     ["Claims", latest.claimCount],
     ["Candidate pairs", latest.candidatePairs],
+    ["Constraint hits", latest.constraintMatches || 0],
     ["Hard conflicts", latest.hardCount],
     ["Soft tensions", latest.softCount],
     ["NLI queued", latest.nliQueued],
@@ -1746,6 +2004,39 @@ function renderAnalysisPanel() {
       return item;
     })
   );
+
+  renderConstraintWorkbench();
+}
+
+function renderConstraintWorkbench() {
+  if (!state.constraints.length) {
+    const empty = document.createElement("article");
+    empty.className = "constraint-empty";
+    empty.innerHTML = `
+      <strong>No constraints yet</strong>
+      <span>Add a rule, SHACL shape, or SMT template to make deterministic checks inspectable.</span>
+    `;
+    replaceChildren(els.constraintList, [empty]);
+    return;
+  }
+
+  replaceChildren(
+    els.constraintList,
+    state.constraints.map((constraint) => {
+      const item = document.createElement("article");
+      item.className = `constraint-item severity-${constraint.severity}${constraint.enabled ? "" : " is-disabled"}`;
+      item.innerHTML = `
+        <div>
+          <span class="constraint-meta">${escapeHtml(constraint.language.toUpperCase())} · ${escapeHtml(titleCase(constraint.severity))}</span>
+          <strong>${escapeHtml(constraint.name)}</strong>
+          <p>${escapeHtml(constraint.body)}</p>
+        </div>
+        <button class="utility-button compact" type="button" data-remove-constraint="${escapeHtml(constraint.id)}">Remove</button>
+      `;
+      item.querySelector("[data-remove-constraint]").addEventListener("click", () => removeConstraint(constraint.id));
+      return item;
+    })
+  );
 }
 
 function renderCalibrationPanel() {
@@ -1785,14 +2076,19 @@ function renderCalibrationPanel() {
 function renderDataRightsPanel() {
   const receipt = buildPrivacyReceiptPayload();
   const migration = state.migrationReport || buildDefaultMigrationReport();
+  const security = buildSecurityReportPayload();
+  const storage = buildStorageReportPayload();
+  syncSecurityControlsForm();
   replaceChildren(
     els.privacyReceiptList,
     [
       ["Storage", receipt.processing.storageMode],
+      ["Persistence", storage.summary],
       ["Cloud sync", receipt.processing.cloudSync ? "Opted in" : "Off"],
       ["Model triage", receipt.processing.nliTriage ? "Opted in" : "Off"],
       ["Retention", retentionLabel(receipt.processing.retention)],
       ["Encrypted archive", receipt.processing.encryptedArchive],
+      ["API abuse controls", security.summary.abuseResistance],
       ["Sensitive claims", `${receipt.classification.potentiallySensitive} flagged`],
       ["User rights", "Access, export, delete, correction"],
     ].map(([label, value]) => renderReceiptItem(label, value))
@@ -1804,10 +2100,26 @@ function renderDataRightsPanel() {
       ["Status", migration.status],
       ["Mapped claims", String(migration.mappedClaims)],
       ["Mapped relations", String(migration.mappedRelations || 0)],
+      ["Mapped constraints", String(migration.mappedConstraints || 0)],
       ["Mapped conflicts", String(migration.mappedConflicts)],
       ["Legacy conflicts", String(migration.legacyUnverified)],
+      ["Storage extractor", storage.extractorStatus],
       ["Ambiguous fields", String(migration.ambiguousFields.length)],
       ["Generated", formatTime(migration.generatedAt)],
+    ].map(([label, value]) => renderReceiptItem(label, value))
+  );
+
+  replaceChildren(
+    els.securityControlList,
+    [
+      ["API quota", `${security.controls.quotaPerHour} requests/hour`],
+      ["Body limit", `${security.controls.bodyLimitKb} KB per request`],
+      ["Analysis caps", `${security.controls.analysisClaimCap} claims, ${security.controls.nliPairCap} NLI pairs`],
+      ["Budget cap", `$${security.controls.monthlyBudgetUsd}/month`],
+      ["Sync auth", security.controls.syncAuthRequired ? "Required before sync" : "Not required"],
+      ["Compliance", `${security.summary.complianceStatus} (${security.summary.launchGate})`],
+      ["Telemetry", security.controls.telemetryMode],
+      ["Restore drill", security.controls.restoreDrillCadence],
     ].map(([label, value]) => renderReceiptItem(label, value))
   );
 }
@@ -1820,6 +2132,18 @@ function renderReceiptItem(label, value) {
     <strong>${escapeHtml(value)}</strong>
   `;
   return item;
+}
+
+function syncSecurityControlsForm() {
+  const controls = normalizeSecurityControls(state.securityControls);
+  els.quotaPerHourInput.value = controls.quotaPerHour;
+  els.bodyLimitInput.value = controls.bodyLimitKb;
+  els.analysisCapInput.value = controls.analysisClaimCap;
+  els.nliCapInput.value = controls.nliPairCap;
+  els.budgetCapInput.value = controls.monthlyBudgetUsd;
+  els.telemetryModeInput.value = controls.telemetryMode;
+  els.complianceStatusInput.value = controls.complianceStatus;
+  els.syncAuthRequiredInput.checked = controls.syncAuthRequired;
 }
 
 function runLocalAnalysis() {
@@ -1841,7 +2165,7 @@ function runLocalAnalysis() {
   state.activeNav = "conflicts";
   recordRevision(
     "analysis",
-    `${run.id} analyzed ${run.claimCount} claims, ${run.candidatePairs} candidate pairs, ${run.hardCount} hard conflicts, and ${run.softCount} soft tensions.`
+    `${run.id} analyzed ${run.claimCount} claims, ${run.constraintCount} constraints, ${run.candidatePairs} candidate pairs, ${run.hardCount} hard conflicts, and ${run.softCount} soft tensions.`
   );
   saveState();
   render();
@@ -1875,14 +2199,17 @@ function buildAnalysisReport() {
   const claimCount = state.beliefs.length;
   const candidatePairs = getCandidatePairs().length;
   const generatedConflicts = detectCandidateConflicts();
+  const constraintMatches = countConstraintMatches();
+  const security = buildSecurityReportPayload();
   const hardCount = state.conflicts.filter((conflict) => conflict.kind === "hard").length
     + generatedConflicts.filter((conflict) => conflict.kind === "hard").length;
   const softCount = state.conflicts.filter((conflict) => conflict.kind !== "hard").length
     + generatedConflicts.filter((conflict) => conflict.kind !== "hard").length;
-  const nliQueued = state.privacy.nliTriage ? Math.min(candidatePairs, 25) : 0;
+  const nliQueued = state.privacy.nliTriage ? Math.min(candidatePairs, security.controls.nliPairCap) : 0;
   const explanationCoverage = state.conflicts.filter((conflict) => conflict.why && conflict.core?.length && conflict.repairs?.length).length;
   const precisionReadiness = roundNumber(clamp((explanationCoverage + generatedConflicts.length) / Math.max(1, state.conflicts.length + generatedConflicts.length), 0, 1));
-  const estimatedRuleLatency = roundNumber(0.12 + claimCount * 0.03 + hardCount * 0.02);
+  const activeConstraintCount = state.constraints.filter((constraint) => constraint.enabled).length;
+  const estimatedRuleLatency = roundNumber(0.12 + claimCount * 0.03 + activeConstraintCount * 0.04 + hardCount * 0.02);
   const estimatedHybridLatency = roundNumber(estimatedRuleLatency + (state.privacy.nliTriage ? nliQueued * 0.18 : 0));
 
   return {
@@ -1890,6 +2217,8 @@ function buildAnalysisReport() {
     time: new Date().toISOString(),
     claimCount,
     candidatePairs,
+    constraintCount: activeConstraintCount,
+    constraintMatches,
     hardCount,
     softCount,
     generatedCount: generatedConflicts.length,
@@ -1918,15 +2247,26 @@ function buildEvaluationReport({ preview = false } = {}) {
   const repairedConflicts = state.conflicts.filter((conflict) => conflict.status === "repaired").length;
   const repairAcceptance = roundNumber((repairedConflicts + state.repairApplications.length) / Math.max(1, state.conflicts.length));
   const accessibility = buildAccessibilityReportPayload();
+  const security = buildSecurityReportPayload();
+  const storage = buildStorageReportPayload();
   const criticalA11y = Object.values(accessibility.checks).filter((value) => value === false).length;
   const restoreReady = hasWebCrypto() && Boolean(els.exportEncryptedBtn && els.encryptedArchiveInput);
+  const storageReady = storage.indexedDb.primary || state.privacy.retention === "session-only";
+  const abuseReadiness = roundNumber([
+    security.controls.quotaPerHour > 0,
+    security.controls.bodyLimitKb <= 512,
+    security.controls.analysisClaimCap <= 1000,
+    security.controls.nliPairCap <= 50,
+    security.controls.monthlyBudgetUsd <= 100,
+  ].filter(Boolean).length / 5);
   const sessionCompletion = roundNumber(clamp(
     (state.beliefs.length ? 0.2 : 0)
       + (state.relations.length ? 0.15 : 0)
+      + (state.constraints.length ? 0.1 : 0)
       + (state.conflicts.length ? 0.2 : 0)
       + (state.analysisRuns.length ? 0.15 : 0)
-      + (state.revisions.length ? 0.15 : 0)
-      + (state.privacy.retention ? 0.15 : 0),
+      + (state.revisions.length ? 0.1 : 0)
+      + (state.privacy.retention ? 0.1 : 0),
     0,
     1
   ));
@@ -1937,11 +2277,14 @@ function buildEvaluationReport({ preview = false } = {}) {
     buildEvaluationMetric("repairAcceptance", "Repair acceptance", repairAcceptance, 0.35, ">=", "", `${repairedConflicts} repaired conflicts and ${state.repairApplications.length} recorded applications.`),
     buildEvaluationMetric("ruleLatency", "Rule-only latency", latestAnalysis.estimatedRuleLatency, 1.5, "<", "s", `${latestAnalysis.candidatePairs} candidate pairs in the local deterministic pass.`),
     buildEvaluationMetric("hybridLatency", "Hybrid latency", latestAnalysis.estimatedHybridLatency, 7, "<", "s", `${latestAnalysis.nliQueued} NLI items queued under current privacy settings.`),
+    buildEvaluationMetric("apiAbuseResistance", "API abuse resistance", abuseReadiness, 0.8, ">=", "", security.summary.abuseResistance),
+    buildEvaluationMetric("localFirstPersistence", "Local-first persistence", storageReady ? 1 : 0.5, 1, ">=", "", storage.summary),
     buildEvaluationMetric("criticalA11y", "Critical accessibility", criticalA11y, 0, "===", "", "Skip link, command palette, graph/table mode, and screen-reader summary are checked."),
   ];
   const launchReadiness = [
-    { label: "Session completion", status: sessionCompletion >= 0.75 ? "pass" : "warning", value: sessionCompletion, evidence: "Claims, relations, conflicts, analysis, revisions, and privacy controls present." },
+    { label: "Session completion", status: sessionCompletion >= 0.75 ? "pass" : "warning", value: sessionCompletion, evidence: "Claims, relations, constraints, conflicts, analysis, revisions, and privacy controls present." },
     { label: "Encrypted archive restore", status: restoreReady ? "pass" : "warning", value: restoreReady ? 1 : 0, evidence: restoreReady ? "AES-GCM archive controls are available." : "Web Crypto or archive controls unavailable in this browser." },
+    { label: "Security launch gate", status: security.summary.launchGate === "ready-for-beta" ? "pass" : "warning", value: security.summary.launchGate, evidence: `${security.summary.complianceStatus}; ${security.summary.syncAuth}.` },
     { label: "Local cost control", status: "pass", value: 0, evidence: "Static local evaluation runs without paid model calls." },
   ];
   const allChecks = [...metrics, ...launchReadiness];
@@ -1964,9 +2307,12 @@ function buildEvaluationReport({ preview = false } = {}) {
       analysisRunId: latestAnalysis.id,
       claimCount: state.beliefs.length,
       relationCount: state.relations.length,
+      constraintCount: state.constraints.length,
       conflictCount: state.conflicts.length,
       repairedConflicts,
       accessibility,
+      security,
+      storage,
       privacyReceipt: buildPrivacyReceiptPayload(),
     },
   });
@@ -2007,12 +2353,21 @@ function detectCandidateConflicts() {
   return generated.slice(0, 3);
 }
 
+function countConstraintMatches() {
+  return getCandidatePairs().filter(({ claimA, claimB }) => {
+    const joined = `${claimA.text.toLowerCase()} ${claimB.text.toLowerCase()}`;
+    return Boolean(scoreConstraintPair(claimA, claimB, joined));
+  }).length;
+}
+
 function scoreBeliefPair(claimA, claimB) {
   const a = claimA.text.toLowerCase();
   const b = claimB.text.toLowerCase();
   const joined = `${a} ${b}`;
   const overlap = tokenOverlap(a, b);
   const relationContext = getRelationsBetween(claimA.id, claimB.id);
+  const constraintSignal = scoreConstraintPair(claimA, claimB, joined);
+  if (constraintSignal) return constraintSignal;
   const explicitConflict = relationContext.find((relation) => relation.type === "conflicts" || relation.type === "undercuts");
 
   if (explicitConflict && explicitConflict.weight >= 0.55) {
@@ -2058,6 +2413,53 @@ function scoreBeliefPair(claimA, claimB) {
   return null;
 }
 
+function scoreConstraintPair(claimA, claimB, joinedText) {
+  const activeConstraints = state.constraints.filter((constraint) => constraint.enabled);
+  for (const constraint of activeConstraints) {
+    const score = constraintMatchScore(constraint, claimA, claimB, joinedText);
+    if (!score) continue;
+    const hard = constraint.severity === "critical" || constraint.language === "smt";
+    return {
+      kind: hard ? "hard" : "soft",
+      severity: constraint.severity,
+      confidence: roundNumber(clamp(score, 0.58, 0.96)),
+      constraintId: constraint.id,
+      engine: ["Rule constraint", `${constraint.language.toUpperCase()} template`, "Unsat core preview"],
+      why: `${constraint.id} ${constraint.name}: ${constraint.body}`,
+    };
+  }
+  return null;
+}
+
+function constraintMatchScore(constraint, claimA, claimB, joinedText) {
+  const body = constraint.body.toLowerCase();
+  const explicitRefs = extractClaimRefs(constraint.body);
+  if (explicitRefs.length >= 2) {
+    const pair = new Set([claimA.id, claimB.id]);
+    const matchingRefs = explicitRefs.filter((id) => pair.has(id)).length;
+    if (matchingRefs >= 2) return 0.94;
+  }
+
+  if (body.includes("protected") && body.includes("proxy")) {
+    if (joinedText.includes("protected") && (joinedText.includes("experience") || joinedText.includes("proxy") || joinedText.includes("bias"))) return 0.88;
+  }
+
+  if (body.includes("transparen") && (body.includes("confidential") || body.includes("internal notes"))) {
+    if (joinedText.includes("transparen") && (joinedText.includes("confidential") || joinedText.includes("trade secret") || joinedText.includes("proprietary"))) return 0.82;
+  }
+
+  if (body.includes("validation") || body.includes("validated")) {
+    if ((joinedText.includes("role-fit") || joinedText.includes("experience") || joinedText.includes("structured interview")) && joinedText.includes("fair")) return 0.74;
+  }
+
+  const bodyOverlap = tokenOverlap(body, joinedText);
+  return bodyOverlap >= 0.28 ? 0.58 + bodyOverlap * 0.24 : 0;
+}
+
+function extractClaimRefs(value) {
+  return [...String(value || "").matchAll(/\b[JPTB]\d+\b/gi)].map((match) => match[0].toUpperCase());
+}
+
 function getCandidatePairs() {
   const pairs = new Map();
   const addPair = (sourceId, targetId, reason) => {
@@ -2069,6 +2471,12 @@ function getCandidatePairs() {
   };
 
   state.relations.forEach((relation) => addPair(relation.source, relation.target, relation.type));
+  state.constraints.forEach((constraint) => {
+    const refs = extractClaimRefs(constraint.body);
+    for (let i = 0; i < refs.length; i += 1) {
+      for (let j = i + 1; j < refs.length; j += 1) addPair(refs[i], refs[j], "constraint-reference");
+    }
+  });
   state.conflicts.forEach((conflict) => {
     addPair(conflict.claimA, conflict.claimB, "existing-conflict");
     (conflict.core || []).forEach((id) => addPair(conflict.claimA, id, "conflict-core"));
@@ -2095,9 +2503,10 @@ function getRelationsBetween(claimA, claimB) {
 function createGeneratedConflict(claimA, claimB, signal, number) {
   const id = `C-${String(number).padStart(3, "0")}`;
   const repairId = `R-${String(number).padStart(3, "0")}`;
+  const constraint = signal.constraintId ? state.constraints.find((item) => item.id === signal.constraintId) : null;
   return normalizeConflict({
     id,
-    title: `${claimA.id} / ${claimB.id} Analysis Candidate`,
+    title: constraint ? `${constraint.name} Violation` : `${claimA.id} / ${claimB.id} Analysis Candidate`,
     severity: signal.severity,
     summary: `${claimA.id} ${signal.kind === "hard" ? "hard-conflicts" : "soft-tensions"} with ${claimB.id}`,
     provenance: `${claimA.id}, ${claimB.id}`,
@@ -2110,6 +2519,7 @@ function createGeneratedConflict(claimA, claimB, signal, number) {
     core: [claimA.id, claimB.id],
     engine: signal.engine,
     why: signal.why,
+    constraintId: signal.constraintId || "",
     generated: true,
     repairs: [
       {
@@ -2157,9 +2567,13 @@ function syncCaseConfidenceOutput() {
 }
 
 function syncStorageStatus() {
-  const storageMode = state.privacy.retention === "session-only" ? "session" : "local";
+  const storageMode = state.privacy.retention === "session-only"
+    ? "session"
+    : storageInfo.indexedDb === "active"
+      ? "indexeddb"
+      : "local";
   const syncMode = state.privacy.cloudSync ? "sync ready" : "local-only";
-  els.storageStatus.textContent = `${titleCase(storageMode)} · ${syncMode}`;
+  els.storageStatus.textContent = `${storageLabel(storageMode)} · ${syncMode}`;
 }
 
 function getCounts() {
@@ -2290,6 +2704,46 @@ function removeRelation(relationId) {
   saveState();
   render();
   focusElement(els.claimWorkbenchPanel);
+}
+
+function addConstraintFromForm() {
+  const data = new FormData(els.constraintForm);
+  const constraint = normalizeConstraint({
+    id: nextConstraintId(),
+    name: String(data.get("name") || "").trim(),
+    language: String(data.get("language") || "rule"),
+    severity: String(data.get("severity") || "medium"),
+    body: String(data.get("body") || "").trim(),
+    enabled: true,
+  });
+
+  if (!constraint.name || !constraint.body) {
+    if (!constraint.name) els.constraintNameInput.focus();
+    else els.constraintBodyInput.focus();
+    return;
+  }
+
+  state.constraints.push(constraint);
+  state.activeStage = "integration";
+  recordRevision("constraint", `Added ${constraint.id}: ${constraint.name} (${constraint.language.toUpperCase()}).`, {
+    constraintId: constraint.id,
+  });
+  els.constraintForm.reset();
+  saveState();
+  render();
+  focusElement(els.analysisPanel);
+}
+
+function removeConstraint(constraintId) {
+  const constraint = state.constraints.find((item) => item.id === constraintId);
+  if (!constraint) return;
+  state.constraints = state.constraints.filter((item) => item.id !== constraintId);
+  recordRevision("constraint", `Removed ${constraint.id}: ${constraint.name}.`, {
+    constraintId: constraint.id,
+  });
+  saveState();
+  render();
+  focusElement(els.analysisPanel);
 }
 
 function recordCalibrationRound() {
@@ -2548,6 +3002,47 @@ function exportApi() {
   downloadJson(buildSessionPayload(), "normativity-wre-session.json");
 }
 
+function exportJsonLd() {
+  downloadJson(buildJsonLdPayload(), "normativity-wre-session.jsonld", "application/ld+json");
+}
+
+function exportCsvSummary() {
+  downloadText(buildCsvSummaryPayload(), "normativity-wre-summary.csv", "text/csv;charset=utf-8");
+}
+
+async function exportLocalStoreExtractor() {
+  let indexedDbPayload = null;
+  let indexedDbError = "";
+  try {
+    indexedDbPayload = await readIndexedDbState();
+  } catch (error) {
+    indexedDbError = error?.message || "IndexedDB read failed";
+  }
+
+  downloadJson(
+    {
+      schemaVersion: "wre-2.5-local-store-extractor",
+      generatedAt: new Date().toISOString(),
+      sessionId: INDEXED_DB_SESSION_ID,
+      storage: buildStorageReportPayload(),
+      indexedDb: {
+        available: Boolean(window.indexedDB),
+        database: INDEXED_DB_NAME,
+        store: INDEXED_DB_STORE,
+        hasRecord: Boolean(indexedDbPayload),
+        error: indexedDbError,
+        payload: indexedDbPayload,
+      },
+      webStorage: {
+        localStorage: readWebStorageSnapshot(localStorage),
+        sessionStorage: readWebStorageSnapshot(sessionStorage),
+      },
+      currentSession: buildSessionPayload(),
+    },
+    "normativity-wre-local-store-extractor.json"
+  );
+}
+
 function buildSessionPayload() {
   const payload = {
     schemaVersion: "wre-2.5",
@@ -2561,7 +3056,9 @@ function buildSessionPayload() {
     schema: {
       claimFields: agentContract.claimFields,
       relationFields: agentContract.relationFields,
+      constraintFields: agentContract.constraintFields,
       repairOptionFields: agentContract.repairOptionFields,
+      exportFormats: agentContract.exportFormats,
       relationTypes: agentContract.relationTypes,
       conflictKinds: agentContract.conflictKinds,
     },
@@ -2569,6 +3066,7 @@ function buildSessionPayload() {
     openApi: buildOpenApiPayload(),
     beliefs: state.beliefs.map(normalizeBelief),
     relations: state.relations.map(normalizeRelation),
+    constraints: state.constraints.map(normalizeConstraint),
     conflicts: state.conflicts,
     selectedConflictId: state.selectedConflictId,
     revisions: state.revisions,
@@ -2576,6 +3074,9 @@ function buildSessionPayload() {
     evaluationRuns: state.evaluationRuns,
     calibrationRounds: state.calibrationRounds,
     repairApplications: state.repairApplications,
+    securityControls: normalizeSecurityControls(state.securityControls),
+    securityReport: buildSecurityReportPayload(),
+    storageReport: buildStorageReportPayload(),
     privacyReceipt: buildPrivacyReceiptPayload(),
     accessibilityReport: buildAccessibilityReportPayload(),
     migrationReport: state.migrationReport || buildDefaultMigrationReport(),
@@ -2583,6 +3084,170 @@ function buildSessionPayload() {
     agentContract: buildAgentContractPayload(),
   };
   return payload;
+}
+
+function buildJsonLdPayload() {
+  const sessionId = "sess_7f2c9e7a";
+  const sessionNode = `urn:wre:session:${sessionId}`;
+  const claimNode = (id) => `urn:wre:claim:${id}`;
+  const relationNode = (id) => `urn:wre:relation:${id}`;
+  const constraintNode = (id) => `urn:wre:constraint:${id}`;
+  const conflictNode = (id) => `urn:wre:conflict:${id}`;
+  const revisionNode = (index) => `urn:wre:revision:${sessionId}:${index + 1}`;
+  const security = buildSecurityReportPayload();
+  const storage = buildStorageReportPayload();
+
+  return {
+    "@context": {
+      wre: "https://normativity.dev/wre#",
+      schema: "https://schema.org/",
+      id: "@id",
+      type: "@type",
+      text: "schema:text",
+      name: "schema:name",
+      created: "schema:dateCreated",
+      confidence: "wre:confidence",
+      domain: "wre:domain",
+      layer: "wre:layer",
+      severity: "wre:severity",
+      source: { "@id": "wre:source", "@type": "@id" },
+      target: { "@id": "wre:target", "@type": "@id" },
+      member: { "@id": "wre:member", "@type": "@id" },
+      generatedBy: { "@id": "wre:generatedBy", "@type": "@id" },
+    },
+    "@id": sessionNode,
+    "@type": "wre:SessionExport",
+    schemaVersion: "wre-2.5-jsonld",
+    generatedAt: new Date().toISOString(),
+    exportFormats: agentContract.exportFormats,
+    "@graph": [
+      {
+        "@id": sessionNode,
+        "@type": "wre:Session",
+        name: "AI hiring assistant",
+        created: state.createdAt,
+        privacyMode: state.privacy.cloudSync ? "local-plus-sync" : "local-first",
+        retention: state.privacy.retention,
+        apiAbuseResistance: security.summary.abuseResistance,
+        persistence: storage.summary,
+      },
+      {
+        "@id": `urn:wre:storage:${sessionId}`,
+        "@type": "wre:StorageReport",
+        name: storage.summary,
+        indexedDbStatus: storage.indexedDb.status,
+        localStorageKey: storage.fallback.localStorageKey,
+        retention: storage.retention,
+        generatedBy: sessionNode,
+      },
+      {
+        "@id": `urn:wre:security:${sessionId}`,
+        "@type": "wre:SecurityReport",
+        quotaPerHour: security.controls.quotaPerHour,
+        bodyLimitKb: security.controls.bodyLimitKb,
+        analysisClaimCap: security.controls.analysisClaimCap,
+        nliPairCap: security.controls.nliPairCap,
+        monthlyBudgetUsd: security.controls.monthlyBudgetUsd,
+        complianceStatus: security.summary.complianceStatus,
+        launchGate: security.summary.launchGate,
+        generatedBy: sessionNode,
+      },
+      ...state.beliefs.map((belief) => {
+        const normalized = normalizeBelief(belief);
+        return {
+          "@id": claimNode(normalized.id),
+          "@type": "wre:Claim",
+          claimId: normalized.id,
+          layer: normalized.layer,
+          domain: normalized.domain,
+          confidence: normalized.confidence,
+          timeScope: normalized.timeScope,
+          provenance: normalized.provenance,
+          sensitivity: normalized.sensitivity,
+          text: normalized.text,
+          generatedBy: sessionNode,
+        };
+      }),
+      ...state.relations.map((relation) => {
+        const normalized = normalizeRelation(relation);
+        return {
+          "@id": relationNode(normalized.id),
+          "@type": "wre:Relation",
+          relationId: normalized.id,
+          relationType: normalized.type,
+          weight: normalized.weight,
+          source: claimNode(normalized.source),
+          target: claimNode(normalized.target),
+          rationale: normalized.rationale,
+          generatedBy: sessionNode,
+        };
+      }),
+      ...state.constraints.map((constraint) => {
+        const normalized = normalizeConstraint(constraint);
+        return {
+          "@id": constraintNode(normalized.id),
+          "@type": "wre:Constraint",
+          constraintId: normalized.id,
+          name: normalized.name,
+          language: normalized.language,
+          severity: normalized.severity,
+          enabled: normalized.enabled,
+          text: normalized.body,
+          generatedBy: sessionNode,
+        };
+      }),
+      ...state.conflicts.map((conflict) => ({
+        "@id": conflictNode(conflict.id),
+        "@type": "wre:Conflict",
+        conflictId: conflict.id,
+        name: conflict.title,
+        severity: conflict.severity,
+        kind: conflict.kind,
+        confidence: conflict.confidence,
+        member: (conflict.core || []).map(claimNode),
+        source: conflict.claimA ? claimNode(conflict.claimA) : undefined,
+        target: conflict.claimB ? claimNode(conflict.claimB) : undefined,
+        explanation: conflict.why,
+        constraint: conflict.constraintId ? constraintNode(conflict.constraintId) : undefined,
+        generatedBy: sessionNode,
+      })),
+      ...state.revisions.map((revision, index) => ({
+        "@id": revisionNode(index),
+        "@type": "wre:RevisionLog",
+        revisionType: revision.type,
+        text: revision.text,
+        created: revision.time,
+        conflict: revision.conflictId ? conflictNode(revision.conflictId) : undefined,
+        repairId: revision.repairId || undefined,
+        generatedBy: sessionNode,
+      })),
+    ],
+  };
+}
+
+function buildCsvSummaryPayload() {
+  const columns = ["record_type", "id", "label", "kind_or_type", "source", "target", "severity", "confidence", "text", "evidence"];
+  const security = buildSecurityReportPayload();
+  const storage = buildStorageReportPayload();
+  const rows = [
+    ...state.beliefs.map((belief) => {
+      const normalized = normalizeBelief(belief);
+      return ["claim", normalized.id, labelForLayer(normalized.layer), normalized.domain, "", "", "", normalized.confidence, normalized.text, `${normalized.timeScope}; ${normalized.provenance}; ${normalized.sensitivity}`];
+    }),
+    ...state.relations.map((relation) => {
+      const normalized = normalizeRelation(relation);
+      return ["relation", normalized.id, relationTypeLabel(normalized.type), normalized.type, normalized.source, normalized.target, "", normalized.weight, normalized.rationale, ""];
+    }),
+    ...state.constraints.map((constraint) => {
+      const normalized = normalizeConstraint(constraint);
+      return ["constraint", normalized.id, normalized.name, normalized.language, "", "", normalized.severity, normalized.enabled ? 1 : 0, normalized.body, "local deterministic template"];
+    }),
+    ...state.conflicts.map((conflict) => ["conflict", conflict.id, conflict.title, conflict.kind, conflict.claimA || "", conflict.claimB || "", conflict.severity, conflict.confidence, conflict.why || conflict.summary || "", (conflict.core || []).join(" ")]),
+    ["security", "SEC-001", "API abuse resistance", security.summary.abuseResistance, "", "", security.summary.launchGate, security.controls.quotaPerHour, `Body ${security.controls.bodyLimitKb} KB; claims ${security.controls.analysisClaimCap}; NLI ${security.controls.nliPairCap}`, security.summary.complianceStatus],
+    ["storage", "STORE-001", "Local-first persistence", storage.summary, "", "", storage.indexedDb.status, storage.indexedDb.primary ? 1 : 0, storage.extractorStatus, storage.lastSavedAt],
+    ...state.revisions.map((revision, index) => ["revision", `REV-${index + 1}`, revisionLabel(revision.type), revision.type, revision.conflictId || "", revision.repairId || "", "", "", revision.text, revision.time]),
+  ];
+  return [columns, ...rows].map((row) => row.map(csvCell).join(",")).join("\n");
 }
 
 function exportPrivacyReceipt() {
@@ -2621,6 +3286,23 @@ function exportEvaluationReport() {
     },
     "normativity-wre-evaluation-report.json"
   );
+}
+
+function exportConstraints() {
+  downloadJson(
+    {
+      schemaVersion: "wre-2.5-constraints",
+      generatedAt: new Date().toISOString(),
+      sessionId: "sess_7f2c9e7a",
+      constraints: state.constraints.map(normalizeConstraint),
+      latestAnalysis: getLatestAnalysisRun() || buildAnalysisReport({ preview: true }),
+    },
+    "normativity-wre-constraints.json"
+  );
+}
+
+function exportSecurityReport() {
+  downloadJson(buildSecurityReportPayload(), "normativity-wre-security-report.json");
 }
 
 function exportAccessibilityReport() {
@@ -2681,7 +3363,96 @@ async function importEncryptedArchive(event) {
   }
 }
 
+function buildSecurityReportPayload() {
+  const controls = normalizeSecurityControls(state.securityControls);
+  const quotaReady = controls.quotaPerHour > 0 && controls.bodyLimitKb <= 512 && controls.analysisClaimCap <= 1000;
+  const nliReady = !state.privacy.nliTriage || controls.nliPairCap <= 50;
+  const syncReady = !state.privacy.cloudSync || controls.syncAuthRequired;
+  const budgetReady = controls.monthlyBudgetUsd <= 100;
+  const mapped = controls.complianceStatus === "mapped" || controls.complianceStatus === "launch-ready";
+  const launchGate = quotaReady && nliReady && syncReady && budgetReady && mapped ? "ready-for-beta" : "needs-security-review";
+
+  return {
+    schemaVersion: "wre-2.5-security-report",
+    generatedAt: new Date().toISOString(),
+    sessionId: "sess_7f2c9e7a",
+    standards: {
+      privacyByDesign: "DPIA-style review before sync, analytics, or third-party LLM processing",
+      applicationSecurity: "OWASP ASVS mapping for auth, session handling, secrets, uploads, and logging",
+      apiAbuse: "OWASP API Top 10 guardrails for quotas, body-size limits, and execution caps",
+      observability: "OpenTelemetry-compatible event vocabulary without mandatory third-party telemetry",
+      restoreDrills: `${controls.restoreDrillCadence} encrypted archive restore drill`,
+    },
+    controls,
+    summary: {
+      abuseResistance: quotaReady && nliReady ? "quota-gated" : "needs tighter caps",
+      complianceStatus: controls.complianceStatus,
+      syncAuth: syncReady ? "auth required when sync is enabled" : "sync auth missing",
+      budgetStatus: budgetReady ? "within low-cost guardrail" : "budget cap exceeds MVP guardrail",
+      launchGate,
+    },
+    evidence: {
+      localFirstDefault: !state.privacy.cloudSync,
+      nliOptIn: Boolean(state.privacy.nliTriage),
+      encryptedArchiveAvailable: hasWebCrypto(),
+      exportDeleteCorrection: true,
+      telemetryMode: controls.telemetryMode,
+      dpiaReview: controls.dpiaReview,
+      asvsMapping: controls.asvsMapping,
+    },
+  };
+}
+
+function buildStorageReportPayload() {
+  const sessionOnly = state.privacy.retention === "session-only";
+  const indexedActive = storageInfo.indexedDb === "active" && !sessionOnly;
+  return {
+    schemaVersion: "wre-2.5-storage-report",
+    generatedAt: new Date().toISOString(),
+    sessionId: INDEXED_DB_SESSION_ID,
+    summary: indexedActive ? "IndexedDB primary with webStorage fallback" : sessionOnly ? "Session-only webStorage" : "webStorage fallback",
+    extractorStatus: "localStorage/sessionStorage/IndexedDB extractor available",
+    indexedDb: {
+      database: INDEXED_DB_NAME,
+      store: INDEXED_DB_STORE,
+      key: INDEXED_DB_SESSION_ID,
+      status: storageInfo.indexedDb,
+      available: Boolean(window.indexedDB),
+      primary: indexedActive,
+    },
+    fallback: {
+      localStorageKey: STORAGE_KEY,
+      sessionStorageKey: STORAGE_KEY,
+      active: !indexedActive || sessionOnly,
+    },
+    retention: state.privacy.retention,
+    cloudSync: Boolean(state.privacy.cloudSync),
+    lastSavedAt: storageInfo.lastSavedAt || state.updatedAt || "",
+    lastHydratedAt: storageInfo.lastHydratedAt,
+  };
+}
+
+function readWebStorageSnapshot(store) {
+  try {
+    const raw = store.getItem(STORAGE_KEY);
+    return {
+      hasRecord: Boolean(raw),
+      byteLength: raw ? raw.length : 0,
+      payload: raw ? JSON.parse(raw) : null,
+    };
+  } catch (error) {
+    return {
+      hasRecord: false,
+      byteLength: 0,
+      error: error?.message || "Storage read failed",
+      payload: null,
+    };
+  }
+}
+
 function buildPrivacyReceiptPayload() {
+  const security = buildSecurityReportPayload();
+  const storage = buildStorageReportPayload();
   const sensitivityCounts = state.beliefs.reduce((counts, belief) => {
     const key = belief.sensitivity || "private";
     counts[key] = (counts[key] || 0) + 1;
@@ -2706,16 +3477,28 @@ function buildPrivacyReceiptPayload() {
       repairApplications: state.repairApplications.length,
     },
     processing: {
-      storageMode: state.privacy.retention === "session-only" ? "sessionStorage" : "localStorage",
+      storageMode: state.privacy.retention === "session-only" ? "sessionStorage" : storage.indexedDb.primary ? "IndexedDB" : "localStorage",
+      persistence: storage.summary,
+      indexedDbStatus: storage.indexedDb.status,
       retention: state.privacy.retention,
       cloudSync: Boolean(state.privacy.cloudSync),
       nliTriage: Boolean(state.privacy.nliTriage),
       encryptedArchive: hasWebCrypto() ? "AES-GCM available locally" : "unavailable in this browser",
       thirdPartyProcessing: state.privacy.cloudSync || state.privacy.nliTriage ? "opt-in only" : "none selected",
     },
+    security: {
+      apiAbuseResistance: security.summary.abuseResistance,
+      quotaPerHour: security.controls.quotaPerHour,
+      bodyLimitKb: security.controls.bodyLimitKb,
+      analysisClaimCap: security.controls.analysisClaimCap,
+      nliPairCap: security.controls.nliPairCap,
+      monthlyBudgetUsd: security.controls.monthlyBudgetUsd,
+      complianceStatus: security.summary.complianceStatus,
+      launchGate: security.summary.launchGate,
+    },
     userRights: {
       access: "Export API or privacy receipt",
-      export: "JSON session, benchmark, and calibration exports",
+      export: "JSON session, JSON-LD graph, CSV summary, benchmark, and calibration exports",
       delete: "Delete Local Data removes WRE local/session storage keys",
       correction: "Edit by importing corrected JSON or adding revised claims/rounds",
     },
@@ -2741,6 +3524,8 @@ function buildAccessibilityReportPayload() {
       dualGraphTableMode: Boolean(els.claimWorkbenchPanel && document.querySelector("[data-view-mode='table']") && document.querySelector("[data-view-mode='graph']")),
       keyboardCommandPalette: Boolean(els.commandPalette),
       screenReaderSummaryRegion: Boolean(els.screenReaderSummary),
+      textConstraintEditor: Boolean(els.constraintForm && els.constraintList),
+      securityControlsForm: Boolean(els.securityControlsForm && els.securityControlList),
       dialogUsesAriaModal: els.commandPalette?.getAttribute("aria-modal") === "true",
       automatedAxeScan: "not-run-in-static-session",
       manualKeyboardPass: "command palette, table/graph switch, conflict navigation, repair focus, and replay focus",
@@ -2765,8 +3550,8 @@ function exportCalibrationRounds() {
   );
 }
 
-function downloadJson(payload, filename) {
-  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+function downloadJson(payload, filename, type = "application/json") {
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
@@ -2775,6 +3560,23 @@ function downloadJson(payload, filename) {
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
+}
+
+function downloadText(payload, filename, type) {
+  const blob = new Blob([payload], { type });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.append(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function csvCell(value) {
+  const text = String(value ?? "");
+  return /[",\n]/.test(text) ? `"${text.replaceAll('"', '""')}"` : text;
 }
 
 function importApi(event) {
@@ -2807,6 +3609,7 @@ function applyImportedPayload(parsed) {
     ...createState(),
     beliefs: normalizedBeliefs,
     relations,
+    constraints: Array.isArray(parsed.constraints) ? parsed.constraints.map(normalizeConstraint) : clone(seedConstraints),
     conflicts: conflicts.map((conflict) => normalizeImportedConflict(conflict, migrationReport)),
     revisions: Array.isArray(parsed.revisions) ? parsed.revisions.map(normalizeRevision) : [],
     analysisRuns: Array.isArray(parsed.analysisRuns) ? parsed.analysisRuns.map(normalizeAnalysisRun) : [],
@@ -2815,6 +3618,7 @@ function applyImportedPayload(parsed) {
     repairApplications: Array.isArray(parsed.repairApplications) ? parsed.repairApplications.map(normalizeRepairApplication) : [],
     migrationReport,
     privacy: { ...DEFAULT_PRIVACY, ...(parsed.privacy || parsed.session?.privacy || {}) },
+    securityControls: normalizeSecurityControls(parsed.securityControls || parsed.securityReport?.controls),
     selectedConflictId: parsed.selectedConflictId || conflicts[0]?.id || "C-001",
     viewMode: parsed.viewMode === "graph" ? "graph" : "table",
     workbenchFilter: ["judgment", "principle", "theory"].includes(parsed.workbenchFilter) ? parsed.workbenchFilter : "all",
@@ -2936,10 +3740,12 @@ function normalizeImportedConflict(conflict, migrationReport) {
 function buildMigrationReport(parsed, beliefs, conflicts, relations = []) {
   const schemaVersion = parsed.schemaVersion || parsed.version || "legacy/unknown";
   const native = schemaVersion === "wre-2.5";
+  const constraints = Array.isArray(parsed.constraints) ? parsed.constraints : seedConstraints;
   const ambiguousFields = [];
   if (!parsed.schemaVersion) ambiguousFields.push("schemaVersion");
   if (Array.isArray(parsed.claims) && !Array.isArray(parsed.beliefs)) ambiguousFields.push("claims mapped to beliefs");
   if (!Array.isArray(parsed.relations)) ambiguousFields.push("relations derived from references/conflicts");
+  if (!Array.isArray(parsed.constraints)) ambiguousFields.push("constraints defaulted to local WRE templates");
   if (!parsed.agentContract) ambiguousFields.push("agentContract");
   if (!parsed.session?.privacy && !parsed.privacy) ambiguousFields.push("privacy");
   return {
@@ -2948,6 +3754,7 @@ function buildMigrationReport(parsed, beliefs, conflicts, relations = []) {
     status: native ? "native-wre-2.5" : "legacy-imported",
     mappedClaims: beliefs.length,
     mappedRelations: relations.length,
+    mappedConstraints: constraints.length,
     mappedConflicts: conflicts.length,
     legacyUnverified: native ? 0 : conflicts.length,
     ambiguousFields,
@@ -2964,6 +3771,7 @@ function buildDefaultMigrationReport() {
     status: "native-seed",
     mappedClaims: state.beliefs.length,
     mappedRelations: state.relations.length,
+    mappedConstraints: state.constraints.length,
     mappedConflicts: state.conflicts.length,
     legacyUnverified: state.conflicts.filter((conflict) => conflict.verification === "legacy-unverified").length,
     ambiguousFields: [],
@@ -2976,7 +3784,12 @@ function resetLocalSession() {
   if (!confirmed) return;
   localStorage.removeItem(STORAGE_KEY);
   sessionStorage.removeItem(STORAGE_KEY);
+  deleteIndexedDbState().catch(() => {});
   state = createState();
+  storageInfo.indexedDb = window.indexedDB ? "pending" : "unavailable";
+  storageInfo.primary = "localStorage";
+  storageInfo.lastSavedAt = "";
+  storageInfo.lastHydratedAt = "";
   render();
 }
 
@@ -2985,7 +3798,12 @@ function deleteLocalData() {
   if (!confirmed) return;
   localStorage.removeItem(STORAGE_KEY);
   sessionStorage.removeItem(STORAGE_KEY);
+  deleteIndexedDbState().catch(() => {});
   state = createState();
+  storageInfo.indexedDb = window.indexedDB ? "pending" : "unavailable";
+  storageInfo.primary = "localStorage";
+  storageInfo.lastSavedAt = "";
+  storageInfo.lastHydratedAt = "";
   render();
   focusElement(els.dataRightsPanel);
 }
@@ -3007,6 +3825,28 @@ function updatePrivacyControls() {
   renderAnalysisPanel();
   renderPipeline();
   renderRevisionReplay();
+}
+
+function updateSecurityControls() {
+  state.securityControls = normalizeSecurityControls({
+    quotaPerHour: els.quotaPerHourInput.value,
+    bodyLimitKb: els.bodyLimitInput.value,
+    analysisClaimCap: els.analysisCapInput.value,
+    nliPairCap: els.nliCapInput.value,
+    monthlyBudgetUsd: els.budgetCapInput.value,
+    telemetryMode: els.telemetryModeInput.value,
+    complianceStatus: els.complianceStatusInput.value,
+    syncAuthRequired: els.syncAuthRequiredInput.checked,
+  });
+  recordRevision(
+    "security",
+    `Updated API abuse controls: ${state.securityControls.quotaPerHour}/hr quota, ${state.securityControls.bodyLimitKb} KB body cap, ${state.securityControls.analysisClaimCap} claim analysis cap.`
+  );
+  saveState();
+  renderDataRightsPanel();
+  renderAnalysisPanel();
+  renderRevisionReplay();
+  focusElement(els.dataRightsPanel);
 }
 
 function syncLayerCounts() {
@@ -3090,9 +3930,22 @@ function focusCalibrationLoop() {
   focusElement(els.calibrationPanel);
 }
 
+function focusConstraintWorkbench() {
+  state.activeStage = "integration";
+  saveState();
+  renderStages();
+  focusElement(els.analysisPanel);
+  els.constraintNameInput.focus();
+}
+
 function focusEncryptedArchive() {
   focusElement(els.dataRightsPanel);
   els.archivePassphraseInput.focus();
+}
+
+function focusSecurityControls() {
+  focusElement(els.dataRightsPanel);
+  els.quotaPerHourInput.focus();
 }
 
 function getVisibleBeliefs() {
@@ -3144,12 +3997,18 @@ function buildAgentContractPayload() {
     schemaVersion: agentContract.schemaVersion,
     claimFields: agentContract.claimFields,
     relationFields: agentContract.relationFields,
+    constraintFields: agentContract.constraintFields,
     repairOptionFields: agentContract.repairOptionFields,
+    exportFormats: agentContract.exportFormats,
     relationTypes: agentContract.relationTypes,
     conflictKinds: agentContract.conflictKinds,
     jsonSchemas: buildJsonSchemasPayload(),
     examples: buildAgentRequestExamples(),
     endpoints: agentContract.endpoints.map(([method, path, description]) => ({ method, path, description })),
+    exportFormats: agentContract.exportFormats,
+    securityControls: normalizeSecurityControls(state.securityControls),
+    securityReport: buildSecurityReportPayload(),
+    storageReport: buildStorageReportPayload(),
   };
 }
 
@@ -3184,6 +4043,19 @@ function buildJsonSchemasPayload() {
           rationale: { type: "string" },
         },
       },
+      Constraint: {
+        type: "object",
+        required: ["id", "name", "language", "body", "severity", "enabled"],
+        properties: {
+          id: { type: "string", pattern: "^K-[0-9]+$" },
+          name: { type: "string" },
+          language: { type: "string", enum: ["rule", "smt", "shacl"] },
+          body: { type: "string" },
+          severity: { type: "string", enum: severityOrder },
+          enabled: { type: "boolean" },
+          createdAt: { type: "string", format: "date-time" },
+        },
+      },
       Conflict: {
         type: "object",
         required: ["id", "title", "severity", "claimA", "claimB", "kind", "core", "why", "repairs"],
@@ -3196,6 +4068,7 @@ function buildJsonSchemasPayload() {
           linked: { type: "array", items: { type: "string" } },
           kind: { type: "string", enum: agentContract.conflictKinds },
           confidence: { type: "number", minimum: 0, maximum: 1 },
+          constraintId: { type: "string" },
           core: { type: "array", items: { type: "string" } },
           engine: { type: "array", items: { type: "string" } },
           why: { type: "string" },
@@ -3227,6 +4100,8 @@ function buildJsonSchemasPayload() {
           time: { type: "string", format: "date-time" },
           claimCount: { type: "number" },
           candidatePairs: { type: "number" },
+          constraintCount: { type: "number" },
+          constraintMatches: { type: "number" },
           hardCount: { type: "number" },
           softCount: { type: "number" },
           nliQueued: { type: "number" },
@@ -3250,6 +4125,20 @@ function buildJsonSchemasPayload() {
           launchReadiness: { type: "array", items: { type: "object" } },
         },
       },
+      SecurityControls: {
+        type: "object",
+        required: ["quotaPerHour", "bodyLimitKb", "analysisClaimCap", "nliPairCap", "monthlyBudgetUsd", "telemetryMode", "complianceStatus", "syncAuthRequired"],
+        properties: {
+          quotaPerHour: { type: "number", minimum: 1 },
+          bodyLimitKb: { type: "number", minimum: 16 },
+          analysisClaimCap: { type: "number", minimum: 10 },
+          nliPairCap: { type: "number", minimum: 0 },
+          monthlyBudgetUsd: { type: "number", minimum: 0 },
+          telemetryMode: { type: "string", enum: ["off", "local", "otlp-ready"] },
+          complianceStatus: { type: "string", enum: ["draft", "mapped", "launch-ready"] },
+          syncAuthRequired: { type: "boolean" },
+        },
+      },
       SessionExport: {
         type: "object",
         required: ["schemaVersion", "session", "beliefs", "relations", "conflicts"],
@@ -3258,9 +4147,17 @@ function buildJsonSchemasPayload() {
           session: { type: "object" },
           beliefs: { type: "array", items: { $ref: "#/schemas/Claim" } },
           relations: { type: "array", items: { $ref: "#/schemas/Relation" } },
+          constraints: { type: "array", items: { $ref: "#/schemas/Constraint" } },
           conflicts: { type: "array", items: { $ref: "#/schemas/Conflict" } },
+          schema: {
+            type: "object",
+            properties: {
+              exportFormats: { type: "array", items: { type: "string", enum: agentContract.exportFormats } },
+            },
+          },
           analysisRuns: { type: "array", items: { $ref: "#/schemas/AnalysisRun" } },
           evaluationRuns: { type: "array", items: { $ref: "#/schemas/EvaluationRun" } },
+          securityControls: { $ref: "#/schemas/SecurityControls" },
         },
       },
     },
@@ -3284,6 +4181,9 @@ function buildOpenApiPayload() {
           [operation]: {
             summary: description,
             operationId: operationIdFor(method, path),
+            security: state.securityControls.syncAuthRequired ? [{ bearerAuth: [] }] : [],
+            "x-wre-rate-limit": `${state.securityControls.quotaPerHour} requests/hour`,
+            "x-wre-body-limit-kb": state.securityControls.bodyLimitKb,
             requestBody: requestBodyForEndpoint(method, path),
             responses: responseForEndpoint(method, path),
           },
@@ -3292,8 +4192,17 @@ function buildOpenApiPayload() {
     })),
     components: {
       schemas,
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          description: "Required for synced workspaces; local-only exports do not transmit data.",
+        },
+      },
     },
     "x-wre-examples": buildAgentRequestExamples(),
+    "x-wre-security": buildSecurityReportPayload(),
+    "x-wre-storage": buildStorageReportPayload(),
   };
 }
 
@@ -3301,8 +4210,18 @@ function requestBodyForEndpoint(method, path) {
   if (method === "GET" || method === "DELETE") return undefined;
   if (path === "/v1/beliefs") return jsonRequestBody("Claim batch", { type: "object", properties: { beliefs: { type: "array", items: { $ref: "#/components/schemas/Claim" } } } });
   if (path === "/v1/relations") return jsonRequestBody("Relation batch", { type: "object", properties: { relations: { type: "array", items: { $ref: "#/components/schemas/Relation" } } } });
+  if (path === "/v1/constraints") return jsonRequestBody("Constraint batch", { type: "object", properties: { constraints: { type: "array", items: { $ref: "#/components/schemas/Constraint" } } } });
   if (path === "/v1/conflicts/{id}/repair") return jsonRequestBody("Repair application", { type: "object", properties: { repairId: { type: "string" }, mode: { type: "string", enum: ["preview", "apply"] } } });
-  if (path === "/v1/analyze") return jsonRequestBody("Analysis request", { type: "object", properties: { engineMode: { type: "string", enum: ["rule-only", "hybrid"] }, nliTriage: { type: "boolean" } } });
+  if (path === "/v1/analyze") return jsonRequestBody("Analysis request", {
+    type: "object",
+    properties: {
+      engineMode: { type: "string", enum: ["rule-only", "hybrid"] },
+      nliTriage: { type: "boolean" },
+      candidateLimit: { type: "number", maximum: state.securityControls.nliPairCap },
+      maxClaims: { type: "number", maximum: state.securityControls.analysisClaimCap },
+      maxBodyKb: { type: "number", maximum: state.securityControls.bodyLimitKb },
+    },
+  });
   if (path === "/v1/sessions") return jsonRequestBody("Session create", { type: "object", properties: { scope: { type: "string" }, privacy: { type: "object" } } });
   return jsonRequestBody("WRE request", { type: "object" });
 }
@@ -3325,8 +4244,27 @@ function jsonRequestBody(description, schema) {
 }
 
 function responseForEndpoint(method, path) {
-  const schema = path === "/v1/export"
-    ? { $ref: "#/components/schemas/SessionExport" }
+  if (path === "/v1/export") {
+    return {
+      "200": {
+        description: "Portable WRE session archive in JSON, JSON-LD, or CSV summary form.",
+        content: {
+          "application/json": {
+            schema: { $ref: "#/components/schemas/SessionExport" },
+          },
+          "application/ld+json": {
+            schema: { type: "object" },
+          },
+          "text/csv": {
+            schema: { type: "string" },
+          },
+        },
+      },
+    };
+  }
+
+  const schema = path.includes("constraints")
+      ? { type: "object", properties: { constraints: { type: "array", items: { $ref: "#/components/schemas/Constraint" } } } }
     : path.includes("conflicts")
       ? { type: "object", properties: { conflicts: { type: "array", items: { $ref: "#/components/schemas/Conflict" } } } }
       : { type: "object" };
@@ -3364,13 +4302,32 @@ function buildAgentRequestExamples() {
     },
     {
       method: "POST",
+      path: "/v1/constraints",
+      description: "Batch add transparent rule, SHACL, or SMT templates before local analysis.",
+      body: {
+        constraints: state.constraints.slice(0, 2).map(normalizeConstraint),
+      },
+    },
+    {
+      method: "POST",
       path: "/v1/analyze",
       description: "Run the local hybrid analysis profile currently selected in privacy controls.",
       body: {
         sessionId: "sess_7f2c9e7a",
         engineMode: state.privacy.nliTriage ? "hybrid" : "rule-only",
         nliTriage: Boolean(state.privacy.nliTriage),
-        candidateLimit: 25,
+        candidateLimit: state.securityControls.nliPairCap,
+        maxClaims: state.securityControls.analysisClaimCap,
+        maxBodyKb: state.securityControls.bodyLimitKb,
+      },
+    },
+    {
+      method: "GET",
+      path: "/v1/export",
+      description: "Request a portable archive as JSON, linked data, or a spreadsheet-safe summary.",
+      body: {
+        accept: agentContract.exportFormats,
+        includes: ["claims", "relations", "constraints", "conflicts", "revisions"],
       },
     },
     {
@@ -3430,6 +4387,13 @@ function nextRelationId() {
     .map((relation) => Number(String(relation.id).replace(/^[A-Z-]+/, "")) || 0)
     .reduce((highest, value) => Math.max(highest, value), 0);
   return `L-${String(max + 1).padStart(3, "0")}`;
+}
+
+function nextConstraintId() {
+  const max = state.constraints
+    .map((constraint) => Number(String(constraint.id).replace(/^[A-Z-]+/, "")) || 0)
+    .reduce((highest, value) => Math.max(highest, value), 0);
+  return `K-${String(max + 1).padStart(3, "0")}`;
 }
 
 function nextRepairApplicationId() {
@@ -3562,8 +4526,10 @@ function copyAgentContract() {
 function revisionLabel(type) {
   if (type === "repair") return "Repair applied";
   if (type === "privacy") return "Privacy changed";
+  if (type === "security") return "Security controls";
   if (type === "claim") return "Claim added";
   if (type === "relation") return "Relation updated";
+  if (type === "constraint") return "Constraint updated";
   if (type === "analysis") return "Analysis run";
   if (type === "evaluation") return "Evaluation run";
   if (type === "calibration") return "Calibration round";
@@ -3633,8 +4599,20 @@ function retentionLabel(value) {
   return "Until deleted";
 }
 
+function storageLabel(value) {
+  if (value === "indexeddb") return "IndexedDB";
+  if (value === "session") return "Session";
+  return "Local";
+}
+
 function clamp(value, min, max) {
   return Math.min(max, Math.max(min, value));
+}
+
+function clampInteger(value, min, max, fallback) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  return Math.round(clamp(parsed, min, max));
 }
 
 function replaceChildren(container, children) {
