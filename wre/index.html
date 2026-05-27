@@ -224,13 +224,18 @@
             <h2 id="analysisTitle">Local Hybrid Analysis</h2>
             <p>Run deterministic rule checks, graph retrieval, optional NLI triage, and repair-readiness scoring before sending anything to a server.</p>
           </div>
-          <button id="exportBenchmarkBtn" class="utility-button compact" type="button">
-            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12" /><path d="m8 11 4 4 4-4" /><path d="M5 20h14" /></svg>
-            <span>Export Benchmark</span>
-          </button>
+          <div class="analysis-actions">
+            <button id="runEvaluationBtn" class="utility-button compact" type="button">Run Evaluation</button>
+            <button id="exportBenchmarkBtn" class="utility-button compact" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12" /><path d="m8 11 4 4 4-4" /><path d="M5 20h14" /></svg>
+              <span>Export Benchmark</span>
+            </button>
+            <button id="exportEvaluationBtn" class="utility-button compact" type="button">Export Evaluation</button>
+          </div>
         </div>
         <div id="analysisSummary" class="analysis-summary"></div>
         <div id="benchmarkList" class="benchmark-list" aria-label="Evaluation targets"></div>
+        <div id="evaluationList" class="evaluation-list" aria-label="Latest local evaluation evidence"></div>
       </section>
 
       <section id="calibrationPanel" class="calibration-panel" tabindex="-1" aria-labelledby="calibrationTitle">

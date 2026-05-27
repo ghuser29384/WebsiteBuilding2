@@ -470,7 +470,9 @@ const els = {
   applyRepairBtn: document.getElementById("applyRepairBtn"),
   guidanceBtn: document.getElementById("guidanceBtn"),
   analyzeBtn: document.getElementById("analyzeBtn"),
+  runEvaluationBtn: document.getElementById("runEvaluationBtn"),
   exportBenchmarkBtn: document.getElementById("exportBenchmarkBtn"),
+  exportEvaluationBtn: document.getElementById("exportEvaluationBtn"),
   editContextBtn: document.getElementById("editContextBtn"),
   cloudSyncToggle: document.getElementById("cloudSyncToggle"),
   llmTriageToggle: document.getElementById("llmTriageToggle"),
@@ -500,6 +502,7 @@ const els = {
   analysisPanel: document.getElementById("analysisPanel"),
   analysisSummary: document.getElementById("analysisSummary"),
   benchmarkList: document.getElementById("benchmarkList"),
+  evaluationList: document.getElementById("evaluationList"),
   dataRightsPanel: document.getElementById("dataRightsPanel"),
   privacyReceiptList: document.getElementById("privacyReceiptList"),
   migrationReportList: document.getElementById("migrationReportList"),
@@ -539,6 +542,7 @@ function createState() {
     conflicts: clone(seedConflicts),
     revisions: [],
     analysisRuns: [],
+    evaluationRuns: [],
     calibrationRounds: [],
     repairApplications: [],
     migrationReport: null,
@@ -569,6 +573,7 @@ function loadState() {
       conflicts: parsed.conflicts.map(normalizeConflict),
       revisions: Array.isArray(parsed.revisions) ? parsed.revisions.map(normalizeRevision) : [],
       analysisRuns: Array.isArray(parsed.analysisRuns) ? parsed.analysisRuns.map(normalizeAnalysisRun) : [],
+      evaluationRuns: Array.isArray(parsed.evaluationRuns) ? parsed.evaluationRuns.map(normalizeEvaluationRun) : [],
       calibrationRounds: Array.isArray(parsed.calibrationRounds) ? parsed.calibrationRounds.map(normalizeCalibrationRound) : [],
       repairApplications: Array.isArray(parsed.repairApplications) ? parsed.repairApplications.map(normalizeRepairApplication) : [],
       migrationReport: parsed.migrationReport || null,
@@ -698,6 +703,22 @@ function normalizeAnalysisRun(run) {
   };
 }
 
+function normalizeEvaluationRun(run) {
+  return {
+    id: run.id || `E-${Date.now()}`,
+    time: run.time || new Date().toISOString(),
+    overallStatus: run.overallStatus || "review",
+    passed: Number.isFinite(Number(run.passed)) ? Number(run.passed) : 0,
+    warning: Number.isFinite(Number(run.warning)) ? Number(run.warning) : 0,
+    failed: Number.isFinite(Number(run.failed)) ? Number(run.failed) : 0,
+    total: Number.isFinite(Number(run.total)) ? Number(run.total) : 0,
+    readinessScore: Number.isFinite(Number(run.readinessScore)) ? Number(run.readinessScore) : 0,
+    metrics: Array.isArray(run.metrics) ? run.metrics : [],
+    launchReadiness: Array.isArray(run.launchReadiness) ? run.launchReadiness : [],
+    evidence: run.evidence || {},
+  };
+}
+
 function normalizeCalibrationRound(round) {
   return {
     id: round.id || `Q-${Date.now()}`,
@@ -782,7 +803,9 @@ function bindEvents() {
 
   els.applyRepairBtn.addEventListener("click", applySelectedRepair);
   els.analyzeBtn.addEventListener("click", runLocalAnalysis);
+  els.runEvaluationBtn.addEventListener("click", runLocalEvaluation);
   els.exportBenchmarkBtn.addEventListener("click", exportBenchmark);
+  els.exportEvaluationBtn.addEventListener("click", exportEvaluationReport);
 
   els.graphBtn.addEventListener("click", () => {
     state.viewMode = "graph";
@@ -1015,6 +1038,8 @@ function getCommandDefinitions() {
     { id: "repair-detail", label: "View repair detail", group: "Repair", keywords: "simulation preview", run: focusRepairDetail },
     { id: "apply-repair", label: "Apply selected repair", group: "Repair", keywords: "revision", disabled: repairApplied, run: applySelectedRepair },
     { id: "analyze-session", label: "Analyze session", group: "Analysis", keywords: "rule smt nli", run: runLocalAnalysis },
+    { id: "run-evaluation", label: "Run local evaluation", group: "Analysis", keywords: "benchmark readiness launch", run: runLocalEvaluation },
+    { id: "export-evaluation", label: "Export evaluation report", group: "Export", keywords: "benchmark readiness launch", run: exportEvaluationReport },
     { id: "replay", label: "Review replay", group: "Replay", keywords: "revision audit log", run: reviewReplay },
     { id: "calibration", label: "Open calibration loop", group: "Calibration", keywords: "case disagreement confidence", run: focusCalibrationLoop },
     { id: "export-session", label: "Export session JSON", group: "Export", keywords: "api archive", run: exportApi },
@@ -1696,6 +1721,31 @@ function renderAnalysisPanel() {
       return item;
     })
   );
+
+  const evaluation = getLatestEvaluationRun() || buildEvaluationReport({ preview: true });
+  const evaluationItems = [
+    {
+      label: "Launch readiness",
+      value: `${Math.round(evaluation.readinessScore * 100)}%`,
+      status: evaluation.overallStatus,
+      evidence: `${evaluation.passed}/${evaluation.total} checks passing`,
+    },
+    ...evaluation.metrics,
+  ];
+
+  replaceChildren(
+    els.evaluationList,
+    evaluationItems.map((metric) => {
+      const item = document.createElement("article");
+      item.className = `evaluation-item is-${String(metric.status).replace(/\s+/g, "-")}`;
+      item.innerHTML = `
+        <span>${escapeHtml(metric.label)}</span>
+        <strong>${escapeHtml(metric.value)}${metric.unit ? escapeHtml(metric.unit) : ""}</strong>
+        <small>${escapeHtml(metric.evidence || metric.target || "Ready for local review")}</small>
+      `;
+      return item;
+    })
+  );
 }
 
 function renderCalibrationPanel() {
@@ -1803,6 +1853,24 @@ function runLocalAnalysis() {
   }, 1400);
 }
 
+function runLocalEvaluation() {
+  const report = buildEvaluationReport();
+  state.evaluationRuns.push(report);
+  recordRevision(
+    "evaluation",
+    `${report.id} checked ${report.total} WRE launch metrics: ${report.passed} pass, ${report.warning} review, ${report.failed} need evidence.`
+  );
+  saveState();
+  render();
+  focusElement(els.analysisPanel);
+
+  const originalLabel = els.runEvaluationBtn.textContent;
+  els.runEvaluationBtn.textContent = "Evaluation Saved";
+  window.setTimeout(() => {
+    els.runEvaluationBtn.textContent = originalLabel;
+  }, 1400);
+}
+
 function buildAnalysisReport() {
   const claimCount = state.beliefs.length;
   const candidatePairs = getCandidatePairs().length;
@@ -1839,6 +1907,91 @@ function buildAnalysisReport() {
     ],
     generatedConflicts,
     generatedConflictIds: generatedConflicts.map((conflict) => conflict.id),
+  };
+}
+
+function buildEvaluationReport({ preview = false } = {}) {
+  const latestAnalysis = getLatestAnalysisRun() || buildAnalysisReport({ preview: true });
+  const explanationReady = state.conflicts.filter((conflict) => conflict.why && conflict.core?.length && conflict.repairs?.length).length;
+  const explanationCoverage = explanationReady / Math.max(1, state.conflicts.length);
+  const explanationUsefulness = roundNumber(clamp(1 + explanationCoverage * 4, 1, 5));
+  const repairedConflicts = state.conflicts.filter((conflict) => conflict.status === "repaired").length;
+  const repairAcceptance = roundNumber((repairedConflicts + state.repairApplications.length) / Math.max(1, state.conflicts.length));
+  const accessibility = buildAccessibilityReportPayload();
+  const criticalA11y = Object.values(accessibility.checks).filter((value) => value === false).length;
+  const restoreReady = hasWebCrypto() && Boolean(els.exportEncryptedBtn && els.encryptedArchiveInput);
+  const sessionCompletion = roundNumber(clamp(
+    (state.beliefs.length ? 0.2 : 0)
+      + (state.relations.length ? 0.15 : 0)
+      + (state.conflicts.length ? 0.2 : 0)
+      + (state.analysisRuns.length ? 0.15 : 0)
+      + (state.revisions.length ? 0.15 : 0)
+      + (state.privacy.retention ? 0.15 : 0),
+    0,
+    1
+  ));
+
+  const metrics = [
+    buildEvaluationMetric("precisionTop5", "Conflict precision at top 5", latestAnalysis.precisionReadiness, 0.8, ">=", "", "Explanation coverage plus generated conflict evidence."),
+    buildEvaluationMetric("explanationUsefulness", "Explanation usefulness", explanationUsefulness, 4, ">=", "/5", `${explanationReady}/${state.conflicts.length} conflicts have why, core, and repair context.`),
+    buildEvaluationMetric("repairAcceptance", "Repair acceptance", repairAcceptance, 0.35, ">=", "", `${repairedConflicts} repaired conflicts and ${state.repairApplications.length} recorded applications.`),
+    buildEvaluationMetric("ruleLatency", "Rule-only latency", latestAnalysis.estimatedRuleLatency, 1.5, "<", "s", `${latestAnalysis.candidatePairs} candidate pairs in the local deterministic pass.`),
+    buildEvaluationMetric("hybridLatency", "Hybrid latency", latestAnalysis.estimatedHybridLatency, 7, "<", "s", `${latestAnalysis.nliQueued} NLI items queued under current privacy settings.`),
+    buildEvaluationMetric("criticalA11y", "Critical accessibility", criticalA11y, 0, "===", "", "Skip link, command palette, graph/table mode, and screen-reader summary are checked."),
+  ];
+  const launchReadiness = [
+    { label: "Session completion", status: sessionCompletion >= 0.75 ? "pass" : "warning", value: sessionCompletion, evidence: "Claims, relations, conflicts, analysis, revisions, and privacy controls present." },
+    { label: "Encrypted archive restore", status: restoreReady ? "pass" : "warning", value: restoreReady ? 1 : 0, evidence: restoreReady ? "AES-GCM archive controls are available." : "Web Crypto or archive controls unavailable in this browser." },
+    { label: "Local cost control", status: "pass", value: 0, evidence: "Static local evaluation runs without paid model calls." },
+  ];
+  const allChecks = [...metrics, ...launchReadiness];
+  const passed = allChecks.filter((metric) => metric.status === "pass").length;
+  const warning = allChecks.filter((metric) => metric.status === "warning").length;
+  const failed = allChecks.filter((metric) => metric.status === "fail").length;
+
+  return normalizeEvaluationRun({
+    id: preview ? "E-preview" : nextEvaluationRunId(),
+    time: new Date().toISOString(),
+    overallStatus: failed ? "needs-evidence" : warning ? "review" : "pass",
+    passed,
+    warning,
+    failed,
+    total: allChecks.length,
+    readinessScore: roundNumber((passed + warning * 0.5) / Math.max(1, allChecks.length)),
+    metrics,
+    launchReadiness,
+    evidence: {
+      analysisRunId: latestAnalysis.id,
+      claimCount: state.beliefs.length,
+      relationCount: state.relations.length,
+      conflictCount: state.conflicts.length,
+      repairedConflicts,
+      accessibility,
+      privacyReceipt: buildPrivacyReceiptPayload(),
+    },
+  });
+}
+
+function buildEvaluationMetric(id, label, value, target, comparator, unit, evidence) {
+  const normalizedValue = roundNumber(Number(value));
+  const passes = comparator === ">="
+    ? normalizedValue >= target
+    : comparator === "<"
+      ? normalizedValue < target
+      : normalizedValue === target;
+  const close = comparator === ">="
+    ? normalizedValue >= target * 0.8
+    : comparator === "<"
+      ? normalizedValue < target * 1.25
+      : Math.abs(normalizedValue - target) <= 1;
+  return {
+    id,
+    label,
+    value: normalizedValue,
+    target: `${comparator} ${target}${unit}`,
+    unit,
+    status: passes ? "pass" : close ? "warning" : "fail",
+    evidence,
   };
 }
 
@@ -2420,6 +2573,7 @@ function buildSessionPayload() {
     selectedConflictId: state.selectedConflictId,
     revisions: state.revisions,
     analysisRuns: state.analysisRuns,
+    evaluationRuns: state.evaluationRuns,
     calibrationRounds: state.calibrationRounds,
     repairApplications: state.repairApplications,
     privacyReceipt: buildPrivacyReceiptPayload(),
@@ -2441,15 +2595,31 @@ function exportPrivacyReceipt() {
 
 function exportBenchmark() {
   const latest = getLatestAnalysisRun() || buildAnalysisReport({ preview: true });
+  const latestEvaluation = getLatestEvaluationRun() || buildEvaluationReport({ preview: true });
   downloadJson(
     {
       schemaVersion: "wre-2.5-benchmark",
       generatedAt: new Date().toISOString(),
       latestAnalysis: latest,
+      latestEvaluation,
       benchmarkTargets,
       notes: "Local benchmark export for precision, explanation, latency, repair acceptance, and accessibility review.",
     },
     "normativity-wre-benchmark.json"
+  );
+}
+
+function exportEvaluationReport() {
+  const payload = getLatestEvaluationRun() || buildEvaluationReport({ preview: true });
+  downloadJson(
+    {
+      schemaVersion: "wre-2.5-evaluation",
+      generatedAt: new Date().toISOString(),
+      sessionId: "sess_7f2c9e7a",
+      evaluation: payload,
+      benchmarkTargets,
+    },
+    "normativity-wre-evaluation-report.json"
   );
 }
 
@@ -2640,6 +2810,7 @@ function applyImportedPayload(parsed) {
     conflicts: conflicts.map((conflict) => normalizeImportedConflict(conflict, migrationReport)),
     revisions: Array.isArray(parsed.revisions) ? parsed.revisions.map(normalizeRevision) : [],
     analysisRuns: Array.isArray(parsed.analysisRuns) ? parsed.analysisRuns.map(normalizeAnalysisRun) : [],
+    evaluationRuns: Array.isArray(parsed.evaluationRuns) ? parsed.evaluationRuns.map(normalizeEvaluationRun) : [],
     calibrationRounds: Array.isArray(parsed.calibrationRounds) ? parsed.calibrationRounds.map(normalizeCalibrationRound) : [],
     repairApplications: Array.isArray(parsed.repairApplications) ? parsed.repairApplications.map(normalizeRepairApplication) : [],
     migrationReport,
@@ -3063,6 +3234,22 @@ function buildJsonSchemasPayload() {
           engines: { type: "array", items: { type: "string" } },
         },
       },
+      EvaluationRun: {
+        type: "object",
+        required: ["id", "overallStatus", "passed", "warning", "failed", "metrics"],
+        properties: {
+          id: { type: "string", pattern: "^E-[0-9]+$" },
+          time: { type: "string", format: "date-time" },
+          overallStatus: { type: "string", enum: ["pass", "review", "needs-evidence"] },
+          passed: { type: "number" },
+          warning: { type: "number" },
+          failed: { type: "number" },
+          total: { type: "number" },
+          readinessScore: { type: "number", minimum: 0, maximum: 1 },
+          metrics: { type: "array", items: { type: "object" } },
+          launchReadiness: { type: "array", items: { type: "object" } },
+        },
+      },
       SessionExport: {
         type: "object",
         required: ["schemaVersion", "session", "beliefs", "relations", "conflicts"],
@@ -3073,6 +3260,7 @@ function buildJsonSchemasPayload() {
           relations: { type: "array", items: { $ref: "#/schemas/Relation" } },
           conflicts: { type: "array", items: { $ref: "#/schemas/Conflict" } },
           analysisRuns: { type: "array", items: { $ref: "#/schemas/AnalysisRun" } },
+          evaluationRuns: { type: "array", items: { $ref: "#/schemas/EvaluationRun" } },
         },
       },
     },
@@ -3206,6 +3394,10 @@ function getLatestAnalysisRun() {
   return state.analysisRuns[state.analysisRuns.length - 1] || null;
 }
 
+function getLatestEvaluationRun() {
+  return state.evaluationRuns[state.evaluationRuns.length - 1] || null;
+}
+
 function nextAnalysisRunId() {
   const max = state?.analysisRuns
     ? state.analysisRuns
@@ -3213,6 +3405,15 @@ function nextAnalysisRunId() {
         .reduce((highest, value) => Math.max(highest, value), 0)
     : 0;
   return `A-${String(max + 1).padStart(3, "0")}`;
+}
+
+function nextEvaluationRunId() {
+  const max = state?.evaluationRuns
+    ? state.evaluationRuns
+        .map((run) => Number(String(run.id).replace(/^[A-Z-]+/, "")) || 0)
+        .reduce((highest, value) => Math.max(highest, value), 0)
+    : 0;
+  return `E-${String(max + 1).padStart(3, "0")}`;
 }
 
 function nextCalibrationRoundId() {
@@ -3364,6 +3565,7 @@ function revisionLabel(type) {
   if (type === "claim") return "Claim added";
   if (type === "relation") return "Relation updated";
   if (type === "analysis") return "Analysis run";
+  if (type === "evaluation") return "Evaluation run";
   if (type === "calibration") return "Calibration round";
   return "Session event";
 }
