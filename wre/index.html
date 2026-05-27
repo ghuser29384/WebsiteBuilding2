@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <meta name="theme-color" content="#ffffff">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-uw1rDg1vFrlhvppfPvdPyHOa3iCdN6GTPrsZyB22QaI='; style-src 'self'; img-src 'self' https: data:; connect-src 'self' http://127.0.0.1:8787 http://localhost:8787 https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'">
   <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
   <meta name="description" content="A Wide Reflective Equilibrium tool surface for intake, conflict review, repair, and revision replay.">
   <title>Wide Reflective Equilibrium Tool | Normativity</title>
@@ -21,7 +22,7 @@
   <meta name="twitter:description" content="Compose beliefs, review conflicts, inspect repair options, and replay revisions.">
   <meta name="twitter:image" content="https://normativity.org/assets/Normativity%20Logo.png">
   <link rel="icon" type="image/png" href="../assets/Normativity%20Favicon.png">
-  <link rel="stylesheet" href="./styles.css?v=encrypted-archive">
+  <link rel="stylesheet" href="./styles.css?v=wre3-sync">
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -117,7 +118,7 @@
           <div><dt>Created</dt><dd id="sessionCreated">May 15, 2025 10:42 AM</dd></div>
           <div><dt>Status</dt><dd><span class="status-dot"></span>Active</dd></div>
           <div><dt>Scope</dt><dd>AI hiring assistant</dd></div>
-          <div><dt>Mode</dt><dd id="sessionMode">Local-first</dd></div>
+          <div><dt>Mode</dt><dd id="sessionMode">Local only</dd></div>
           <div><dt>Retention</dt><dd id="sessionRetention">Until deleted</dd></div>
         </dl>
         <button id="editContextBtn" class="ghost-button full-width" type="button">
@@ -176,6 +177,18 @@
               <option value="30-days">30 days</option>
             </select>
           </label>
+          <label class="control-card" for="privacyModeSelect">
+            <span>
+              <strong>Privacy mode</strong>
+              <small>Explicit WRE3 storage and sharing scope</small>
+            </span>
+            <select id="privacyModeSelect">
+              <option value="local_only">Local only</option>
+              <option value="encrypted_sync">Encrypted sync</option>
+              <option value="private_link">Private link</option>
+              <option value="workspace">Workspace</option>
+            </select>
+          </label>
         </div>
       </section>
 
@@ -216,6 +229,36 @@
             <input id="encryptedArchiveInput" class="hidden-file" type="file" accept="application/json,.json">
           </div>
           <p id="encryptedArchiveStatus" class="encrypted-archive-status" aria-live="polite">Encrypted archive not exported this session.</p>
+        </section>
+        <section class="sync-packet-panel" aria-labelledby="syncPacketTitle">
+          <div class="sync-packet-head">
+            <div>
+              <h3 id="syncPacketTitle">Sync Packet & Edge Contract</h3>
+              <p>Prepare the local mutation bundle, encryption manifest, conflict policy, and Cloudflare Worker style sync routes before any data leaves the browser.</p>
+            </div>
+            <button id="exportSyncPacketBtn" class="utility-button compact" type="button">Export Sync Packet</button>
+          </div>
+          <form id="syncBackendForm" class="sync-backend-form">
+            <label for="syncEndpointInput">
+              <span>Worker endpoint</span>
+              <input id="syncEndpointInput" name="syncEndpoint" type="url" placeholder="http://127.0.0.1:8787">
+            </label>
+            <label for="workspaceIdInput">
+              <span>Workspace ID</span>
+              <input id="workspaceIdInput" name="workspaceId" type="text" autocomplete="off" placeholder="Create or paste workspace">
+            </label>
+            <label for="syncTokenInput">
+              <span>Sync token</span>
+              <input id="syncTokenInput" name="syncToken" type="password" autocomplete="new-password" placeholder="Stored locally only">
+            </label>
+            <div class="sync-backend-actions">
+              <button id="createWorkspaceBtn" class="utility-button compact" type="button">Create Workspace</button>
+              <button id="pushSyncBtn" class="primary-button compact" type="button">Push Encrypted</button>
+              <button id="pullSyncBtn" class="utility-button compact" type="button">Pull Manifest</button>
+            </div>
+          </form>
+          <p id="syncBackendStatus" class="sync-backend-status" aria-live="polite">Worker sync is staged locally until encrypted sync is selected.</p>
+          <div id="syncReadinessList" class="sync-readiness-list" aria-label="Optional sync readiness evidence"></div>
         </section>
         <section class="security-controls-panel" aria-labelledby="securityControlsTitle">
           <div class="security-controls-head">
@@ -327,6 +370,36 @@
             <button class="primary-button constraint-submit" type="submit">Add Constraint</button>
           </form>
           <div id="constraintList" class="constraint-list" aria-label="Active local constraints"></div>
+        </section>
+        <section class="formal-trace" aria-labelledby="formalTraceTitle">
+          <div class="formal-trace-head">
+            <div>
+              <h3 id="formalTraceTitle">Formal Solver Trace</h3>
+              <p>Inspect named assertions, SMT-style constraint templates, unsat cores, and ranked repairs from the latest local analysis.</p>
+            </div>
+            <button id="exportFormalTraceBtn" class="utility-button compact" type="button">Export Formal Trace</button>
+          </div>
+          <div id="formalTraceList" class="formal-trace-list" aria-label="Latest formal solver trace"></div>
+        </section>
+        <section class="argumentation-review" aria-labelledby="argumentationTitle">
+          <div class="argumentation-head">
+            <div>
+              <h3 id="argumentationTitle">Argumentation Review</h3>
+              <p>Model relation and conflict edges as attacks, defenses, vulnerable claims, and an admissible working set.</p>
+            </div>
+            <button id="exportArgumentationBtn" class="utility-button compact" type="button">Export Argumentation</button>
+          </div>
+          <div id="argumentationList" class="argumentation-list" aria-label="Latest argumentation graph analysis"></div>
+        </section>
+        <section class="triage-review" aria-labelledby="triageTitle">
+          <div class="triage-head">
+            <div>
+              <h3 id="triageTitle">NLI & Probabilistic Triage</h3>
+              <p>Rank candidate clashes with local NLI-style contradiction estimates, semantic overlap, confidence weights, and provenance-aware soft-tension scores.</p>
+            </div>
+            <button id="exportTriageBtn" class="utility-button compact" type="button">Export Triage</button>
+          </div>
+          <div id="triageList" class="triage-list" aria-label="Latest NLI and probabilistic triage queue"></div>
         </section>
       </section>
 
@@ -459,13 +532,44 @@
         </div>
 
         <form id="beliefForm" class="belief-form">
+          <div id="beliefErrorSummary" class="error-summary" role="alert" tabindex="-1" hidden></div>
           <div class="metadata-grid" aria-label="Claim metadata">
             <label for="claimKind">
-              <span>Claim kind</span>
+              <span>WRE family</span>
               <select id="claimKind">
                 <option value="judgment">Judgment</option>
                 <option value="principle">Principle</option>
                 <option value="theory">Background theory</option>
+              </select>
+            </label>
+            <label for="claimTypeInput">
+              <span>Claim kind</span>
+              <select id="claimTypeInput">
+                <option value="judgment">Judgment</option>
+                <option value="principle">Principle</option>
+                <option value="background_theory">Background theory</option>
+                <option value="belief_statement">Belief statement</option>
+                <option value="exception">Exception</option>
+                <option value="empirical_premise">Empirical premise</option>
+              </select>
+            </label>
+            <label for="modalityInput">
+              <span>Modality</span>
+              <select id="modalityInput">
+                <option value="should">Should</option>
+                <option value="is">Is</option>
+                <option value="causes">Causes</option>
+                <option value="permits">Permits</option>
+                <option value="forbids">Forbids</option>
+              </select>
+            </label>
+            <label for="polarityInput">
+              <span>Polarity</span>
+              <select id="polarityInput">
+                <option value="positive">Positive</option>
+                <option value="negative">Negative</option>
+                <option value="mixed">Mixed</option>
+                <option value="unknown">Unknown</option>
               </select>
             </label>
             <label for="claimDomain">
@@ -481,8 +585,12 @@
               <span>Confidence <output id="confidenceOutput" for="confidenceInput">72%</output></span>
               <input id="confidenceInput" type="range" min="1" max="100" value="72">
             </label>
+            <label for="entrenchmentInput">
+              <span>Entrenchment <output id="entrenchmentOutput" for="entrenchmentInput">60%</output></span>
+              <input id="entrenchmentInput" type="range" min="1" max="100" value="60">
+            </label>
             <label for="timeScopeInput">
-              <span>Time scope</span>
+              <span>Scope</span>
               <input id="timeScopeInput" type="text" placeholder="e.g., 2026 hiring cycle">
             </label>
             <label for="provenanceInput">
@@ -495,6 +603,15 @@
                 <option value="private">Private</option>
                 <option value="pseudonymous">Pseudonymous</option>
                 <option value="public">Public</option>
+              </select>
+            </label>
+            <label for="claimStatusInput">
+              <span>Status</span>
+              <select id="claimStatusInput">
+                <option value="active">Active</option>
+                <option value="draft">Draft</option>
+                <option value="accepted_tension">Accepted tension</option>
+                <option value="retired">Retired</option>
               </select>
             </label>
           </div>
@@ -618,6 +735,16 @@
       </section>
 
       <section class="detail-section">
+        <h3>Relation Path</h3>
+        <div id="detailRelationPath" class="relation-path-list"></div>
+      </section>
+
+      <section class="detail-section">
+        <h3>Downstream Effects</h3>
+        <div id="detailDownstream" class="downstream-list"></div>
+      </section>
+
+      <section class="detail-section">
         <h3>Engine Path</h3>
         <div id="detailEngine" class="engine-path"></div>
       </section>
@@ -645,6 +772,16 @@
           <span>Apply Repair</span>
         </button>
       </div>
+      <section class="detail-section tension-section">
+        <label for="tensionRationaleInput">
+          <span>Known tension rationale</span>
+          <textarea id="tensionRationaleInput" rows="3" placeholder="Why should this conflict remain open for now?"></textarea>
+        </label>
+        <button id="acceptTensionBtn" class="ghost-button full-width" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18" /><path d="M5 8h14" /><path d="M7 14h10" /></svg>
+          <span>Accept Unresolved Tension</span>
+        </button>
+      </section>
     </aside>
 
     <section class="pipeline-panel" tabindex="-1" aria-label="WRE pipeline">
@@ -674,6 +811,6 @@
     </div>
   </section>
 
-  <script defer src="./wre-tool.js?v=encrypted-archive"></script>
+  <script defer src="./wre-tool.js?v=wre3-sync"></script>
 </body>
 </html>

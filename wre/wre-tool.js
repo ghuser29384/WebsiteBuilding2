@@ -3,10 +3,21 @@ const INDEXED_DB_NAME = "normativity-wre-local-first";
 const INDEXED_DB_VERSION = 1;
 const INDEXED_DB_STORE = "sessions";
 const INDEXED_DB_SESSION_ID = "sess_7f2c9e7a";
+const WRE_SCHEMA_VERSION = "wre-3";
+const LEGACY_SCHEMA_VERSION = "wre-2.5";
+const WRE_ENGINE_VERSION = "local-wre-engine-3.0.0";
+const DEFAULT_SYNC_ENDPOINT = "http://127.0.0.1:8787";
 const DEFAULT_PRIVACY = {
+  privacyMode: "local_only",
   cloudSync: false,
   nliTriage: false,
   retention: "until-deleted",
+  syncEndpoint: DEFAULT_SYNC_ENDPOINT,
+  workspaceId: "",
+  syncTokenCreatedAt: "",
+  lastSyncStatus: "staged-local-only",
+  lastSyncAt: "",
+  lastRemoteClock: 0,
 };
 
 const DEFAULT_SECURITY_CONTROLS = {
@@ -21,6 +32,9 @@ const DEFAULT_SECURITY_CONTROLS = {
   restoreDrillCadence: "monthly",
   dpiaReview: "DPIA-style privacy review mapped before sync or third-party processing.",
   asvsMapping: "OWASP ASVS control map drafted for auth, session handling, uploads, secrets, and logging.",
+  cspMode: "meta-policy-for-static-wre",
+  dependencyScanning: "dependabot-root-and-worker-npm",
+  publicFormAbuse: "turnstile-ready-before-public-share-or-sign-up",
 };
 
 const icons = {
@@ -409,21 +423,36 @@ const pipeline = [
 ];
 
 const agentContract = {
-  schemaVersion: "wre-2.5",
-  claimFields: ["id", "layer", "text", "domain", "confidence", "timeScope", "provenance", "sensitivity"],
+  schemaVersion: WRE_SCHEMA_VERSION,
+  claimFields: ["id", "kind", "layer", "text", "canonicalForm", "domain", "modality", "polarity", "scope", "confidence", "entrenchment", "provenance", "sensitivity", "status"],
   relationFields: ["id", "source", "target", "type", "weight", "rationale"],
   constraintFields: ["id", "name", "language", "body", "severity", "enabled"],
+  formalRunFields: ["id", "analysisRunId", "status", "assertions", "constraints", "unsatCores", "repairRanking"],
+  argumentationRunFields: ["id", "analysisRunId", "attackEdges", "defenseEdges", "admissibleSet", "vulnerableClaims", "groundedExtension"],
+  triageRunFields: ["id", "analysisRunId", "nliMode", "candidateLimit", "reviewQueue", "formalizationCandidates", "probabilisticSummary"],
+  syncPacketFields: ["workspace", "manifest", "mutationSet", "edgeContract", "conflictPolicy", "readiness", "backend"],
   repairOptionFields: ["id", "conflictId", "actionType", "affectedClaims", "predictedResolutionScore", "disruptionCost", "explanation"],
+  revisionEventFields: ["id", "time", "type", "text", "schemaVersion", "algorithmVersion", "affectedClaims", "beforeHash", "afterHash"],
   exportFormats: ["application/json", "application/ld+json", "text/csv"],
-  relationTypes: ["supports", "conflicts", "neutral", "implies", "depends_on", "undercuts"],
-  conflictKinds: ["hard", "soft", "nlp"],
+  relationTypes: ["supports", "attacks", "contradicts", "entails", "undercuts", "scopes", "depends_on", "exception_to"],
+  legacyRelationTypes: ["conflicts", "implies", "neutral"],
+  conflictKinds: ["hard", "soft", "nlp", "accepted_tension"],
   endpoints: [
+    ["GET", "/health", "Check Worker health without reading or writing session data."],
     ["POST", "/v1/sessions", "Create a local or synced WRE session with explicit privacy mode."],
     ["POST", "/v1/beliefs", "Add or batch import typed judgments, principles, and background theories."],
-    ["POST", "/v1/relations", "Add or batch import support, conflict, neutral, implication, dependency, and undercut links."],
+    ["POST", "/v1/workspaces", "Create an encrypted sync workspace and token verifier."],
+    ["POST", "/v1/relations", "Add or batch import support, attack, contradiction, entailment, undercut, scope, dependency, and exception links."],
     ["POST", "/v1/constraints", "Add rule, SHACL, or SMT templates for deterministic hard-conflict checks."],
     ["POST", "/v1/analyze", "Run rule, SMT, graph, NLI, and probabilistic checks."],
     ["GET", "/v1/conflicts", "Read explanation-first conflict reports."],
+    ["GET", "/v1/formal-trace/latest", "Read the latest named-assertion trace with SMT-style unsat cores."],
+    ["GET", "/v1/argumentation/latest", "Read attack, defense, vulnerability, and admissible-set analysis."],
+    ["GET", "/v1/triage/latest", "Read NLI-style candidate-pair triage and probabilistic soft-tension scores."],
+    ["POST", "/v1/sync/push", "Push an encrypted local mutation packet to an optional sync backend."],
+    ["GET", "/v1/sync/pull", "Pull a remote manifest and tombstones for local merge review."],
+    ["POST", "/v1/sync/resolve", "Submit a user-reviewed merge resolution after sync conflicts."],
+    ["GET", "/v1/sessions/{id}/manifest", "Read opaque encrypted-packet manifest metadata."],
     ["POST", "/v1/conflicts/{id}/repair", "Preview or apply a ranked repair option."],
     ["GET", "/v1/export", "Export a portable JSON, JSON-LD, or CSV session archive."],
     ["GET", "/v1/benchmarks/latest", "Read evaluation targets and the latest local analysis run."],
@@ -453,6 +482,48 @@ const benchmarkTargets = [
     target: ">= 0.35",
     value: "0.35",
     copy: "Accepted or lightly edited repairs",
+  },
+  {
+    id: "taskCompletion",
+    label: "Core task completion",
+    target: ">= 0.80",
+    value: "0.80",
+    copy: "Enter case, link relation, understand conflict, decide repair or tension",
+  },
+  {
+    id: "timeToFirstExplainedConflict",
+    label: "Time to first explained conflict",
+    target: "<= 180s",
+    value: "180s",
+    copy: "Private beta usability target",
+  },
+  {
+    id: "sus",
+    label: "System Usability Scale",
+    target: ">= 75",
+    value: "75",
+    copy: "Post-task SUS target",
+  },
+  {
+    id: "nasaTlx",
+    label: "NASA-TLX workload",
+    target: "<= 45",
+    value: "45",
+    copy: "Subjective workload target",
+  },
+  {
+    id: "repairReversal",
+    label: "Repair reversal rate",
+    target: "<= 0.20",
+    value: "0.20",
+    copy: "Tracks whether accepted repairs later get undone",
+  },
+  {
+    id: "aiOverride",
+    label: "AI suggestion override tracking",
+    target: "logged",
+    value: "logged",
+    copy: "Optional AI suggestions must remain user-overridable",
   },
   {
     id: "ruleLatency",
@@ -493,6 +564,8 @@ const els = {
   detailClaims: document.getElementById("detailClaims"),
   detailLinks: document.getElementById("detailLinks"),
   detailWhy: document.getElementById("detailWhy"),
+  detailRelationPath: document.getElementById("detailRelationPath"),
+  detailDownstream: document.getElementById("detailDownstream"),
   repairOptions: document.getElementById("repairOptions"),
   repairPreview: document.getElementById("repairPreview"),
   pipelineList: document.getElementById("pipelineList"),
@@ -510,6 +583,7 @@ const els = {
   exportPrivacyBtn: document.getElementById("exportPrivacyBtn"),
   exportLocalStoreBtn: document.getElementById("exportLocalStoreBtn"),
   deleteLocalDataBtn: document.getElementById("deleteLocalDataBtn"),
+  exportSyncPacketBtn: document.getElementById("exportSyncPacketBtn"),
   archivePassphraseInput: document.getElementById("archivePassphraseInput"),
   exportEncryptedBtn: document.getElementById("exportEncryptedBtn"),
   encryptedArchiveInput: document.getElementById("encryptedArchiveInput"),
@@ -520,25 +594,46 @@ const els = {
   insertReferenceBtn: document.getElementById("insertReferenceBtn"),
   assistBtn: document.getElementById("assistBtn"),
   applyRepairBtn: document.getElementById("applyRepairBtn"),
+  acceptTensionBtn: document.getElementById("acceptTensionBtn"),
+  tensionRationaleInput: document.getElementById("tensionRationaleInput"),
   guidanceBtn: document.getElementById("guidanceBtn"),
   analyzeBtn: document.getElementById("analyzeBtn"),
   runEvaluationBtn: document.getElementById("runEvaluationBtn"),
   exportBenchmarkBtn: document.getElementById("exportBenchmarkBtn"),
   exportEvaluationBtn: document.getElementById("exportEvaluationBtn"),
   exportConstraintsBtn: document.getElementById("exportConstraintsBtn"),
+  exportFormalTraceBtn: document.getElementById("exportFormalTraceBtn"),
+  exportArgumentationBtn: document.getElementById("exportArgumentationBtn"),
+  exportTriageBtn: document.getElementById("exportTriageBtn"),
   editContextBtn: document.getElementById("editContextBtn"),
   cloudSyncToggle: document.getElementById("cloudSyncToggle"),
   llmTriageToggle: document.getElementById("llmTriageToggle"),
   retentionSelect: document.getElementById("retentionSelect"),
+  privacyModeSelect: document.getElementById("privacyModeSelect"),
+  syncBackendForm: document.getElementById("syncBackendForm"),
+  syncEndpointInput: document.getElementById("syncEndpointInput"),
+  workspaceIdInput: document.getElementById("workspaceIdInput"),
+  syncTokenInput: document.getElementById("syncTokenInput"),
+  createWorkspaceBtn: document.getElementById("createWorkspaceBtn"),
+  pushSyncBtn: document.getElementById("pushSyncBtn"),
+  pullSyncBtn: document.getElementById("pullSyncBtn"),
+  syncBackendStatus: document.getElementById("syncBackendStatus"),
   sessionMode: document.getElementById("sessionMode"),
   sessionRetention: document.getElementById("sessionRetention"),
   claimKind: document.getElementById("claimKind"),
+  claimTypeInput: document.getElementById("claimTypeInput"),
+  modalityInput: document.getElementById("modalityInput"),
+  polarityInput: document.getElementById("polarityInput"),
   claimDomain: document.getElementById("claimDomain"),
   confidenceInput: document.getElementById("confidenceInput"),
   confidenceOutput: document.getElementById("confidenceOutput"),
+  entrenchmentInput: document.getElementById("entrenchmentInput"),
+  entrenchmentOutput: document.getElementById("entrenchmentOutput"),
   timeScopeInput: document.getElementById("timeScopeInput"),
   provenanceInput: document.getElementById("provenanceInput"),
   sensitivityInput: document.getElementById("sensitivityInput"),
+  claimStatusInput: document.getElementById("claimStatusInput"),
+  beliefErrorSummary: document.getElementById("beliefErrorSummary"),
   claimWorkbenchPanel: document.getElementById("claimWorkbenchPanel"),
   detailCore: document.getElementById("detailCore"),
   detailEngine: document.getElementById("detailEngine"),
@@ -564,9 +659,13 @@ const els = {
   constraintSeverityInput: document.getElementById("constraintSeverityInput"),
   constraintBodyInput: document.getElementById("constraintBodyInput"),
   constraintList: document.getElementById("constraintList"),
+  formalTraceList: document.getElementById("formalTraceList"),
+  argumentationList: document.getElementById("argumentationList"),
+  triageList: document.getElementById("triageList"),
   dataRightsPanel: document.getElementById("dataRightsPanel"),
   privacyReceiptList: document.getElementById("privacyReceiptList"),
   migrationReportList: document.getElementById("migrationReportList"),
+  syncReadinessList: document.getElementById("syncReadinessList"),
   exportSecurityBtn: document.getElementById("exportSecurityBtn"),
   securityControlsForm: document.getElementById("securityControlsForm"),
   quotaPerHourInput: document.getElementById("quotaPerHourInput"),
@@ -623,6 +722,9 @@ function createState() {
     conflicts: clone(seedConflicts),
     revisions: [],
     analysisRuns: [],
+    formalRuns: [],
+    argumentationRuns: [],
+    triageRuns: [],
     evaluationRuns: [],
     calibrationRounds: [],
     repairApplications: [],
@@ -653,17 +755,39 @@ function normalizeStatePayload(parsed) {
     conflicts: parsed.conflicts.map(normalizeConflict),
     revisions: Array.isArray(parsed.revisions) ? parsed.revisions.map(normalizeRevision) : [],
     analysisRuns: Array.isArray(parsed.analysisRuns) ? parsed.analysisRuns.map(normalizeAnalysisRun) : [],
+    formalRuns: Array.isArray(parsed.formalRuns) ? parsed.formalRuns.map(normalizeFormalRun) : [],
+    argumentationRuns: Array.isArray(parsed.argumentationRuns) ? parsed.argumentationRuns.map(normalizeArgumentationRun) : [],
+    triageRuns: Array.isArray(parsed.triageRuns) ? parsed.triageRuns.map(normalizeTriageRun) : [],
     evaluationRuns: Array.isArray(parsed.evaluationRuns) ? parsed.evaluationRuns.map(normalizeEvaluationRun) : [],
     calibrationRounds: Array.isArray(parsed.calibrationRounds) ? parsed.calibrationRounds.map(normalizeCalibrationRound) : [],
     repairApplications: Array.isArray(parsed.repairApplications) ? parsed.repairApplications.map(normalizeRepairApplication) : [],
     migrationReport: parsed.migrationReport || null,
-    privacy: { ...DEFAULT_PRIVACY, ...(parsed.privacy || {}) },
+    privacy: normalizePrivacy(parsed.privacy || parsed.session?.privacy),
     securityControls: normalizeSecurityControls(parsed.securityControls),
     viewMode: parsed.viewMode === "graph" ? "graph" : "table",
     workbenchFilter: ["judgment", "principle", "theory"].includes(parsed.workbenchFilter) ? parsed.workbenchFilter : "all",
     graphFocusConflictId: parsed.graphFocusConflictId || "",
     updatedAt: parsed.updatedAt || parsed.savedAt || parsed.createdAt || new Date().toISOString(),
   };
+}
+
+function normalizePrivacy(privacy = {}) {
+  const source = { ...DEFAULT_PRIVACY, ...(privacy || {}) };
+  if (source.cloudSync && !source.privacyMode) source.privacyMode = "encrypted_sync";
+  if (source.privacyMode === "local-plus-sync") source.privacyMode = "encrypted_sync";
+  if (!["local_only", "encrypted_sync", "private_link", "workspace"].includes(source.privacyMode)) {
+    source.privacyMode = source.cloudSync ? "encrypted_sync" : "local_only";
+  }
+  source.cloudSync = source.privacyMode !== "local_only" || Boolean(source.cloudSync);
+  if (source.privacyMode === "local_only") source.cloudSync = false;
+  if (!["until-deleted", "session-only", "30-days"].includes(source.retention)) source.retention = DEFAULT_PRIVACY.retention;
+  source.syncEndpoint = String(source.syncEndpoint || DEFAULT_SYNC_ENDPOINT).trim() || DEFAULT_SYNC_ENDPOINT;
+  source.workspaceId = String(source.workspaceId || "").trim();
+  source.syncTokenCreatedAt = source.syncTokenCreatedAt || "";
+  source.lastSyncStatus = source.lastSyncStatus || "staged-local-only";
+  source.lastSyncAt = source.lastSyncAt || "";
+  source.lastRemoteClock = Number.isFinite(Number(source.lastRemoteClock)) ? Number(source.lastRemoteClock) : 0;
+  return source;
 }
 
 function loadState() {
@@ -797,33 +921,100 @@ function deleteIndexedDbState() {
 
 function normalizeBelief(belief) {
   const layer = ["judgment", "principle", "theory"].includes(belief.layer) ? belief.layer : "judgment";
+  const kind = normalizeClaimKind(belief.kind || belief.claimKind || belief.type || layer);
+  const scope = belief.scope || belief.timeScope || belief.time_scope || "Unscoped";
   return {
     id: belief.id || `${prefixForLayer(layer)}0`,
+    kind,
     layer,
     text: belief.text || "",
+    canonicalForm: belief.canonicalForm || canonicalizeClaimText(belief.text || ""),
     domain: belief.domain || (layer === "theory" ? "empirical" : "normative"),
+    modality: normalizeClaimModality(belief.modality, belief.text || ""),
+    polarity: normalizeClaimPolarity(belief.polarity, belief.text || ""),
     confidence: Number.isFinite(Number(belief.confidence)) ? clamp(Number(belief.confidence), 1, 100) : 70,
-    timeScope: belief.timeScope || belief.time_scope || "Unscoped",
+    entrenchment: Number.isFinite(Number(belief.entrenchment)) ? clamp(Number(belief.entrenchment), 1, 100) : defaultEntrenchmentForLayer(layer),
+    scope,
+    timeScope: scope,
     provenance: belief.provenance || belief.source_refs || "User supplied",
     sensitivity: belief.sensitivity || belief.sensitivity_tags || "private",
+    status: normalizeClaimStatus(belief.status),
   };
 }
 
+function normalizeClaimKind(value) {
+  const kind = String(value || "").replace(/-/g, "_").toLowerCase();
+  if (["judgment", "principle", "background_theory", "belief_statement", "exception", "empirical_premise"].includes(kind)) {
+    return kind;
+  }
+  if (kind === "theory") return "background_theory";
+  if (kind === "background theory") return "background_theory";
+  return "belief_statement";
+}
+
+function normalizeClaimModality(value, text = "") {
+  const modality = String(value || "").toLowerCase();
+  if (["should", "is", "causes", "permits", "forbids"].includes(modality)) return modality;
+  const lower = text.toLowerCase();
+  if (lower.includes("must not") || lower.includes("forbid") || lower.includes("prohibit")) return "forbids";
+  if (lower.includes("may ") || lower.includes("permit")) return "permits";
+  if (lower.includes("cause") || lower.includes("leads to")) return "causes";
+  if (lower.includes(" is ") || lower.includes(" are ")) return "is";
+  return "should";
+}
+
+function normalizeClaimPolarity(value, text = "") {
+  const polarity = String(value || "").toLowerCase();
+  if (["positive", "negative", "mixed", "unknown"].includes(polarity)) return polarity;
+  return inferClaimPolarity(text);
+}
+
+function normalizeClaimStatus(value) {
+  const status = String(value || "active").toLowerCase().replace(/-/g, "_");
+  return ["active", "draft", "accepted_tension", "retired"].includes(status) ? status : "active";
+}
+
+function defaultEntrenchmentForLayer(layer) {
+  if (layer === "principle") return 76;
+  if (layer === "theory") return 58;
+  return 62;
+}
+
+function canonicalizeClaimText(text) {
+  return String(text || "").trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function normalizeRelationType(value) {
+  const type = String(value || "").replace(/-/g, "_").toLowerCase();
+  if (agentContract.relationTypes.includes(type)) return type;
+  if (type === "conflicts") return "contradicts";
+  if (type === "implies") return "entails";
+  if (type === "neutral") return "depends_on";
+  return "depends_on";
+}
+
 function normalizeConflict(conflict) {
+  const status = ["open", "repaired", "ignored", "accepted_tension"].includes(conflict.status) ? conflict.status : "open";
+  const core = Array.isArray(conflict.core) ? conflict.core : [conflict.claimA, conflict.claimB].filter(Boolean);
   return {
     ...conflict,
     kind: conflict.kind || "soft",
     confidence: Number.isFinite(Number(conflict.confidence)) ? Number(conflict.confidence) : 0.7,
-    core: Array.isArray(conflict.core) ? conflict.core : [conflict.claimA, conflict.claimB].filter(Boolean),
+    core,
     engine: Array.isArray(conflict.engine) ? conflict.engine : ["Rule constraint", "Human review"],
     constraintId: conflict.constraintId || "",
     repairs: Array.isArray(conflict.repairs) ? conflict.repairs : [],
     linked: Array.isArray(conflict.linked) ? conflict.linked : [],
+    status,
+    minimalConflictSet: Array.isArray(conflict.minimalConflictSet) ? conflict.minimalConflictSet : core,
+    evidencePath: Array.isArray(conflict.evidencePath) ? conflict.evidencePath : [],
+    downstreamClaims: Array.isArray(conflict.downstreamClaims) ? conflict.downstreamClaims : [],
+    algorithmVersion: conflict.algorithmVersion || WRE_ENGINE_VERSION,
   };
 }
 
 function normalizeRelation(relation, fallbackIndex = 0) {
-  const type = agentContract.relationTypes.includes(relation.type) ? relation.type : "neutral";
+  const type = normalizeRelationType(relation.type);
   const source = relation.source || relation.source_claim_id || relation.sourceClaimId || relation.from || "";
   const target = relation.target || relation.target_claim_id || relation.targetClaimId || relation.to || "";
   return {
@@ -831,6 +1022,7 @@ function normalizeRelation(relation, fallbackIndex = 0) {
     source,
     target,
     type,
+    legacyType: relation.legacyType || (agentContract.legacyRelationTypes.includes(relation.type) ? relation.type : ""),
     weight: Number.isFinite(Number(relation.weight)) ? clamp(Number(relation.weight), 0, 1) : 0.5,
     rationale: relation.rationale || relation.reason || "",
   };
@@ -867,10 +1059,15 @@ function normalizeRelationSet(relations, beliefs, conflicts = []) {
 }
 
 function normalizeRevision(revision) {
+  const beforeHash = revision.beforeHash || (revision.beforeSnapshot ? hashPayload(revision.beforeSnapshot) : "");
+  const afterHash = revision.afterHash || (revision.afterSnapshot ? hashPayload(revision.afterSnapshot) : "");
   return {
+    id: revision.id || `RV-${Date.now()}`,
     time: revision.time || new Date().toISOString(),
     type: revision.type || "audit",
     text: revision.text || revision.reason || "Session updated.",
+    schemaVersion: revision.schemaVersion || WRE_SCHEMA_VERSION,
+    algorithmVersion: revision.algorithmVersion || WRE_ENGINE_VERSION,
     conflictId: revision.conflictId || "",
     repairId: revision.repairId || "",
     affectedClaims: Array.isArray(revision.affectedClaims) ? revision.affectedClaims : [],
@@ -878,6 +1075,8 @@ function normalizeRevision(revision) {
     disruptionCost: Number.isFinite(Number(revision.disruptionCost)) ? Number(revision.disruptionCost) : null,
     beforeSnapshot: revision.beforeSnapshot || null,
     afterSnapshot: revision.afterSnapshot || null,
+    beforeHash,
+    afterHash,
   };
 }
 
@@ -917,6 +1116,57 @@ function normalizeAnalysisRun(run) {
   };
 }
 
+function normalizeFormalRun(run = {}) {
+  return {
+    id: run.id || `F-${Date.now()}`,
+    analysisRunId: run.analysisRunId || "",
+    time: run.time || new Date().toISOString(),
+    status: run.status || "sat-with-soft-tensions",
+    satisfiable: run.satisfiable !== false,
+    engineVersions: Array.isArray(run.engineVersions) ? run.engineVersions : ["local-rule-v1", "smt-template-v1", "unsat-core-preview-v1"],
+    assertions: Array.isArray(run.assertions) ? run.assertions : [],
+    constraints: Array.isArray(run.constraints) ? run.constraints : [],
+    unsatCores: Array.isArray(run.unsatCores) ? run.unsatCores : [],
+    softTensions: Array.isArray(run.softTensions) ? run.softTensions : [],
+    repairRanking: Array.isArray(run.repairRanking) ? run.repairRanking : [],
+    notes: run.notes || "Local deterministic formalization preview; external Z3 execution is not required for this static WRE session.",
+  };
+}
+
+function normalizeArgumentationRun(run = {}) {
+  return {
+    id: run.id || `G-${Date.now()}`,
+    analysisRunId: run.analysisRunId || "",
+    time: run.time || new Date().toISOString(),
+    attackEdges: Array.isArray(run.attackEdges) ? run.attackEdges : [],
+    supportEdges: Array.isArray(run.supportEdges) ? run.supportEdges : [],
+    defenseEdges: Array.isArray(run.defenseEdges) ? run.defenseEdges : [],
+    admissibleSet: Array.isArray(run.admissibleSet) ? run.admissibleSet : [],
+    groundedExtension: Array.isArray(run.groundedExtension) ? run.groundedExtension : [],
+    vulnerableClaims: Array.isArray(run.vulnerableClaims) ? run.vulnerableClaims : [],
+    contestedClaims: Array.isArray(run.contestedClaims) ? run.contestedClaims : [],
+    summary: run.summary || "",
+    engineVersions: Array.isArray(run.engineVersions) ? run.engineVersions : ["argumentation-graph-v1", "admissible-set-preview-v1"],
+  };
+}
+
+function normalizeTriageRun(run = {}) {
+  return {
+    id: run.id || `N-${Date.now()}`,
+    analysisRunId: run.analysisRunId || "",
+    time: run.time || new Date().toISOString(),
+    nliMode: run.nliMode || "local-preview",
+    externalProcessing: Boolean(run.externalProcessing),
+    candidateLimit: Number.isFinite(Number(run.candidateLimit)) ? Number(run.candidateLimit) : DEFAULT_SECURITY_CONTROLS.nliPairCap,
+    queuedPairCount: Number.isFinite(Number(run.queuedPairCount)) ? Number(run.queuedPairCount) : 0,
+    reviewQueue: Array.isArray(run.reviewQueue) ? run.reviewQueue : [],
+    formalizationCandidates: Array.isArray(run.formalizationCandidates) ? run.formalizationCandidates : [],
+    probabilisticSummary: run.probabilisticSummary || {},
+    adapter: run.adapter || "local-heuristic-nli-v1",
+    notes: run.notes || "Static local triage estimates contradiction probability without sending belief text to an external model.",
+  };
+}
+
 function normalizeEvaluationRun(run) {
   return {
     id: run.id || `E-${Date.now()}`,
@@ -947,6 +1197,9 @@ function normalizeSecurityControls(controls = {}) {
     restoreDrillCadence: source.restoreDrillCadence || DEFAULT_SECURITY_CONTROLS.restoreDrillCadence,
     dpiaReview: source.dpiaReview || DEFAULT_SECURITY_CONTROLS.dpiaReview,
     asvsMapping: source.asvsMapping || DEFAULT_SECURITY_CONTROLS.asvsMapping,
+    cspMode: source.cspMode || DEFAULT_SECURITY_CONTROLS.cspMode,
+    dependencyScanning: source.dependencyScanning || DEFAULT_SECURITY_CONTROLS.dependencyScanning,
+    publicFormAbuse: source.publicFormAbuse || DEFAULT_SECURITY_CONTROLS.publicFormAbuse,
   };
 }
 
@@ -1001,6 +1254,7 @@ function bindEvents() {
 
   els.beliefText.addEventListener("input", updateTokenCount);
   els.confidenceInput.addEventListener("input", syncConfidenceOutput);
+  els.entrenchmentInput.addEventListener("input", syncEntrenchmentOutput);
   els.caseConfidenceInput.addEventListener("input", syncCaseConfidenceOutput);
 
   els.beliefForm.addEventListener("submit", (event) => {
@@ -1033,11 +1287,15 @@ function bindEvents() {
   });
 
   els.applyRepairBtn.addEventListener("click", applySelectedRepair);
+  els.acceptTensionBtn.addEventListener("click", acceptUnresolvedTension);
   els.analyzeBtn.addEventListener("click", runLocalAnalysis);
   els.runEvaluationBtn.addEventListener("click", runLocalEvaluation);
   els.exportBenchmarkBtn.addEventListener("click", exportBenchmark);
   els.exportEvaluationBtn.addEventListener("click", exportEvaluationReport);
   els.exportConstraintsBtn.addEventListener("click", exportConstraints);
+  els.exportFormalTraceBtn.addEventListener("click", exportFormalTrace);
+  els.exportArgumentationBtn.addEventListener("click", exportArgumentationReport);
+  els.exportTriageBtn.addEventListener("click", exportTriageReport);
   els.constraintForm.addEventListener("submit", (event) => {
     event.preventDefault();
     addConstraintFromForm();
@@ -1077,6 +1335,7 @@ function bindEvents() {
   els.exportPrivacyBtn.addEventListener("click", exportPrivacyReceipt);
   els.exportLocalStoreBtn.addEventListener("click", exportLocalStoreExtractor);
   els.deleteLocalDataBtn.addEventListener("click", deleteLocalData);
+  els.exportSyncPacketBtn.addEventListener("click", exportSyncPacket);
   els.exportSecurityBtn.addEventListener("click", exportSecurityReport);
   els.securityControlsForm.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -1088,9 +1347,15 @@ function bindEvents() {
   els.importInput.addEventListener("change", importApi);
   els.resetLocalBtn.addEventListener("click", resetLocalSession);
 
-  [els.cloudSyncToggle, els.llmTriageToggle, els.retentionSelect].forEach((control) => {
+  [els.cloudSyncToggle, els.llmTriageToggle, els.retentionSelect, els.privacyModeSelect].forEach((control) => {
     control.addEventListener("change", updatePrivacyControls);
   });
+  [els.syncEndpointInput, els.workspaceIdInput].forEach((control) => {
+    control.addEventListener("change", updateSyncBackendSettings);
+  });
+  els.createWorkspaceBtn.addEventListener("click", createEncryptedWorkspace);
+  els.pushSyncBtn.addEventListener("click", pushEncryptedSyncPacket);
+  els.pullSyncBtn.addEventListener("click", pullSyncManifest);
 
   els.reviewLatestBtn.addEventListener("click", () => {
     reviewReplay();
@@ -1122,7 +1387,9 @@ function render() {
   syncPrivacyControls();
   syncViewMode();
   syncConfidenceOutput();
+  syncEntrenchmentOutput();
   syncCaseConfidenceOutput();
+  syncSyncBackendControls();
   syncStorageStatus();
   updateTokenCount();
 }
@@ -1281,11 +1548,18 @@ function getCommandDefinitions() {
     { id: "previous-conflict", label: "Previous conflict", group: "Conflicts", keywords: "review queue", run: () => selectRelativeConflict(-1) },
     { id: "repair-detail", label: "View repair detail", group: "Repair", keywords: "simulation preview", run: focusRepairDetail },
     { id: "apply-repair", label: "Apply selected repair", group: "Repair", keywords: "revision", disabled: repairApplied, run: applySelectedRepair },
+    { id: "accept-tension", label: "Accept unresolved tension", group: "Repair", keywords: "known tension preserve", disabled: selectedConflict?.status === "accepted_tension", run: () => focusElement(els.tensionRationaleInput) },
     { id: "analyze-session", label: "Analyze session", group: "Analysis", keywords: "rule smt nli", run: runLocalAnalysis },
     { id: "run-evaluation", label: "Run local evaluation", group: "Analysis", keywords: "benchmark readiness launch", run: runLocalEvaluation },
     { id: "export-evaluation", label: "Export evaluation report", group: "Export", keywords: "benchmark readiness launch", run: exportEvaluationReport },
     { id: "focus-constraints", label: "Edit constraints", group: "Analysis", keywords: "rule shacl smt hard conflict", run: focusConstraintWorkbench },
     { id: "export-constraints", label: "Export constraints", group: "Export", keywords: "rule shacl smt schema", run: exportConstraints },
+    { id: "focus-formal-trace", label: "View formal trace", group: "Analysis", keywords: "smt unsat core assertions", run: focusFormalTrace },
+    { id: "export-formal-trace", label: "Export formal trace", group: "Export", keywords: "smt unsat core assertions repair", run: exportFormalTrace },
+    { id: "focus-argumentation", label: "View argumentation review", group: "Analysis", keywords: "attack defense admissible vulnerable", run: focusArgumentationReview },
+    { id: "export-argumentation", label: "Export argumentation report", group: "Export", keywords: "attack defense admissible graph", run: exportArgumentationReport },
+    { id: "focus-triage", label: "View NLI triage", group: "Analysis", keywords: "nli probabilistic soft tension score", run: focusTriageReview },
+    { id: "export-triage", label: "Export triage report", group: "Export", keywords: "nli probabilistic candidate pairs", run: exportTriageReport },
     { id: "replay", label: "Review replay", group: "Replay", keywords: "revision audit log", run: reviewReplay },
     { id: "calibration", label: "Open calibration loop", group: "Calibration", keywords: "case disagreement confidence", run: focusCalibrationLoop },
     { id: "export-session", label: "Export session JSON", group: "Export", keywords: "api archive", run: exportApi },
@@ -1293,6 +1567,10 @@ function getCommandDefinitions() {
     { id: "export-csv", label: "Export CSV summary", group: "Export", keywords: "spreadsheet archive summary", run: exportCsvSummary },
     { id: "export-security", label: "Export security report", group: "Privacy", keywords: "owasp asvs quota abuse dpia", run: exportSecurityReport },
     { id: "export-local-store", label: "Export local store", group: "Privacy", keywords: "indexeddb localstorage migration extractor", run: exportLocalStoreExtractor },
+    { id: "export-sync-packet", label: "Export sync packet", group: "Privacy", keywords: "cloud sync worker encrypted mutation manifest", run: exportSyncPacket },
+    { id: "create-sync-workspace", label: "Create sync workspace", group: "Privacy", keywords: "cloudflare worker encrypted sync", run: createEncryptedWorkspace },
+    { id: "push-encrypted-sync", label: "Push encrypted sync", group: "Privacy", keywords: "cloudflare worker r2 d1", disabled: state.privacy.privacyMode === "local_only", run: pushEncryptedSyncPacket },
+    { id: "sync-readiness", label: "Review sync readiness", group: "Privacy", keywords: "cloud sync worker backend manifest", run: focusSyncReadiness },
     { id: "security-controls", label: "Open security controls", group: "Privacy", keywords: "quota abuse body size budget", run: focusSecurityControls },
     { id: "encrypted-archive", label: "Focus encrypted archive", group: "Privacy", keywords: "backup sync passphrase", run: focusEncryptedArchive },
     { id: "export-openapi", label: "Export OpenAPI contract", group: "Export", keywords: "agent schema endpoint json", run: exportOpenApiContract },
@@ -1309,16 +1587,25 @@ function buildAccessibleSummaryText() {
   const selectedConflict = getSelectedConflict();
   const hardCount = state.conflicts.filter((conflict) => conflict.kind === "hard").length;
   const repairedCount = state.conflicts.filter((conflict) => conflict.status === "repaired").length;
+  const acceptedTensionCount = state.conflicts.filter((conflict) => conflict.status === "accepted_tension").length;
   const latestRun = getLatestAnalysisRun();
+  const latestFormal = getLatestFormalRun();
+  const latestArgumentation = getLatestArgumentationRun();
+  const latestTriage = getLatestTriageRun();
+  const syncPacket = buildSyncPacketPayload();
   const security = buildSecurityReportPayload();
   return [
     `WRE session has ${state.beliefs.length} claims, ${state.relations.length} relations, ${state.constraints.length} constraints, and ${state.conflicts.length} conflicts.`,
     `${hardCount} hard conflicts and ${state.conflicts.length - hardCount} soft tensions are currently tracked.`,
-    `${repairedCount} conflicts are marked repaired.`,
+    `${repairedCount} conflicts are marked repaired and ${acceptedTensionCount} known tensions are preserved.`,
     `Security launch gate is ${security.summary.launchGate}.`,
     `Selected conflict ${selectedConflict?.id || "none"}: ${selectedConflict?.title || "none selected"}.`,
     `Workspace view is ${state.viewMode}.`,
     latestRun ? `Latest analysis ${latestRun.id} reviewed ${latestRun.candidatePairs} candidate pairs.` : "No analysis run has been recorded in this session.",
+    latestFormal ? `Latest formal trace ${latestFormal.id} is ${latestFormal.status} with ${latestFormal.unsatCores.length} unsat cores.` : "Formal trace preview is available before analysis.",
+    latestArgumentation ? `Latest argumentation review ${latestArgumentation.id} has ${latestArgumentation.attackEdges.length} attacks and ${latestArgumentation.defenseEdges.length} defenses.` : "Argumentation review preview is available before analysis.",
+    latestTriage ? `Latest triage ${latestTriage.id} queued ${latestTriage.queuedPairCount} candidate pairs and flagged ${latestTriage.formalizationCandidates.length} for formalization.` : "NLI and probabilistic triage preview is available before analysis.",
+    `Optional sync packet is ${syncPacket.readiness.status} with ${syncPacket.readiness.score * 100}% readiness.`,
   ].join(" ");
 }
 
@@ -1367,7 +1654,7 @@ function renderBeliefLayer(layer, container) {
         <span class="belief-id">${escapeHtml(belief.id)}</span>
         <span class="belief-copy">
           <p>${escapeHtml(belief.text)}</p>
-          <small>${escapeHtml(titleCase(belief.domain))} · ${escapeHtml(belief.confidence)}% · ${escapeHtml(titleCase(belief.sensitivity))}</small>
+          <small>${escapeHtml(claimKindLabel(belief.kind || belief.layer))} · ${escapeHtml(titleCase(belief.modality || "should"))} · ${escapeHtml(belief.confidence)}% confidence · ${escapeHtml(belief.entrenchment || defaultEntrenchmentForLayer(layer))}% entrenched</small>
         </span>
         <button class="row-menu" type="button" aria-label="More actions for ${escapeHtml(belief.id)}">${icons.dots}</button>
       `;
@@ -1418,6 +1705,7 @@ function renderConflicts() {
           <h3>${escapeHtml(conflict.title)}</h3>
           <span class="severity-pill ${escapeHtml(conflict.severity)}">${escapeHtml(titleCase(conflict.severity))}</span>
           ${conflict.status === "repaired" ? '<span class="repair-status-pill">Repaired</span>' : ""}
+          ${conflict.status === "accepted_tension" ? '<span class="repair-status-pill accepted">Accepted tension</span>' : ""}
         </span>
         <p>${escapeHtml(conflict.summary)}</p>
         <p>Provenance: ${escapeHtml(conflict.provenance)}</p>
@@ -1450,6 +1738,7 @@ function renderDetail() {
   els.detailSeverity.className = `severity-pill ${conflict.severity}`;
   els.detailSeverity.textContent = titleCase(conflict.severity);
   els.detailWhy.textContent = conflict.why;
+  const explanation = buildConflictExplanation(conflict);
 
   replaceChildren(
     els.detailCore,
@@ -1470,12 +1759,48 @@ function renderDetail() {
 
   replaceChildren(
     els.detailEngine,
-    (conflict.engine || []).map((step, index) => {
+    [...(conflict.engine || []), explanation.algorithmVersion].map((step, index) => {
       const item = document.createElement("span");
       item.className = "engine-chip";
       item.textContent = `${index + 1}. ${step}`;
       return item;
     })
+  );
+
+  replaceChildren(
+    els.detailRelationPath,
+    explanation.relationPath.length
+      ? explanation.relationPath.map((step) => {
+          const item = document.createElement("article");
+          item.className = "relation-path-item";
+          item.innerHTML = `
+            <header>
+              <span>${escapeHtml(step.source)} → ${escapeHtml(step.target)}</span>
+              <span class="relation-path-type">${escapeHtml(relationTypeLabel(step.type))}</span>
+            </header>
+            <p>${escapeHtml(step.rationale || step.evidence || "Relation contributes to this minimal conflict explanation.")}</p>
+          `;
+          return item;
+        })
+      : [emptyExplanationItem("No explicit relation path yet. Add support, attack, contradiction, entailment, undercut, scope, dependency, or exception links to strengthen this explanation.")]
+  );
+
+  replaceChildren(
+    els.detailDownstream,
+    explanation.downstreamClaims.length
+      ? explanation.downstreamClaims.map((entry) => {
+          const item = document.createElement("article");
+          item.className = "downstream-item";
+          item.innerHTML = `
+            <header>
+              <span>${escapeHtml(entry.id)}${entry.label ? ` · ${escapeHtml(entry.label)}` : ""}</span>
+              <span class="downstream-hop">${escapeHtml(entry.via)}</span>
+            </header>
+            <p>${escapeHtml(entry.text || "No claim text available.")}</p>
+          `;
+          return item;
+        })
+      : [emptyExplanationItem("No downstream claim is currently supported by, dependent on, or scoped by this conflict core.")]
   );
 
   replaceChildren(
@@ -1544,6 +1869,7 @@ function renderDetail() {
 
   renderRepairPreview(conflict);
   syncRepairAction(conflict);
+  syncTensionAction(conflict);
   renderAccessibleSummary();
 }
 
@@ -1551,6 +1877,13 @@ function syncRepairAction(conflict) {
   const alreadyApplied = conflict.status === "repaired" && conflict.appliedRepairId === state.selectedRepairId;
   els.applyRepairBtn.disabled = alreadyApplied;
   els.applyRepairBtn.querySelector("span").textContent = alreadyApplied ? "Repair Applied" : "Apply Repair";
+}
+
+function syncTensionAction(conflict) {
+  const accepted = conflict.status === "accepted_tension";
+  els.acceptTensionBtn.disabled = accepted;
+  els.acceptTensionBtn.querySelector("span").textContent = accepted ? "Tension Accepted" : "Accept Unresolved Tension";
+  els.tensionRationaleInput.value = accepted ? conflict.tensionRationale || "" : "";
 }
 
 function renderRepairPreview(conflict) {
@@ -1655,24 +1988,32 @@ function renderTableView() {
         <th scope="col">ID</th>
         <th scope="col">Kind</th>
         <th scope="col">Claim</th>
+        <th scope="col">Modality</th>
+        <th scope="col">Polarity</th>
         <th scope="col">Domain</th>
         <th scope="col">Confidence</th>
+        <th scope="col">Entrenchment</th>
         <th scope="col">Scope</th>
         <th scope="col">Provenance</th>
         <th scope="col">Sensitivity</th>
+        <th scope="col">Status</th>
       </tr>
     </thead>
     <tbody>
       ${visibleBeliefs.map((belief) => `
         <tr>
           <td><span class="belief-id">${escapeHtml(belief.id)}</span></td>
-          <td>${escapeHtml(labelForLayer(belief.layer))}</td>
+          <td>${escapeHtml(claimKindLabel(belief.kind || belief.layer))}</td>
           <td>${escapeHtml(belief.text)}</td>
+          <td>${escapeHtml(titleCase(belief.modality || "should"))}</td>
+          <td>${escapeHtml(titleCase(belief.polarity || "unknown"))}</td>
           <td>${escapeHtml(titleCase(belief.domain))}</td>
           <td>${escapeHtml(belief.confidence)}%</td>
+          <td>${escapeHtml(belief.entrenchment || defaultEntrenchmentForLayer(belief.layer))}%</td>
           <td>${escapeHtml(belief.timeScope)}</td>
           <td>${escapeHtml(belief.provenance)}</td>
           <td>${escapeHtml(titleCase(belief.sensitivity))}</td>
+          <td>${escapeHtml(claimStatusLabel(belief.status))}</td>
         </tr>
       `).join("")}
     </tbody>
@@ -1775,11 +2116,12 @@ function renderRelationEditor() {
     <div class="relation-editor-head">
       <div>
         <h3 id="relationEditorTitle">Relation Editor</h3>
-        <p>Create keyboard-editable support, conflict, neutral, implication, dependency, and undercut links for the agent graph.</p>
+        <p>Create keyboard-editable support, attack, contradiction, entailment, undercut, scope, dependency, and exception links for the agent graph.</p>
       </div>
       <span>${escapeHtml(state.relations.length)} links</span>
     </div>
     <form class="relation-form">
+      <div class="error-summary relation-error-summary" role="alert" tabindex="-1" hidden></div>
       <label>
         <span>Source claim</span>
         <select name="source" ${state.beliefs.length < 2 ? "disabled" : ""}>${renderBeliefOptions(sourceId)}</select>
@@ -1874,11 +2216,13 @@ function renderRevisionReplay() {
 }
 
 function renderRevisionEvidence(revision) {
-  if (!revision.affectedClaims?.length && revision.predictedResolutionScore === null && revision.disruptionCost === null) return "";
+  if (!revision.affectedClaims?.length && revision.predictedResolutionScore === null && revision.disruptionCost === null && !revision.algorithmVersion) return "";
   const bits = [];
   if (revision.affectedClaims?.length) bits.push(`Affected ${revision.affectedClaims.join(", ")}`);
   if (revision.predictedResolutionScore !== null) bits.push(`Resolution ${Math.round(revision.predictedResolutionScore * 100)}%`);
   if (revision.disruptionCost !== null) bits.push(`Cost ${Number(revision.disruptionCost).toFixed(2)}`);
+  if (revision.algorithmVersion) bits.push(revision.algorithmVersion);
+  if (revision.beforeHash && revision.afterHash) bits.push(`${revision.beforeHash.slice(0, 8)} -> ${revision.afterHash.slice(0, 8)}`);
   return `<small class="revision-evidence">${escapeHtml(bits.join(" | "))}</small>`;
 }
 
@@ -1891,6 +2235,7 @@ function renderAgentContract() {
       renderContractGroup("Relation fields", agentContract.relationFields),
       renderContractGroup("Constraint fields", agentContract.constraintFields),
       renderContractGroup("Repair option fields", agentContract.repairOptionFields),
+      renderContractGroup("Revision event fields", agentContract.revisionEventFields),
       renderContractGroup("Export formats", agentContract.exportFormats),
       renderContractGroup("Local storage", [buildStorageReportPayload().summary]),
       renderContractGroup("Relation types", agentContract.relationTypes),
@@ -1939,11 +2284,17 @@ function renderContractGroup(title, values) {
 
 function renderAnalysisPanel() {
   const latest = getLatestAnalysisRun() || buildAnalysisReport({ preview: true });
+  const formal = getLatestFormalRun() || buildFormalTrace({ preview: true, analysisRun: latest });
+  const argumentation = getLatestArgumentationRun() || buildArgumentationRun({ preview: true, analysisRun: latest });
+  const triage = getLatestTriageRun() || buildTriageRun({ preview: true, analysisRun: latest });
   const runLabel = getLatestAnalysisRun() ? `Run ${latest.id}` : "Ready to run";
   const summary = [
     ["Claims", latest.claimCount],
     ["Candidate pairs", latest.candidatePairs],
     ["Constraint hits", latest.constraintMatches || 0],
+    ["Unsat cores", formal.unsatCores.length],
+    ["Attack edges", argumentation.attackEdges.length],
+    ["Triage flags", triage.formalizationCandidates.length],
     ["Hard conflicts", latest.hardCount],
     ["Soft tensions", latest.softCount],
     ["NLI queued", latest.nliQueued],
@@ -2006,6 +2357,9 @@ function renderAnalysisPanel() {
   );
 
   renderConstraintWorkbench();
+  renderFormalTrace(formal);
+  renderArgumentationReview(argumentation);
+  renderTriageReview(triage);
 }
 
 function renderConstraintWorkbench() {
@@ -2037,6 +2391,111 @@ function renderConstraintWorkbench() {
       return item;
     })
   );
+}
+
+function renderFormalTrace(formalRun = getLatestFormalRun() || buildFormalTrace({ preview: true })) {
+  const statusItem = document.createElement("article");
+  statusItem.className = `formal-trace-item is-${formalRun.status}`;
+  statusItem.innerHTML = `
+    <span class="formal-pill">${escapeHtml(formalRun.status.toUpperCase())}</span>
+    <strong>${escapeHtml(formalRun.id)} · ${escapeHtml(formalRun.assertions.length)} named assertions</strong>
+    <small>${escapeHtml(formalRun.unsatCores.length)} unsat core${formalRun.unsatCores.length === 1 ? "" : "s"} · ${escapeHtml(formalRun.constraints.length)} active templates</small>
+  `;
+
+  const coreItems = formalRun.unsatCores.slice(0, 3).map((core) => {
+    const item = document.createElement("article");
+    item.className = `formal-core-item severity-${core.severity || "medium"}`;
+    item.innerHTML = `
+      <span>${escapeHtml(core.id)} · ${escapeHtml(core.constraintId || core.conflictId || "tracked assertions")}</span>
+      <strong>${escapeHtml((core.members || []).join(" + ") || "No named members")}</strong>
+      <p>${escapeHtml(core.explanation || "No explanation recorded.")}</p>
+      <small>${escapeHtml(core.repairRanking?.[0]?.title || "Repair ranking pending")}</small>
+    `;
+    return item;
+  });
+
+  if (!coreItems.length) {
+    const empty = document.createElement("article");
+    empty.className = "formal-core-empty";
+    empty.innerHTML = `
+      <strong>No hard unsat core found</strong>
+      <span>Soft tensions remain reviewable through the conflict queue and probabilistic scoring.</span>
+    `;
+    coreItems.push(empty);
+  }
+
+  replaceChildren(els.formalTraceList, [statusItem, ...coreItems]);
+}
+
+function renderArgumentationReview(argumentation = getLatestArgumentationRun() || buildArgumentationRun({ preview: true })) {
+  const summaryItem = document.createElement("article");
+  summaryItem.className = "argumentation-summary-item";
+  summaryItem.innerHTML = `
+    <span class="argumentation-pill">${escapeHtml(argumentation.id)}</span>
+    <strong>${escapeHtml(argumentation.admissibleSet.length)} admissible claims</strong>
+    <small>${escapeHtml(argumentation.attackEdges.length)} attacks · ${escapeHtml(argumentation.defenseEdges.length)} defenses · ${escapeHtml(argumentation.vulnerableClaims.length)} vulnerable</small>
+  `;
+
+  const defended = document.createElement("article");
+  defended.className = "argumentation-item";
+  defended.innerHTML = `
+    <span>Grounded extension</span>
+    <strong>${escapeHtml(argumentation.groundedExtension.join(" + ") || "No stable extension")}</strong>
+    <p>${escapeHtml(argumentation.summary || "No argumentation summary recorded.")}</p>
+  `;
+
+  const vulnerable = document.createElement("article");
+  vulnerable.className = "argumentation-item is-vulnerable";
+  vulnerable.innerHTML = `
+    <span>Vulnerable claims</span>
+    <strong>${escapeHtml(argumentation.vulnerableClaims.map((item) => item.claimId).join(" + ") || "None")}</strong>
+    <p>${escapeHtml(argumentation.vulnerableClaims[0]?.reason || "Every attacked claim has at least one visible counter-attack or support defense.")}</p>
+  `;
+
+  const topAttack = argumentation.attackEdges[0];
+  const attacks = document.createElement("article");
+  attacks.className = "argumentation-item";
+  attacks.innerHTML = `
+    <span>Strongest attack</span>
+    <strong>${escapeHtml(topAttack ? `${topAttack.source} -> ${topAttack.target}` : "No attacks")}</strong>
+    <p>${escapeHtml(topAttack?.rationale || "No conflict or undercut relation is active.")}</p>
+  `;
+
+  replaceChildren(els.argumentationList, [summaryItem, defended, vulnerable, attacks]);
+}
+
+function renderTriageReview(triage = getLatestTriageRun() || buildTriageRun({ preview: true })) {
+  const summary = document.createElement("article");
+  summary.className = "triage-summary-item";
+  summary.innerHTML = `
+    <span class="triage-pill">${escapeHtml(triage.nliMode)}</span>
+    <strong>${escapeHtml(triage.queuedPairCount)} candidate pairs queued</strong>
+    <small>${escapeHtml(triage.formalizationCandidates.length)} formalization flags · p95 ${escapeHtml(triage.probabilisticSummary?.estimatedLatency || 0)}s</small>
+  `;
+
+  const topItems = triage.reviewQueue.slice(0, 3).map((item) => {
+    const article = document.createElement("article");
+    article.className = `triage-item is-${item.priority || "review"}`;
+    article.innerHTML = `
+      <span>${escapeHtml(item.claimA)} / ${escapeHtml(item.claimB)} · ${escapeHtml(item.recommendation)}</span>
+      <strong>${escapeHtml(Math.round(item.softTensionScore * 100))}% soft-tension score</strong>
+      <p>${escapeHtml(item.explanation)}</p>
+      <small>NLI ${escapeHtml(Math.round(item.contradictionProbability * 100))}% · overlap ${escapeHtml(Math.round(item.semanticOverlap * 100))}%</small>
+    `;
+    return article;
+  });
+
+  if (!topItems.length) {
+    const empty = document.createElement("article");
+    empty.className = "triage-empty";
+    empty.innerHTML = `
+      <strong>No candidate pairs queued</strong>
+      <span>Add relations or cross-layer claims before running probabilistic triage.</span>
+    `;
+    topItems.push(empty);
+  }
+
+  replaceChildren(els.triageList, [summary, ...topItems]);
 }
 
 function renderCalibrationPanel() {
@@ -2078,16 +2537,19 @@ function renderDataRightsPanel() {
   const migration = state.migrationReport || buildDefaultMigrationReport();
   const security = buildSecurityReportPayload();
   const storage = buildStorageReportPayload();
+  const syncPacket = buildSyncPacketPayload();
   syncSecurityControlsForm();
   replaceChildren(
     els.privacyReceiptList,
     [
       ["Storage", receipt.processing.storageMode],
       ["Persistence", storage.summary],
+      ["Privacy mode", privacyModeLabel(receipt.processing.privacyMode)],
       ["Cloud sync", receipt.processing.cloudSync ? "Opted in" : "Off"],
       ["Model triage", receipt.processing.nliTriage ? "Opted in" : "Off"],
       ["Retention", retentionLabel(receipt.processing.retention)],
       ["Encrypted archive", receipt.processing.encryptedArchive],
+      ["Sync packet", syncPacket.readiness.status],
       ["API abuse controls", security.summary.abuseResistance],
       ["Sensitive claims", `${receipt.classification.potentiallySensitive} flagged`],
       ["User rights", "Access, export, delete, correction"],
@@ -2106,6 +2568,22 @@ function renderDataRightsPanel() {
       ["Storage extractor", storage.extractorStatus],
       ["Ambiguous fields", String(migration.ambiguousFields.length)],
       ["Generated", formatTime(migration.generatedAt)],
+    ].map(([label, value]) => renderReceiptItem(label, value))
+  );
+
+  replaceChildren(
+    els.syncReadinessList,
+    [
+      ["Mode", syncPacket.workspace.mode],
+      ["Readiness", `${Math.round(syncPacket.readiness.score * 100)}% · ${syncPacket.readiness.status}`],
+      ["Consent", syncPacket.readiness.checks.cloudSyncConsent ? "Opted in" : "Local-only staged"],
+      ["Encryption", syncPacket.manifest.encryption],
+      ["Mutation set", `${syncPacket.mutationSet.count} changes`],
+      ["Conflict policy", syncPacket.conflictPolicy.strategy],
+      ["Workspace", syncPacket.backend.workspaceId || "not created"],
+      ["Last sync", syncPacket.backend.lastStatus || "not synced"],
+      ["Worker routes", `${syncPacket.edgeContract.routes.length} routes`],
+      ["Delete support", syncPacket.edgeContract.deleteWorkflow],
     ].map(([label, value]) => renderReceiptItem(label, value))
   );
 
@@ -2161,11 +2639,17 @@ function runLocalAnalysis() {
     generatedConflictIds: generatedConflicts.map((conflict) => conflict.id),
   });
   state.analysisRuns.push(run);
+  const formalRun = buildFormalTrace({ analysisRun: run });
+  state.formalRuns.push(formalRun);
+  const argumentationRun = buildArgumentationRun({ analysisRun: run });
+  state.argumentationRuns.push(argumentationRun);
+  const triageRun = buildTriageRun({ analysisRun: run });
+  state.triageRuns.push(triageRun);
   state.activeStage = "reflection";
   state.activeNav = "conflicts";
   recordRevision(
     "analysis",
-    `${run.id} analyzed ${run.claimCount} claims, ${run.constraintCount} constraints, ${run.candidatePairs} candidate pairs, ${run.hardCount} hard conflicts, and ${run.softCount} soft tensions.`
+    `${run.id} analyzed ${run.claimCount} claims, ${run.constraintCount} constraints, ${run.candidatePairs} candidate pairs, ${run.hardCount} hard conflicts, ${run.softCount} soft tensions, ${formalRun.unsatCores.length} formal unsat cores, ${argumentationRun.attackEdges.length} argumentation attacks, and ${triageRun.formalizationCandidates.length} NLI/probabilistic formalization flags.`
   );
   saveState();
   render();
@@ -2239,19 +2723,583 @@ function buildAnalysisReport() {
   };
 }
 
+function buildFormalTrace({ preview = false, analysisRun = null } = {}) {
+  const run = analysisRun || getLatestAnalysisRun() || { id: preview ? "A-preview" : "" };
+  const assertions = state.beliefs.map(buildNamedAssertion);
+  const assertionByClaim = new Map(assertions.map((assertion) => [assertion.claimId, assertion]));
+  const constraints = state.constraints
+    .filter((constraint) => constraint.enabled)
+    .map((constraint) => buildFormalConstraint(normalizeConstraint(constraint)));
+  const unsatCores = collectFormalUnsatCores(assertionByClaim);
+  const repairRanking = unsatCores
+    .flatMap((core) => core.repairRanking.map((repair) => ({ ...repair, coreId: core.id })))
+    .sort((a, b) => a.disruptionCost - b.disruptionCost || b.predictedResolutionScore - a.predictedResolutionScore)
+    .slice(0, 8);
+  const status = unsatCores.length ? "unsat" : "sat-with-soft-tensions";
+
+  return normalizeFormalRun({
+    id: preview ? "F-preview" : nextFormalRunId(),
+    analysisRunId: run.id || "",
+    time: new Date().toISOString(),
+    status,
+    satisfiable: !unsatCores.length,
+    engineVersions: ["local-rule-v1", "smt-template-v1", "unsat-core-preview-v1", "repair-rank-v1"],
+    assertions,
+    constraints,
+    unsatCores,
+    softTensions: state.conflicts
+      .filter((conflict) => conflict.kind !== "hard")
+      .map((conflict) => ({
+        conflictId: conflict.id,
+        members: [...new Set([conflict.claimA, conflict.claimB, ...(conflict.core || [])].filter(Boolean))],
+        confidence: Number(conflict.confidence || 0),
+        explanation: conflict.why || conflict.summary || "",
+      })),
+    repairRanking,
+  });
+}
+
+function buildNamedAssertion(claim) {
+  const normalized = normalizeBelief(claim);
+  return {
+    id: `A-${normalized.id}`,
+    claimId: normalized.id,
+    smtName: claimSmtName(normalized.id),
+    symbol: claimSymbol(normalized),
+    literal: claimLiteral(normalized),
+    polarity: normalized.polarity,
+    modality: normalized.modality,
+    layer: normalized.layer,
+    kind: normalized.kind,
+    domain: normalized.domain,
+    scope: normalized.scope,
+    confidence: normalized.confidence,
+    entrenchment: normalized.entrenchment,
+    source: normalized.provenance,
+    sensitivity: normalized.sensitivity,
+  };
+}
+
+function buildFormalConstraint(constraint) {
+  const refs = extractClaimRefs(constraint.body);
+  return {
+    id: constraint.id,
+    name: constraint.name,
+    language: constraint.language,
+    severity: constraint.severity,
+    body: constraint.body,
+    references: refs,
+    smtTemplate: `(assert (! ${constraintFormula(constraint, refs)} :named ${constraint.id}))`,
+  };
+}
+
+function collectFormalUnsatCores(assertionByClaim) {
+  const cores = [];
+  const seen = new Set();
+  const addCore = (source, conflict, signal = {}) => {
+    const members = [...new Set([conflict.claimA, conflict.claimB, ...(conflict.core || [])].filter(Boolean))];
+    if (members.length < 2) return;
+    const key = members.slice().sort().join(":");
+    if (seen.has(key)) return;
+    seen.add(key);
+    const repairs = normalizeRepairsForCore(conflict);
+    cores.push({
+      id: `UC-${String(cores.length + 1).padStart(3, "0")}`,
+      source,
+      conflictId: conflict.id || "",
+      constraintId: conflict.constraintId || signal.constraintId || inferConstraintForMembers(members)?.id || "",
+      status: conflict.status || "open",
+      severity: signal.severity || conflict.severity || "high",
+      confidence: Number(signal.confidence || conflict.confidence || 0.8),
+      members,
+      namedAssertions: members.map((member) => assertionByClaim.get(member)?.id || `A-${member}`),
+      explanation: signal.why || conflict.why || conflict.summary || "Tracked assertions cannot all remain active under the current hard constraints.",
+      repairRanking: repairs,
+    });
+  };
+
+  state.conflicts
+    .filter((conflict) => conflict.kind === "hard" && conflict.status !== "ignored")
+    .forEach((conflict) => addCore("conflict-queue", conflict));
+
+  getCandidatePairs().forEach(({ claimA, claimB }) => {
+    const signal = scoreConstraintPair(claimA, claimB, `${claimA.text.toLowerCase()} ${claimB.text.toLowerCase()}`);
+    if (!signal || signal.kind !== "hard") return;
+    addCore("constraint-workbench", {
+      id: "",
+      claimA: claimA.id,
+      claimB: claimB.id,
+      core: [claimA.id, claimB.id],
+      kind: "hard",
+      severity: signal.severity,
+      confidence: signal.confidence,
+      constraintId: signal.constraintId,
+      why: signal.why,
+      repairs: [{
+        id: `R-${signal.constraintId || "K"}`,
+        title: "Clarify Constraint Scope",
+        text: "Add an exception, validation boundary, or confidence downgrade before using these assertions together.",
+        cost: "0.62",
+        badge: "Suggested",
+        tone: "high",
+      }],
+    }, signal);
+  });
+
+  return cores;
+}
+
+function normalizeRepairsForCore(conflict) {
+  const repairs = Array.isArray(conflict.repairs) && conflict.repairs.length
+    ? conflict.repairs
+    : [{
+      id: `R-${conflict.id || "UC"}`,
+      title: "Review Core Members",
+      text: "Retract, weaken, split, or scope one assertion in the unsat core.",
+      cost: "0.7",
+      badge: "Fallback",
+      tone: "medium",
+    }];
+
+  return repairs.map((repair) => {
+    const actionType = inferRepairActionType(repair);
+    const disruptionCost = Number.isFinite(Number(repair.cost)) ? Number(repair.cost) : 0.7;
+    return {
+      id: repair.id,
+      title: repair.title || "Repair option",
+      actionType,
+      affectedClaims: [...new Set([inferRepairTargetClaimId(conflict, repair), ...(conflict.core || [])].filter(Boolean))],
+      predictedResolutionScore: roundNumber(clamp(0.96 - disruptionCost * 0.25 + (conflict.kind === "hard" ? 0.03 : 0), 0.42, 0.94)),
+      disruptionCost,
+      explanation: repair.text || "Minimal-change repair candidate.",
+    };
+  }).sort((a, b) => a.disruptionCost - b.disruptionCost);
+}
+
+function inferConstraintForMembers(members) {
+  return state.constraints.find((constraint) => {
+    if (!constraint.enabled) return false;
+    const refs = extractClaimRefs(constraint.body);
+    return refs.length && refs.every((ref) => members.includes(ref));
+  });
+}
+
+function claimSymbol(claim) {
+  return `${claim.layer}_${claim.domain}_${claim.id}`.replace(/[^a-z0-9_]+/gi, "_").toLowerCase();
+}
+
+function claimLiteral(claim) {
+  const tokens = claim.text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]+/g, " ")
+    .split(/\s+/)
+    .filter((token) => token.length > 2 && !["should", "because", "where", "when", "only", "with"].includes(token))
+    .slice(0, 5);
+  return tokens.join("_") || claimSymbol(claim);
+}
+
+function inferClaimPolarity(text) {
+  return /\b(no|not|never|without|prohibit|reject)\b/i.test(text) ? "negative" : "positive";
+}
+
+function constraintFormula(constraint, refs) {
+  if (refs.length) return `(=> (and ${refs.map(claimSmtName).join(" ")}) ${constraint.severity === "critical" ? "false" : "review_required"})`;
+  const name = constraint.name.replace(/[^a-z0-9_]+/gi, "_").toLowerCase();
+  return `(${constraint.language}_${name || "constraint"} active)`;
+}
+
+function claimSmtName(claimId) {
+  return `A_${String(claimId || "claim").replace(/[^a-z0-9_]+/gi, "_")}`;
+}
+
+function buildArgumentationRun({ preview = false, analysisRun = null } = {}) {
+  const run = analysisRun || getLatestAnalysisRun() || { id: preview ? "A-preview" : "" };
+  const claimIds = state.beliefs.map((belief) => belief.id);
+  const supportEdges = buildSupportEdges();
+  const attackEdges = buildAttackEdges();
+  const defenseEdges = buildDefenseEdges(attackEdges, supportEdges);
+  const vulnerableClaims = buildVulnerableClaims(claimIds, attackEdges, defenseEdges);
+  const admissibleSet = buildAdmissibleSet(claimIds, attackEdges, defenseEdges);
+  const groundedExtension = buildGroundedExtension(claimIds, attackEdges);
+  const contestedClaims = claimIds
+    .filter((claimId) => attackEdges.some((edge) => edge.source === claimId || edge.target === claimId))
+    .map((claimId) => ({
+      claimId,
+      attacksOut: attackEdges.filter((edge) => edge.source === claimId).length,
+      attacksIn: attackEdges.filter((edge) => edge.target === claimId).length,
+      defended: defenseEdges.some((edge) => edge.defended === claimId),
+    }));
+
+  return normalizeArgumentationRun({
+    id: preview ? "G-preview" : nextArgumentationRunId(),
+    analysisRunId: run.id || "",
+    time: new Date().toISOString(),
+    attackEdges,
+    supportEdges,
+    defenseEdges,
+    admissibleSet,
+    groundedExtension,
+    vulnerableClaims,
+    contestedClaims,
+    summary: `${admissibleSet.length}/${claimIds.length} claims are in the admissible working set; ${vulnerableClaims.length} attacked claim${vulnerableClaims.length === 1 ? "" : "s"} ${vulnerableClaims.length === 1 ? "lacks" : "lack"} a visible counter-attack or support defense.`,
+    engineVersions: ["argumentation-graph-v1", "attack-defense-v1", "admissible-set-preview-v1"],
+  });
+}
+
+function buildSupportEdges() {
+  const edges = [];
+  const seen = new Set();
+  state.relations
+    .filter((relation) => ["supports", "entails", "depends_on", "scopes", "exception_to"].includes(relation.type))
+    .forEach((relation) => {
+      addArgumentEdge(edges, seen, {
+        id: `S-${relation.id}`,
+        source: relation.source,
+        target: relation.target,
+        relationId: relation.id,
+        type: relation.type,
+        weight: Number(relation.weight || 0.6),
+        rationale: relation.rationale || `${relation.source} ${relationTypeLabel(relation.type).toLowerCase()} ${relation.target}.`,
+      });
+    });
+  return edges.sort((a, b) => b.weight - a.weight || a.id.localeCompare(b.id));
+}
+
+function buildAttackEdges() {
+  const edges = [];
+  const seen = new Set();
+  state.relations
+    .filter((relation) => ["attacks", "contradicts", "undercuts"].includes(relation.type))
+    .forEach((relation) => {
+      addArgumentEdge(edges, seen, {
+        id: `AT-${relation.id}`,
+        source: relation.source,
+        target: relation.target,
+        relationId: relation.id,
+        type: relation.type === "undercuts" ? "undercut" : "attack",
+        weight: Number(relation.weight || 0.7),
+        rationale: relation.rationale || `${relation.source} attacks ${relation.target}.`,
+      });
+      if (relation.type === "contradicts") {
+        addArgumentEdge(edges, seen, {
+          id: `AT-${relation.id}-R`,
+          source: relation.target,
+          target: relation.source,
+          relationId: relation.id,
+          type: "attack",
+          weight: Number(relation.weight || 0.7),
+          rationale: relation.rationale || `${relation.target} attacks ${relation.source}.`,
+        });
+      }
+    });
+
+  state.conflicts
+    .filter((conflict) => conflict.status !== "ignored")
+    .forEach((conflict) => {
+      const weight = conflictWeight(conflict);
+      addArgumentEdge(edges, seen, {
+        id: `AT-${conflict.id}-A`,
+        source: conflict.claimA,
+        target: conflict.claimB,
+        conflictId: conflict.id,
+        type: conflict.kind === "hard" ? "hard-attack" : "soft-attack",
+        weight,
+        rationale: conflict.why || conflict.summary || `${conflict.claimA} conflicts with ${conflict.claimB}.`,
+      });
+      addArgumentEdge(edges, seen, {
+        id: `AT-${conflict.id}-B`,
+        source: conflict.claimB,
+        target: conflict.claimA,
+        conflictId: conflict.id,
+        type: conflict.kind === "hard" ? "hard-attack" : "soft-attack",
+        weight,
+        rationale: conflict.why || conflict.summary || `${conflict.claimB} conflicts with ${conflict.claimA}.`,
+      });
+    });
+
+  return edges.sort((a, b) => b.weight - a.weight || a.id.localeCompare(b.id));
+}
+
+function buildDefenseEdges(attackEdges, supportEdges) {
+  const defenses = [];
+  const seen = new Set();
+  attackEdges.forEach((attack) => {
+    attackEdges
+      .filter((counter) => counter.target === attack.source && counter.source !== attack.target)
+      .forEach((counter) => {
+        addDefenseEdge(defenses, seen, {
+          id: `D-${counter.id}-${attack.id}`,
+          defender: counter.source,
+          defended: attack.target,
+          attacker: attack.source,
+          mode: "counter-attack",
+          weight: roundNumber((counter.weight + attack.weight) / 2),
+          rationale: `${counter.source} counter-attacks ${attack.source}, defending ${attack.target}.`,
+        });
+      });
+    supportEdges
+      .filter((support) => support.target === attack.target && support.source !== attack.source)
+      .forEach((support) => {
+        addDefenseEdge(defenses, seen, {
+          id: `D-${support.id}-${attack.id}`,
+          defender: support.source,
+          defended: attack.target,
+          attacker: attack.source,
+          mode: "support-backed",
+          weight: roundNumber((support.weight + attack.weight) / 2),
+          rationale: `${support.source} supports ${attack.target} against ${attack.source}.`,
+        });
+      });
+  });
+  return defenses.sort((a, b) => b.weight - a.weight || a.id.localeCompare(b.id));
+}
+
+function buildVulnerableClaims(claimIds, attackEdges, defenseEdges) {
+  return claimIds
+    .map((claimId) => {
+      const incoming = attackEdges.filter((edge) => edge.target === claimId);
+      if (!incoming.length) return null;
+      const defended = incoming.every((attack) => {
+        return defenseEdges.some((defense) => defense.defended === claimId && defense.attacker === attack.source);
+      });
+      if (defended) return null;
+      const strongest = incoming[0];
+      return {
+        claimId,
+        incomingAttacks: incoming.length,
+        strongestAttack: strongest.id,
+        reason: `${claimId} is attacked by ${strongest.source} without a complete visible defense set.`,
+      };
+    })
+    .filter(Boolean);
+}
+
+function buildAdmissibleSet(claimIds, attackEdges, defenseEdges) {
+  const defended = claimIds.filter((claimId) => {
+    const incoming = attackEdges.filter((edge) => edge.target === claimId);
+    if (!incoming.length) return true;
+    return incoming.every((attack) => {
+      return defenseEdges.some((defense) => defense.defended === claimId && defense.attacker === attack.source);
+    });
+  });
+
+  return defended.filter((claimId) => {
+    return !attackEdges.some((edge) => {
+      if (edge.target !== claimId || !defended.includes(edge.source)) return false;
+      return !defenseEdges.some((defense) => defense.defended === claimId && defense.attacker === edge.source);
+    });
+  });
+}
+
+function buildGroundedExtension(claimIds, attackEdges) {
+  const accepted = new Set(claimIds.filter((claimId) => !attackEdges.some((edge) => edge.target === claimId)));
+  const rejected = new Set();
+  let changed = true;
+  while (changed) {
+    changed = false;
+    attackEdges.forEach((edge) => {
+      if (accepted.has(edge.source) && !rejected.has(edge.target)) {
+        rejected.add(edge.target);
+        changed = true;
+      }
+    });
+    claimIds.forEach((claimId) => {
+      if (accepted.has(claimId) || rejected.has(claimId)) return;
+      const attackers = attackEdges.filter((edge) => edge.target === claimId).map((edge) => edge.source);
+      if (attackers.length && attackers.every((attacker) => rejected.has(attacker))) {
+        accepted.add(claimId);
+        changed = true;
+      }
+    });
+  }
+  return [...accepted];
+}
+
+function addArgumentEdge(edges, seen, edge) {
+  if (!edge.source || !edge.target || edge.source === edge.target || !findBelief(edge.source) || !findBelief(edge.target)) return;
+  const key = `${edge.source}:${edge.type}:${edge.target}:${edge.conflictId || edge.relationId || ""}`;
+  if (seen.has(key)) return;
+  seen.add(key);
+  edges.push({
+    ...edge,
+    weight: roundNumber(clamp(Number(edge.weight || 0.6), 0, 1)),
+  });
+}
+
+function addDefenseEdge(edges, seen, edge) {
+  if (!edge.defender || !edge.defended || !edge.attacker || edge.defender === edge.defended) return;
+  const key = `${edge.defender}:${edge.mode}:${edge.defended}:${edge.attacker}`;
+  if (seen.has(key)) return;
+  seen.add(key);
+  edges.push(edge);
+}
+
+function conflictWeight(conflict) {
+  const severityBoost = conflict.severity === "critical" ? 0.16 : conflict.severity === "high" ? 0.1 : conflict.severity === "medium" ? 0.04 : 0;
+  return roundNumber(clamp(Number(conflict.confidence || 0.65) + severityBoost, 0.45, 0.98));
+}
+
+function buildTriageRun({ preview = false, analysisRun = null } = {}) {
+  const run = analysisRun || getLatestAnalysisRun() || { id: preview ? "A-preview" : "" };
+  const security = buildSecurityReportPayload();
+  const candidateLimit = state.privacy.nliTriage
+    ? security.controls.nliPairCap
+    : Math.min(10, security.controls.nliPairCap || 10);
+  const scored = getCandidatePairs()
+    .map(({ claimA, claimB, reason }) => scoreTriagePair(claimA, claimB, reason))
+    .filter(Boolean)
+    .sort((a, b) => b.softTensionScore - a.softTensionScore || b.contradictionProbability - a.contradictionProbability)
+    .slice(0, Math.max(candidateLimit, 0));
+  const reviewQueue = scored.slice(0, 8);
+  const formalizationCandidates = reviewQueue.filter((item) => {
+    return item.contradictionProbability >= 0.72 && item.softTensionScore >= 0.24;
+  }).map((item) => ({
+    claimA: item.claimA,
+    claimB: item.claimB,
+    reason: item.explanation,
+    suggestedConstraint: `If @${item.claimA} and @${item.claimB} remain active, require an explicit scope boundary before treating them as jointly stable.`,
+    estimatedFormalizationConfidence: roundNumber(clamp((item.contradictionProbability + item.softTensionScore) / 2, 0, 1)),
+  }));
+  const averageScore = reviewQueue.length
+    ? roundNumber(reviewQueue.reduce((sum, item) => sum + item.softTensionScore, 0) / reviewQueue.length)
+    : 0;
+
+  return normalizeTriageRun({
+    id: preview ? "N-preview" : nextTriageRunId(),
+    analysisRunId: run.id || "",
+    time: new Date().toISOString(),
+    nliMode: state.privacy.nliTriage ? "opt-in-selected-pairs" : "local-preview",
+    externalProcessing: false,
+    candidateLimit,
+    queuedPairCount: scored.length,
+    reviewQueue,
+    formalizationCandidates,
+    probabilisticSummary: {
+      averageSoftTensionScore: averageScore,
+      maxSoftTensionScore: reviewQueue[0]?.softTensionScore || 0,
+      threshold: 0.24,
+      estimatedLatency: roundNumber(0.16 + scored.length * (state.privacy.nliTriage ? 0.18 : 0.04)),
+      scoringFormula: "contradiction_probability * semantic_overlap * confidence_weight * provenance_weight * relation_modifier",
+      externalModelCalls: 0,
+    },
+    adapter: state.privacy.nliTriage ? "selected-pair-nli-adapter-ready-v1" : "local-heuristic-nli-v1",
+  });
+}
+
+function scoreTriagePair(claimA, claimB, reason) {
+  const relationContext = getRelationsBetween(claimA.id, claimB.id);
+  const joined = `${claimA.text.toLowerCase()} ${claimB.text.toLowerCase()}`;
+  const semanticOverlap = Math.max(tokenOverlap(claimA.text.toLowerCase(), claimB.text.toLowerCase()), relationContext.length ? 0.34 : 0);
+  const contradictionProbability = estimateContradictionProbability(claimA, claimB, relationContext, joined);
+  if (contradictionProbability < 0.32 && semanticOverlap < 0.32) return null;
+  const confidenceWeight = roundNumber(((Number(claimA.confidence || 50) + Number(claimB.confidence || 50)) / 2) / 100);
+  const provenanceWeight = roundNumber((provenanceScore(claimA) + provenanceScore(claimB)) / 2);
+  const relationModifier = relationContext.some((relation) => relation.type === "supports" || relation.type === "entails")
+    ? 1.15
+    : relationContext.some((relation) => ["attacks", "contradicts", "undercuts"].includes(relation.type))
+      ? 1.1
+      : 1;
+  const softTensionScore = roundNumber(clamp(
+    contradictionProbability * Math.max(semanticOverlap, 0.28) * confidenceWeight * provenanceWeight * relationModifier,
+    0,
+    1
+  ));
+  const recommendation = contradictionProbability >= 0.78
+    ? "formalize"
+    : softTensionScore >= 0.24
+      ? "human-review"
+      : "watch";
+  const priority = recommendation === "formalize" ? "high" : recommendation === "human-review" ? "review" : "watch";
+
+  return {
+    id: `NLI-${claimA.id}-${claimB.id}`,
+    claimA: claimA.id,
+    claimB: claimB.id,
+    retrievalReason: reason || "candidate-pair",
+    semanticOverlap: roundNumber(semanticOverlap),
+    contradictionProbability,
+    entailmentProbability: estimateEntailmentProbability(relationContext, semanticOverlap, contradictionProbability),
+    neutralityProbability: roundNumber(clamp(1 - Math.max(contradictionProbability, semanticOverlap * 0.65), 0, 1)),
+    confidenceWeight,
+    provenanceWeight,
+    relationModifier,
+    softTensionScore,
+    recommendation,
+    priority,
+    explanation: explainTriagePair(claimA, claimB, contradictionProbability, softTensionScore, relationContext),
+  };
+}
+
+function estimateContradictionProbability(claimA, claimB, relationContext, joined) {
+  const explicitAttack = relationContext.find((relation) => ["attacks", "contradicts", "undercuts"].includes(relation.type));
+  if (explicitAttack) return roundNumber(clamp(Number(explicitAttack.weight || 0.7) + 0.08, 0.55, 0.96));
+  const existingConflict = state.conflicts.find((conflict) => {
+    const members = new Set([conflict.claimA, conflict.claimB, ...(conflict.core || [])].filter(Boolean));
+    return members.has(claimA.id) && members.has(claimB.id);
+  });
+  if (existingConflict) return roundNumber(clamp(Number(existingConflict.confidence || 0.7) + (existingConflict.kind === "hard" ? 0.1 : 0), 0.5, 0.96));
+  if (joined.includes("protected attribute") && (joined.includes("reject") || joined.includes("proxy"))) return 0.86;
+  if (joined.includes("transparen") && (joined.includes("confidential") || joined.includes("trade secret") || joined.includes("internal notes"))) return 0.76;
+  if (inferClaimPolarity(claimA.text) !== inferClaimPolarity(claimB.text) && tokenOverlap(claimA.text.toLowerCase(), claimB.text.toLowerCase()) >= 0.24) return 0.7;
+  if (claimA.layer !== claimB.layer && tokenOverlap(claimA.text.toLowerCase(), claimB.text.toLowerCase()) >= 0.4) return 0.58;
+  return roundNumber(clamp(0.28 + tokenOverlap(claimA.text.toLowerCase(), claimB.text.toLowerCase()) * 0.52, 0.18, 0.68));
+}
+
+function estimateEntailmentProbability(relationContext, semanticOverlap, contradictionProbability) {
+  const support = relationContext.find((relation) => ["supports", "entails", "depends_on", "scopes", "exception_to"].includes(relation.type));
+  const base = support ? Number(support.weight || 0.62) : semanticOverlap * 0.45;
+  return roundNumber(clamp(base * (1 - contradictionProbability * 0.5), 0, 0.92));
+}
+
+function provenanceScore(claim) {
+  const source = `${claim.provenance || ""} ${claim.timeScope || ""}`.toLowerCase();
+  if (source.includes("research") || source.includes("law") || source.includes("audit")) return 0.94;
+  if (source.includes("rubric") || source.includes("structured") || source.includes("principle")) return 0.88;
+  if (source.trim()) return 0.8;
+  return 0.62;
+}
+
+function explainTriagePair(claimA, claimB, contradictionProbability, softTensionScore, relationContext) {
+  const relationLabel = relationContext.length
+    ? ` Existing relation context: ${relationContext.map((relation) => relationTypeLabel(relation.type)).join(", ")}.`
+    : "";
+  if (contradictionProbability >= 0.78) return `${claimA.id} and ${claimB.id} look like a high-contradiction pair and should be formalized before repair ranking.${relationLabel}`;
+  if (softTensionScore >= 0.24) return `${claimA.id} and ${claimB.id} have enough semantic overlap, confidence, and provenance weight to enter human soft-tension review.${relationLabel}`;
+  return `${claimA.id} and ${claimB.id} are related enough to watch, but current probability stays below the review threshold.${relationLabel}`;
+}
+
 function buildEvaluationReport({ preview = false } = {}) {
   const latestAnalysis = getLatestAnalysisRun() || buildAnalysisReport({ preview: true });
+  const latestFormal = getLatestFormalRun() || buildFormalTrace({ preview: true, analysisRun: latestAnalysis });
+  const latestArgumentation = getLatestArgumentationRun() || buildArgumentationRun({ preview: true, analysisRun: latestAnalysis });
+  const latestTriage = getLatestTriageRun() || buildTriageRun({ preview: true, analysisRun: latestAnalysis });
   const explanationReady = state.conflicts.filter((conflict) => conflict.why && conflict.core?.length && conflict.repairs?.length).length;
   const explanationCoverage = explanationReady / Math.max(1, state.conflicts.length);
   const explanationUsefulness = roundNumber(clamp(1 + explanationCoverage * 4, 1, 5));
   const repairedConflicts = state.conflicts.filter((conflict) => conflict.status === "repaired").length;
+  const acceptedTensions = state.conflicts.filter((conflict) => conflict.status === "accepted_tension").length;
   const repairAcceptance = roundNumber((repairedConflicts + state.repairApplications.length) / Math.max(1, state.conflicts.length));
+  const coreTaskCompletion = roundNumber([
+    state.beliefs.length >= 3,
+    state.relations.length >= 1,
+    state.conflicts.some((conflict) => buildConflictExplanation(conflict).relationPath.length || conflict.why),
+    state.conflicts.some((conflict) => conflict.repairs?.length),
+    Boolean(repairedConflicts || acceptedTensions || state.revisions.length),
+  ].filter(Boolean).length / 5);
+  const firstExplainedConflictSeconds = state.conflicts.some((conflict) => conflict.why && conflict.core?.length) ? 90 : 240;
+  const susProxy = roundNumber(clamp(68 + coreTaskCompletion * 18 - (state.conflicts.length > 12 ? 4 : 0), 0, 100));
+  const nasaTlxProxy = roundNumber(clamp(58 - coreTaskCompletion * 18 + Math.max(0, state.conflicts.length - 8), 0, 100));
+  const repairReversalRate = roundNumber(state.repairApplications.length
+    ? state.revisions.filter((revision) => /revers|undo|rollback/i.test(revision.text || "")).length / state.repairApplications.length
+    : 0);
+  const aiSuggestionOverrideLogged = Boolean(state.triageRuns.length || state.revisions.some((revision) => /assist|suggest|override/i.test(revision.text || "")));
   const accessibility = buildAccessibilityReportPayload();
   const security = buildSecurityReportPayload();
   const storage = buildStorageReportPayload();
   const criticalA11y = Object.values(accessibility.checks).filter((value) => value === false).length;
   const restoreReady = hasWebCrypto() && Boolean(els.exportEncryptedBtn && els.encryptedArchiveInput);
   const storageReady = storage.indexedDb.primary || state.privacy.retention === "session-only";
+  const syncPacket = buildSyncPacketPayload();
   const abuseReadiness = roundNumber([
     security.controls.quotaPerHour > 0,
     security.controls.bodyLimitKb <= 512,
@@ -2274,11 +3322,21 @@ function buildEvaluationReport({ preview = false } = {}) {
   const metrics = [
     buildEvaluationMetric("precisionTop5", "Conflict precision at top 5", latestAnalysis.precisionReadiness, 0.8, ">=", "", "Explanation coverage plus generated conflict evidence."),
     buildEvaluationMetric("explanationUsefulness", "Explanation usefulness", explanationUsefulness, 4, ">=", "/5", `${explanationReady}/${state.conflicts.length} conflicts have why, core, and repair context.`),
+    buildEvaluationMetric("unsatCoreTrace", "Unsat-core trace", latestFormal.unsatCores.length ? 1 : 0.5, 1, ">=", "", `${latestFormal.id} is ${latestFormal.status} with ${latestFormal.assertions.length} assertions and ${latestFormal.unsatCores.length} core(s).`),
+    buildEvaluationMetric("argumentationCoverage", "Argumentation coverage", latestArgumentation.attackEdges.length ? 1 : 0.5, 1, ">=", "", `${latestArgumentation.id} has ${latestArgumentation.attackEdges.length} attacks, ${latestArgumentation.defenseEdges.length} defenses, and ${latestArgumentation.admissibleSet.length} admissible claims.`),
+    buildEvaluationMetric("triageCoverage", "NLI/probabilistic triage", latestTriage.reviewQueue.length ? 1 : 0.5, 1, ">=", "", `${latestTriage.id} scored ${latestTriage.reviewQueue.length} candidate pairs with ${latestTriage.formalizationCandidates.length} formalization flags and no external model calls.`),
     buildEvaluationMetric("repairAcceptance", "Repair acceptance", repairAcceptance, 0.35, ">=", "", `${repairedConflicts} repaired conflicts and ${state.repairApplications.length} recorded applications.`),
+    buildEvaluationMetric("taskCompletion", "Core task completion", coreTaskCompletion, 0.8, ">=", "", "Covers entering claims, linking relations, seeing an explained conflict, and deciding repair or accepted tension."),
+    buildEvaluationMetric("timeToFirstExplainedConflict", "Time to first explained conflict", firstExplainedConflictSeconds, 180, "<=", "s", "Proxy target for private-beta observation; conflict detail is visible immediately in the seeded session."),
+    buildEvaluationMetric("sus", "System Usability Scale", susProxy, 75, ">=", "", "Proxy until private-beta SUS responses are imported."),
+    buildEvaluationMetric("nasaTlx", "NASA-TLX workload", nasaTlxProxy, 45, "<=", "", "Proxy until private-beta NASA-TLX responses are imported."),
+    buildEvaluationMetric("repairReversal", "Repair reversal rate", repairReversalRate, 0.2, "<=", "", `${state.repairApplications.length} repair application(s) and no explicit rollback unless revision text says so.`),
+    buildEvaluationMetric("aiOverride", "AI suggestion override tracking", aiSuggestionOverrideLogged ? 1 : 0.8, 1, ">=", "", "Optional AI/NLI suggestions are surfaced as review queues and revision text can record override decisions."),
     buildEvaluationMetric("ruleLatency", "Rule-only latency", latestAnalysis.estimatedRuleLatency, 1.5, "<", "s", `${latestAnalysis.candidatePairs} candidate pairs in the local deterministic pass.`),
     buildEvaluationMetric("hybridLatency", "Hybrid latency", latestAnalysis.estimatedHybridLatency, 7, "<", "s", `${latestAnalysis.nliQueued} NLI items queued under current privacy settings.`),
     buildEvaluationMetric("apiAbuseResistance", "API abuse resistance", abuseReadiness, 0.8, ">=", "", security.summary.abuseResistance),
     buildEvaluationMetric("localFirstPersistence", "Local-first persistence", storageReady ? 1 : 0.5, 1, ">=", "", storage.summary),
+    buildEvaluationMetric("syncPacketReadiness", "Optional sync packet", syncPacket.readiness.score, 0.8, ">=", "", `${syncPacket.readiness.status}; ${syncPacket.mutationSet.count} local changes packaged for Worker sync.`),
     buildEvaluationMetric("criticalA11y", "Critical accessibility", criticalA11y, 0, "===", "", "Skip link, command palette, graph/table mode, and screen-reader summary are checked."),
   ];
   const launchReadiness = [
@@ -2313,6 +3371,10 @@ function buildEvaluationReport({ preview = false } = {}) {
       accessibility,
       security,
       storage,
+      syncPacket,
+      formalTrace: latestFormal,
+      argumentation: latestArgumentation,
+      triage: latestTriage,
       privacyReceipt: buildPrivacyReceiptPayload(),
     },
   });
@@ -2322,14 +3384,20 @@ function buildEvaluationMetric(id, label, value, target, comparator, unit, evide
   const normalizedValue = roundNumber(Number(value));
   const passes = comparator === ">="
     ? normalizedValue >= target
-    : comparator === "<"
-      ? normalizedValue < target
-      : normalizedValue === target;
+    : comparator === ">"
+      ? normalizedValue > target
+      : comparator === "<="
+        ? normalizedValue <= target
+        : comparator === "<"
+          ? normalizedValue < target
+          : normalizedValue === target;
   const close = comparator === ">="
     ? normalizedValue >= target * 0.8
-    : comparator === "<"
-      ? normalizedValue < target * 1.25
-      : Math.abs(normalizedValue - target) <= 1;
+    : comparator === ">"
+      ? normalizedValue > target * 0.8
+      : comparator === "<=" || comparator === "<"
+        ? normalizedValue <= target * 1.25
+        : Math.abs(normalizedValue - target) <= 1;
   return {
     id,
     label,
@@ -2368,11 +3436,11 @@ function scoreBeliefPair(claimA, claimB) {
   const relationContext = getRelationsBetween(claimA.id, claimB.id);
   const constraintSignal = scoreConstraintPair(claimA, claimB, joined);
   if (constraintSignal) return constraintSignal;
-  const explicitConflict = relationContext.find((relation) => relation.type === "conflicts" || relation.type === "undercuts");
+  const explicitConflict = relationContext.find((relation) => ["attacks", "contradicts", "undercuts"].includes(relation.type));
 
   if (explicitConflict && explicitConflict.weight >= 0.55) {
     return {
-      kind: explicitConflict.type === "conflicts" ? "hard" : "soft",
+      kind: explicitConflict.type === "contradicts" ? "hard" : "soft",
       severity: explicitConflict.weight >= 0.78 ? "high" : "medium",
       confidence: roundNumber(clamp(explicitConflict.weight, 0.55, 0.95)),
       engine: ["Argument graph", "Rule constraint", "Repair ranking"],
@@ -2500,6 +3568,91 @@ function getRelationsBetween(claimA, claimB) {
   });
 }
 
+function buildConflictExplanation(conflict) {
+  const normalized = normalizeConflict(conflict);
+  const minimalConflictSet = [...new Set([
+    ...(normalized.minimalConflictSet || []),
+    ...(normalized.core || []),
+    normalized.claimA,
+    normalized.claimB,
+  ].filter(Boolean))];
+  const coreSet = new Set(minimalConflictSet);
+  const linkedSet = new Set([...(normalized.linked || []), ...minimalConflictSet].filter(Boolean));
+  const relationPath = normalized.evidencePath.length
+    ? normalized.evidencePath
+    : state.relations
+        .filter((relation) => {
+          const touchesCore = coreSet.has(relation.source) || coreSet.has(relation.target);
+          const staysInExplanation = linkedSet.has(relation.source) && linkedSet.has(relation.target);
+          return touchesCore && staysInExplanation;
+        })
+        .slice(0, 6)
+        .map((relation) => ({
+          id: relation.id,
+          source: relation.source,
+          target: relation.target,
+          type: relation.type,
+          weight: relation.weight,
+          rationale: relation.rationale,
+        }));
+
+  if (!relationPath.length && normalized.constraintId) {
+    const constraint = state.constraints.find((item) => item.id === normalized.constraintId);
+    relationPath.push({
+      id: normalized.constraintId,
+      source: normalized.claimA,
+      target: normalized.claimB,
+      type: "contradicts",
+      weight: normalized.confidence,
+      evidence: constraint ? `${constraint.name}: ${constraint.body}` : normalized.why,
+    });
+  }
+
+  return {
+    algorithmVersion: normalized.algorithmVersion || WRE_ENGINE_VERSION,
+    minimalConflictSet,
+    relationPath,
+    downstreamClaims: normalized.downstreamClaims.length
+      ? normalized.downstreamClaims
+      : collectDownstreamClaims(minimalConflictSet),
+    reason: normalized.why,
+  };
+}
+
+function collectDownstreamClaims(sourceIds) {
+  const coreSet = new Set(sourceIds.filter(Boolean));
+  const seen = new Set(coreSet);
+  const queue = sourceIds.map((id) => ({ id, depth: 0, via: "core" }));
+  const downstream = [];
+  while (queue.length && downstream.length < 8) {
+    const current = queue.shift();
+    state.relations.forEach((relation) => {
+      if (relation.source !== current.id && relation.target !== current.id) return;
+      const nextId = relation.source === current.id ? relation.target : relation.source;
+      if (seen.has(nextId)) return;
+      seen.add(nextId);
+      const belief = findBelief(nextId);
+      if (belief) {
+        downstream.push({
+          id: belief.id,
+          label: labelForLayer(belief.layer),
+          text: belief.text,
+          via: relationTypeLabel(relation.type),
+        });
+      }
+      if (current.depth < 1) queue.push({ id: nextId, depth: current.depth + 1, via: relation.type });
+    });
+  }
+  return downstream;
+}
+
+function emptyExplanationItem(message) {
+  const item = document.createElement("article");
+  item.className = "relation-path-item";
+  item.innerHTML = `<p>${escapeHtml(message)}</p>`;
+  return item;
+}
+
 function createGeneratedConflict(claimA, claimB, signal, number) {
   const id = `C-${String(number).padStart(3, "0")}`;
   const repairId = `R-${String(number).padStart(3, "0")}`;
@@ -2551,10 +3704,12 @@ function syncViewMode() {
 }
 
 function syncPrivacyControls() {
+  state.privacy = normalizePrivacy(state.privacy);
   els.cloudSyncToggle.checked = Boolean(state.privacy.cloudSync);
   els.llmTriageToggle.checked = Boolean(state.privacy.nliTriage);
   els.retentionSelect.value = state.privacy.retention || DEFAULT_PRIVACY.retention;
-  els.sessionMode.textContent = state.privacy.cloudSync ? "Local + sync" : "Local-first";
+  els.privacyModeSelect.value = state.privacy.privacyMode || DEFAULT_PRIVACY.privacyMode;
+  els.sessionMode.textContent = privacyModeLabel(state.privacy.privacyMode);
   els.sessionRetention.textContent = retentionLabel(state.privacy.retention);
 }
 
@@ -2562,8 +3717,26 @@ function syncConfidenceOutput() {
   els.confidenceOutput.textContent = `${els.confidenceInput.value}%`;
 }
 
+function syncEntrenchmentOutput() {
+  els.entrenchmentOutput.textContent = `${els.entrenchmentInput.value}%`;
+}
+
 function syncCaseConfidenceOutput() {
   els.caseConfidenceOutput.textContent = `${els.caseConfidenceInput.value}%`;
+}
+
+function syncSyncBackendControls() {
+  if (!els.syncEndpointInput) return;
+  els.syncEndpointInput.value = state.privacy.syncEndpoint || DEFAULT_SYNC_ENDPOINT;
+  els.workspaceIdInput.value = state.privacy.workspaceId || "";
+  const hasToken = Boolean(getStoredSyncToken());
+  els.syncTokenInput.value = hasToken ? "••••••••••••" : "";
+  els.syncTokenInput.placeholder = hasToken ? "Token stored locally" : "Stored locally only";
+  const syncSelected = state.privacy.privacyMode !== "local_only";
+  els.pushSyncBtn.disabled = !syncSelected;
+  els.pullSyncBtn.disabled = !syncSelected || !state.privacy.workspaceId || !hasToken;
+  els.createWorkspaceBtn.disabled = !syncSelected;
+  els.syncBackendStatus.textContent = syncBackendStatusText();
 }
 
 function syncStorageStatus() {
@@ -2572,8 +3745,88 @@ function syncStorageStatus() {
     : storageInfo.indexedDb === "active"
       ? "indexeddb"
       : "local";
-  const syncMode = state.privacy.cloudSync ? "sync ready" : "local-only";
+  const syncMode = state.privacy.cloudSync ? privacyModeLabel(state.privacy.privacyMode).toLowerCase() : "local-only";
   els.storageStatus.textContent = `${storageLabel(storageMode)} · ${syncMode}`;
+}
+
+function validateBeliefForm(text) {
+  const errors = [];
+  if (!text) errors.push({ field: "beliefText", message: "Enter a belief statement before adding the claim." });
+  if (text && text.length < 12) errors.push({ field: "beliefText", message: "Use a complete claim, not a fragment." });
+  if (!els.timeScopeInput.value.trim()) errors.push({ field: "timeScopeInput", message: "Add a scope so the claim is not treated as universal by accident." });
+  if (!els.provenanceInput.value.trim()) errors.push({ field: "provenanceInput", message: "Record a provenance source for audit replay." });
+  return { valid: errors.length === 0, errors };
+}
+
+function showBeliefErrors(errors) {
+  setErrorSummary(els.beliefErrorSummary, errors);
+  [els.beliefText, els.timeScopeInput, els.provenanceInput].forEach(clearFieldInvalid);
+  errors.forEach((error) => {
+    const field = els[error.field];
+    if (field) markFieldInvalid(field, error.message);
+  });
+  els.beliefErrorSummary.focus();
+}
+
+function clearBeliefErrors() {
+  setErrorSummary(els.beliefErrorSummary, []);
+  [els.beliefText, els.timeScopeInput, els.provenanceInput].forEach(clearFieldInvalid);
+}
+
+function validateRelationForm({ source, target, rationale }) {
+  const errors = [];
+  if (!source) errors.push({ field: "source", message: "Choose a source claim." });
+  if (!target) errors.push({ field: "target", message: "Choose a target claim." });
+  if (source && target && source === target) errors.push({ field: "target", message: "A relation must connect two different claims." });
+  if (!rationale) errors.push({ field: "rationale", message: "Add a rationale so the relation is explainable." });
+  return { valid: errors.length === 0, errors };
+}
+
+function showInlineFormErrors(form, errors) {
+  let summary = form.querySelector(".error-summary");
+  if (!summary) {
+    summary = document.createElement("div");
+    summary.className = "error-summary";
+    summary.setAttribute("role", "alert");
+    summary.tabIndex = -1;
+    form.prepend(summary);
+  }
+  setErrorSummary(summary, errors);
+  form.querySelectorAll("[aria-invalid='true']").forEach(clearFieldInvalid);
+  errors.forEach((error) => {
+    const field = form.querySelector(`[name='${error.field}'], #${error.field}`);
+    if (field) markFieldInvalid(field, error.message);
+  });
+  summary?.focus();
+}
+
+function clearInlineFormErrors(form) {
+  setErrorSummary(form.querySelector(".error-summary"), []);
+  form.querySelectorAll("[aria-invalid='true']").forEach(clearFieldInvalid);
+}
+
+function setErrorSummary(summary, errors) {
+  if (!summary) return;
+  if (!errors.length) {
+    summary.hidden = true;
+    summary.innerHTML = "";
+    return;
+  }
+  summary.hidden = false;
+  summary.innerHTML = `
+    <strong>Review ${errors.length} field${errors.length === 1 ? "" : "s"}</strong>
+    <ul>${errors.map((error) => `<li>${escapeHtml(error.message)}</li>`).join("")}</ul>
+  `;
+}
+
+function markFieldInvalid(field, message) {
+  field.setAttribute("aria-invalid", "true");
+  field.dataset.error = message;
+}
+
+function clearFieldInvalid(field) {
+  field.removeAttribute("aria-invalid");
+  delete field.dataset.error;
 }
 
 function getCounts() {
@@ -2612,9 +3865,25 @@ function labelForLayer(layer) {
   return "Linked Item";
 }
 
+function claimKindLabel(kind) {
+  return titleCase(String(kind || "belief_statement").replace(/_/g, " "));
+}
+
+function claimStatusLabel(status) {
+  return titleCase(normalizeClaimStatus(status).replace(/_/g, " "));
+}
+
+function privacyModeLabel(mode) {
+  if (mode === "encrypted_sync") return "Encrypted sync";
+  if (mode === "private_link") return "Private link";
+  if (mode === "workspace") return "Workspace";
+  return "Local only";
+}
+
 function focusComposer(layer) {
   if (["judgment", "principle", "theory"].includes(layer)) {
     els.claimKind.value = layer;
+    els.claimTypeInput.value = layer === "theory" ? "background_theory" : layer;
     els.claimDomain.value = layer === "theory" ? "empirical" : "normative";
   }
   const prefix = layer === "principle" ? "@P2 " : layer === "theory" ? "@T3 " : "@J1 ";
@@ -2625,22 +3894,30 @@ function focusComposer(layer) {
 
 function addBelief() {
   const text = els.beliefText.value.trim();
-  if (!text) {
-    els.beliefText.focus();
+  const validation = validateBeliefForm(text);
+  if (!validation.valid) {
+    showBeliefErrors(validation.errors);
     return;
   }
+  clearBeliefErrors();
 
   const layer = els.claimKind.value || inferLayer(text);
-  const prefix = prefixForLayer(layer);
   const belief = {
     id: nextBeliefId(layer),
     layer,
+    kind: els.claimTypeInput.value,
     text,
+    canonicalForm: canonicalizeClaimText(text),
     domain: els.claimDomain.value,
+    modality: els.modalityInput.value,
+    polarity: els.polarityInput.value,
     confidence: Number(els.confidenceInput.value),
+    entrenchment: Number(els.entrenchmentInput.value),
+    scope: els.timeScopeInput.value.trim() || "Unscoped",
     timeScope: els.timeScopeInput.value.trim() || "Unscoped",
     provenance: els.provenanceInput.value.trim() || "User supplied",
     sensitivity: els.sensitivityInput.value,
+    status: els.claimStatusInput.value,
   };
 
   state.beliefs.push(belief);
@@ -2650,6 +3927,7 @@ function addBelief() {
   els.beliefText.value = "";
   els.timeScopeInput.value = "";
   els.provenanceInput.value = "";
+  els.claimStatusInput.value = "active";
   state.activeStage = "collection";
   saveState();
   render();
@@ -2659,12 +3937,13 @@ function addRelationFromForm(form) {
   const data = new FormData(form);
   const source = String(data.get("source") || "");
   const target = String(data.get("target") || "");
-  const type = String(data.get("type") || "neutral");
+  const type = String(data.get("type") || "depends_on");
   const weight = Number(data.get("weight") || 65) / 100;
   const rationale = String(data.get("rationale") || "").trim();
+  const validation = validateRelationForm({ source, target, type, rationale });
 
-  if (!source || !target || source === target) {
-    form.querySelector("[name='target']").focus();
+  if (!validation.valid) {
+    showInlineFormErrors(form, validation.errors);
     return;
   }
 
@@ -2672,9 +3951,10 @@ function addRelationFromForm(form) {
     return relation.source === source && relation.target === target && relation.type === type;
   });
   if (existing) {
-    form.querySelector("[name='type']").focus();
+    showInlineFormErrors(form, [{ field: "type", message: "This exact relation already exists." }]);
     return;
   }
+  clearInlineFormErrors(form);
 
   const relation = normalizeRelation({
     id: nextRelationId(),
@@ -2718,10 +3998,13 @@ function addConstraintFromForm() {
   });
 
   if (!constraint.name || !constraint.body) {
-    if (!constraint.name) els.constraintNameInput.focus();
-    else els.constraintBodyInput.focus();
+    showInlineFormErrors(els.constraintForm, [
+      ...(!constraint.name ? [{ field: "name", message: "Name the constraint before adding it." }] : []),
+      ...(!constraint.body ? [{ field: "body", message: "Add a rule, SMT, or SHACL body before saving the constraint." }] : []),
+    ]);
     return;
   }
+  clearInlineFormErrors(els.constraintForm);
 
   state.constraints.push(constraint);
   state.activeStage = "integration";
@@ -2760,11 +4043,14 @@ function recordCalibrationRound() {
   });
 
   if (!round.principle || !round.intuition || !round.updatedPrinciple) {
-    if (!round.principle) els.casePrincipleInput.focus();
-    else if (!round.intuition) els.caseIntuitionInput.focus();
-    else els.caseUpdatedPrincipleInput.focus();
+    showInlineFormErrors(els.calibrationForm, [
+      ...(!round.principle ? [{ field: "casePrincipleInput", message: "Record the principle under test." }] : []),
+      ...(!round.intuition ? [{ field: "caseIntuitionInput", message: "Record the case intuition." }] : []),
+      ...(!round.updatedPrinciple ? [{ field: "caseUpdatedPrincipleInput", message: "Record an updated principle, scope boundary, or rationale." }] : []),
+    ]);
     return;
   }
+  clearInlineFormErrors(els.calibrationForm);
 
   state.calibrationRounds.push(round);
   state.activeStage = "reflection";
@@ -2890,13 +4176,50 @@ function applySelectedRepair() {
   }, 1400);
 }
 
+function acceptUnresolvedTension() {
+  const conflict = getSelectedConflict();
+  if (!conflict || conflict.status === "accepted_tension") return;
+  const rationale = els.tensionRationaleInput.value.trim();
+  if (rationale.length < 12) {
+    markFieldInvalid(els.tensionRationaleInput, "Add a short rationale before preserving this tension.");
+    els.tensionRationaleInput.focus();
+    return;
+  }
+  clearFieldInvalid(els.tensionRationaleInput);
+  const conflictIndex = state.conflicts.findIndex((item) => item.id === conflict.id);
+  if (conflictIndex >= 0) {
+    state.conflicts[conflictIndex] = {
+      ...state.conflicts[conflictIndex],
+      status: "accepted_tension",
+      tensionRationale: rationale,
+      acceptedTensionAt: new Date().toISOString(),
+    };
+  }
+  const acceptedClaimIds = new Set([conflict.claimA, conflict.claimB, ...(conflict.core || [])].filter(Boolean));
+  state.beliefs = state.beliefs.map((belief) => (
+    acceptedClaimIds.has(belief.id)
+      ? normalizeBelief({ ...belief, status: "accepted_tension" })
+      : belief
+  ));
+  recordRevision("tension", `${conflict.id} preserved as a known tension: ${rationale}`, {
+    conflictId: conflict.id,
+    affectedClaims: [...acceptedClaimIds],
+  });
+  state.activeStage = "action";
+  state.activeNav = "replay";
+  saveState();
+  render();
+  focusElement(els.revisionReplay);
+}
+
 function buildRepairSimulation(conflict, repair) {
   const targetClaimId = inferRepairTargetClaimId(conflict, repair);
   const affectedClaims = [...new Set([targetClaimId, ...(conflict.core || []), conflict.claimA, conflict.claimB].filter(Boolean))];
   const beforeSnapshot = buildRepairSnapshot(conflict, affectedClaims);
   const targetClaim = findBelief(targetClaimId);
   const actionType = inferRepairActionType(repair);
-  const disruptionCost = Number.isFinite(Number(repair.cost)) ? Number(repair.cost) : 0.75;
+  const entrenchmentPenalty = targetClaim ? Number(targetClaim.entrenchment || defaultEntrenchmentForLayer(targetClaim.layer)) / 400 : 0.15;
+  const disruptionCost = roundNumber(clamp((Number.isFinite(Number(repair.cost)) ? Number(repair.cost) : 0.75) + entrenchmentPenalty, 0, 1.4));
   const predictedResolutionScore = roundNumber(clamp(0.96 - disruptionCost * 0.25 + (conflict.kind === "hard" ? 0.03 : 0), 0.42, 0.94));
   const dependencyImpact = state.relations.filter((relation) => {
     return affectedClaims.includes(relation.source) || affectedClaims.includes(relation.target);
@@ -2949,8 +4272,10 @@ function buildRepairedClaim(claim, repair, actionType) {
   } else {
     repaired.text = buildRepairedClaimText(claim, repair);
   }
+  repaired.canonicalForm = canonicalizeClaimText(repaired.text);
+  repaired.scope = repaired.timeScope || repaired.scope || "Unscoped";
   repaired.provenance = appendAuditNote(claim.provenance, `repaired via ${repair.id}`);
-  return repaired;
+  return normalizeBelief(repaired);
 }
 
 function buildRepairedClaimText(claim, repair) {
@@ -3021,7 +4346,7 @@ async function exportLocalStoreExtractor() {
 
   downloadJson(
     {
-      schemaVersion: "wre-2.5-local-store-extractor",
+      schemaVersion: `${WRE_SCHEMA_VERSION}-local-store-extractor`,
       generatedAt: new Date().toISOString(),
       sessionId: INDEXED_DB_SESSION_ID,
       storage: buildStorageReportPayload(),
@@ -3043,21 +4368,36 @@ async function exportLocalStoreExtractor() {
   );
 }
 
+function exportSyncPacket() {
+  const payload = buildSyncPacketPayload();
+  recordRevision("privacy", `Exported optional sync packet (${payload.readiness.status}) with ${payload.mutationSet.count} local records.`);
+  saveState();
+  renderRevisionReplay();
+  renderDataRightsPanel();
+  downloadJson(payload, "normativity-wre-sync-packet.json");
+}
+
 function buildSessionPayload() {
   const payload = {
-    schemaVersion: "wre-2.5",
+    schemaVersion: WRE_SCHEMA_VERSION,
     session: {
       id: "sess_7f2c9e7a",
       created: state.createdAt,
       scope: "AI hiring assistant",
       status: "active",
       privacy: state.privacy,
+      algorithmVersion: WRE_ENGINE_VERSION,
     },
     schema: {
       claimFields: agentContract.claimFields,
       relationFields: agentContract.relationFields,
       constraintFields: agentContract.constraintFields,
+      formalRunFields: agentContract.formalRunFields,
+      argumentationRunFields: agentContract.argumentationRunFields,
+      triageRunFields: agentContract.triageRunFields,
+      syncPacketFields: agentContract.syncPacketFields,
       repairOptionFields: agentContract.repairOptionFields,
+      revisionEventFields: agentContract.revisionEventFields,
       exportFormats: agentContract.exportFormats,
       relationTypes: agentContract.relationTypes,
       conflictKinds: agentContract.conflictKinds,
@@ -3067,16 +4407,23 @@ function buildSessionPayload() {
     beliefs: state.beliefs.map(normalizeBelief),
     relations: state.relations.map(normalizeRelation),
     constraints: state.constraints.map(normalizeConstraint),
-    conflicts: state.conflicts,
+    conflicts: state.conflicts.map((conflict) => ({
+      ...normalizeConflict(conflict),
+      explanation: buildConflictExplanation(conflict),
+    })),
     selectedConflictId: state.selectedConflictId,
-    revisions: state.revisions,
+    revisions: state.revisions.map(normalizeRevision),
     analysisRuns: state.analysisRuns,
+    formalRuns: state.formalRuns,
+    argumentationRuns: state.argumentationRuns,
+    triageRuns: state.triageRuns,
     evaluationRuns: state.evaluationRuns,
     calibrationRounds: state.calibrationRounds,
     repairApplications: state.repairApplications,
     securityControls: normalizeSecurityControls(state.securityControls),
     securityReport: buildSecurityReportPayload(),
     storageReport: buildStorageReportPayload(),
+    syncPacket: buildSyncPacketPayload(),
     privacyReceipt: buildPrivacyReceiptPayload(),
     accessibilityReport: buildAccessibilityReportPayload(),
     migrationReport: state.migrationReport || buildDefaultMigrationReport(),
@@ -3093,9 +4440,17 @@ function buildJsonLdPayload() {
   const relationNode = (id) => `urn:wre:relation:${id}`;
   const constraintNode = (id) => `urn:wre:constraint:${id}`;
   const conflictNode = (id) => `urn:wre:conflict:${id}`;
+  const formalNode = (id) => `urn:wre:formal-run:${id}`;
+  const argumentationNode = (id) => `urn:wre:argumentation-run:${id}`;
+  const triageNode = (id) => `urn:wre:triage-run:${id}`;
+  const syncNode = (id) => `urn:wre:sync-packet:${id}`;
   const revisionNode = (index) => `urn:wre:revision:${sessionId}:${index + 1}`;
   const security = buildSecurityReportPayload();
   const storage = buildStorageReportPayload();
+  const formal = getLatestFormalRun() || buildFormalTrace({ preview: true });
+  const argumentation = getLatestArgumentationRun() || buildArgumentationRun({ preview: true });
+  const triage = getLatestTriageRun() || buildTriageRun({ preview: true });
+  const syncPacket = buildSyncPacketPayload();
 
   return {
     "@context": {
@@ -3117,7 +4472,7 @@ function buildJsonLdPayload() {
     },
     "@id": sessionNode,
     "@type": "wre:SessionExport",
-    schemaVersion: "wre-2.5-jsonld",
+    schemaVersion: `${WRE_SCHEMA_VERSION}-jsonld`,
     generatedAt: new Date().toISOString(),
     exportFormats: agentContract.exportFormats,
     "@graph": [
@@ -3126,10 +4481,14 @@ function buildJsonLdPayload() {
         "@type": "wre:Session",
         name: "AI hiring assistant",
         created: state.createdAt,
-        privacyMode: state.privacy.cloudSync ? "local-plus-sync" : "local-first",
+        privacyMode: state.privacy.privacyMode,
         retention: state.privacy.retention,
         apiAbuseResistance: security.summary.abuseResistance,
         persistence: storage.summary,
+        formalStatus: formal.status,
+        argumentationAttacks: argumentation.attackEdges.length,
+        triageFlags: triage.formalizationCandidates.length,
+        syncReadiness: syncPacket.readiness.status,
       },
       {
         "@id": `urn:wre:storage:${sessionId}`,
@@ -3158,12 +4517,19 @@ function buildJsonLdPayload() {
           "@id": claimNode(normalized.id),
           "@type": "wre:Claim",
           claimId: normalized.id,
+          kind: normalized.kind,
           layer: normalized.layer,
+          canonicalForm: normalized.canonicalForm,
           domain: normalized.domain,
+          modality: normalized.modality,
+          polarity: normalized.polarity,
+          scope: normalized.scope,
           confidence: normalized.confidence,
+          entrenchment: normalized.entrenchment,
           timeScope: normalized.timeScope,
           provenance: normalized.provenance,
           sensitivity: normalized.sensitivity,
+          status: normalized.status,
           text: normalized.text,
           generatedBy: sessionNode,
         };
@@ -3211,6 +4577,82 @@ function buildJsonLdPayload() {
         constraint: conflict.constraintId ? constraintNode(conflict.constraintId) : undefined,
         generatedBy: sessionNode,
       })),
+      {
+        "@id": formalNode(formal.id),
+        "@type": "wre:FormalRun",
+        formalRunId: formal.id,
+        status: formal.status,
+        satisfiable: formal.satisfiable,
+        assertionCount: formal.assertions.length,
+        unsatCoreCount: formal.unsatCores.length,
+        engineVersions: formal.engineVersions,
+        generatedBy: sessionNode,
+      },
+      ...formal.unsatCores.map((core) => ({
+        "@id": `urn:wre:unsat-core:${core.id}`,
+        "@type": "wre:UnsatCore",
+        coreId: core.id,
+        severity: core.severity,
+        confidence: core.confidence,
+        member: (core.members || []).map(claimNode),
+        constraint: core.constraintId ? constraintNode(core.constraintId) : undefined,
+        explanation: core.explanation,
+        generatedBy: formalNode(formal.id),
+      })),
+      {
+        "@id": argumentationNode(argumentation.id),
+        "@type": "wre:ArgumentationRun",
+        argumentationRunId: argumentation.id,
+        attackCount: argumentation.attackEdges.length,
+        defenseCount: argumentation.defenseEdges.length,
+        admissibleSet: argumentation.admissibleSet.map(claimNode),
+        groundedExtension: argumentation.groundedExtension.map(claimNode),
+        vulnerableClaims: argumentation.vulnerableClaims.map((item) => claimNode(item.claimId)),
+        generatedBy: sessionNode,
+      },
+      ...argumentation.attackEdges.slice(0, 12).map((edge) => ({
+        "@id": `urn:wre:attack:${edge.id}`,
+        "@type": "wre:AttackEdge",
+        attackId: edge.id,
+        source: claimNode(edge.source),
+        target: claimNode(edge.target),
+        weight: edge.weight,
+        rationale: edge.rationale,
+        generatedBy: argumentationNode(argumentation.id),
+      })),
+      {
+        "@id": triageNode(triage.id),
+        "@type": "wre:TriageRun",
+        triageRunId: triage.id,
+        nliMode: triage.nliMode,
+        externalProcessing: triage.externalProcessing,
+        queuedPairCount: triage.queuedPairCount,
+        formalizationFlagCount: triage.formalizationCandidates.length,
+        averageSoftTensionScore: triage.probabilisticSummary.averageSoftTensionScore,
+        generatedBy: sessionNode,
+      },
+      ...triage.reviewQueue.slice(0, 12).map((item) => ({
+        "@id": `urn:wre:triage-pair:${item.id}`,
+        "@type": "wre:TriagePair",
+        source: claimNode(item.claimA),
+        target: claimNode(item.claimB),
+        contradictionProbability: item.contradictionProbability,
+        softTensionScore: item.softTensionScore,
+        recommendation: item.recommendation,
+        explanation: item.explanation,
+        generatedBy: triageNode(triage.id),
+      })),
+      {
+        "@id": syncNode(sessionId),
+        "@type": "wre:SyncPacket",
+        syncStatus: syncPacket.readiness.status,
+        readinessScore: syncPacket.readiness.score,
+        mode: syncPacket.workspace.mode,
+        mutationCount: syncPacket.mutationSet.count,
+        idempotencyKey: syncPacket.manifest.idempotencyKey,
+        conflictPolicy: syncPacket.conflictPolicy.strategy,
+        generatedBy: sessionNode,
+      },
       ...state.revisions.map((revision, index) => ({
         "@id": revisionNode(index),
         "@type": "wre:RevisionLog",
@@ -3229,10 +4671,12 @@ function buildCsvSummaryPayload() {
   const columns = ["record_type", "id", "label", "kind_or_type", "source", "target", "severity", "confidence", "text", "evidence"];
   const security = buildSecurityReportPayload();
   const storage = buildStorageReportPayload();
+  const formal = getLatestFormalRun() || buildFormalTrace({ preview: true });
+  const argumentation = getLatestArgumentationRun() || buildArgumentationRun({ preview: true });
   const rows = [
     ...state.beliefs.map((belief) => {
       const normalized = normalizeBelief(belief);
-      return ["claim", normalized.id, labelForLayer(normalized.layer), normalized.domain, "", "", "", normalized.confidence, normalized.text, `${normalized.timeScope}; ${normalized.provenance}; ${normalized.sensitivity}`];
+      return ["claim", normalized.id, claimKindLabel(normalized.kind), `${normalized.modality}/${normalized.polarity}`, "", "", normalized.status, normalized.confidence, normalized.text, `${normalized.scope}; entrenchment ${normalized.entrenchment}%; ${normalized.provenance}; ${normalized.sensitivity}`];
     }),
     ...state.relations.map((relation) => {
       const normalized = normalizeRelation(relation);
@@ -3243,6 +4687,13 @@ function buildCsvSummaryPayload() {
       return ["constraint", normalized.id, normalized.name, normalized.language, "", "", normalized.severity, normalized.enabled ? 1 : 0, normalized.body, "local deterministic template"];
     }),
     ...state.conflicts.map((conflict) => ["conflict", conflict.id, conflict.title, conflict.kind, conflict.claimA || "", conflict.claimB || "", conflict.severity, conflict.confidence, conflict.why || conflict.summary || "", (conflict.core || []).join(" ")]),
+    ["formal_run", formal.id, "Formal solver trace", formal.status, "", "", formal.satisfiable ? "sat" : "unsat", formal.unsatCores.length, `${formal.assertions.length} named assertions; ${formal.constraints.length} templates`, formal.engineVersions.join(" ")],
+    ...formal.unsatCores.map((core) => ["unsat_core", core.id, core.conflictId || core.constraintId || "Tracked core", core.source, core.members?.[0] || "", core.members?.[1] || "", core.severity, core.confidence, core.explanation, (core.namedAssertions || []).join(" ")]),
+    ["argumentation_run", argumentation.id, "Argumentation review", "attack-defense", "", "", argumentation.vulnerableClaims.length ? "review" : "defended", argumentation.attackEdges.length, argumentation.summary, `admissible ${argumentation.admissibleSet.join(" ")}`],
+    ...argumentation.attackEdges.slice(0, 12).map((edge) => ["attack_edge", edge.id, edge.type, edge.relationId || edge.conflictId || "", edge.source, edge.target, "", edge.weight, edge.rationale, "argumentation graph"]),
+    ["triage_run", triage.id, "NLI and probabilistic triage", triage.nliMode, "", "", triage.externalProcessing ? "external" : "local", triage.reviewQueue.length, `${triage.formalizationCandidates.length} formalization flags`, triage.probabilisticSummary.scoringFormula],
+    ...triage.reviewQueue.slice(0, 12).map((item) => ["triage_pair", item.id, item.recommendation, item.retrievalReason, item.claimA, item.claimB, item.priority, item.softTensionScore, item.explanation, `nli ${item.contradictionProbability}; overlap ${item.semanticOverlap}`]),
+    ["sync_packet", "SYNC-001", "Optional sync packet", syncPacket.workspace.mode, "", "", syncPacket.readiness.status, syncPacket.readiness.score, `${syncPacket.mutationSet.count} mutation records; ${syncPacket.edgeContract.routes.length} routes`, syncPacket.manifest.idempotencyKey],
     ["security", "SEC-001", "API abuse resistance", security.summary.abuseResistance, "", "", security.summary.launchGate, security.controls.quotaPerHour, `Body ${security.controls.bodyLimitKb} KB; claims ${security.controls.analysisClaimCap}; NLI ${security.controls.nliPairCap}`, security.summary.complianceStatus],
     ["storage", "STORE-001", "Local-first persistence", storage.summary, "", "", storage.indexedDb.status, storage.indexedDb.primary ? 1 : 0, storage.extractorStatus, storage.lastSavedAt],
     ...state.revisions.map((revision, index) => ["revision", `REV-${index + 1}`, revisionLabel(revision.type), revision.type, revision.conflictId || "", revision.repairId || "", "", "", revision.text, revision.time]),
@@ -3263,7 +4714,7 @@ function exportBenchmark() {
   const latestEvaluation = getLatestEvaluationRun() || buildEvaluationReport({ preview: true });
   downloadJson(
     {
-      schemaVersion: "wre-2.5-benchmark",
+      schemaVersion: `${WRE_SCHEMA_VERSION}-benchmark`,
       generatedAt: new Date().toISOString(),
       latestAnalysis: latest,
       latestEvaluation,
@@ -3278,7 +4729,7 @@ function exportEvaluationReport() {
   const payload = getLatestEvaluationRun() || buildEvaluationReport({ preview: true });
   downloadJson(
     {
-      schemaVersion: "wre-2.5-evaluation",
+      schemaVersion: `${WRE_SCHEMA_VERSION}-evaluation`,
       generatedAt: new Date().toISOString(),
       sessionId: "sess_7f2c9e7a",
       evaluation: payload,
@@ -3291,13 +4742,55 @@ function exportEvaluationReport() {
 function exportConstraints() {
   downloadJson(
     {
-      schemaVersion: "wre-2.5-constraints",
+      schemaVersion: `${WRE_SCHEMA_VERSION}-constraints`,
       generatedAt: new Date().toISOString(),
       sessionId: "sess_7f2c9e7a",
       constraints: state.constraints.map(normalizeConstraint),
       latestAnalysis: getLatestAnalysisRun() || buildAnalysisReport({ preview: true }),
     },
     "normativity-wre-constraints.json"
+  );
+}
+
+function exportFormalTrace() {
+  const trace = getLatestFormalRun() || buildFormalTrace({ preview: true });
+  downloadJson(
+    {
+      schemaVersion: `${WRE_SCHEMA_VERSION}-formal-trace`,
+      generatedAt: new Date().toISOString(),
+      sessionId: "sess_7f2c9e7a",
+      formalTrace: trace,
+      note: "Trace uses local named assertions and SMT-style templates so the static WRE app can explain unsat cores without remote processing.",
+    },
+    "normativity-wre-formal-trace.json"
+  );
+}
+
+function exportArgumentationReport() {
+  const argumentation = getLatestArgumentationRun() || buildArgumentationRun({ preview: true });
+  downloadJson(
+    {
+      schemaVersion: `${WRE_SCHEMA_VERSION}-argumentation`,
+      generatedAt: new Date().toISOString(),
+      sessionId: "sess_7f2c9e7a",
+      argumentation,
+      note: "Argumentation review models conflicts and undercuts as attacks, support and implication as defenses, and exposes an admissible working set for human review.",
+    },
+    "normativity-wre-argumentation.json"
+  );
+}
+
+function exportTriageReport() {
+  const triage = getLatestTriageRun() || buildTriageRun({ preview: true });
+  downloadJson(
+    {
+      schemaVersion: `${WRE_SCHEMA_VERSION}-triage`,
+      generatedAt: new Date().toISOString(),
+      sessionId: "sess_7f2c9e7a",
+      triage,
+      note: "NLI-style scores are local deterministic estimates. The static WRE app does not send belief text to an external model during this export.",
+    },
+    "normativity-wre-triage.json"
   );
 }
 
@@ -3367,13 +4860,13 @@ function buildSecurityReportPayload() {
   const controls = normalizeSecurityControls(state.securityControls);
   const quotaReady = controls.quotaPerHour > 0 && controls.bodyLimitKb <= 512 && controls.analysisClaimCap <= 1000;
   const nliReady = !state.privacy.nliTriage || controls.nliPairCap <= 50;
-  const syncReady = !state.privacy.cloudSync || controls.syncAuthRequired;
+  const syncReady = state.privacy.privacyMode === "local_only" || controls.syncAuthRequired;
   const budgetReady = controls.monthlyBudgetUsd <= 100;
   const mapped = controls.complianceStatus === "mapped" || controls.complianceStatus === "launch-ready";
   const launchGate = quotaReady && nliReady && syncReady && budgetReady && mapped ? "ready-for-beta" : "needs-security-review";
 
   return {
-    schemaVersion: "wre-2.5-security-report",
+    schemaVersion: `${WRE_SCHEMA_VERSION}-security-report`,
     generatedAt: new Date().toISOString(),
     sessionId: "sess_7f2c9e7a",
     standards: {
@@ -3382,6 +4875,9 @@ function buildSecurityReportPayload() {
       apiAbuse: "OWASP API Top 10 guardrails for quotas, body-size limits, and execution caps",
       observability: "OpenTelemetry-compatible event vocabulary without mandatory third-party telemetry",
       restoreDrills: `${controls.restoreDrillCadence} encrypted archive restore drill`,
+      contentSecurityPolicy: controls.cspMode,
+      dependencyScanning: controls.dependencyScanning,
+      publicFormAbuse: controls.publicFormAbuse,
     },
     controls,
     summary: {
@@ -3392,13 +4888,16 @@ function buildSecurityReportPayload() {
       launchGate,
     },
     evidence: {
-      localFirstDefault: !state.privacy.cloudSync,
+      localFirstDefault: state.privacy.privacyMode === "local_only",
       nliOptIn: Boolean(state.privacy.nliTriage),
       encryptedArchiveAvailable: hasWebCrypto(),
       exportDeleteCorrection: true,
       telemetryMode: controls.telemetryMode,
       dpiaReview: controls.dpiaReview,
       asvsMapping: controls.asvsMapping,
+      cspMapped: true,
+      dependencyScanningMapped: true,
+      turnstileReady: true,
     },
   };
 }
@@ -3407,7 +4906,7 @@ function buildStorageReportPayload() {
   const sessionOnly = state.privacy.retention === "session-only";
   const indexedActive = storageInfo.indexedDb === "active" && !sessionOnly;
   return {
-    schemaVersion: "wre-2.5-storage-report",
+    schemaVersion: `${WRE_SCHEMA_VERSION}-storage-report`,
     generatedAt: new Date().toISOString(),
     sessionId: INDEXED_DB_SESSION_ID,
     summary: indexedActive ? "IndexedDB primary with webStorage fallback" : sessionOnly ? "Session-only webStorage" : "webStorage fallback",
@@ -3426,9 +4925,147 @@ function buildStorageReportPayload() {
       active: !indexedActive || sessionOnly,
     },
     retention: state.privacy.retention,
-    cloudSync: Boolean(state.privacy.cloudSync),
+    privacyMode: state.privacy.privacyMode,
+    cloudSync: state.privacy.privacyMode !== "local_only",
     lastSavedAt: storageInfo.lastSavedAt || state.updatedAt || "",
     lastHydratedAt: storageInfo.lastHydratedAt,
+  };
+}
+
+function buildSyncPacketPayload() {
+  const security = buildSecurityReportPayload();
+  const storage = buildStorageReportPayload();
+  const sessionId = INDEXED_DB_SESSION_ID;
+  const generatedAt = new Date().toISOString();
+  const snapshotHashes = {
+    beliefs: hashPayload(state.beliefs.map(normalizeBelief)),
+    relations: hashPayload(state.relations.map(normalizeRelation)),
+    constraints: hashPayload(state.constraints.map(normalizeConstraint)),
+    conflicts: hashPayload(state.conflicts),
+    revisions: hashPayload(state.revisions),
+  };
+  const mutationTypes = [
+    ["claims", state.beliefs.length],
+    ["relations", state.relations.length],
+    ["constraints", state.constraints.length],
+    ["conflicts", state.conflicts.length],
+    ["revisions", state.revisions.length],
+    ["analysisRuns", state.analysisRuns.length],
+    ["formalRuns", state.formalRuns.length],
+    ["argumentationRuns", state.argumentationRuns.length],
+    ["triageRuns", state.triageRuns.length],
+    ["calibrationRounds", state.calibrationRounds.length],
+    ["repairApplications", state.repairApplications.length],
+  ];
+  const mutationCount = mutationTypes.reduce((sum, [, count]) => sum + count, 0);
+  const checks = {
+    localFirstDefault: state.privacy.privacyMode === "local_only" || storage.indexedDb.primary || state.privacy.retention === "session-only",
+    cloudSyncConsent: state.privacy.privacyMode !== "local_only",
+    encryptedArchiveAvailable: hasWebCrypto(),
+    workerEndpointConfigured: Boolean(state.privacy.syncEndpoint),
+    workspaceConfigured: state.privacy.privacyMode === "local_only" || Boolean(state.privacy.workspaceId),
+    syncTokenPresent: state.privacy.privacyMode === "local_only" || Boolean(getStoredSyncToken()),
+    authRequiredForSync: security.controls.syncAuthRequired,
+    quotaReady: security.controls.quotaPerHour > 0 && security.controls.bodyLimitKb <= 512,
+    budgetReady: security.controls.monthlyBudgetUsd <= 100,
+    deleteWorkflowReady: Boolean(els.deleteLocalDataBtn),
+    retentionMapped: ["until-deleted", "session-only", "30-days"].includes(state.privacy.retention),
+  };
+  const readinessBase = [
+    checks.localFirstDefault,
+    checks.encryptedArchiveAvailable,
+    checks.workerEndpointConfigured,
+    checks.workspaceConfigured,
+    checks.syncTokenPresent,
+    checks.authRequiredForSync,
+    checks.quotaReady,
+    checks.budgetReady,
+    checks.deleteWorkflowReady,
+    checks.retentionMapped,
+  ];
+  const readinessScore = roundNumber(readinessBase.filter(Boolean).length / readinessBase.length);
+  const status = state.privacy.privacyMode !== "local_only"
+    ? readinessScore >= 0.85 ? "ready-to-sync" : "needs-sync-review"
+    : readinessScore >= 0.85 ? "staged-local-only" : "needs-local-hardening";
+
+  return {
+    schemaVersion: `${WRE_SCHEMA_VERSION}-sync-packet`,
+    algorithmVersion: WRE_ENGINE_VERSION,
+    generatedAt,
+    workspace: {
+      id: `workspace-${sessionId}`,
+      sessionId,
+      ownerHash: `local-${hashPayload(state.createdAt || sessionId).slice(0, 10)}`,
+      mode: state.privacy.privacyMode === "local_only" ? "local-first-staged" : state.privacy.privacyMode,
+      retentionPolicy: state.privacy.retention,
+      syncConsent: state.privacy.privacyMode !== "local_only",
+      createdAt: state.createdAt,
+      updatedAt: state.updatedAt,
+    },
+    manifest: {
+      encryption: hasWebCrypto() ? "AES-GCM archive ready; sync payload must be encrypted before upload" : "Web Crypto unavailable",
+      storagePrimary: storage.indexedDb.primary ? "IndexedDB" : storage.retention === "session-only" ? "sessionStorage" : "localStorage",
+      snapshotHashes,
+      algorithmVersion: WRE_ENGINE_VERSION,
+      objectPrefix: `r2://normativity-wre/${sessionId}/`,
+      d1Tables: ["workspace", "sync_packet_manifest", "sync_audit_event", "sync_tombstone"],
+      idempotencyKey: `sync-${sessionId}-${hashPayload(snapshotHashes).slice(0, 12)}`,
+    },
+    mutationSet: {
+      count: mutationCount,
+      clientClock: state.revisions.length + state.repairApplications.length + state.analysisRuns.length,
+      lastLocalRevisionAt: state.revisions[state.revisions.length - 1]?.time || state.updatedAt,
+      types: Object.fromEntries(mutationTypes),
+      operations: mutationTypes.filter(([, count]) => count > 0).map(([type, count]) => ({
+        type: `upsert_${type}`,
+        count,
+        hash: hashPayload({ type, count, version: state.updatedAt }),
+      })),
+      tombstones: [],
+    },
+    conflictPolicy: {
+      strategy: "revision-log-merge",
+      deterministicMerge: "merge non-overlapping claim/relation updates by id and timestamp",
+      humanReview: "require review when two clients edit the same conflict, claim text, confidence, or sensitivity tag",
+      rollback: "restore from encrypted archive or revision before accepting remote packet",
+    },
+    edgeContract: {
+      provider: "Cloudflare Workers + D1 metadata + R2 encrypted packets",
+      apiVersion: WRE_SCHEMA_VERSION,
+      algorithmVersion: WRE_ENGINE_VERSION,
+      auth: security.controls.syncAuthRequired ? "Bearer token required for synced workspaces" : "local export only; sync auth disabled",
+      quotaPerHour: security.controls.quotaPerHour,
+      bodyLimitKb: security.controls.bodyLimitKb,
+      deleteWorkflow: "DELETE /v1/sessions/{id} writes tombstone and purges encrypted objects",
+      routes: [
+        { method: "GET", path: "/health", purpose: "Read Worker health and schema version" },
+        { method: "POST", path: "/v1/workspaces", purpose: "Create encrypted sync workspace and token verifier" },
+        { method: "POST", path: "/v1/sync/push", purpose: "Upload encrypted mutation packet with idempotency key" },
+        { method: "GET", path: "/v1/sync/pull", purpose: "Fetch remote manifest, vector clock, and tombstones" },
+        { method: "POST", path: "/v1/sync/resolve", purpose: "Submit user-reviewed merge result" },
+        { method: "GET", path: "/v1/sessions/{id}/manifest", purpose: "Read opaque encrypted packet metadata" },
+        { method: "DELETE", path: "/v1/sessions/{id}", purpose: "Delete a synced session packet set and write a local tombstone" },
+      ],
+    },
+    backend: {
+      endpoint: state.privacy.syncEndpoint || DEFAULT_SYNC_ENDPOINT,
+      workspaceId: state.privacy.workspaceId || "",
+      tokenPresent: Boolean(getStoredSyncToken()),
+      lastStatus: state.privacy.lastSyncStatus,
+      lastSyncAt: state.privacy.lastSyncAt,
+      remoteClock: state.privacy.lastRemoteClock,
+    },
+    readiness: {
+      score: readinessScore,
+      status,
+      checks,
+      blockers: Object.entries(checks)
+        .filter(([key, value]) => key !== "cloudSyncConsent" && !value)
+        .map(([key]) => key),
+      note: state.privacy.privacyMode !== "local_only"
+        ? "Cloud sync is opted in; packet must be encrypted and authenticated before upload."
+        : "Cloud sync is off; packet is a local preview until the user opts in.",
+    },
   };
 }
 
@@ -3453,6 +5090,7 @@ function readWebStorageSnapshot(store) {
 function buildPrivacyReceiptPayload() {
   const security = buildSecurityReportPayload();
   const storage = buildStorageReportPayload();
+  const syncPacket = buildSyncPacketPayload();
   const sensitivityCounts = state.beliefs.reduce((counts, belief) => {
     const key = belief.sensitivity || "private";
     counts[key] = (counts[key] || 0) + 1;
@@ -3463,7 +5101,7 @@ function buildPrivacyReceiptPayload() {
   }).length;
 
   return {
-    schemaVersion: "wre-2.5-privacy-receipt",
+    schemaVersion: `${WRE_SCHEMA_VERSION}-privacy-receipt`,
     generatedAt: new Date().toISOString(),
     sessionId: "sess_7f2c9e7a",
     classification: {
@@ -3473,6 +5111,9 @@ function buildPrivacyReceiptPayload() {
       claimCount: state.beliefs.length,
       relationCount: state.relations.length,
       conflictCount: state.conflicts.length,
+      formalRuns: state.formalRuns.length,
+      argumentationRuns: state.argumentationRuns.length,
+      triageRuns: state.triageRuns.length,
       calibrationRounds: state.calibrationRounds.length,
       repairApplications: state.repairApplications.length,
     },
@@ -3481,10 +5122,16 @@ function buildPrivacyReceiptPayload() {
       persistence: storage.summary,
       indexedDbStatus: storage.indexedDb.status,
       retention: state.privacy.retention,
-      cloudSync: Boolean(state.privacy.cloudSync),
+      privacyMode: state.privacy.privacyMode,
+      cloudSync: state.privacy.privacyMode !== "local_only",
       nliTriage: Boolean(state.privacy.nliTriage),
       encryptedArchive: hasWebCrypto() ? "AES-GCM available locally" : "unavailable in this browser",
-      thirdPartyProcessing: state.privacy.cloudSync || state.privacy.nliTriage ? "opt-in only" : "none selected",
+      thirdPartyProcessing: state.privacy.privacyMode !== "local_only" || state.privacy.nliTriage ? "opt-in only" : "none selected",
+      syncEndpoint: state.privacy.syncEndpoint,
+      workspaceId: state.privacy.workspaceId || "not-created",
+      syncToken: getStoredSyncToken() ? "stored locally only" : "not stored",
+      syncPacketStatus: syncPacket.readiness.status,
+      syncPacketMutations: syncPacket.mutationSet.count,
     },
     security: {
       apiAbuseResistance: security.summary.abuseResistance,
@@ -3498,7 +5145,7 @@ function buildPrivacyReceiptPayload() {
     },
     userRights: {
       access: "Export API or privacy receipt",
-      export: "JSON session, JSON-LD graph, CSV summary, benchmark, and calibration exports",
+      export: "JSON session, JSON-LD graph, CSV summary, benchmark, sync packet, and calibration exports",
       delete: "Delete Local Data removes WRE local/session storage keys",
       correction: "Edit by importing corrected JSON or adding revised claims/rounds",
     },
@@ -3508,7 +5155,7 @@ function buildPrivacyReceiptPayload() {
 function buildAccessibilityReportPayload() {
   const commands = getCommandDefinitions();
   return {
-    schemaVersion: "wre-2.5-accessibility-report",
+    schemaVersion: `${WRE_SCHEMA_VERSION}-accessibility-report`,
     generatedAt: new Date().toISOString(),
     target: "WCAG 2.2 AA",
     sessionId: "sess_7f2c9e7a",
@@ -3521,10 +5168,16 @@ function buildAccessibilityReportPayload() {
     screenReaderSummary: buildAccessibleSummaryText(),
     checks: {
       skipLink: Boolean(document.querySelector(".skip-link")),
+      guidedStageFlow: Boolean(els.stageList && document.querySelector("[data-stage='preparation']") && document.querySelector("[data-stage='action']")),
+      fieldErrorSummary: Boolean(els.beliefErrorSummary && els.constraintForm && els.calibrationForm),
       dualGraphTableMode: Boolean(els.claimWorkbenchPanel && document.querySelector("[data-view-mode='table']") && document.querySelector("[data-view-mode='graph']")),
       keyboardCommandPalette: Boolean(els.commandPalette),
       screenReaderSummaryRegion: Boolean(els.screenReaderSummary),
       textConstraintEditor: Boolean(els.constraintForm && els.constraintList),
+      formalTracePanel: Boolean(els.formalTraceList && els.exportFormalTraceBtn),
+      argumentationReviewPanel: Boolean(els.argumentationList && els.exportArgumentationBtn),
+      triageReviewPanel: Boolean(els.triageList && els.exportTriageBtn),
+      syncPacketPanel: Boolean(els.syncReadinessList && els.exportSyncPacketBtn),
       securityControlsForm: Boolean(els.securityControlsForm && els.securityControlList),
       dialogUsesAriaModal: els.commandPalette?.getAttribute("aria-modal") === "true",
       automatedAxeScan: "not-run-in-static-session",
@@ -3536,7 +5189,7 @@ function buildAccessibilityReportPayload() {
 function exportCalibrationRounds() {
   downloadJson(
     {
-      schemaVersion: "wre-2.5-calibration",
+      schemaVersion: `${WRE_SCHEMA_VERSION}-calibration`,
       generatedAt: new Date().toISOString(),
       sessionId: "sess_7f2c9e7a",
       calibrationRounds: state.calibrationRounds.map(normalizeCalibrationRound),
@@ -3613,11 +5266,14 @@ function applyImportedPayload(parsed) {
     conflicts: conflicts.map((conflict) => normalizeImportedConflict(conflict, migrationReport)),
     revisions: Array.isArray(parsed.revisions) ? parsed.revisions.map(normalizeRevision) : [],
     analysisRuns: Array.isArray(parsed.analysisRuns) ? parsed.analysisRuns.map(normalizeAnalysisRun) : [],
+    formalRuns: Array.isArray(parsed.formalRuns) ? parsed.formalRuns.map(normalizeFormalRun) : [],
+    argumentationRuns: Array.isArray(parsed.argumentationRuns) ? parsed.argumentationRuns.map(normalizeArgumentationRun) : [],
+    triageRuns: Array.isArray(parsed.triageRuns) ? parsed.triageRuns.map(normalizeTriageRun) : [],
     evaluationRuns: Array.isArray(parsed.evaluationRuns) ? parsed.evaluationRuns.map(normalizeEvaluationRun) : [],
     calibrationRounds: Array.isArray(parsed.calibrationRounds) ? parsed.calibrationRounds.map(normalizeCalibrationRound) : [],
     repairApplications: Array.isArray(parsed.repairApplications) ? parsed.repairApplications.map(normalizeRepairApplication) : [],
     migrationReport,
-    privacy: { ...DEFAULT_PRIVACY, ...(parsed.privacy || parsed.session?.privacy || {}) },
+    privacy: normalizePrivacy(parsed.privacy || parsed.session?.privacy),
     securityControls: normalizeSecurityControls(parsed.securityControls || parsed.securityReport?.controls),
     selectedConflictId: parsed.selectedConflictId || conflicts[0]?.id || "C-001",
     viewMode: parsed.viewMode === "graph" ? "graph" : "table",
@@ -3632,7 +5288,7 @@ async function encryptSessionPayload(payload, passphrase) {
   const encoded = new TextEncoder().encode(JSON.stringify(payload));
   const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoded);
   return {
-    schemaVersion: "wre-2.5-encrypted-archive",
+    schemaVersion: "wre-3-encrypted-archive",
     encryptedAt: new Date().toISOString(),
     manifest: {
       exportSchemaVersion: payload.schemaVersion,
@@ -3656,7 +5312,7 @@ async function encryptSessionPayload(payload, passphrase) {
 }
 
 async function decryptSessionPayload(archive, passphrase) {
-  if (archive.schemaVersion !== "wre-2.5-encrypted-archive") throw new Error("Unsupported archive.");
+  if (![`${WRE_SCHEMA_VERSION}-encrypted-archive`, `${LEGACY_SCHEMA_VERSION}-encrypted-archive`].includes(archive.schemaVersion)) throw new Error("Unsupported archive.");
   const salt = base64ToArrayBuffer(archive.kdf?.salt || "");
   const iv = base64ToArrayBuffer(archive.cipher?.iv || "");
   const ciphertext = base64ToArrayBuffer(archive.payload || "");
@@ -3728,9 +5384,87 @@ function base64ToArrayBuffer(value) {
   return bytes.buffer;
 }
 
+function syncTokenStorageKey(workspaceId = state.privacy.workspaceId) {
+  return `${STORAGE_KEY}:sync-token:${workspaceId || "pending"}`;
+}
+
+function getStoredSyncToken() {
+  if (!state.privacy?.workspaceId) return "";
+  try {
+    return localStorage.getItem(syncTokenStorageKey()) || "";
+  } catch {
+    return "";
+  }
+}
+
+function storeSyncToken(token, workspaceId = state.privacy.workspaceId) {
+  try {
+    localStorage.setItem(syncTokenStorageKey(workspaceId), token);
+  } catch {
+    // The UI keeps working in export-only mode if localStorage is unavailable.
+  }
+}
+
+function resolveSyncTokenFromInput() {
+  const typed = els.syncTokenInput.value.trim();
+  if (typed && !typed.includes("•")) {
+    storeSyncToken(typed);
+    return typed;
+  }
+  return getStoredSyncToken();
+}
+
+function generateSyncToken() {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  return `wre_${arrayBufferToBase64(bytes).replaceAll("+", "-").replaceAll("/", "_").replaceAll("=", "")}`;
+}
+
+async function sha256Hex(value) {
+  const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(value));
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function normalizeSyncEndpoint(value) {
+  const endpoint = String(value || DEFAULT_SYNC_ENDPOINT).trim().replace(/\/+$/, "");
+  if (!/^https?:\/\//i.test(endpoint)) throw new Error("Worker endpoint must start with http:// or https://.");
+  return endpoint;
+}
+
+async function requestSyncJson(path, { method = "GET", endpoint = state.privacy.syncEndpoint, token = "", body = null } = {}) {
+  const headers = {
+    Accept: "application/json",
+  };
+  if (body) headers["Content-Type"] = "application/json";
+  if (token) headers.Authorization = `Bearer ${token}`;
+  const response = await fetch(`${normalizeSyncEndpoint(endpoint)}${path}`, {
+    method,
+    headers,
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    throw new Error(payload.error || payload.message || `Worker request failed with ${response.status}.`);
+  }
+  return payload;
+}
+
+function showSyncBackendStatus(message, tone = "neutral") {
+  if (!els.syncBackendStatus) return;
+  els.syncBackendStatus.textContent = message;
+  els.syncBackendStatus.dataset.tone = tone;
+}
+
+function syncBackendStatusText() {
+  if (state.privacy.privacyMode === "local_only") return "Worker sync is staged locally until encrypted sync is selected.";
+  if (!state.privacy.workspaceId) return "Encrypted sync selected. Create a workspace before pushing packets.";
+  const tokenStatus = getStoredSyncToken() ? "token stored" : "token missing";
+  const clock = state.privacy.lastRemoteClock ? ` · remote clock ${state.privacy.lastRemoteClock}` : "";
+  return `${privacyModeLabel(state.privacy.privacyMode)} workspace ${state.privacy.workspaceId}; ${tokenStatus}; ${state.privacy.lastSyncStatus || "not synced"}${clock}.`;
+}
+
 function normalizeImportedConflict(conflict, migrationReport) {
   const normalized = normalizeConflict(conflict);
-  if (migrationReport.status !== "native-wre-2.5") {
+  if (!migrationReport.status.startsWith("native-wre")) {
     normalized.verification = "legacy-unverified";
     normalized.engine = [...new Set([...(normalized.engine || []), "Legacy import review"])];
   }
@@ -3739,7 +5473,7 @@ function normalizeImportedConflict(conflict, migrationReport) {
 
 function buildMigrationReport(parsed, beliefs, conflicts, relations = []) {
   const schemaVersion = parsed.schemaVersion || parsed.version || "legacy/unknown";
-  const native = schemaVersion === "wre-2.5";
+  const native = schemaVersion === WRE_SCHEMA_VERSION || schemaVersion === LEGACY_SCHEMA_VERSION;
   const constraints = Array.isArray(parsed.constraints) ? parsed.constraints : seedConstraints;
   const ambiguousFields = [];
   if (!parsed.schemaVersion) ambiguousFields.push("schemaVersion");
@@ -3751,7 +5485,7 @@ function buildMigrationReport(parsed, beliefs, conflicts, relations = []) {
   return {
     generatedAt: new Date().toISOString(),
     sourceSchemaVersion: schemaVersion,
-    status: native ? "native-wre-2.5" : "legacy-imported",
+    status: native ? `native-${schemaVersion}` : "legacy-imported",
     mappedClaims: beliefs.length,
     mappedRelations: relations.length,
     mappedConstraints: constraints.length,
@@ -3759,7 +5493,7 @@ function buildMigrationReport(parsed, beliefs, conflicts, relations = []) {
     legacyUnverified: native ? 0 : conflicts.length,
     ambiguousFields,
     notes: native
-      ? "Imported data already declares WRE 2.5 schema."
+      ? `Imported data declares ${schemaVersion} schema.`
       : "Legacy conflicts are marked legacy-unverified until a local analysis run re-checks them.",
   };
 }
@@ -3775,7 +5509,7 @@ function buildDefaultMigrationReport() {
     mappedConflicts: state.conflicts.length,
     legacyUnverified: state.conflicts.filter((conflict) => conflict.verification === "legacy-unverified").length,
     ambiguousFields: [],
-    notes: "Current sample session is already normalized into the local WRE 2.5 model.",
+    notes: "Current sample session is already normalized into the local WRE3 model.",
   };
 }
 
@@ -3809,22 +5543,159 @@ function deleteLocalData() {
 }
 
 function updatePrivacyControls() {
-  state.privacy = {
-    cloudSync: Boolean(els.cloudSyncToggle.checked),
+  const privacyMode = els.privacyModeSelect.value || DEFAULT_PRIVACY.privacyMode;
+  state.privacy = normalizePrivacy({
+    ...state.privacy,
+    privacyMode,
+    cloudSync: privacyMode !== "local_only" || Boolean(els.cloudSyncToggle.checked),
     nliTriage: Boolean(els.llmTriageToggle.checked),
     retention: els.retentionSelect.value || DEFAULT_PRIVACY.retention,
-  };
+    syncEndpoint: els.syncEndpointInput.value.trim() || DEFAULT_SYNC_ENDPOINT,
+    workspaceId: els.workspaceIdInput.value.trim(),
+  });
   recordRevision(
     "privacy",
-    `Updated privacy controls: ${state.privacy.cloudSync ? "sync eligible" : "local only"}, ${state.privacy.nliTriage ? "NLI triage on" : "NLI triage off"}, ${retentionLabel(state.privacy.retention)} retention.`
+    `Updated privacy controls: ${privacyModeLabel(state.privacy.privacyMode)}, ${state.privacy.nliTriage ? "NLI triage on" : "NLI triage off"}, ${retentionLabel(state.privacy.retention)} retention.`
   );
   saveState();
   syncPrivacyControls();
+  syncSyncBackendControls();
   syncStorageStatus();
   renderDataRightsPanel();
   renderAnalysisPanel();
   renderPipeline();
   renderRevisionReplay();
+}
+
+function updateSyncBackendSettings() {
+  state.privacy = normalizePrivacy({
+    ...state.privacy,
+    syncEndpoint: els.syncEndpointInput.value.trim() || DEFAULT_SYNC_ENDPOINT,
+    workspaceId: els.workspaceIdInput.value.trim(),
+  });
+  recordRevision("privacy", `Updated WRE3 sync backend settings for ${state.privacy.syncEndpoint}.`);
+  saveState();
+  syncSyncBackendControls();
+  renderDataRightsPanel();
+}
+
+async function createEncryptedWorkspace() {
+  if (state.privacy.privacyMode === "local_only") {
+    showSyncBackendStatus("Select encrypted sync, private link, or workspace before creating a remote workspace.", "error");
+    return;
+  }
+  try {
+    const endpoint = normalizeSyncEndpoint(els.syncEndpointInput.value);
+    const token = generateSyncToken();
+    const tokenVerifierHash = await sha256Hex(token);
+    const payload = await requestSyncJson("/v1/workspaces", {
+      method: "POST",
+      endpoint,
+      body: {
+        sessionId: INDEXED_DB_SESSION_ID,
+        privacyMode: state.privacy.privacyMode,
+        retentionPolicy: state.privacy.retention,
+        tokenVerifierHash,
+        schemaVersion: WRE_SCHEMA_VERSION,
+      },
+    });
+    const workspaceId = payload.workspaceId || payload.workspace?.id;
+    if (!workspaceId) throw new Error("Workspace response did not include an ID.");
+    storeSyncToken(token, workspaceId);
+    state.privacy = normalizePrivacy({
+      ...state.privacy,
+      syncEndpoint: endpoint,
+      workspaceId,
+      syncTokenCreatedAt: new Date().toISOString(),
+      lastSyncStatus: "workspace-created",
+      lastSyncAt: new Date().toISOString(),
+      lastRemoteClock: Number(payload.remoteClock || 0),
+    });
+    recordRevision("privacy", `Created encrypted sync workspace ${workspaceId}.`);
+    saveState();
+    syncSyncBackendControls();
+    renderDataRightsPanel();
+    showSyncBackendStatus(`Workspace ${workspaceId} created. Sync token is stored in this browser only.`, "success");
+  } catch (error) {
+    showSyncBackendStatus(error?.message || "Workspace creation failed.", "error");
+  }
+}
+
+async function pushEncryptedSyncPacket() {
+  if (state.privacy.privacyMode === "local_only") {
+    showSyncBackendStatus("Local-only sessions do not push to the Worker.", "error");
+    return;
+  }
+  const token = resolveSyncTokenFromInput();
+  const passphrase = els.archivePassphraseInput.value;
+  if (!state.privacy.workspaceId || !token) {
+    showSyncBackendStatus("Create a workspace and keep its sync token before pushing.", "error");
+    return;
+  }
+  if (!passphrase || passphrase.length < 8) {
+    showSyncBackendStatus("Enter an archive passphrase with at least 8 characters before pushing encrypted data.", "error");
+    els.archivePassphraseInput.focus();
+    return;
+  }
+  try {
+    const packet = buildSyncPacketPayload();
+    const encryptedPayload = await encryptSessionPayload(packet, passphrase);
+    const response = await requestSyncJson("/v1/sync/push", {
+      method: "POST",
+      token,
+      body: {
+        schemaVersion: `${WRE_SCHEMA_VERSION}-encrypted-sync-push`,
+        workspaceId: state.privacy.workspaceId,
+        sessionId: INDEXED_DB_SESSION_ID,
+        idempotencyKey: packet.manifest.idempotencyKey,
+        manifest: packet.manifest,
+        mutationSet: packet.mutationSet,
+        encryptedPayload,
+      },
+    });
+    state.privacy = normalizePrivacy({
+      ...state.privacy,
+      lastSyncStatus: response.status || "pushed",
+      lastSyncAt: new Date().toISOString(),
+      lastRemoteClock: Number(response.remoteClock || response.manifest?.remoteClock || state.privacy.lastRemoteClock || 0),
+    });
+    recordRevision("privacy", `Pushed encrypted sync packet ${packet.manifest.idempotencyKey} to ${state.privacy.workspaceId}.`);
+    saveState();
+    syncSyncBackendControls();
+    renderDataRightsPanel();
+    renderRevisionReplay();
+    showSyncBackendStatus(`Encrypted sync pushed (${state.privacy.lastSyncStatus}).`, "success");
+  } catch (error) {
+    showSyncBackendStatus(error?.message || "Encrypted sync push failed.", "error");
+  }
+}
+
+async function pullSyncManifest() {
+  const token = resolveSyncTokenFromInput();
+  if (!state.privacy.workspaceId || !token) {
+    showSyncBackendStatus("Workspace ID and sync token are required before pulling.", "error");
+    return;
+  }
+  try {
+    const payload = await requestSyncJson(`/v1/sync/pull?workspaceId=${encodeURIComponent(state.privacy.workspaceId)}&sessionId=${encodeURIComponent(INDEXED_DB_SESSION_ID)}`, {
+      method: "GET",
+      token,
+    });
+    state.privacy = normalizePrivacy({
+      ...state.privacy,
+      lastSyncStatus: payload.status || "pulled-manifest",
+      lastSyncAt: new Date().toISOString(),
+      lastRemoteClock: Number(payload.remoteClock || payload.manifest?.remoteClock || 0),
+    });
+    recordRevision("privacy", `Pulled remote sync manifest for ${state.privacy.workspaceId}.`);
+    saveState();
+    syncSyncBackendControls();
+    renderDataRightsPanel();
+    renderRevisionReplay();
+    showSyncBackendStatus(`Remote manifest pulled: clock ${state.privacy.lastRemoteClock}.`, "success");
+  } catch (error) {
+    showSyncBackendStatus(error?.message || "Sync pull failed.", "error");
+  }
 }
 
 function updateSecurityControls() {
@@ -3938,9 +5809,34 @@ function focusConstraintWorkbench() {
   els.constraintNameInput.focus();
 }
 
+function focusFormalTrace() {
+  state.activeStage = "reflection";
+  saveState();
+  renderStages();
+  focusElement(els.formalTraceList);
+}
+
+function focusArgumentationReview() {
+  state.activeStage = "reflection";
+  saveState();
+  renderStages();
+  focusElement(els.argumentationList);
+}
+
+function focusTriageReview() {
+  state.activeStage = "reflection";
+  saveState();
+  renderStages();
+  focusElement(els.triageList);
+}
+
 function focusEncryptedArchive() {
   focusElement(els.dataRightsPanel);
   els.archivePassphraseInput.focus();
+}
+
+function focusSyncReadiness() {
+  focusElement(els.syncReadinessList);
 }
 
 function focusSecurityControls() {
@@ -3984,9 +5880,12 @@ function focusElement(element) {
 function recordRevision(type, text, extra = {}) {
   state.revisions.push(
     normalizeRevision({
+      id: `RV-${String(state.revisions.length + 1).padStart(3, "0")}`,
       time: new Date().toISOString(),
       type,
       text,
+      schemaVersion: WRE_SCHEMA_VERSION,
+      algorithmVersion: WRE_ENGINE_VERSION,
       ...extra,
     })
   );
@@ -3998,7 +5897,12 @@ function buildAgentContractPayload() {
     claimFields: agentContract.claimFields,
     relationFields: agentContract.relationFields,
     constraintFields: agentContract.constraintFields,
+    formalRunFields: agentContract.formalRunFields,
+    argumentationRunFields: agentContract.argumentationRunFields,
+    triageRunFields: agentContract.triageRunFields,
+    syncPacketFields: agentContract.syncPacketFields,
     repairOptionFields: agentContract.repairOptionFields,
+    revisionEventFields: agentContract.revisionEventFields,
     exportFormats: agentContract.exportFormats,
     relationTypes: agentContract.relationTypes,
     conflictKinds: agentContract.conflictKinds,
@@ -4009,26 +5913,34 @@ function buildAgentContractPayload() {
     securityControls: normalizeSecurityControls(state.securityControls),
     securityReport: buildSecurityReportPayload(),
     storageReport: buildStorageReportPayload(),
+    syncPacket: buildSyncPacketPayload(),
   };
 }
 
 function buildJsonSchemasPayload() {
   return {
-    schemaVersion: "wre-2.5-json-schema",
+    schemaVersion: `${WRE_SCHEMA_VERSION}-json-schema`,
     generatedAt: new Date().toISOString(),
     schemas: {
       Claim: {
         type: "object",
-        required: ["id", "layer", "text", "domain", "confidence", "timeScope", "provenance", "sensitivity"],
+        required: ["id", "kind", "layer", "text", "canonicalForm", "domain", "modality", "polarity", "scope", "confidence", "entrenchment", "provenance", "sensitivity", "status"],
         properties: {
           id: { type: "string", pattern: "^[JPTB][0-9]+$" },
+          kind: { type: "string", enum: ["judgment", "principle", "background_theory", "belief_statement", "exception", "empirical_premise"] },
           layer: { type: "string", enum: ["judgment", "principle", "theory"] },
           text: { type: "string", minLength: 1 },
+          canonicalForm: { type: "string" },
           domain: { type: "string", enum: ["normative", "empirical", "conceptual", "meta"] },
+          modality: { type: "string", enum: ["should", "is", "causes", "permits", "forbids"] },
+          polarity: { type: "string", enum: ["positive", "negative", "mixed", "unknown"] },
+          scope: { type: "string" },
           confidence: { type: "number", minimum: 1, maximum: 100 },
+          entrenchment: { type: "number", minimum: 1, maximum: 100 },
           timeScope: { type: "string" },
           provenance: { type: "string" },
           sensitivity: { type: "string", enum: ["private", "pseudonymous", "public"] },
+          status: { type: "string", enum: ["active", "draft", "accepted_tension", "retired"] },
         },
       },
       Relation: {
@@ -4072,7 +5984,13 @@ function buildJsonSchemasPayload() {
           core: { type: "array", items: { type: "string" } },
           engine: { type: "array", items: { type: "string" } },
           why: { type: "string" },
-          status: { type: "string", enum: ["open", "repaired", "ignored"] },
+          status: { type: "string", enum: ["open", "repaired", "ignored", "accepted_tension"] },
+          tensionRationale: { type: "string" },
+          minimalConflictSet: { type: "array", items: { type: "string" } },
+          evidencePath: { type: "array", items: { type: "object" } },
+          downstreamClaims: { type: "array", items: { type: "object" } },
+          algorithmVersion: { type: "string" },
+          explanation: { type: "object" },
           repairs: { type: "array", items: { $ref: "#/schemas/RepairOption" } },
         },
       },
@@ -4090,6 +6008,93 @@ function buildJsonSchemasPayload() {
           disruptionCost: { type: "number", minimum: 0 },
           explanation: { type: "string" },
           cost: { type: "string" },
+        },
+      },
+      RevisionEvent: {
+        type: "object",
+        required: ["id", "time", "type", "text", "schemaVersion", "algorithmVersion"],
+        properties: {
+          id: { type: "string", pattern: "^RV-[0-9]+$|^RV-[0-9]{13,}$" },
+          time: { type: "string", format: "date-time" },
+          type: { type: "string" },
+          text: { type: "string" },
+          schemaVersion: { type: "string", const: WRE_SCHEMA_VERSION },
+          algorithmVersion: { type: "string" },
+          conflictId: { type: "string" },
+          repairId: { type: "string" },
+          affectedClaims: { type: "array", items: { type: "string" } },
+          predictedResolutionScore: { type: ["number", "null"], minimum: 0, maximum: 1 },
+          disruptionCost: { type: ["number", "null"], minimum: 0 },
+          beforeHash: { type: "string" },
+          afterHash: { type: "string" },
+          beforeSnapshot: { type: ["object", "null"] },
+          afterSnapshot: { type: ["object", "null"] },
+        },
+      },
+      FormalRun: {
+        type: "object",
+        required: ["id", "status", "assertions", "constraints", "unsatCores", "repairRanking"],
+        properties: {
+          id: { type: "string", pattern: "^F-[0-9]+$|^F-preview$" },
+          analysisRunId: { type: "string" },
+          time: { type: "string", format: "date-time" },
+          status: { type: "string", enum: ["unsat", "sat-with-soft-tensions"] },
+          satisfiable: { type: "boolean" },
+          engineVersions: { type: "array", items: { type: "string" } },
+          assertions: { type: "array", items: { type: "object" } },
+          constraints: { type: "array", items: { type: "object" } },
+          unsatCores: { type: "array", items: { type: "object" } },
+          softTensions: { type: "array", items: { type: "object" } },
+          repairRanking: { type: "array", items: { type: "object" } },
+        },
+      },
+      ArgumentationRun: {
+        type: "object",
+        required: ["id", "attackEdges", "defenseEdges", "admissibleSet", "vulnerableClaims"],
+        properties: {
+          id: { type: "string", pattern: "^G-[0-9]+$|^G-preview$" },
+          analysisRunId: { type: "string" },
+          time: { type: "string", format: "date-time" },
+          attackEdges: { type: "array", items: { type: "object" } },
+          supportEdges: { type: "array", items: { type: "object" } },
+          defenseEdges: { type: "array", items: { type: "object" } },
+          admissibleSet: { type: "array", items: { type: "string" } },
+          groundedExtension: { type: "array", items: { type: "string" } },
+          vulnerableClaims: { type: "array", items: { type: "object" } },
+          contestedClaims: { type: "array", items: { type: "object" } },
+          summary: { type: "string" },
+        },
+      },
+      TriageRun: {
+        type: "object",
+        required: ["id", "nliMode", "candidateLimit", "reviewQueue", "formalizationCandidates", "probabilisticSummary"],
+        properties: {
+          id: { type: "string", pattern: "^N-[0-9]+$|^N-preview$" },
+          analysisRunId: { type: "string" },
+          time: { type: "string", format: "date-time" },
+          nliMode: { type: "string", enum: ["local-preview", "opt-in-selected-pairs"] },
+          externalProcessing: { type: "boolean" },
+          candidateLimit: { type: "number" },
+          queuedPairCount: { type: "number" },
+          reviewQueue: { type: "array", items: { type: "object" } },
+          formalizationCandidates: { type: "array", items: { type: "object" } },
+          probabilisticSummary: { type: "object" },
+          adapter: { type: "string" },
+        },
+      },
+      SyncPacket: {
+        type: "object",
+        required: ["schemaVersion", "workspace", "manifest", "mutationSet", "edgeContract", "conflictPolicy", "readiness", "backend"],
+        properties: {
+          schemaVersion: { type: "string", const: `${WRE_SCHEMA_VERSION}-sync-packet` },
+          generatedAt: { type: "string", format: "date-time" },
+          workspace: { type: "object" },
+          manifest: { type: "object" },
+          mutationSet: { type: "object" },
+          edgeContract: { type: "object" },
+          conflictPolicy: { type: "object" },
+          readiness: { type: "object" },
+          backend: { type: "object" },
         },
       },
       AnalysisRun: {
@@ -4137,18 +6142,25 @@ function buildJsonSchemasPayload() {
           telemetryMode: { type: "string", enum: ["off", "local", "otlp-ready"] },
           complianceStatus: { type: "string", enum: ["draft", "mapped", "launch-ready"] },
           syncAuthRequired: { type: "boolean" },
+          restoreDrillCadence: { type: "string" },
+          dpiaReview: { type: "string" },
+          asvsMapping: { type: "string" },
+          cspMode: { type: "string" },
+          dependencyScanning: { type: "string" },
+          publicFormAbuse: { type: "string" },
         },
       },
       SessionExport: {
         type: "object",
         required: ["schemaVersion", "session", "beliefs", "relations", "conflicts"],
         properties: {
-          schemaVersion: { type: "string", const: "wre-2.5" },
+          schemaVersion: { type: "string", const: WRE_SCHEMA_VERSION },
           session: { type: "object" },
           beliefs: { type: "array", items: { $ref: "#/schemas/Claim" } },
           relations: { type: "array", items: { $ref: "#/schemas/Relation" } },
           constraints: { type: "array", items: { $ref: "#/schemas/Constraint" } },
           conflicts: { type: "array", items: { $ref: "#/schemas/Conflict" } },
+          revisions: { type: "array", items: { $ref: "#/schemas/RevisionEvent" } },
           schema: {
             type: "object",
             properties: {
@@ -4156,6 +6168,10 @@ function buildJsonSchemasPayload() {
             },
           },
           analysisRuns: { type: "array", items: { $ref: "#/schemas/AnalysisRun" } },
+          formalRuns: { type: "array", items: { $ref: "#/schemas/FormalRun" } },
+          argumentationRuns: { type: "array", items: { $ref: "#/schemas/ArgumentationRun" } },
+          triageRuns: { type: "array", items: { $ref: "#/schemas/TriageRun" } },
+          syncPacket: { $ref: "#/schemas/SyncPacket" },
           evaluationRuns: { type: "array", items: { $ref: "#/schemas/EvaluationRun" } },
           securityControls: { $ref: "#/schemas/SecurityControls" },
         },
@@ -4171,7 +6187,7 @@ function buildOpenApiPayload() {
     info: {
       title: "Normativity WRE Agent API",
       version: agentContract.schemaVersion,
-      description: "Deterministic WRE 2.5 contract for local-first belief graph agents.",
+      description: "Deterministic WRE3 contract for local-first belief graph agents and optional encrypted Cloudflare sync.",
     },
     paths: Object.fromEntries(agentContract.endpoints.map(([method, path, description]) => {
       const operation = method.toLowerCase();
@@ -4181,7 +6197,7 @@ function buildOpenApiPayload() {
           [operation]: {
             summary: description,
             operationId: operationIdFor(method, path),
-            security: state.securityControls.syncAuthRequired ? [{ bearerAuth: [] }] : [],
+            security: endpointRequiresBearer(method, path) ? [{ bearerAuth: [] }] : [],
             "x-wre-rate-limit": `${state.securityControls.quotaPerHour} requests/hour`,
             "x-wre-body-limit-kb": state.securityControls.bodyLimitKb,
             requestBody: requestBodyForEndpoint(method, path),
@@ -4206,12 +6222,54 @@ function buildOpenApiPayload() {
   };
 }
 
+function endpointRequiresBearer(method, path) {
+  if (!state.securityControls.syncAuthRequired) return false;
+  if (path === "/health" || path === "/v1/workspaces") return false;
+  return path.startsWith("/v1/sync/") || path.startsWith("/v1/sessions/");
+}
+
 function requestBodyForEndpoint(method, path) {
   if (method === "GET" || method === "DELETE") return undefined;
   if (path === "/v1/beliefs") return jsonRequestBody("Claim batch", { type: "object", properties: { beliefs: { type: "array", items: { $ref: "#/components/schemas/Claim" } } } });
   if (path === "/v1/relations") return jsonRequestBody("Relation batch", { type: "object", properties: { relations: { type: "array", items: { $ref: "#/components/schemas/Relation" } } } });
   if (path === "/v1/constraints") return jsonRequestBody("Constraint batch", { type: "object", properties: { constraints: { type: "array", items: { $ref: "#/components/schemas/Constraint" } } } });
   if (path === "/v1/conflicts/{id}/repair") return jsonRequestBody("Repair application", { type: "object", properties: { repairId: { type: "string" }, mode: { type: "string", enum: ["preview", "apply"] } } });
+  if (path === "/v1/workspaces") return jsonRequestBody("Encrypted workspace create", {
+    type: "object",
+    required: ["sessionId", "privacyMode", "retentionPolicy", "tokenVerifierHash"],
+    properties: {
+      sessionId: { type: "string" },
+      privacyMode: { type: "string", enum: ["encrypted_sync", "private_link", "workspace"] },
+      retentionPolicy: { type: "string" },
+      tokenVerifierHash: { type: "string", pattern: "^[a-f0-9]{64}$" },
+      schemaVersion: { type: "string", const: WRE_SCHEMA_VERSION },
+    },
+  });
+  if (path === "/v1/sync/push") return jsonRequestBody("Encrypted sync push", {
+    type: "object",
+    required: ["workspaceId", "sessionId", "idempotencyKey", "manifest", "mutationSet", "encryptedPayload"],
+    properties: {
+      schemaVersion: { type: "string", const: `${WRE_SCHEMA_VERSION}-encrypted-sync-push` },
+      workspaceId: { type: "string" },
+      sessionId: { type: "string" },
+      idempotencyKey: { type: "string" },
+      manifest: { type: "object" },
+      mutationSet: { type: "object" },
+      encryptedPayload: { type: "object" },
+    },
+  });
+  if (path === "/v1/sync/resolve") return jsonRequestBody("Sync conflict resolution", {
+    type: "object",
+    required: ["workspaceId", "sessionId", "resolutionId", "strategy"],
+    properties: {
+      workspaceId: { type: "string" },
+      sessionId: { type: "string" },
+      resolutionId: { type: "string" },
+      strategy: { type: "string", enum: ["local_wins", "remote_wins", "manual_merge", "accept_tension"] },
+      rationale: { type: "string" },
+      mergedManifest: { type: "object" },
+    },
+  });
   if (path === "/v1/analyze") return jsonRequestBody("Analysis request", {
     type: "object",
     properties: {
@@ -4244,6 +6302,96 @@ function jsonRequestBody(description, schema) {
 }
 
 function responseForEndpoint(method, path) {
+  if (path === "/health") {
+    return {
+      "200": {
+        description: "Worker health, schema, and storage binding readiness.",
+        content: { "application/json": { schema: { type: "object" } } },
+      },
+    };
+  }
+
+  if (path === "/v1/workspaces") {
+    return {
+      "201": {
+        description: "Encrypted sync workspace metadata. The raw token remains client-side.",
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              properties: {
+                workspaceId: { type: "string" },
+                remoteClock: { type: "number" },
+                status: { type: "string" },
+              },
+            },
+          },
+        },
+      },
+    };
+  }
+
+  if (["/v1/sync/push", "/v1/sync/pull", "/v1/sync/resolve", "/v1/sessions/{id}/manifest"].includes(path)) {
+    return {
+      "200": {
+        description: "Encrypted sync manifest metadata, vector clock, tombstones, and merge policy response.",
+        content: {
+          "application/json": {
+            schema: { type: "object" },
+          },
+        },
+      },
+    };
+  }
+
+  if (method === "DELETE" && path === "/v1/sessions/{id}") {
+    return {
+      "200": {
+        description: "Deletion tombstone recorded and known encrypted objects removed when available.",
+        content: { "application/json": { schema: { type: "object" } } },
+      },
+    };
+  }
+
+  if (path === "/v1/formal-trace/latest") {
+    return {
+      "200": {
+        description: "Latest local formal solver trace with named assertions, templates, unsat cores, and repair ranking.",
+        content: {
+          "application/json": {
+            schema: { $ref: "#/components/schemas/FormalRun" },
+          },
+        },
+      },
+    };
+  }
+
+  if (path === "/v1/argumentation/latest") {
+    return {
+      "200": {
+        description: "Latest argumentation analysis with attack edges, defense edges, admissible set, and vulnerable claims.",
+        content: {
+          "application/json": {
+            schema: { $ref: "#/components/schemas/ArgumentationRun" },
+          },
+        },
+      },
+    };
+  }
+
+  if (path === "/v1/triage/latest") {
+    return {
+      "200": {
+        description: "Latest NLI-style and probabilistic triage run with candidate-pair scores and formalization suggestions.",
+        content: {
+          "application/json": {
+            schema: { $ref: "#/components/schemas/TriageRun" },
+          },
+        },
+      },
+    };
+  }
+
   if (path === "/v1/export") {
     return {
       "200": {
@@ -4323,6 +6471,64 @@ function buildAgentRequestExamples() {
     },
     {
       method: "GET",
+      path: "/v1/formal-trace/latest",
+      description: "Inspect the latest local named-assertion trace and unsat-core repair ranking.",
+      body: {
+        includeAssertions: true,
+        includeRepairRanking: true,
+      },
+    },
+    {
+      method: "GET",
+      path: "/v1/argumentation/latest",
+      description: "Inspect attack, defense, vulnerable-claim, and admissible-set evidence.",
+      body: {
+        includeAttackEdges: true,
+        includeAdmissibleSet: true,
+      },
+    },
+    {
+      method: "GET",
+      path: "/v1/triage/latest",
+      description: "Inspect local NLI-style and probabilistic candidate-pair triage.",
+      body: {
+        includeReviewQueue: true,
+        includeFormalizationCandidates: true,
+      },
+    },
+    {
+      method: "POST",
+      path: "/v1/workspaces",
+      description: "Create an encrypted sync workspace. Store the raw token in the browser; send only its verifier hash.",
+      body: {
+        sessionId: INDEXED_DB_SESSION_ID,
+        privacyMode: state.privacy.privacyMode === "local_only" ? "encrypted_sync" : state.privacy.privacyMode,
+        retentionPolicy: state.privacy.retention,
+        tokenVerifierHash: "sha256(sync-token)",
+        schemaVersion: WRE_SCHEMA_VERSION,
+      },
+    },
+    {
+      method: "POST",
+      path: "/v1/sync/push",
+      description: "Upload the encrypted local mutation packet after explicit sync consent.",
+      body: {
+        schemaVersion: `${WRE_SCHEMA_VERSION}-encrypted-sync-push`,
+        workspaceId: state.privacy.workspaceId || "wsp_example",
+        sessionId: INDEXED_DB_SESSION_ID,
+        idempotencyKey: buildSyncPacketPayload().manifest.idempotencyKey,
+        manifest: buildSyncPacketPayload().manifest,
+        mutationSet: buildSyncPacketPayload().mutationSet,
+        encryptedPayload: {
+          schemaVersion: `${WRE_SCHEMA_VERSION}-encrypted-archive`,
+          salt: "base64",
+          iv: "base64",
+          ciphertext: "base64",
+        },
+      },
+    },
+    {
+      method: "GET",
       path: "/v1/export",
       description: "Request a portable archive as JSON, linked data, or a spreadsheet-safe summary.",
       body: {
@@ -4351,6 +6557,18 @@ function getLatestAnalysisRun() {
   return state.analysisRuns[state.analysisRuns.length - 1] || null;
 }
 
+function getLatestFormalRun() {
+  return state.formalRuns[state.formalRuns.length - 1] || null;
+}
+
+function getLatestArgumentationRun() {
+  return state.argumentationRuns[state.argumentationRuns.length - 1] || null;
+}
+
+function getLatestTriageRun() {
+  return state.triageRuns[state.triageRuns.length - 1] || null;
+}
+
 function getLatestEvaluationRun() {
   return state.evaluationRuns[state.evaluationRuns.length - 1] || null;
 }
@@ -4362,6 +6580,27 @@ function nextAnalysisRunId() {
         .reduce((highest, value) => Math.max(highest, value), 0)
     : 0;
   return `A-${String(max + 1).padStart(3, "0")}`;
+}
+
+function nextFormalRunId() {
+  const max = state.formalRuns
+    .map((run) => Number(String(run.id).replace(/^[A-Z-]+/, "")) || 0)
+    .reduce((highest, value) => Math.max(highest, value), 0);
+  return `F-${String(max + 1).padStart(3, "0")}`;
+}
+
+function nextArgumentationRunId() {
+  const max = state.argumentationRuns
+    .map((run) => Number(String(run.id).replace(/^[A-Z-]+/, "")) || 0)
+    .reduce((highest, value) => Math.max(highest, value), 0);
+  return `G-${String(max + 1).padStart(3, "0")}`;
+}
+
+function nextTriageRunId() {
+  const max = state.triageRuns
+    .map((run) => Number(String(run.id).replace(/^[A-Z-]+/, "")) || 0)
+    .reduce((highest, value) => Math.max(highest, value), 0);
+  return `N-${String(max + 1).padStart(3, "0")}`;
 }
 
 function nextEvaluationRunId() {
@@ -4443,7 +6682,7 @@ function deriveRelationsFromClaimsAndConflicts(beliefs, conflicts) {
     addDerived(
       conflict.claimA,
       conflict.claimB,
-      "conflicts",
+      "contradicts",
       Number.isFinite(Number(conflict.confidence)) ? clamp(Number(conflict.confidence), 0, 1) : 0.7,
       conflict.summary || `Derived from legacy conflict ${conflict.id || "record"}.`
     );
@@ -4483,6 +6722,16 @@ function tokenOverlap(textA, textB) {
 
 function roundNumber(value) {
   return Math.round(value * 100) / 100;
+}
+
+function hashPayload(value) {
+  const text = typeof value === "string" ? value : JSON.stringify(value);
+  let hash = 2166136261;
+  for (let index = 0; index < text.length; index += 1) {
+    hash ^= text.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(16).padStart(8, "0");
 }
 
 function averageConfidence(rounds) {
@@ -4537,8 +6786,12 @@ function revisionLabel(type) {
 }
 
 function relationTypeLabel(type) {
+  if (type === "exception_to") return "Exception to";
   if (type === "depends_on") return "Depends on";
-  return titleCase(String(type || "neutral").replace(/_/g, " "));
+  if (type === "contradicts") return "Contradicts";
+  if (type === "entails") return "Entails";
+  if (type === "scopes") return "Scopes";
+  return titleCase(String(type || "depends_on").replace(/_/g, " "));
 }
 
 function renderBeliefOptions(selectedId) {

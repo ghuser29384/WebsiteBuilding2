@@ -1,0 +1,30 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "normativity-wre-sync",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-05-27",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "vars": {
+    "ALLOWED_ORIGINS": "https://normativity.org,https://www.normativity.org,http://127.0.0.1:4173,http://localhost:4173",
+    "BODY_LIMIT_BYTES": "262144",
+    "RATE_LIMIT_PER_HOUR": "60"
+  },
+  "d1_databases": [
+    {
+      "binding": "WRE_SYNC_DB",
+      "database_name": "normativity-wre-sync",
+      "database_id": "replace-with-cloudflare-d1-database-id",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "WRE_SYNC_ARCHIVES",
+      "bucket_name": "normativity-wre-sync-archives"
+    }
+  ]
+}
