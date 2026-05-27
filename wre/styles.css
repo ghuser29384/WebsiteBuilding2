@@ -1944,6 +1944,13 @@ svg {
   padding: 14px;
 }
 
+.agent-contract-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
 .revision-head h2,
 .agent-contract-head h2 {
   margin: 0 0 5px;
@@ -2037,6 +2044,69 @@ svg {
   max-height: 278px;
   overflow: auto;
   padding: 12px;
+}
+
+.agent-example-list {
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid var(--line);
+  background: #fbfcfb;
+  padding: 12px;
+}
+
+.agent-example {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  padding: 10px;
+}
+
+.agent-example span {
+  display: inline-flex;
+  min-height: 20px;
+  align-items: center;
+  border: 1px solid #bbd9cb;
+  border-radius: 999px;
+  background: #edf8f2;
+  color: var(--green);
+  padding: 0 7px;
+  font-size: 10px;
+  font-weight: 820;
+}
+
+.agent-example strong {
+  display: block;
+  margin-top: 6px;
+  color: #17202b;
+  font-size: 12px;
+  font-weight: 820;
+}
+
+.agent-example p {
+  margin: 4px 0 0;
+  color: #5d6872;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.agent-example pre {
+  overflow: auto;
+  max-height: 190px;
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #f6f8f9;
+  padding: 9px;
+}
+
+.agent-example code {
+  color: #26313d;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  font-size: 10px;
+  line-height: 1.45;
+  white-space: pre;
 }
 
 .contract-group,
@@ -3090,8 +3160,10 @@ svg {
     flex-direction: column;
   }
 
-  .data-rights-actions {
+  .data-rights-actions,
+  .agent-contract-actions {
     flex-wrap: wrap;
+    justify-content: flex-start;
   }
 
   .compose-tools,

@@ -487,10 +487,12 @@ const els = {
   viewAllConflictsBtn: document.getElementById("viewAllConflictsBtn"),
   reviewLatestBtn: document.getElementById("reviewLatestBtn"),
   copyContractBtn: document.getElementById("copyContractBtn"),
+  exportOpenApiBtn: document.getElementById("exportOpenApiBtn"),
   revisionReplay: document.getElementById("revisionReplay"),
   revisionList: document.getElementById("revisionList"),
   agentContractPanel: document.getElementById("agentContractPanel"),
   agentContractList: document.getElementById("agentContractList"),
+  agentExampleList: document.getElementById("agentExampleList"),
   analysisPanel: document.getElementById("analysisPanel"),
   analysisSummary: document.getElementById("analysisSummary"),
   benchmarkList: document.getElementById("benchmarkList"),
@@ -824,6 +826,7 @@ function bindEvents() {
   });
 
   els.copyContractBtn.addEventListener("click", copyAgentContract);
+  els.exportOpenApiBtn.addEventListener("click", exportOpenApiContract);
   els.seedCalibrationBtn.addEventListener("click", seedCalibrationFromConflict);
   els.clearCalibrationBtn.addEventListener("click", clearCalibrationForm);
 }
@@ -1009,6 +1012,7 @@ function getCommandDefinitions() {
     { id: "replay", label: "Review replay", group: "Replay", keywords: "revision audit log", run: reviewReplay },
     { id: "calibration", label: "Open calibration loop", group: "Calibration", keywords: "case disagreement confidence", run: focusCalibrationLoop },
     { id: "export-session", label: "Export session JSON", group: "Export", keywords: "api archive", run: exportApi },
+    { id: "export-openapi", label: "Export OpenAPI contract", group: "Export", keywords: "agent schema endpoint json", run: exportOpenApiContract },
     { id: "export-accessibility", label: "Export accessibility report", group: "Export", keywords: "wcag keyboard screen reader", run: exportAccessibilityReport },
   ];
 }
@@ -1593,6 +1597,7 @@ function renderRevisionEvidence(revision) {
 }
 
 function renderAgentContract() {
+  const examples = buildAgentRequestExamples();
   replaceChildren(
     els.agentContractList,
     [
@@ -1601,6 +1606,7 @@ function renderAgentContract() {
       renderContractGroup("Repair option fields", agentContract.repairOptionFields),
       renderContractGroup("Relation types", agentContract.relationTypes),
       renderContractGroup("Conflict kinds", agentContract.conflictKinds),
+      renderContractGroup("JSON schemas", Object.keys(buildJsonSchemasPayload().schemas)),
       ...agentContract.endpoints.map(([method, path, copy]) => {
         const item = document.createElement("article");
         item.className = "contract-endpoint";
@@ -1612,6 +1618,23 @@ function renderAgentContract() {
         return item;
       }),
     ]
+  );
+
+  replaceChildren(
+    els.agentExampleList,
+    examples.map((example) => {
+      const item = document.createElement("article");
+      item.className = "agent-example";
+      item.innerHTML = `
+        <div>
+          <span>${escapeHtml(example.method)}</span>
+          <strong>${escapeHtml(example.path)}</strong>
+          <p>${escapeHtml(example.description)}</p>
+        </div>
+        <pre><code>${escapeHtml(JSON.stringify(example.body, null, 2))}</code></pre>
+      `;
+      return item;
+    })
   );
 }
 
@@ -2377,6 +2400,8 @@ function exportApi() {
       relationTypes: agentContract.relationTypes,
       conflictKinds: agentContract.conflictKinds,
     },
+    jsonSchemas: buildJsonSchemasPayload(),
+    openApi: buildOpenApiPayload(),
     beliefs: state.beliefs.map(normalizeBelief),
     relations: state.relations.map(normalizeRelation),
     conflicts: state.conflicts,
@@ -2418,6 +2443,10 @@ function exportBenchmark() {
 
 function exportAccessibilityReport() {
   downloadJson(buildAccessibilityReportPayload(), "normativity-wre-accessibility-report.json");
+}
+
+function exportOpenApiContract() {
+  downloadJson(buildOpenApiPayload(), "normativity-wre-openapi.json");
 }
 
 function buildPrivacyReceiptPayload() {
@@ -2771,8 +2800,230 @@ function buildAgentContractPayload() {
     repairOptionFields: agentContract.repairOptionFields,
     relationTypes: agentContract.relationTypes,
     conflictKinds: agentContract.conflictKinds,
+    jsonSchemas: buildJsonSchemasPayload(),
+    examples: buildAgentRequestExamples(),
     endpoints: agentContract.endpoints.map(([method, path, description]) => ({ method, path, description })),
   };
+}
+
+function buildJsonSchemasPayload() {
+  return {
+    schemaVersion: "wre-2.5-json-schema",
+    generatedAt: new Date().toISOString(),
+    schemas: {
+      Claim: {
+        type: "object",
+        required: ["id", "layer", "text", "domain", "confidence", "timeScope", "provenance", "sensitivity"],
+        properties: {
+          id: { type: "string", pattern: "^[JPTB][0-9]+$" },
+          layer: { type: "string", enum: ["judgment", "principle", "theory"] },
+          text: { type: "string", minLength: 1 },
+          domain: { type: "string", enum: ["normative", "empirical", "conceptual", "meta"] },
+          confidence: { type: "number", minimum: 1, maximum: 100 },
+          timeScope: { type: "string" },
+          provenance: { type: "string" },
+          sensitivity: { type: "string", enum: ["private", "pseudonymous", "public"] },
+        },
+      },
+      Relation: {
+        type: "object",
+        required: ["id", "source", "target", "type", "weight", "rationale"],
+        properties: {
+          id: { type: "string", pattern: "^L-[0-9]+$" },
+          source: { type: "string" },
+          target: { type: "string" },
+          type: { type: "string", enum: agentContract.relationTypes },
+          weight: { type: "number", minimum: 0, maximum: 1 },
+          rationale: { type: "string" },
+        },
+      },
+      Conflict: {
+        type: "object",
+        required: ["id", "title", "severity", "claimA", "claimB", "kind", "core", "why", "repairs"],
+        properties: {
+          id: { type: "string", pattern: "^C-[0-9]+$" },
+          title: { type: "string" },
+          severity: { type: "string", enum: severityOrder },
+          claimA: { type: "string" },
+          claimB: { type: "string" },
+          linked: { type: "array", items: { type: "string" } },
+          kind: { type: "string", enum: agentContract.conflictKinds },
+          confidence: { type: "number", minimum: 0, maximum: 1 },
+          core: { type: "array", items: { type: "string" } },
+          engine: { type: "array", items: { type: "string" } },
+          why: { type: "string" },
+          status: { type: "string", enum: ["open", "repaired", "ignored"] },
+          repairs: { type: "array", items: { $ref: "#/schemas/RepairOption" } },
+        },
+      },
+      RepairOption: {
+        type: "object",
+        required: ["id", "title", "text", "cost"],
+        properties: {
+          id: { type: "string", pattern: "^R-[0-9]+$" },
+          conflictId: { type: "string" },
+          title: { type: "string" },
+          text: { type: "string" },
+          actionType: { type: "string" },
+          affectedClaims: { type: "array", items: { type: "string" } },
+          predictedResolutionScore: { type: "number", minimum: 0, maximum: 1 },
+          disruptionCost: { type: "number", minimum: 0 },
+          explanation: { type: "string" },
+          cost: { type: "string" },
+        },
+      },
+      AnalysisRun: {
+        type: "object",
+        required: ["id", "claimCount", "candidatePairs", "hardCount", "softCount", "engines"],
+        properties: {
+          id: { type: "string", pattern: "^A-[0-9]+$" },
+          time: { type: "string", format: "date-time" },
+          claimCount: { type: "number" },
+          candidatePairs: { type: "number" },
+          hardCount: { type: "number" },
+          softCount: { type: "number" },
+          nliQueued: { type: "number" },
+          estimatedHybridLatency: { type: "number" },
+          engines: { type: "array", items: { type: "string" } },
+        },
+      },
+      SessionExport: {
+        type: "object",
+        required: ["schemaVersion", "session", "beliefs", "relations", "conflicts"],
+        properties: {
+          schemaVersion: { type: "string", const: "wre-2.5" },
+          session: { type: "object" },
+          beliefs: { type: "array", items: { $ref: "#/schemas/Claim" } },
+          relations: { type: "array", items: { $ref: "#/schemas/Relation" } },
+          conflicts: { type: "array", items: { $ref: "#/schemas/Conflict" } },
+          analysisRuns: { type: "array", items: { $ref: "#/schemas/AnalysisRun" } },
+        },
+      },
+    },
+  };
+}
+
+function buildOpenApiPayload() {
+  const schemas = buildJsonSchemasPayload().schemas;
+  return {
+    openapi: "3.1.0",
+    info: {
+      title: "Normativity WRE Agent API",
+      version: agentContract.schemaVersion,
+      description: "Deterministic WRE 2.5 contract for local-first belief graph agents.",
+    },
+    paths: Object.fromEntries(agentContract.endpoints.map(([method, path, description]) => {
+      const operation = method.toLowerCase();
+      return [
+        path,
+        {
+          [operation]: {
+            summary: description,
+            operationId: operationIdFor(method, path),
+            requestBody: requestBodyForEndpoint(method, path),
+            responses: responseForEndpoint(method, path),
+          },
+        },
+      ];
+    })),
+    components: {
+      schemas,
+    },
+    "x-wre-examples": buildAgentRequestExamples(),
+  };
+}
+
+function requestBodyForEndpoint(method, path) {
+  if (method === "GET" || method === "DELETE") return undefined;
+  if (path === "/v1/beliefs") return jsonRequestBody("Claim batch", { type: "object", properties: { beliefs: { type: "array", items: { $ref: "#/components/schemas/Claim" } } } });
+  if (path === "/v1/relations") return jsonRequestBody("Relation batch", { type: "object", properties: { relations: { type: "array", items: { $ref: "#/components/schemas/Relation" } } } });
+  if (path === "/v1/conflicts/{id}/repair") return jsonRequestBody("Repair application", { type: "object", properties: { repairId: { type: "string" }, mode: { type: "string", enum: ["preview", "apply"] } } });
+  if (path === "/v1/analyze") return jsonRequestBody("Analysis request", { type: "object", properties: { engineMode: { type: "string", enum: ["rule-only", "hybrid"] }, nliTriage: { type: "boolean" } } });
+  if (path === "/v1/sessions") return jsonRequestBody("Session create", { type: "object", properties: { scope: { type: "string" }, privacy: { type: "object" } } });
+  return jsonRequestBody("WRE request", { type: "object" });
+}
+
+function jsonRequestBody(description, schema) {
+  return {
+    required: true,
+    content: {
+      "application/json": {
+        schema,
+        examples: {
+          current: {
+            summary: description,
+            value: buildAgentRequestExamples()[0]?.body || {},
+          },
+        },
+      },
+    },
+  };
+}
+
+function responseForEndpoint(method, path) {
+  const schema = path === "/v1/export"
+    ? { $ref: "#/components/schemas/SessionExport" }
+    : path.includes("conflicts")
+      ? { type: "object", properties: { conflicts: { type: "array", items: { $ref: "#/components/schemas/Conflict" } } } }
+      : { type: "object" };
+  return {
+    "200": {
+      description: `${method} ${path} response`,
+      content: {
+        "application/json": {
+          schema,
+        },
+      },
+    },
+  };
+}
+
+function buildAgentRequestExamples() {
+  const selectedConflict = getSelectedConflict();
+  const selectedRepair = selectedConflict?.repairs.find((repair) => repair.id === state.selectedRepairId) || selectedConflict?.repairs[0];
+  return [
+    {
+      method: "POST",
+      path: "/v1/beliefs",
+      description: "Batch add the current focused claims as typed WRE records.",
+      body: {
+        beliefs: state.beliefs.slice(0, 2).map(normalizeBelief),
+      },
+    },
+    {
+      method: "POST",
+      path: "/v1/relations",
+      description: "Batch add support, dependency, conflict, or undercut links.",
+      body: {
+        relations: state.relations.slice(0, 2).map(normalizeRelation),
+      },
+    },
+    {
+      method: "POST",
+      path: "/v1/analyze",
+      description: "Run the local hybrid analysis profile currently selected in privacy controls.",
+      body: {
+        sessionId: "sess_7f2c9e7a",
+        engineMode: state.privacy.nliTriage ? "hybrid" : "rule-only",
+        nliTriage: Boolean(state.privacy.nliTriage),
+        candidateLimit: 25,
+      },
+    },
+    {
+      method: "POST",
+      path: `/v1/conflicts/${selectedConflict?.id || "C-001"}/repair`,
+      description: "Preview or apply the selected minimal-change repair option.",
+      body: {
+        repairId: selectedRepair?.id || "R-001",
+        mode: "preview",
+        requireBeforeAfterSnapshot: true,
+      },
+    },
+  ];
+}
+
+function operationIdFor(method, path) {
+  return `${method.toLowerCase()}_${path.replace(/[^a-z0-9]+/gi, "_").replace(/^_|_$/g, "")}`;
 }
 
 function getLatestAnalysisRun() {

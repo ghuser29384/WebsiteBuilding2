@@ -21,7 +21,7 @@
   <meta name="twitter:description" content="Compose beliefs, review conflicts, inspect repair options, and replay revisions.">
   <meta name="twitter:image" content="https://normativity.org/assets/Normativity%20Logo.png">
   <link rel="icon" type="image/png" href="../assets/Normativity%20Favicon.png">
-  <link rel="stylesheet" href="./styles.css?v=command-palette">
+  <link rel="stylesheet" href="./styles.css?v=agent-contract">
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -442,9 +442,13 @@
               <h2 id="agentContractTitle">Agent Contract</h2>
               <p>Stable JSON fields and API verbs for software agents using the same local claim graph.</p>
             </div>
-            <button id="copyContractBtn" class="utility-button compact" type="button">Copy JSON</button>
+            <div class="agent-contract-actions">
+              <button id="copyContractBtn" class="utility-button compact" type="button">Copy JSON</button>
+              <button id="exportOpenApiBtn" class="utility-button compact" type="button">Export OpenAPI</button>
+            </div>
           </div>
           <div id="agentContractList" class="agent-contract-list"></div>
+          <div id="agentExampleList" class="agent-example-list"></div>
         </section>
       </section>
     </section>
@@ -555,6 +559,6 @@
     </div>
   </section>
 
-  <script defer src="./wre-tool.js?v=command-palette"></script>
+  <script defer src="./wre-tool.js?v=agent-contract"></script>
 </body>
 </html>
