@@ -1,32 +1,35 @@
 <!doctype html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <meta name="theme-color" content="#ffffff" />
-  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1" />
-  <meta name="description" content="Interactive Wide Reflective Equilibrium lessons with coherence tracking, graph visualization, and explainable updates." />
-  <title>Wide Reflective Equilibrium Lessons | Normativity</title>
-  <link rel="canonical" href="https://normativity.org/wre/index.html" />
-  <meta property="og:locale" content="en_US" />
-  <meta property="og:type" content="website" />
-  <meta property="og:site_name" content="Normativity" />
-  <meta property="og:title" content="Wide Reflective Equilibrium Lessons | Normativity" />
-  <meta property="og:description" content="Interactive Wide Reflective Equilibrium lessons with coherence tracking, graph visualization, and explainable updates." />
-  <meta property="og:url" content="https://normativity.org/wre/index.html" />
-  <meta property="og:image" content="https://normativity.org/assets/Normativity%20Logo.png" />
-  <meta property="og:image:alt" content="Normativity logo" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Wide Reflective Equilibrium Lessons | Normativity" />
-  <meta name="twitter:description" content="Interactive Wide Reflective Equilibrium lessons with coherence tracking, graph visualization, and explainable updates." />
-  <meta name="twitter:image" content="https://normativity.org/assets/Normativity%20Logo.png" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="description" content="A Wide Reflective Equilibrium tool surface for intake, conflict review, repair, and revision replay.">
+  <title>Wide Reflective Equilibrium Tool | Normativity</title>
+  <link rel="canonical" href="https://normativity.org/wre/index.html">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Normativity">
+  <meta property="og:title" content="Wide Reflective Equilibrium Tool | Normativity">
+  <meta property="og:description" content="Compose beliefs, review conflicts, inspect repair options, and replay revisions.">
+  <meta property="og:url" content="https://normativity.org/wre/index.html">
+  <meta property="og:image" content="https://normativity.org/assets/Normativity%20Logo.png">
+  <meta property="og:image:alt" content="Normativity logo">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Wide Reflective Equilibrium Tool | Normativity">
+  <meta name="twitter:description" content="Compose beliefs, review conflicts, inspect repair options, and replay revisions.">
+  <meta name="twitter:image" content="https://normativity.org/assets/Normativity%20Logo.png">
+  <link rel="icon" type="image/png" href="../assets/Normativity%20Favicon.png">
+  <link rel="stylesheet" href="./styles.css?v=logo-image">
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "WebPage",
-      "name": "Wide Reflective Equilibrium Lessons | Normativity",
+      "@type": "WebApplication",
+      "name": "Wide Reflective Equilibrium Tool",
       "url": "https://normativity.org/wre/index.html",
-      "description": "Interactive Wide Reflective Equilibrium lessons with coherence tracking, graph visualization, and explainable updates.",
+      "applicationCategory": "ProductivityApplication",
+      "description": "A static product interface for belief intake, conflict review, guided repair, and revision replay.",
       "isPartOf": {
         "@type": "WebSite",
         "name": "Normativity",
@@ -34,89 +37,365 @@
       }
     }
   </script>
-  <link rel="stylesheet" href="/wre/styles.css" />
-  <link rel="stylesheet" href="../theme.css" />
 </head>
-<body class="forethought-site">
-  <a class="skip-link" href="#wreApp">Skip to main content</a>
-  <header class="wre-topbar">
-    <div class="wre-shell">
-      <a class="wre-home-link" href="/" aria-label="Return to home">← normativity.org</a>
-      <h1 class="wre-title">Wide Reflective Equilibrium Lessons</h1>
-      <div class="lesson-picker-wrap">
-        <label for="lessonPicker">Lesson</label>
-        <select id="lessonPicker" aria-label="Select lesson"></select>
-      </div>
+<body class="wre-dashboard">
+  <a class="skip-link" href="#workspace">Skip to main content</a>
+
+  <header class="topbar" aria-label="Normativity WRE tool">
+    <a class="brand" href="/" aria-label="Normativity home">
+      <svg class="brand-logo" viewBox="0 0 470 92" aria-hidden="true" focusable="false">
+        <g class="brand-logo-mark" transform="translate(0 14)">
+          <path class="mark-dark" d="M5 12h21v55H5Z"></path>
+          <path class="mark-dark" d="M31 12h33v16H50v39H31Z"></path>
+          <path class="mark-light" d="M6 4c27 3 48 26 56 63C35 58 15 36 6 4Z"></path>
+          <path class="mark-cut" d="M29 9c14 14 24 34 28 58C45 46 31 27 14 12c5-2 10-3 15-3Z"></path>
+        </g>
+        <text class="brand-logo-text" x="86" y="66">Normativity</text>
+      </svg>
+      <span class="visually-hidden">Normativity</span>
+    </a>
+
+    <nav class="top-nav" aria-label="Workflow views">
+      <button class="nav-button is-active" type="button" data-nav="intake">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0 4-4m-4 4-4-4M5 20h14" /></svg>
+        <span>Intake</span>
+      </button>
+      <button class="nav-button" type="button" data-nav="conflicts">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4 3 20h18L12 4Z" /><path d="M12 9v5" /><path d="M12 17h.01" /></svg>
+        <span>Conflicts</span>
+      </button>
+      <button class="nav-button" type="button" data-nav="repair">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m14.7 6.3 3 3" /><path d="m4 20 6.3-6.3" /><path d="M14 4 20 10" /><path d="m13.5 9.5-4 4" /><path d="M19 5 15 9" /><path d="m9 15-4 4" /></svg>
+        <span>Repair</span>
+      </button>
+      <button class="nav-button" type="button" data-nav="replay">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7" /><path d="M3 4v6h6" /><path d="M12 7v5l3 2" /></svg>
+        <span>Replay</span>
+      </button>
+    </nav>
+
+    <div class="top-actions">
+      <span id="storageStatus" class="local-status">Local-only</span>
+      <label class="import-button" for="importInput">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12" /><path d="m8 7 4-4 4 4" /><path d="M5 20h14" /></svg>
+        <span>Import</span>
+      </label>
+      <input id="importInput" type="file" accept="application/json,.json">
+      <button id="exportBtn" class="export-button" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m8 9-4 3 4 3" /><path d="m16 9 4 3-4 3" /><path d="m14 5-4 14" /></svg>
+        <span>Export API</span>
+      </button>
+      <button id="resetLocalBtn" class="danger-button" type="button">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v5" /><path d="M14 11v5" /></svg>
+        <span>Reset</span>
+      </button>
+      <button class="avatar-button" type="button" aria-label="User menu">
+        <span>AS</span>
+      </button>
+      <button class="chevron-button" type="button" aria-label="Open user menu">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+      </button>
     </div>
   </header>
 
-  <main class="wre-shell wre-main" id="wreApp" tabindex="-1">
-    <section class="progress-card">
-      <div class="progress-head">
-        <p id="progressLabel">Step 1 / 1</p>
-        <p id="progressTitle">Loading lesson...</p>
-      </div>
-      <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Lesson progress">
-        <span id="progressFill"></span>
-      </div>
-    </section>
+  <main id="wreApp" class="app-shell">
+    <aside class="workflow-panel" aria-label="Workflow stages">
+      <section class="panel-block workflow-block">
+        <h2>Workflow Stages</h2>
+        <div id="stageList" class="stage-list"></div>
+      </section>
 
-    <section class="session-card" aria-label="Lesson session controls and diagnostics">
-      <div class="session-row">
-        <p id="sessionLabel">Fresh lesson session.</p>
-        <div class="session-actions">
-          <button id="resetLessonBtn" class="btn btn-ghost" type="button">Reset Lesson</button>
-          <button id="resetAllLessonsBtn" class="btn btn-ghost" type="button">Reset All Lessons</button>
+      <section class="panel-card session-card" aria-label="Session details">
+        <h2>Session</h2>
+        <dl>
+          <div><dt>Session ID</dt><dd id="sessionId">sess_7f2c9e7a</dd></div>
+          <div><dt>Created</dt><dd id="sessionCreated">May 15, 2025 10:42 AM</dd></div>
+          <div><dt>Status</dt><dd><span class="status-dot"></span>Active</dd></div>
+          <div><dt>Scope</dt><dd>AI hiring assistant</dd></div>
+          <div><dt>Mode</dt><dd id="sessionMode">Local-first</dd></div>
+          <div><dt>Retention</dt><dd id="sessionRetention">Until deleted</dd></div>
+        </dl>
+        <button id="editContextBtn" class="ghost-button full-width" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+          <span>Edit Session Context</span>
+        </button>
+      </section>
+    </aside>
+
+    <section id="workspace" class="workspace-panel" tabindex="-1" aria-labelledby="workspaceTitle">
+      <div class="workspace-heading">
+        <div>
+          <h1 id="workspaceTitle">Wide Reflective Equilibrium</h1>
+          <p>Provide typed inputs across the three families, then review hard conflicts and soft tensions with explainable repair options.</p>
         </div>
+        <button id="guidanceBtn" class="utility-button" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5Z" /></svg>
+          <span>View Guidance</span>
+        </button>
       </div>
-      <div class="coherence-meta-row" aria-live="polite">
-        <span id="coherenceDeltaChip" class="coherence-chip">Delta: 0.0 pts</span>
-        <span id="edgeResolvedChip" class="coherence-chip">Resolved edges: 0</span>
-        <span id="edgeTensionChip" class="coherence-chip">Active tensions: 0</span>
-      </div>
-      <p class="lesson-hint keyboard-hint">Tip: Tab to a node or edge and press Enter/Space to inspect or toggle.</p>
-    </section>
 
-    <section class="sep-method-card" aria-label="method anchors">
-      <p class="sep-method-title">Method anchors</p>
-      <p>
-        These lessons are structured as reflective-equilibrium cycles with disagreement pressure and confidence calibration.
-      </p>
-      <p class="sep-method-links">
-        <a href="/normative-issues.html#reference-library" >Reflective Equilibrium</a> ·
-        <a href="/normative-issues.html#reference-library" >Moral Epistemology</a> ·
-        <a href="/normative-issues.html#reference-library" >Moral Disagreement</a> ·
-        <a href="/normative-issues.html#reference-library" >Moral Reasoning</a> ·
-        <a href="/normative-issues.html#reference-library" >Moral Skepticism</a> ·
-        <a href="/normative-issues.html#reference-library" >Ethical Intuitionism</a>
-      </p>
-    </section>
+      <section class="privacy-panel" aria-label="Local-first privacy and analysis controls">
+        <div class="privacy-copy">
+          <h2>Local-first controls</h2>
+          <p>Belief content stays in this browser by default. Cloud sync and model triage remain opt-in so sensitive philosophical or political commitments are not silently processed elsewhere.</p>
+        </div>
+        <div class="privacy-grid">
+          <label class="control-card toggle-card" for="cloudSyncToggle">
+            <span>
+              <strong>Cloud sync</strong>
+              <small>Optional encrypted workspace sync</small>
+            </span>
+            <input id="cloudSyncToggle" type="checkbox">
+            <span class="switch" aria-hidden="true"></span>
+          </label>
+          <label class="control-card toggle-card" for="llmTriageToggle">
+            <span>
+              <strong>NLI triage</strong>
+              <small>Send only selected candidate pairs</small>
+            </span>
+            <input id="llmTriageToggle" type="checkbox">
+            <span class="switch" aria-hidden="true"></span>
+          </label>
+          <label class="control-card" for="retentionSelect">
+            <span>
+              <strong>Retention</strong>
+              <small>Default data lifetime</small>
+            </span>
+            <select id="retentionSelect">
+              <option value="until-deleted">Until deleted</option>
+              <option value="session-only">Session only</option>
+              <option value="30-days">30 days</option>
+            </select>
+          </label>
+        </div>
+      </section>
 
-    <section class="workspace">
-      <div class="workspace-left">
-        <div id="lessonCardHost"></div>
-      </div>
-      <aside class="workspace-right">
-        <div class="graph-card">
-          <div class="graph-card-head">
-            <h2>Reasoning Graph</h2>
-            <button id="expandGraphBtn" class="btn btn-ghost" type="button">Expand graph</button>
+      <section class="families-grid" aria-label="Belief families">
+        <article class="family-card">
+          <div class="family-head">
+            <div>
+              <h2>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v18" /><path d="M5 7h14" /><path d="m6 7-3 6h6L6 7Z" /><path d="m18 7-3 6h6l-3-6Z" /></svg>
+                <span>Judgments</span>
+              </h2>
+              <p>Particular moral judgments about cases.</p>
+            </div>
+            <button class="text-action" type="button" data-add-layer="judgment">+ Add</button>
           </div>
-          <div id="graphHost"></div>
+          <div id="judgmentList" class="belief-list"></div>
+          <button class="view-all-button" type="button" data-filter-layer="judgment">View all (14)</button>
+        </article>
+
+        <article class="family-card">
+          <div class="family-head">
+            <div>
+              <h2>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4V3Z" /></svg>
+                <span>Principles</span>
+              </h2>
+              <p>General normative principles.</p>
+            </div>
+            <button class="text-action" type="button" data-add-layer="principle">+ Add</button>
+          </div>
+          <div id="principleList" class="belief-list"></div>
+          <button class="view-all-button" type="button" data-filter-layer="principle">View all (11)</button>
+        </article>
+
+        <article class="family-card">
+          <div class="family-head">
+            <div>
+              <h2>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5c4.4 0 8 1.3 8 3s-3.6 3-8 3-8-1.3-8-3 3.6-3 8-3Z" /><path d="M4 8v4c0 1.7 3.6 3 8 3s8-1.3 8-3V8" /><path d="M4 12v4c0 1.7 3.6 3 8 3s8-1.3 8-3v-4" /></svg>
+                <span>Background Theories</span>
+              </h2>
+              <p>Theories and empirical claims.</p>
+            </div>
+            <button class="text-action" type="button" data-add-layer="theory">+ Add</button>
+          </div>
+          <div id="theoryList" class="belief-list"></div>
+          <button class="view-all-button" type="button" data-filter-layer="theory">View all (11)</button>
+        </article>
+      </section>
+
+      <section class="compose-card" aria-labelledby="composeTitle">
+        <div class="compose-head">
+          <div>
+            <h2 id="composeTitle">Compose Typed Beliefs</h2>
+            <p>Keep natural-language reflection, but attach the fields needed for reliable contradiction detection.</p>
+          </div>
+          <div class="compose-tools">
+            <button id="insertReferenceBtn" class="utility-button compact" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.1 0l2.1-2.1a5 5 0 0 0-7.1-7.1L11 4.9" /><path d="M14 11a5 5 0 0 0-7.1 0l-2.1 2.1a5 5 0 0 0 7.1 7.1l1.1-1.1" /></svg>
+              <span>Insert Reference</span>
+              <svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+            </button>
+            <button id="clearComposerBtn" class="utility-button compact" type="button">Clear</button>
+          </div>
         </div>
-        <div class="gauge-card">
-          <h2>Coherence</h2>
-          <div id="gaugeHost"></div>
+
+        <form id="beliefForm" class="belief-form">
+          <div class="metadata-grid" aria-label="Claim metadata">
+            <label for="claimKind">
+              <span>Claim kind</span>
+              <select id="claimKind">
+                <option value="judgment">Judgment</option>
+                <option value="principle">Principle</option>
+                <option value="theory">Background theory</option>
+              </select>
+            </label>
+            <label for="claimDomain">
+              <span>Domain</span>
+              <select id="claimDomain">
+                <option value="normative">Normative</option>
+                <option value="empirical">Empirical</option>
+                <option value="conceptual">Conceptual</option>
+                <option value="meta">Metaethical</option>
+              </select>
+            </label>
+            <label for="confidenceInput">
+              <span>Confidence <output id="confidenceOutput" for="confidenceInput">72%</output></span>
+              <input id="confidenceInput" type="range" min="1" max="100" value="72">
+            </label>
+            <label for="timeScopeInput">
+              <span>Time scope</span>
+              <input id="timeScopeInput" type="text" placeholder="e.g., 2026 hiring cycle">
+            </label>
+            <label for="provenanceInput">
+              <span>Provenance</span>
+              <input id="provenanceInput" type="text" placeholder="e.g., interview rubric, study, intuition">
+            </label>
+            <label for="sensitivityInput">
+              <span>Sensitivity</span>
+              <select id="sensitivityInput">
+                <option value="private">Private</option>
+                <option value="pseudonymous">Pseudonymous</option>
+                <option value="public">Public</option>
+              </select>
+            </label>
+          </div>
+          <label class="composer-label">
+            <span class="visually-hidden">Belief statement</span>
+            <textarea id="beliefText" rows="6" placeholder="Start typing your belief statement..."></textarea>
+          </label>
+          <div class="composer-footer">
+            <button id="assistBtn" class="plain-control" type="button">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v4" /><path d="M12 17v4" /><path d="M3 12h4" /><path d="M17 12h4" /><path d="m5.6 5.6 2.8 2.8" /><path d="m15.6 15.6 2.8 2.8" /><path d="m18.4 5.6-2.8 2.8" /><path d="m8.4 15.6-2.8 2.8" /></svg>
+              <span>Auto-assist</span>
+              <svg class="caret" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6" /></svg>
+            </button>
+            <div class="composer-meta">
+              <span id="tokenCount">0 tokens</span>
+              <button class="icon-control" type="button" aria-label="Format composer">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6h16" /><path d="M4 12h10" /><path d="M4 18h16" /></svg>
+              </button>
+              <button class="icon-control" type="button" aria-label="Expand composer">
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 3h6v6" /><path d="m14 10 7-7" /><path d="M9 21H3v-6" /><path d="m10 14-7 7" /></svg>
+              </button>
+              <button class="primary-button" type="submit">Add Belief</button>
+            </div>
+          </div>
+        </form>
+        <p class="tip-text">Tip: Reference items using @ then J1, P1, or T1 (e.g., @J1, @P2, @T3)</p>
+      </section>
+
+      <section class="claim-workbench" aria-labelledby="claimWorkbenchTitle">
+        <div class="workbench-head">
+          <div>
+            <h2 id="claimWorkbenchTitle">Belief Graph Workspace</h2>
+            <p>Switch between the visual graph and a keyboard-friendly table view of the same claim records.</p>
+          </div>
+          <div class="view-switcher" role="tablist" aria-label="Claim workspace view">
+            <button class="view-mode-button is-active" type="button" role="tab" aria-selected="true" data-view-mode="table">Table</button>
+            <button class="view-mode-button" type="button" role="tab" aria-selected="false" data-view-mode="graph">Graph</button>
+          </div>
         </div>
-      </aside>
+        <div id="claimWorkbenchPanel" class="workbench-panel"></div>
+      </section>
     </section>
 
-    <section class="explanation-card">
-      <h2>Explanation</h2>
-      <div id="inspectorHost"></div>
+    <aside class="conflict-panel" aria-label="Conflict review queue">
+      <div class="queue-head">
+        <div>
+          <h2>Conflict Review Queue</h2>
+        </div>
+        <button class="icon-control" type="button" aria-label="Filter conflicts">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6 7v5l-4 2v-7L4 5Z" /></svg>
+        </button>
+      </div>
+      <div id="conflictTabs" class="queue-tabs" role="tablist" aria-label="Conflict severity filters"></div>
+      <div id="conflictQueue" class="conflict-list"></div>
+      <button id="viewAllConflictsBtn" class="view-all-conflicts" type="button">
+        <span>View all conflicts</span>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7" /><path d="M8 7h9v9" /></svg>
+      </button>
+    </aside>
+
+    <aside class="detail-panel" aria-label="Selected conflict detail">
+      <div class="detail-head">
+        <div>
+          <p id="detailId" class="detail-id">C-001</p>
+          <h2 id="detailTitle">Non-discrimination vs. Experience Proxy</h2>
+        </div>
+        <button class="close-button" type="button" aria-label="Close conflict details">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+        </button>
+      </div>
+      <span id="detailSeverity" class="severity-pill critical">Critical</span>
+
+      <section class="detail-section">
+        <h3>Claims</h3>
+        <div id="detailClaims" class="detail-claims"></div>
+      </section>
+
+      <section class="detail-section">
+        <h3>Linked Principle / Background Theory</h3>
+        <div id="detailLinks" class="detail-links"></div>
+      </section>
+
+      <section class="detail-section why-section">
+        <h3>Why Flagged</h3>
+        <p id="detailWhy"></p>
+      </section>
+
+      <section class="detail-section">
+        <h3>Conflict Core</h3>
+        <div id="detailCore" class="explanation-stack"></div>
+      </section>
+
+      <section class="detail-section">
+        <h3>Engine Path</h3>
+        <div id="detailEngine" class="engine-path"></div>
+      </section>
+
+      <section class="detail-section">
+        <h3>
+          <span>Lowest-cost Repair Options</span>
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v.01" /><path d="M12 13a3 3 0 1 0-3-3" /><circle cx="12" cy="12" r="9" /></svg>
+        </h3>
+        <div id="repairOptions" class="repair-options"></div>
+      </section>
+
+      <div class="detail-actions">
+        <button id="graphBtn" class="ghost-button full-width" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="6" cy="12" r="2" /><circle cx="18" cy="5" r="2" /><circle cx="18" cy="19" r="2" /><path d="m8 11 8-5" /><path d="m8 13 8 5" /></svg>
+          <span>View in Conflict Graph</span>
+        </button>
+        <button id="applyRepairBtn" class="apply-button full-width" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6" /></svg>
+          <span>Apply Repair</span>
+        </button>
+      </div>
+    </aside>
+
+    <section class="pipeline-panel" aria-label="WRE pipeline">
+      <div class="pipeline-title">
+        <h2>WRE Pipeline</h2>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v.01" /><path d="M12 13a3 3 0 1 0-3-3" /><circle cx="12" cy="12" r="9" /></svg>
+      </div>
+      <div id="pipelineList" class="pipeline-list"></div>
     </section>
   </main>
 
-  <script type="module" src="/wre/app.js"></script>
+  <script defer src="./wre-tool.js?v=logo-image"></script>
 </body>
 </html>
