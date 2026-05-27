@@ -458,6 +458,10 @@ const els = {
   exportBtn: document.getElementById("exportBtn"),
   exportPrivacyBtn: document.getElementById("exportPrivacyBtn"),
   deleteLocalDataBtn: document.getElementById("deleteLocalDataBtn"),
+  archivePassphraseInput: document.getElementById("archivePassphraseInput"),
+  exportEncryptedBtn: document.getElementById("exportEncryptedBtn"),
+  encryptedArchiveInput: document.getElementById("encryptedArchiveInput"),
+  encryptedArchiveStatus: document.getElementById("encryptedArchiveStatus"),
   importInput: document.getElementById("importInput"),
   resetLocalBtn: document.getElementById("resetLocalBtn"),
   clearComposerBtn: document.getElementById("clearComposerBtn"),
@@ -813,6 +817,8 @@ function bindEvents() {
   els.exportBtn.addEventListener("click", exportApi);
   els.exportPrivacyBtn.addEventListener("click", exportPrivacyReceipt);
   els.deleteLocalDataBtn.addEventListener("click", deleteLocalData);
+  els.exportEncryptedBtn.addEventListener("click", exportEncryptedArchive);
+  els.encryptedArchiveInput.addEventListener("change", importEncryptedArchive);
   els.exportCalibrationBtn.addEventListener("click", exportCalibrationRounds);
   els.importInput.addEventListener("change", importApi);
   els.resetLocalBtn.addEventListener("click", resetLocalSession);
@@ -1012,6 +1018,7 @@ function getCommandDefinitions() {
     { id: "replay", label: "Review replay", group: "Replay", keywords: "revision audit log", run: reviewReplay },
     { id: "calibration", label: "Open calibration loop", group: "Calibration", keywords: "case disagreement confidence", run: focusCalibrationLoop },
     { id: "export-session", label: "Export session JSON", group: "Export", keywords: "api archive", run: exportApi },
+    { id: "encrypted-archive", label: "Focus encrypted archive", group: "Privacy", keywords: "backup sync passphrase", run: focusEncryptedArchive },
     { id: "export-openapi", label: "Export OpenAPI contract", group: "Export", keywords: "agent schema endpoint json", run: exportOpenApiContract },
     { id: "export-accessibility", label: "Export accessibility report", group: "Export", keywords: "wcag keyboard screen reader", run: exportAccessibilityReport },
   ];
@@ -1735,6 +1742,7 @@ function renderDataRightsPanel() {
       ["Cloud sync", receipt.processing.cloudSync ? "Opted in" : "Off"],
       ["Model triage", receipt.processing.nliTriage ? "Opted in" : "Off"],
       ["Retention", retentionLabel(receipt.processing.retention)],
+      ["Encrypted archive", receipt.processing.encryptedArchive],
       ["Sensitive claims", `${receipt.classification.potentiallySensitive} flagged`],
       ["User rights", "Access, export, delete, correction"],
     ].map(([label, value]) => renderReceiptItem(label, value))
@@ -2384,6 +2392,10 @@ function appendAuditNote(value, note) {
 }
 
 function exportApi() {
+  downloadJson(buildSessionPayload(), "normativity-wre-session.json");
+}
+
+function buildSessionPayload() {
   const payload = {
     schemaVersion: "wre-2.5",
     session: {
@@ -2416,7 +2428,7 @@ function exportApi() {
     benchmarkTargets,
     agentContract: buildAgentContractPayload(),
   };
-  downloadJson(payload, "normativity-wre-session.json");
+  return payload;
 }
 
 function exportPrivacyReceipt() {
@@ -2449,6 +2461,56 @@ function exportOpenApiContract() {
   downloadJson(buildOpenApiPayload(), "normativity-wre-openapi.json");
 }
 
+async function exportEncryptedArchive() {
+  const passphrase = getArchivePassphrase();
+  if (!passphrase) return;
+  if (!hasWebCrypto()) {
+    showEncryptedArchiveStatus("Web Crypto is unavailable in this browser context.", "error");
+    return;
+  }
+
+  try {
+    recordRevision("privacy", "Exported an AES-GCM encrypted WRE session archive.");
+    saveState();
+    renderRevisionReplay();
+    const archive = await encryptSessionPayload(buildSessionPayload(), passphrase);
+    downloadJson(archive, "normativity-wre-encrypted-archive.json");
+    showEncryptedArchiveStatus("Encrypted archive exported with AES-GCM and PBKDF2.", "success");
+  } catch {
+    showEncryptedArchiveStatus("Encrypted export failed. Check browser crypto support and try again.", "error");
+  }
+}
+
+async function importEncryptedArchive(event) {
+  const [file] = event.target.files;
+  if (!file) return;
+  const passphrase = getArchivePassphrase();
+  if (!passphrase) {
+    event.target.value = "";
+    return;
+  }
+  if (!hasWebCrypto()) {
+    showEncryptedArchiveStatus("Web Crypto is unavailable in this browser context.", "error");
+    event.target.value = "";
+    return;
+  }
+
+  try {
+    const archive = JSON.parse(await readFileAsText(file));
+    const payload = await decryptSessionPayload(archive, passphrase);
+    applyImportedPayload(payload);
+    recordRevision("privacy", "Imported an AES-GCM encrypted WRE session archive.");
+    saveState();
+    render();
+    showEncryptedArchiveStatus("Encrypted archive imported and rehydrated locally.", "success");
+    focusElement(els.dataRightsPanel);
+  } catch {
+    showEncryptedArchiveStatus("Encrypted import failed. Check the passphrase and archive file.", "error");
+  } finally {
+    event.target.value = "";
+  }
+}
+
 function buildPrivacyReceiptPayload() {
   const sensitivityCounts = state.beliefs.reduce((counts, belief) => {
     const key = belief.sensitivity || "private";
@@ -2478,6 +2540,7 @@ function buildPrivacyReceiptPayload() {
       retention: state.privacy.retention,
       cloudSync: Boolean(state.privacy.cloudSync),
       nliTriage: Boolean(state.privacy.nliTriage),
+      encryptedArchive: hasWebCrypto() ? "AES-GCM available locally" : "unavailable in this browser",
       thirdPartyProcessing: state.privacy.cloudSync || state.privacy.nliTriage ? "opt-in only" : "none selected",
     },
     userRights: {
@@ -2551,26 +2614,7 @@ function importApi(event) {
   reader.addEventListener("load", () => {
     try {
       const parsed = JSON.parse(String(reader.result));
-      const beliefs = Array.isArray(parsed.beliefs) ? parsed.beliefs : Array.isArray(parsed.claims) ? parsed.claims : [];
-      const conflicts = Array.isArray(parsed.conflicts) ? parsed.conflicts : [];
-      if (!beliefs.length || !conflicts.length) return;
-      const relations = normalizeRelationSet(parsed.relations, beliefs.map(normalizeBelief), conflicts);
-      const migrationReport = buildMigrationReport(parsed, beliefs, conflicts, relations);
-      state = {
-        ...createState(),
-        beliefs: beliefs.map(normalizeBelief),
-        relations,
-        conflicts: conflicts.map((conflict) => normalizeImportedConflict(conflict, migrationReport)),
-        revisions: Array.isArray(parsed.revisions) ? parsed.revisions.map(normalizeRevision) : [],
-        analysisRuns: Array.isArray(parsed.analysisRuns) ? parsed.analysisRuns.map(normalizeAnalysisRun) : [],
-        calibrationRounds: Array.isArray(parsed.calibrationRounds) ? parsed.calibrationRounds.map(normalizeCalibrationRound) : [],
-        repairApplications: Array.isArray(parsed.repairApplications) ? parsed.repairApplications.map(normalizeRepairApplication) : [],
-        migrationReport,
-        privacy: { ...DEFAULT_PRIVACY, ...(parsed.privacy || parsed.session?.privacy || {}) },
-        selectedConflictId: parsed.selectedConflictId || conflicts[0]?.id || "C-001",
-        viewMode: parsed.viewMode === "graph" ? "graph" : "table",
-        workbenchFilter: ["judgment", "principle", "theory"].includes(parsed.workbenchFilter) ? parsed.workbenchFilter : "all",
-      };
+      applyImportedPayload(parsed);
       saveState();
       render();
     } catch {
@@ -2580,6 +2624,133 @@ function importApi(event) {
     }
   });
   reader.readAsText(file);
+}
+
+function applyImportedPayload(parsed) {
+  const beliefs = Array.isArray(parsed.beliefs) ? parsed.beliefs : Array.isArray(parsed.claims) ? parsed.claims : [];
+  const conflicts = Array.isArray(parsed.conflicts) ? parsed.conflicts : [];
+  if (!beliefs.length || !conflicts.length) throw new Error("Import requires beliefs and conflicts.");
+  const normalizedBeliefs = beliefs.map(normalizeBelief);
+  const relations = normalizeRelationSet(parsed.relations, normalizedBeliefs, conflicts);
+  const migrationReport = buildMigrationReport(parsed, beliefs, conflicts, relations);
+  state = {
+    ...createState(),
+    beliefs: normalizedBeliefs,
+    relations,
+    conflicts: conflicts.map((conflict) => normalizeImportedConflict(conflict, migrationReport)),
+    revisions: Array.isArray(parsed.revisions) ? parsed.revisions.map(normalizeRevision) : [],
+    analysisRuns: Array.isArray(parsed.analysisRuns) ? parsed.analysisRuns.map(normalizeAnalysisRun) : [],
+    calibrationRounds: Array.isArray(parsed.calibrationRounds) ? parsed.calibrationRounds.map(normalizeCalibrationRound) : [],
+    repairApplications: Array.isArray(parsed.repairApplications) ? parsed.repairApplications.map(normalizeRepairApplication) : [],
+    migrationReport,
+    privacy: { ...DEFAULT_PRIVACY, ...(parsed.privacy || parsed.session?.privacy || {}) },
+    selectedConflictId: parsed.selectedConflictId || conflicts[0]?.id || "C-001",
+    viewMode: parsed.viewMode === "graph" ? "graph" : "table",
+    workbenchFilter: ["judgment", "principle", "theory"].includes(parsed.workbenchFilter) ? parsed.workbenchFilter : "all",
+  };
+}
+
+async function encryptSessionPayload(payload, passphrase) {
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveArchiveKey(passphrase, salt);
+  const encoded = new TextEncoder().encode(JSON.stringify(payload));
+  const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoded);
+  return {
+    schemaVersion: "wre-2.5-encrypted-archive",
+    encryptedAt: new Date().toISOString(),
+    manifest: {
+      exportSchemaVersion: payload.schemaVersion,
+      claimCount: payload.beliefs?.length || 0,
+      relationCount: payload.relations?.length || 0,
+      conflictCount: payload.conflicts?.length || 0,
+      localFirst: true,
+    },
+    kdf: {
+      name: "PBKDF2",
+      hash: "SHA-256",
+      iterations: 210000,
+      salt: arrayBufferToBase64(salt),
+    },
+    cipher: {
+      name: "AES-GCM",
+      iv: arrayBufferToBase64(iv),
+    },
+    payload: arrayBufferToBase64(ciphertext),
+  };
+}
+
+async function decryptSessionPayload(archive, passphrase) {
+  if (archive.schemaVersion !== "wre-2.5-encrypted-archive") throw new Error("Unsupported archive.");
+  const salt = base64ToArrayBuffer(archive.kdf?.salt || "");
+  const iv = base64ToArrayBuffer(archive.cipher?.iv || "");
+  const ciphertext = base64ToArrayBuffer(archive.payload || "");
+  const key = await deriveArchiveKey(passphrase, new Uint8Array(salt), archive.kdf?.iterations);
+  const plaintext = await crypto.subtle.decrypt({ name: "AES-GCM", iv: new Uint8Array(iv) }, key, ciphertext);
+  return JSON.parse(new TextDecoder().decode(plaintext));
+}
+
+async function deriveArchiveKey(passphrase, salt, iterations = 210000) {
+  const baseKey = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(passphrase),
+    "PBKDF2",
+    false,
+    ["deriveKey"]
+  );
+  return crypto.subtle.deriveKey(
+    { name: "PBKDF2", salt, iterations, hash: "SHA-256" },
+    baseKey,
+    { name: "AES-GCM", length: 256 },
+    false,
+    ["encrypt", "decrypt"]
+  );
+}
+
+function getArchivePassphrase() {
+  const passphrase = els.archivePassphraseInput.value;
+  if (passphrase.length < 8) {
+    showEncryptedArchiveStatus("Enter a passphrase with at least 8 characters.", "error");
+    els.archivePassphraseInput.focus();
+    return "";
+  }
+  return passphrase;
+}
+
+function hasWebCrypto() {
+  return Boolean(window.crypto?.subtle && window.crypto.getRandomValues);
+}
+
+function showEncryptedArchiveStatus(message, tone = "default") {
+  els.encryptedArchiveStatus.textContent = message;
+  els.encryptedArchiveStatus.dataset.tone = tone;
+}
+
+function readFileAsText(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => resolve(String(reader.result)));
+    reader.addEventListener("error", () => reject(reader.error));
+    reader.readAsText(file);
+  });
+}
+
+function arrayBufferToBase64(buffer) {
+  const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+  let binary = "";
+  bytes.forEach((byte) => {
+    binary += String.fromCharCode(byte);
+  });
+  return btoa(binary);
+}
+
+function base64ToArrayBuffer(value) {
+  const binary = atob(value);
+  const bytes = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    bytes[index] = binary.charCodeAt(index);
+  }
+  return bytes.buffer;
 }
 
 function normalizeImportedConflict(conflict, migrationReport) {
@@ -2746,6 +2917,11 @@ function focusCalibrationLoop() {
   saveState();
   renderStages();
   focusElement(els.calibrationPanel);
+}
+
+function focusEncryptedArchive() {
+  focusElement(els.dataRightsPanel);
+  els.archivePassphraseInput.focus();
 }
 
 function getVisibleBeliefs() {

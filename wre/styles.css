@@ -847,6 +847,77 @@ svg {
   overflow-wrap: anywhere;
 }
 
+.encrypted-archive {
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid var(--line);
+  background: #fbfcfb;
+  padding: 12px;
+}
+
+.encrypted-archive h3 {
+  margin: 0 0 5px;
+  color: #17231f;
+  font-size: 14px;
+  font-weight: 760;
+}
+
+.encrypted-archive p {
+  margin: 0;
+  color: #5c6872;
+  font-size: 11px;
+  line-height: 1.42;
+}
+
+.encrypted-archive-controls {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) auto auto;
+  gap: 8px;
+  align-items: end;
+}
+
+.encrypted-archive-controls label:not(.import-encrypted-button) {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.encrypted-archive-controls label span {
+  color: #58656f;
+  font-size: 10px;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
+.encrypted-archive-controls input[type="password"] {
+  min-height: 32px;
+  width: 100%;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: #26313d;
+  padding: 0 9px;
+  font-size: 12px;
+}
+
+.import-encrypted-button {
+  cursor: pointer;
+}
+
+.encrypted-archive-status {
+  min-height: 18px;
+  color: #66727b;
+  font-weight: 700;
+}
+
+.encrypted-archive-status[data-tone="success"] {
+  color: var(--green);
+}
+
+.encrypted-archive-status[data-tone="error"] {
+  color: var(--red);
+}
+
 .analysis-panel {
   margin: 0 0 18px;
   border: 1px solid var(--line);
@@ -3078,6 +3149,7 @@ svg {
   .calibration-log,
   .replay-contract-grid,
   .relation-form,
+  .encrypted-archive-controls,
   .repair-preview-metrics,
   .graph-grid {
     grid-template-columns: 1fr;

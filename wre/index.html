@@ -21,7 +21,7 @@
   <meta name="twitter:description" content="Compose beliefs, review conflicts, inspect repair options, and replay revisions.">
   <meta name="twitter:image" content="https://normativity.org/assets/Normativity%20Logo.png">
   <link rel="icon" type="image/png" href="../assets/Normativity%20Favicon.png">
-  <link rel="stylesheet" href="./styles.css?v=agent-contract">
+  <link rel="stylesheet" href="./styles.css?v=encrypted-archive">
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -200,6 +200,22 @@
             <div id="migrationReportList" class="receipt-list"></div>
           </section>
         </div>
+        <section class="encrypted-archive" aria-labelledby="encryptedArchiveTitle">
+          <div>
+            <h3 id="encryptedArchiveTitle">Encrypted Archive</h3>
+            <p>Use a passphrase to export or restore an AES-GCM encrypted WRE session archive before any optional sync or backup storage.</p>
+          </div>
+          <div class="encrypted-archive-controls">
+            <label for="archivePassphraseInput">
+              <span>Passphrase</span>
+              <input id="archivePassphraseInput" type="password" autocomplete="new-password" minlength="8" placeholder="8+ characters">
+            </label>
+            <button id="exportEncryptedBtn" class="utility-button compact" type="button">Export Encrypted</button>
+            <label class="utility-button compact import-encrypted-button" for="encryptedArchiveInput">Import Encrypted</label>
+            <input id="encryptedArchiveInput" class="hidden-file" type="file" accept="application/json,.json">
+          </div>
+          <p id="encryptedArchiveStatus" class="encrypted-archive-status" aria-live="polite">Encrypted archive not exported this session.</p>
+        </section>
       </section>
 
       <section id="analysisPanel" class="analysis-panel" tabindex="-1" aria-labelledby="analysisTitle">
@@ -559,6 +575,6 @@
     </div>
   </section>
 
-  <script defer src="./wre-tool.js?v=agent-contract"></script>
+  <script defer src="./wre-tool.js?v=encrypted-archive"></script>
 </body>
 </html>
