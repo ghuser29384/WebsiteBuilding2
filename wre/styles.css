@@ -259,6 +259,18 @@ svg {
   font-size: 14px;
 }
 
+.command-button {
+  min-height: 42px;
+  border-color: #cbd5dc;
+  background: #ffffff;
+  color: #26303b;
+}
+
+.command-button svg {
+  width: 16px;
+  height: 16px;
+}
+
 .export-button svg,
 .import-button svg,
 .primary-button svg,
@@ -2609,6 +2621,137 @@ svg {
   background: #e6efe9;
   color: var(--green);
   box-shadow: none;
+}
+
+.command-palette[hidden] {
+  display: none;
+}
+
+.command-palette {
+  position: fixed;
+  z-index: 120;
+  inset: 0;
+  display: grid;
+  place-items: start center;
+  padding: 76px 18px 18px;
+}
+
+.command-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.28);
+}
+
+.command-panel {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 10px;
+  width: min(620px, 100%);
+  max-height: min(680px, calc(100vh - 96px));
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  background: #ffffff;
+  box-shadow: 0 24px 70px rgba(15, 23, 42, 0.22);
+  padding: 12px;
+}
+
+.command-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.command-head h2 {
+  margin: 0;
+  color: #111827;
+  font-size: 15px;
+  font-weight: 820;
+}
+
+.command-search-label input {
+  width: 100%;
+  min-height: 42px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: #fbfcfb;
+  color: #17202b;
+  padding: 0 12px;
+  font-size: 14px;
+}
+
+.command-search-label input:focus {
+  border-color: var(--green);
+  outline: 2px solid rgba(0, 107, 67, 0.16);
+  outline-offset: 1px;
+}
+
+.command-list {
+  display: grid;
+  gap: 6px;
+  overflow: auto;
+  max-height: 430px;
+}
+
+.command-option,
+.command-empty {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: #1f2937;
+  padding: 9px 10px;
+  text-align: left;
+}
+
+.command-option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.command-option.is-active,
+.command-option:focus-visible {
+  border-color: var(--green);
+  background: #f4fbf7;
+  outline: 0;
+}
+
+.command-option:disabled {
+  cursor: default;
+  opacity: 0.68;
+}
+
+.command-option strong {
+  display: block;
+  color: #17202b;
+  font-size: 12px;
+  font-weight: 820;
+}
+
+.command-option small,
+.command-option em,
+.command-status,
+.command-empty {
+  color: #66737d;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 700;
+}
+
+.command-option em {
+  flex: 0 0 auto;
+  border: 1px solid #bbd9cb;
+  border-radius: 999px;
+  background: #edf8f2;
+  color: var(--green);
+  padding: 2px 7px;
+}
+
+.command-status {
+  margin: 0;
 }
 
 .pipeline-panel {

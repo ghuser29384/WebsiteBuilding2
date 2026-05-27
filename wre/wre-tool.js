@@ -449,6 +449,12 @@ const els = {
   beliefText: document.getElementById("beliefText"),
   tokenCount: document.getElementById("tokenCount"),
   storageStatus: document.getElementById("storageStatus"),
+  screenReaderSummary: document.getElementById("screenReaderSummary"),
+  commandPaletteBtn: document.getElementById("commandPaletteBtn"),
+  commandPalette: document.getElementById("commandPalette"),
+  commandSearch: document.getElementById("commandSearch"),
+  commandList: document.getElementById("commandList"),
+  commandStatus: document.getElementById("commandStatus"),
   exportBtn: document.getElementById("exportBtn"),
   exportPrivacyBtn: document.getElementById("exportPrivacyBtn"),
   deleteLocalDataBtn: document.getElementById("deleteLocalDataBtn"),
@@ -509,6 +515,8 @@ const els = {
 };
 
 let state = loadState() || createState();
+let activeCommandIndex = 0;
+let lastCommandFocus = null;
 
 render();
 bindEvents();
@@ -710,10 +718,7 @@ function bindEvents() {
 
   document.querySelectorAll(".view-mode-button").forEach((button) => {
     button.addEventListener("click", () => {
-      state.viewMode = button.dataset.viewMode === "graph" ? "graph" : "table";
-      saveState();
-      syncViewMode();
-      renderClaimWorkbench();
+      setWorkbenchView(button.dataset.viewMode === "graph" ? "graph" : "table");
     });
   });
 
@@ -724,6 +729,17 @@ function bindEvents() {
   document.querySelectorAll("[data-filter-layer]").forEach((button) => {
     button.addEventListener("click", () => showWorkbenchLayer(button.dataset.filterLayer));
   });
+
+  els.commandPaletteBtn.addEventListener("click", openCommandPalette);
+  els.commandSearch.addEventListener("input", () => {
+    activeCommandIndex = 0;
+    renderCommandPalette();
+  });
+  els.commandSearch.addEventListener("keydown", handleCommandSearchKeydown);
+  document.querySelectorAll("[data-close-command]").forEach((element) => {
+    element.addEventListener("click", closeCommandPalette);
+  });
+  document.addEventListener("keydown", handleGlobalKeydown);
 
   els.beliefText.addEventListener("input", updateTokenCount);
   els.confidenceInput.addEventListener("input", syncConfidenceOutput);
@@ -774,13 +790,7 @@ function bindEvents() {
   });
 
   els.viewAllConflictsBtn.addEventListener("click", () => {
-    state.activeTab = "all";
-    state.activeNav = "conflicts";
-    saveState();
-    renderTabs();
-    renderConflicts();
-    syncNav();
-    focusElement(document.querySelector(".conflict-panel"));
+    viewAllConflicts();
   });
 
   els.guidanceBtn.addEventListener("click", () => {
@@ -810,10 +820,7 @@ function bindEvents() {
   });
 
   els.reviewLatestBtn.addEventListener("click", () => {
-    state.activeNav = "replay";
-    saveState();
-    syncNav();
-    focusElement(els.revisionReplay);
+    reviewReplay();
   });
 
   els.copyContractBtn.addEventListener("click", copyAgentContract);
@@ -834,6 +841,7 @@ function render() {
   renderAnalysisPanel();
   renderCalibrationPanel();
   renderPipeline();
+  renderAccessibleSummary();
   syncNav();
   syncPrivacyControls();
   syncViewMode();
@@ -841,6 +849,188 @@ function render() {
   syncCaseConfidenceOutput();
   syncStorageStatus();
   updateTokenCount();
+}
+
+function openCommandPalette() {
+  lastCommandFocus = document.activeElement;
+  activeCommandIndex = 0;
+  els.commandSearch.value = "";
+  els.commandPalette.hidden = false;
+  renderCommandPalette();
+  window.setTimeout(() => els.commandSearch.focus(), 0);
+}
+
+function closeCommandPalette(options = {}) {
+  if (els.commandPalette.hidden) return;
+  els.commandPalette.hidden = true;
+  els.commandSearch.value = "";
+  activeCommandIndex = 0;
+  if (options.restoreFocus === false) return;
+  if (lastCommandFocus && typeof lastCommandFocus.focus === "function") {
+    lastCommandFocus.focus();
+  } else {
+    els.commandPaletteBtn.focus();
+  }
+}
+
+function renderCommandPalette() {
+  const commands = getFilteredCommands();
+  activeCommandIndex = clamp(activeCommandIndex, 0, Math.max(commands.length - 1, 0));
+  els.commandStatus.textContent = `${commands.length} command${commands.length === 1 ? "" : "s"}`;
+  els.commandSearch.setAttribute("aria-activedescendant", commands[activeCommandIndex] ? `command-${commands[activeCommandIndex].id}` : "");
+
+  if (!commands.length) {
+    const empty = document.createElement("article");
+    empty.className = "command-empty";
+    empty.textContent = "No matching commands.";
+    replaceChildren(els.commandList, [empty]);
+    return;
+  }
+
+  replaceChildren(
+    els.commandList,
+    commands.map((command, index) => {
+      const button = document.createElement("button");
+      button.id = `command-${command.id}`;
+      button.type = "button";
+      button.className = `command-option${index === activeCommandIndex ? " is-active" : ""}`;
+      button.setAttribute("role", "option");
+      button.setAttribute("aria-selected", String(index === activeCommandIndex));
+      button.disabled = Boolean(command.disabled);
+      button.innerHTML = `
+        <span>
+          <strong>${escapeHtml(command.label)}</strong>
+          <small>${escapeHtml(command.group)}</small>
+        </span>
+        ${command.disabled ? '<em>Done</em>' : ""}
+      `;
+      button.addEventListener("mouseenter", () => {
+        activeCommandIndex = index;
+        renderCommandPalette();
+      });
+      button.addEventListener("click", () => executeCommand(command));
+      return button;
+    })
+  );
+}
+
+function handleCommandSearchKeydown(event) {
+  const commands = getFilteredCommands();
+  if (event.key === "ArrowDown") {
+    event.preventDefault();
+    activeCommandIndex = commands.length ? (activeCommandIndex + 1) % commands.length : 0;
+    renderCommandPalette();
+  } else if (event.key === "ArrowUp") {
+    event.preventDefault();
+    activeCommandIndex = commands.length ? (activeCommandIndex - 1 + commands.length) % commands.length : 0;
+    renderCommandPalette();
+  } else if (event.key === "Home") {
+    event.preventDefault();
+    activeCommandIndex = 0;
+    renderCommandPalette();
+  } else if (event.key === "End") {
+    event.preventDefault();
+    activeCommandIndex = Math.max(commands.length - 1, 0);
+    renderCommandPalette();
+  } else if (event.key === "Enter") {
+    event.preventDefault();
+    if (commands[activeCommandIndex]) executeCommand(commands[activeCommandIndex]);
+  } else if (event.key === "Escape") {
+    event.preventDefault();
+    closeCommandPalette();
+  }
+}
+
+function handleGlobalKeydown(event) {
+  const isCommandShortcut = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "k";
+  if (isCommandShortcut) {
+    event.preventDefault();
+    openCommandPalette();
+    return;
+  }
+  if (els.commandPalette.hidden) return;
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeCommandPalette();
+    return;
+  }
+  if (event.key === "Tab") {
+    trapCommandPaletteFocus(event);
+  }
+}
+
+function trapCommandPaletteFocus(event) {
+  const focusable = [...els.commandPalette.querySelectorAll("button:not(:disabled), input:not(:disabled)")].filter((element) => {
+    return element && element.offsetParent !== null;
+  });
+  if (!focusable.length) return;
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
+function getFilteredCommands() {
+  const query = els.commandSearch.value.trim().toLowerCase();
+  return getCommandDefinitions().filter((command) => {
+    if (!query) return true;
+    return `${command.label} ${command.group} ${command.keywords || ""}`.toLowerCase().includes(query);
+  });
+}
+
+function executeCommand(command) {
+  if (!command || command.disabled) return;
+  closeCommandPalette({ restoreFocus: false });
+  command.run();
+  renderAccessibleSummary();
+}
+
+function getCommandDefinitions() {
+  const selectedConflict = getSelectedConflict();
+  const selectedRepairId = state.selectedRepairId || selectedConflict?.repairs[0]?.id || "";
+  const repairApplied = selectedConflict?.status === "repaired" && selectedConflict?.appliedRepairId === selectedRepairId;
+  return [
+    { id: "add-judgment", label: "Add judgment", group: "Intake", keywords: "case claim", run: () => focusComposer("judgment") },
+    { id: "add-principle", label: "Add principle", group: "Intake", keywords: "normative claim", run: () => focusComposer("principle") },
+    { id: "add-theory", label: "Add background theory", group: "Intake", keywords: "empirical conceptual claim", run: () => focusComposer("theory") },
+    { id: "table-view", label: "Table view", group: "Workspace", keywords: "linear claims", run: () => setWorkbenchView("table") },
+    { id: "graph-view", label: "Graph view", group: "Workspace", keywords: "relations links", run: () => setWorkbenchView("graph") },
+    { id: "all-conflicts", label: "View conflict queue", group: "Conflicts", keywords: "review", run: viewAllConflicts },
+    { id: "next-conflict", label: "Next conflict", group: "Conflicts", keywords: "review queue", run: () => selectRelativeConflict(1) },
+    { id: "previous-conflict", label: "Previous conflict", group: "Conflicts", keywords: "review queue", run: () => selectRelativeConflict(-1) },
+    { id: "repair-detail", label: "View repair detail", group: "Repair", keywords: "simulation preview", run: focusRepairDetail },
+    { id: "apply-repair", label: "Apply selected repair", group: "Repair", keywords: "revision", disabled: repairApplied, run: applySelectedRepair },
+    { id: "analyze-session", label: "Analyze session", group: "Analysis", keywords: "rule smt nli", run: runLocalAnalysis },
+    { id: "replay", label: "Review replay", group: "Replay", keywords: "revision audit log", run: reviewReplay },
+    { id: "calibration", label: "Open calibration loop", group: "Calibration", keywords: "case disagreement confidence", run: focusCalibrationLoop },
+    { id: "export-session", label: "Export session JSON", group: "Export", keywords: "api archive", run: exportApi },
+    { id: "export-accessibility", label: "Export accessibility report", group: "Export", keywords: "wcag keyboard screen reader", run: exportAccessibilityReport },
+  ];
+}
+
+function renderAccessibleSummary() {
+  if (!els.screenReaderSummary) return;
+  els.screenReaderSummary.textContent = buildAccessibleSummaryText();
+}
+
+function buildAccessibleSummaryText() {
+  const selectedConflict = getSelectedConflict();
+  const hardCount = state.conflicts.filter((conflict) => conflict.kind === "hard").length;
+  const repairedCount = state.conflicts.filter((conflict) => conflict.status === "repaired").length;
+  const latestRun = getLatestAnalysisRun();
+  return [
+    `WRE session has ${state.beliefs.length} claims, ${state.relations.length} relations, and ${state.conflicts.length} conflicts.`,
+    `${hardCount} hard conflicts and ${state.conflicts.length - hardCount} soft tensions are currently tracked.`,
+    `${repairedCount} conflicts are marked repaired.`,
+    `Selected conflict ${selectedConflict?.id || "none"}: ${selectedConflict?.title || "none selected"}.`,
+    `Workspace view is ${state.viewMode}.`,
+    latestRun ? `Latest analysis ${latestRun.id} reviewed ${latestRun.candidatePairs} candidate pairs.` : "No analysis run has been recorded in this session.",
+  ].join(" ");
 }
 
 function renderStages() {
@@ -1065,6 +1255,7 @@ function renderDetail() {
 
   renderRepairPreview(conflict);
   syncRepairAction(conflict);
+  renderAccessibleSummary();
 }
 
 function syncRepairAction(conflict) {
@@ -2195,6 +2386,7 @@ function exportApi() {
     calibrationRounds: state.calibrationRounds,
     repairApplications: state.repairApplications,
     privacyReceipt: buildPrivacyReceiptPayload(),
+    accessibilityReport: buildAccessibilityReportPayload(),
     migrationReport: state.migrationReport || buildDefaultMigrationReport(),
     benchmarkTargets,
     agentContract: buildAgentContractPayload(),
@@ -2222,6 +2414,10 @@ function exportBenchmark() {
     },
     "normativity-wre-benchmark.json"
   );
+}
+
+function exportAccessibilityReport() {
+  downloadJson(buildAccessibilityReportPayload(), "normativity-wre-accessibility-report.json");
 }
 
 function buildPrivacyReceiptPayload() {
@@ -2260,6 +2456,32 @@ function buildPrivacyReceiptPayload() {
       export: "JSON session, benchmark, and calibration exports",
       delete: "Delete Local Data removes WRE local/session storage keys",
       correction: "Edit by importing corrected JSON or adding revised claims/rounds",
+    },
+  };
+}
+
+function buildAccessibilityReportPayload() {
+  const commands = getCommandDefinitions();
+  return {
+    schemaVersion: "wre-2.5-accessibility-report",
+    generatedAt: new Date().toISOString(),
+    target: "WCAG 2.2 AA",
+    sessionId: "sess_7f2c9e7a",
+    keyboardWorkflows: commands.map((command) => ({
+      id: command.id,
+      label: command.label,
+      group: command.group,
+      enabled: !command.disabled,
+    })),
+    screenReaderSummary: buildAccessibleSummaryText(),
+    checks: {
+      skipLink: Boolean(document.querySelector(".skip-link")),
+      dualGraphTableMode: Boolean(els.claimWorkbenchPanel && document.querySelector("[data-view-mode='table']") && document.querySelector("[data-view-mode='graph']")),
+      keyboardCommandPalette: Boolean(els.commandPalette),
+      screenReaderSummaryRegion: Boolean(els.screenReaderSummary),
+      dialogUsesAriaModal: els.commandPalette?.getAttribute("aria-modal") === "true",
+      automatedAxeScan: "not-run-in-static-session",
+      manualKeyboardPass: "command palette, table/graph switch, conflict navigation, repair focus, and replay focus",
     },
   };
 }
@@ -2434,6 +2656,67 @@ function showWorkbenchLayer(layer) {
   syncViewMode();
   renderClaimWorkbench();
   focusElement(els.claimWorkbenchPanel);
+}
+
+function setWorkbenchView(mode) {
+  state.viewMode = mode === "graph" ? "graph" : "table";
+  state.activeStage = "integration";
+  saveState();
+  syncViewMode();
+  renderClaimWorkbench();
+  renderAccessibleSummary();
+  focusElement(els.claimWorkbenchPanel);
+}
+
+function viewAllConflicts() {
+  state.activeTab = "all";
+  state.activeNav = "conflicts";
+  saveState();
+  renderTabs();
+  renderConflicts();
+  renderDetail();
+  syncNav();
+  focusElement(document.querySelector(".conflict-panel"));
+}
+
+function selectRelativeConflict(delta) {
+  const conflicts = getFilteredConflicts();
+  if (!conflicts.length) return;
+  const currentIndex = conflicts.findIndex((conflict) => conflict.id === state.selectedConflictId);
+  const nextIndex = (Math.max(currentIndex, 0) + delta + conflicts.length) % conflicts.length;
+  const nextConflict = conflicts[nextIndex];
+  state.selectedConflictId = nextConflict.id;
+  state.selectedRepairId = nextConflict.repairs[0]?.id || "";
+  state.activeNav = "conflicts";
+  state.graphFocusConflictId = nextConflict.id;
+  saveState();
+  renderTabs();
+  renderConflicts();
+  renderDetail();
+  renderClaimWorkbench();
+  syncNav();
+  focusElement(document.querySelector(".detail-panel"));
+}
+
+function focusRepairDetail() {
+  state.activeNav = "repair";
+  saveState();
+  syncNav();
+  focusElement(document.querySelector(".detail-panel"));
+}
+
+function reviewReplay() {
+  state.activeNav = "replay";
+  saveState();
+  syncNav();
+  focusElement(els.revisionReplay);
+}
+
+function focusCalibrationLoop() {
+  state.activeStage = "reflection";
+  saveState();
+  renderStages();
+  focusElement(els.calibrationPanel);
 }
 
 function getVisibleBeliefs() {
