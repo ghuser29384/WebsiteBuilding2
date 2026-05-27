@@ -328,6 +328,7 @@ const agentContract = {
     ["POST", "/v1/conflicts/{id}/repair", "Preview or apply a ranked repair option."],
     ["GET", "/v1/export", "Export a portable JSON session archive."],
     ["GET", "/v1/benchmarks/latest", "Read evaluation targets and the latest local analysis run."],
+    ["GET", "/v1/calibration-rounds", "Read case-loop calibration and disagreement rounds."],
     ["DELETE", "/v1/sessions/{id}", "Delete a synced or local session record."],
   ],
 };
@@ -436,6 +437,21 @@ const els = {
   analysisPanel: document.getElementById("analysisPanel"),
   analysisSummary: document.getElementById("analysisSummary"),
   benchmarkList: document.getElementById("benchmarkList"),
+  calibrationPanel: document.getElementById("calibrationPanel"),
+  calibrationForm: document.getElementById("calibrationForm"),
+  casePrincipleInput: document.getElementById("casePrincipleInput"),
+  caseIntuitionInput: document.getElementById("caseIntuitionInput"),
+  caseVerdictInput: document.getElementById("caseVerdictInput"),
+  caseEvidenceInput: document.getElementById("caseEvidenceInput"),
+  caseDisagreementInput: document.getElementById("caseDisagreementInput"),
+  caseConfidenceInput: document.getElementById("caseConfidenceInput"),
+  caseConfidenceOutput: document.getElementById("caseConfidenceOutput"),
+  caseUpdatedPrincipleInput: document.getElementById("caseUpdatedPrincipleInput"),
+  seedCalibrationBtn: document.getElementById("seedCalibrationBtn"),
+  clearCalibrationBtn: document.getElementById("clearCalibrationBtn"),
+  exportCalibrationBtn: document.getElementById("exportCalibrationBtn"),
+  calibrationCount: document.getElementById("calibrationCount"),
+  calibrationList: document.getElementById("calibrationList"),
 };
 
 let state = loadState() || createState();
@@ -454,6 +470,7 @@ function createState() {
     conflicts: clone(seedConflicts),
     revisions: [],
     analysisRuns: [],
+    calibrationRounds: [],
     privacy: { ...DEFAULT_PRIVACY },
     viewMode: "table",
     workbenchFilter: "all",
@@ -479,6 +496,7 @@ function loadState() {
       conflicts: parsed.conflicts.map(normalizeConflict),
       revisions: Array.isArray(parsed.revisions) ? parsed.revisions.map(normalizeRevision) : [],
       analysisRuns: Array.isArray(parsed.analysisRuns) ? parsed.analysisRuns.map(normalizeAnalysisRun) : [],
+      calibrationRounds: Array.isArray(parsed.calibrationRounds) ? parsed.calibrationRounds.map(normalizeCalibrationRound) : [],
       privacy: { ...DEFAULT_PRIVACY, ...(parsed.privacy || {}) },
       viewMode: parsed.viewMode === "graph" ? "graph" : "table",
       workbenchFilter: ["judgment", "principle", "theory"].includes(parsed.workbenchFilter) ? parsed.workbenchFilter : "all",
@@ -554,6 +572,20 @@ function normalizeAnalysisRun(run) {
   };
 }
 
+function normalizeCalibrationRound(round) {
+  return {
+    id: round.id || `Q-${Date.now()}`,
+    time: round.time || new Date().toISOString(),
+    principle: round.principle || "",
+    intuition: round.intuition || "",
+    verdict: round.verdict || "",
+    evidence: round.evidence || "unclear",
+    disagreement: round.disagreement || "none",
+    confidence: Number.isFinite(Number(round.confidence)) ? clamp(Number(round.confidence), 1, 100) : 70,
+    updatedPrinciple: round.updatedPrinciple || round.updated_principle || "",
+  };
+}
+
 function bindEvents() {
   document.querySelectorAll(".nav-button").forEach((button) => {
     button.addEventListener("click", () => {
@@ -583,10 +615,16 @@ function bindEvents() {
 
   els.beliefText.addEventListener("input", updateTokenCount);
   els.confidenceInput.addEventListener("input", syncConfidenceOutput);
+  els.caseConfidenceInput.addEventListener("input", syncCaseConfidenceOutput);
 
   els.beliefForm.addEventListener("submit", (event) => {
     event.preventDefault();
     addBelief();
+  });
+
+  els.calibrationForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    recordCalibrationRound();
   });
 
   els.clearComposerBtn.addEventListener("click", () => {
@@ -649,6 +687,7 @@ function bindEvents() {
   });
 
   els.exportBtn.addEventListener("click", exportApi);
+  els.exportCalibrationBtn.addEventListener("click", exportCalibrationRounds);
   els.importInput.addEventListener("change", importApi);
   els.resetLocalBtn.addEventListener("click", resetLocalSession);
 
@@ -664,6 +703,8 @@ function bindEvents() {
   });
 
   els.copyContractBtn.addEventListener("click", copyAgentContract);
+  els.seedCalibrationBtn.addEventListener("click", seedCalibrationFromConflict);
+  els.clearCalibrationBtn.addEventListener("click", clearCalibrationForm);
 }
 
 function render() {
@@ -676,11 +717,13 @@ function render() {
   renderRevisionReplay();
   renderAgentContract();
   renderAnalysisPanel();
+  renderCalibrationPanel();
   renderPipeline();
   syncNav();
   syncPrivacyControls();
   syncViewMode();
   syncConfidenceOutput();
+  syncCaseConfidenceOutput();
   syncStorageStatus();
   updateTokenCount();
 }
@@ -1157,6 +1200,40 @@ function renderAnalysisPanel() {
   );
 }
 
+function renderCalibrationPanel() {
+  const rounds = [...state.calibrationRounds].map(normalizeCalibrationRound).reverse();
+  els.calibrationCount.textContent = `${state.calibrationRounds.length} round${state.calibrationRounds.length === 1 ? "" : "s"}`;
+
+  if (!rounds.length) {
+    const empty = document.createElement("li");
+    empty.className = "calibration-empty";
+    empty.innerHTML = `
+      <strong>No calibration rounds yet</strong>
+      <span>Seed from the selected conflict or record a fresh case intuition to track disagreement pressure.</span>
+    `;
+    replaceChildren(els.calibrationList, [empty]);
+    return;
+  }
+
+  replaceChildren(
+    els.calibrationList,
+    rounds.slice(0, 6).map((round) => {
+      const item = document.createElement("li");
+      item.className = "calibration-item";
+      item.innerHTML = `
+        <span class="calibration-score">${escapeHtml(round.confidence)}%</span>
+        <span class="calibration-copy">
+          <strong>${escapeHtml(round.principle || "Untitled principle")}</strong>
+          <span>${escapeHtml(evidenceLabel(round.evidence))} · ${escapeHtml(disagreementLabel(round.disagreement))}</span>
+          <p>${escapeHtml(round.updatedPrinciple || round.intuition || "No rationale recorded.")}</p>
+          <time datetime="${escapeHtml(round.time)}">${escapeHtml(formatTime(round.time))}</time>
+        </span>
+      `;
+      return item;
+    })
+  );
+}
+
 function runLocalAnalysis() {
   const report = buildAnalysisReport();
   const generatedConflicts = report.generatedConflicts.filter((conflict) => !hasConflictBetween(conflict.claimA, conflict.claimB));
@@ -1342,6 +1419,10 @@ function syncConfidenceOutput() {
   els.confidenceOutput.textContent = `${els.confidenceInput.value}%`;
 }
 
+function syncCaseConfidenceOutput() {
+  els.caseConfidenceOutput.textContent = `${els.caseConfidenceInput.value}%`;
+}
+
 function syncStorageStatus() {
   const storageMode = state.privacy.retention === "session-only" ? "session" : "local";
   const syncMode = state.privacy.cloudSync ? "sync ready" : "local-only";
@@ -1427,6 +1508,70 @@ function addBelief() {
   render();
 }
 
+function recordCalibrationRound() {
+  const round = normalizeCalibrationRound({
+    id: nextCalibrationRoundId(),
+    time: new Date().toISOString(),
+    principle: els.casePrincipleInput.value.trim(),
+    intuition: els.caseIntuitionInput.value.trim(),
+    verdict: els.caseVerdictInput.value.trim(),
+    evidence: els.caseEvidenceInput.value,
+    disagreement: els.caseDisagreementInput.value,
+    confidence: Number(els.caseConfidenceInput.value),
+    updatedPrinciple: els.caseUpdatedPrincipleInput.value.trim(),
+  });
+
+  if (!round.principle || !round.intuition || !round.updatedPrinciple) {
+    if (!round.principle) els.casePrincipleInput.focus();
+    else if (!round.intuition) els.caseIntuitionInput.focus();
+    else els.caseUpdatedPrincipleInput.focus();
+    return;
+  }
+
+  state.calibrationRounds.push(round);
+  state.activeStage = "reflection";
+  state.activeNav = "replay";
+  recordRevision(
+    "calibration",
+    `${round.id} recorded ${evidenceLabel(round.evidence).toLowerCase()} with ${disagreementLabel(round.disagreement).toLowerCase()} and ${round.confidence}% confidence.`
+  );
+  saveState();
+  render();
+  focusElement(els.calibrationPanel);
+}
+
+function seedCalibrationFromConflict() {
+  const conflict = getSelectedConflict();
+  if (!conflict) return;
+  const claimA = findBelief(conflict.claimA);
+  const claimB = findBelief(conflict.claimB);
+  els.casePrincipleInput.value = claimB?.layer === "principle" ? claimB.text : claimA?.text || conflict.title;
+  els.caseIntuitionInput.value = claimA?.text || conflict.summary;
+  els.caseVerdictInput.value = conflict.why || conflict.summary;
+  els.caseEvidenceInput.value = conflict.kind === "hard" ? "weakens" : "unclear";
+  els.caseDisagreementInput.value = conflict.severity === "critical" || conflict.severity === "high" ? "moderate" : "low";
+  els.caseConfidenceInput.value = String(Math.round((conflict.confidence || 0.7) * 100));
+  els.caseUpdatedPrincipleInput.value = conflict.repairs[0]?.text || "";
+  syncCaseConfidenceOutput();
+  els.caseUpdatedPrincipleInput.focus();
+}
+
+function clearCalibrationForm() {
+  [
+    els.casePrincipleInput,
+    els.caseIntuitionInput,
+    els.caseVerdictInput,
+    els.caseUpdatedPrincipleInput,
+  ].forEach((field) => {
+    field.value = "";
+  });
+  els.caseEvidenceInput.value = "supports";
+  els.caseDisagreementInput.value = "none";
+  els.caseConfidenceInput.value = "70";
+  syncCaseConfidenceOutput();
+  els.casePrincipleInput.focus();
+}
+
 function inferLayer(text) {
   const lower = text.toLowerCase();
   if (lower.includes("principle") || lower.includes("@p")) return "principle";
@@ -1481,6 +1626,7 @@ function exportApi() {
     selectedConflictId: state.selectedConflictId,
     revisions: state.revisions,
     analysisRuns: state.analysisRuns,
+    calibrationRounds: state.calibrationRounds,
     benchmarkTargets,
     agentContract: buildAgentContractPayload(),
   };
@@ -1498,6 +1644,23 @@ function exportBenchmark() {
       notes: "Local benchmark export for precision, explanation, latency, repair acceptance, and accessibility review.",
     },
     "normativity-wre-benchmark.json"
+  );
+}
+
+function exportCalibrationRounds() {
+  downloadJson(
+    {
+      schemaVersion: "wre-2.5-calibration",
+      generatedAt: new Date().toISOString(),
+      sessionId: "sess_7f2c9e7a",
+      calibrationRounds: state.calibrationRounds.map(normalizeCalibrationRound),
+      summary: {
+        rounds: state.calibrationRounds.length,
+        averageConfidence: averageConfidence(state.calibrationRounds),
+        highDisagreement: state.calibrationRounds.filter((round) => round.disagreement === "high").length,
+      },
+    },
+    "normativity-wre-calibration-rounds.json"
   );
 }
 
@@ -1529,6 +1692,7 @@ function importApi(event) {
         conflicts: conflicts.map(normalizeConflict),
         revisions: Array.isArray(parsed.revisions) ? parsed.revisions.map(normalizeRevision) : [],
         analysisRuns: Array.isArray(parsed.analysisRuns) ? parsed.analysisRuns.map(normalizeAnalysisRun) : [],
+        calibrationRounds: Array.isArray(parsed.calibrationRounds) ? parsed.calibrationRounds.map(normalizeCalibrationRound) : [],
         privacy: { ...DEFAULT_PRIVACY, ...(parsed.privacy || parsed.session?.privacy || {}) },
         selectedConflictId: parsed.selectedConflictId || conflicts[0]?.id || "C-001",
         viewMode: parsed.viewMode === "graph" ? "graph" : "table",
@@ -1659,6 +1823,15 @@ function nextAnalysisRunId() {
   return `A-${String(max + 1).padStart(3, "0")}`;
 }
 
+function nextCalibrationRoundId() {
+  const max = state?.calibrationRounds
+    ? state.calibrationRounds
+        .map((round) => Number(String(round.id).replace(/^[A-Z-]+/, "")) || 0)
+        .reduce((highest, value) => Math.max(highest, value), 0)
+    : 0;
+  return `Q-${String(max + 1).padStart(3, "0")}`;
+}
+
 function nextConflictNumber() {
   return state.conflicts
     .map((conflict) => Number(String(conflict.id).replace(/^[A-Z-]+/, "")) || 0)
@@ -1685,6 +1858,26 @@ function roundNumber(value) {
   return Math.round(value * 100) / 100;
 }
 
+function averageConfidence(rounds) {
+  if (!rounds.length) return 0;
+  const total = rounds.reduce((sum, round) => sum + Number(round.confidence || 0), 0);
+  return Math.round(total / rounds.length);
+}
+
+function evidenceLabel(value) {
+  if (value === "supports") return "Supports principle";
+  if (value === "weakens") return "Weakens principle";
+  if (value === "undercuts") return "Undercuts background assumption";
+  return "Unclear pressure";
+}
+
+function disagreementLabel(value) {
+  if (value === "low") return "Low disagreement";
+  if (value === "moderate") return "Moderate disagreement";
+  if (value === "high") return "High disagreement";
+  return "No peer disagreement";
+}
+
 function copyAgentContract() {
   const text = JSON.stringify(buildAgentContractPayload(), null, 2);
   const buttonLabel = els.copyContractBtn.textContent;
@@ -1708,6 +1901,7 @@ function revisionLabel(type) {
   if (type === "privacy") return "Privacy changed";
   if (type === "claim") return "Claim added";
   if (type === "analysis") return "Analysis run";
+  if (type === "calibration") return "Calibration round";
   return "Session event";
 }
 

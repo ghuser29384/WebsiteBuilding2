@@ -189,6 +189,71 @@
         <div id="benchmarkList" class="benchmark-list" aria-label="Evaluation targets"></div>
       </section>
 
+      <section id="calibrationPanel" class="calibration-panel" tabindex="-1" aria-labelledby="calibrationTitle">
+        <div class="calibration-head">
+          <div>
+            <h2 id="calibrationTitle">Calibration & Disagreement Loop</h2>
+            <p>Run the five-question case loop so disagreement pressure updates confidence without treating coherence as a final verdict.</p>
+          </div>
+          <button id="exportCalibrationBtn" class="utility-button compact" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12" /><path d="m8 11 4 4 4-4" /><path d="M5 20h14" /></svg>
+            <span>Export Rounds</span>
+          </button>
+        </div>
+        <form id="calibrationForm" class="calibration-form">
+          <label for="casePrincipleInput">
+            <span>1. Principle under test</span>
+            <textarea id="casePrincipleInput" rows="2" placeholder="e.g., Equal respect and non-discrimination"></textarea>
+          </label>
+          <label for="caseIntuitionInput">
+            <span>2. Case intuition</span>
+            <textarea id="caseIntuitionInput" rows="2" placeholder="What seems right in the concrete case?"></textarea>
+          </label>
+          <label for="caseVerdictInput">
+            <span>3. Principle-implied verdict</span>
+            <textarea id="caseVerdictInput" rows="2" placeholder="What does the principle imply?"></textarea>
+          </label>
+          <label for="caseEvidenceInput">
+            <span>4. Evidential pressure</span>
+            <select id="caseEvidenceInput">
+              <option value="supports">Supports principle</option>
+              <option value="weakens">Weakens principle</option>
+              <option value="undercuts">Undercuts background assumption</option>
+              <option value="unclear">Unclear / needs more cases</option>
+            </select>
+          </label>
+          <label for="caseDisagreementInput">
+            <span>Disagreement pressure</span>
+            <select id="caseDisagreementInput">
+              <option value="none">No peer disagreement</option>
+              <option value="low">Low peer disagreement</option>
+              <option value="moderate">Moderate peer disagreement</option>
+              <option value="high">High peer disagreement</option>
+            </select>
+          </label>
+          <label for="caseConfidenceInput">
+            <span>Updated confidence <output id="caseConfidenceOutput" for="caseConfidenceInput">70%</output></span>
+            <input id="caseConfidenceInput" type="range" min="1" max="100" value="70">
+          </label>
+          <label class="calibration-wide" for="caseUpdatedPrincipleInput">
+            <span>5. Updated principle or rationale</span>
+            <textarea id="caseUpdatedPrincipleInput" rows="3" placeholder="Record the revised principle, scope boundary, or reason to leave it unchanged."></textarea>
+          </label>
+          <div class="calibration-actions">
+            <button id="seedCalibrationBtn" class="utility-button compact" type="button">Seed from Conflict</button>
+            <button id="clearCalibrationBtn" class="utility-button compact" type="button">Clear</button>
+            <button class="primary-button" type="submit">Record Round</button>
+          </div>
+        </form>
+        <div class="calibration-log">
+          <div>
+            <h3>Recorded Rounds</h3>
+            <p id="calibrationCount">0 rounds</p>
+          </div>
+          <ol id="calibrationList" class="calibration-list"></ol>
+        </div>
+      </section>
+
       <section class="families-grid" aria-label="Belief families">
         <article class="family-card">
           <div class="family-head">
