@@ -2495,6 +2495,94 @@ svg {
   font-size: 11px;
 }
 
+.repair-status-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  border: 1px solid #bbd9cb;
+  border-radius: 999px;
+  background: #edf8f2;
+  color: var(--green);
+  padding: 0 8px;
+  font-size: 10px;
+  font-weight: 820;
+  white-space: nowrap;
+}
+
+.repair-preview {
+  display: grid;
+  gap: 10px;
+}
+
+.repair-preview-metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.repair-preview-metrics article,
+.repair-diff article,
+.repair-impact {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #fbfcfb;
+  padding: 9px;
+}
+
+.repair-preview-metrics span,
+.repair-diff span,
+.repair-impact span {
+  display: block;
+  color: #61707a;
+  font-size: 10px;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
+.repair-preview-metrics strong {
+  display: block;
+  margin-top: 4px;
+  color: #17202b;
+  font-size: 12px;
+  font-weight: 820;
+}
+
+.repair-diff {
+  display: grid;
+  gap: 8px;
+}
+
+.repair-diff p,
+.repair-impact p {
+  margin: 5px 0 0;
+  color: #26313d;
+  font-size: 11px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.repair-impact strong {
+  display: inline-flex;
+  align-items: center;
+  min-height: 20px;
+  margin-top: 6px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: #ffffff;
+  color: #334155;
+  padding: 0 7px;
+  font-size: 10px;
+  font-weight: 820;
+}
+
+.repair-impact small {
+  display: block;
+  margin-top: 7px;
+  color: #62717b;
+  font-size: 10px;
+  font-weight: 760;
+}
+
 .cost-pill {
   align-self: end;
   border: 1px solid currentColor;
@@ -2514,6 +2602,13 @@ svg {
 .apply-button {
   min-height: 40px;
   font-size: 14px;
+}
+
+.apply-button:disabled {
+  cursor: default;
+  background: #e6efe9;
+  color: var(--green);
+  box-shadow: none;
 }
 
 .pipeline-panel {
@@ -2770,6 +2865,7 @@ svg {
   .calibration-log,
   .replay-contract-grid,
   .relation-form,
+  .repair-preview-metrics,
   .graph-grid {
     grid-template-columns: 1fr;
   }

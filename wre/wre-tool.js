@@ -364,6 +364,7 @@ const agentContract = {
   schemaVersion: "wre-2.5",
   claimFields: ["id", "layer", "text", "domain", "confidence", "timeScope", "provenance", "sensitivity"],
   relationFields: ["id", "source", "target", "type", "weight", "rationale"],
+  repairOptionFields: ["id", "conflictId", "actionType", "affectedClaims", "predictedResolutionScore", "disruptionCost", "explanation"],
   relationTypes: ["supports", "conflicts", "neutral", "implies", "depends_on", "undercuts"],
   conflictKinds: ["hard", "soft", "nlp"],
   endpoints: [
@@ -442,6 +443,7 @@ const els = {
   detailLinks: document.getElementById("detailLinks"),
   detailWhy: document.getElementById("detailWhy"),
   repairOptions: document.getElementById("repairOptions"),
+  repairPreview: document.getElementById("repairPreview"),
   pipelineList: document.getElementById("pipelineList"),
   beliefForm: document.getElementById("beliefForm"),
   beliefText: document.getElementById("beliefText"),
@@ -524,6 +526,7 @@ function createState() {
     revisions: [],
     analysisRuns: [],
     calibrationRounds: [],
+    repairApplications: [],
     migrationReport: null,
     privacy: { ...DEFAULT_PRIVACY },
     viewMode: "table",
@@ -553,6 +556,7 @@ function loadState() {
       revisions: Array.isArray(parsed.revisions) ? parsed.revisions.map(normalizeRevision) : [],
       analysisRuns: Array.isArray(parsed.analysisRuns) ? parsed.analysisRuns.map(normalizeAnalysisRun) : [],
       calibrationRounds: Array.isArray(parsed.calibrationRounds) ? parsed.calibrationRounds.map(normalizeCalibrationRound) : [],
+      repairApplications: Array.isArray(parsed.repairApplications) ? parsed.repairApplications.map(normalizeRepairApplication) : [],
       migrationReport: parsed.migrationReport || null,
       privacy: { ...DEFAULT_PRIVACY, ...(parsed.privacy || {}) },
       viewMode: parsed.viewMode === "graph" ? "graph" : "table",
@@ -638,6 +642,27 @@ function normalizeRevision(revision) {
     text: revision.text || revision.reason || "Session updated.",
     conflictId: revision.conflictId || "",
     repairId: revision.repairId || "",
+    affectedClaims: Array.isArray(revision.affectedClaims) ? revision.affectedClaims : [],
+    predictedResolutionScore: Number.isFinite(Number(revision.predictedResolutionScore)) ? Number(revision.predictedResolutionScore) : null,
+    disruptionCost: Number.isFinite(Number(revision.disruptionCost)) ? Number(revision.disruptionCost) : null,
+    beforeSnapshot: revision.beforeSnapshot || null,
+    afterSnapshot: revision.afterSnapshot || null,
+  };
+}
+
+function normalizeRepairApplication(application) {
+  return {
+    id: application.id || `RA-${Date.now()}`,
+    time: application.time || new Date().toISOString(),
+    conflictId: application.conflictId || "",
+    repairId: application.repairId || "",
+    actionType: application.actionType || "scope_boundary",
+    affectedClaims: Array.isArray(application.affectedClaims) ? application.affectedClaims : [],
+    predictedResolutionScore: Number.isFinite(Number(application.predictedResolutionScore)) ? Number(application.predictedResolutionScore) : 0,
+    disruptionCost: Number.isFinite(Number(application.disruptionCost)) ? Number(application.disruptionCost) : 0,
+    beforeSnapshot: application.beforeSnapshot || null,
+    afterSnapshot: application.afterSnapshot || null,
+    explanation: application.explanation || "",
   };
 }
 
@@ -913,6 +938,7 @@ function renderConflicts() {
           <span class="conflict-card-id">${escapeHtml(conflict.id)}</span>
           <h3>${escapeHtml(conflict.title)}</h3>
           <span class="severity-pill ${escapeHtml(conflict.severity)}">${escapeHtml(titleCase(conflict.severity))}</span>
+          ${conflict.status === "repaired" ? '<span class="repair-status-pill">Repaired</span>' : ""}
         </span>
         <p>${escapeHtml(conflict.summary)}</p>
         <p>Provenance: ${escapeHtml(conflict.provenance)}</p>
@@ -1036,6 +1062,62 @@ function renderDetail() {
       return button;
     })
   );
+
+  renderRepairPreview(conflict);
+  syncRepairAction(conflict);
+}
+
+function syncRepairAction(conflict) {
+  const alreadyApplied = conflict.status === "repaired" && conflict.appliedRepairId === state.selectedRepairId;
+  els.applyRepairBtn.disabled = alreadyApplied;
+  els.applyRepairBtn.querySelector("span").textContent = alreadyApplied ? "Repair Applied" : "Apply Repair";
+}
+
+function renderRepairPreview(conflict) {
+  const repair = conflict.repairs.find((item) => item.id === state.selectedRepairId) || conflict.repairs[0];
+  if (!repair) {
+    els.repairPreview.textContent = "No repair option selected.";
+    return;
+  }
+  const simulation = buildRepairSimulation(conflict, repair);
+  const targetBefore = simulation.beforeSnapshot.claims.find((claim) => claim.id === simulation.targetClaimId);
+  const targetAfter = simulation.afterSnapshot.claims.find((claim) => claim.id === simulation.targetClaimId);
+  const resolution = `${Math.round(simulation.predictedResolutionScore * 100)}%`;
+  const dependencyText = simulation.dependencyImpact
+    ? `${simulation.dependencyImpact} graph link${simulation.dependencyImpact === 1 ? "" : "s"} touch affected claims`
+    : "No explicit relation links touched";
+
+  els.repairPreview.innerHTML = `
+    <div class="repair-preview-metrics">
+      <article>
+        <span>Action type</span>
+        <strong>${escapeHtml(actionTypeLabel(simulation.actionType))}</strong>
+      </article>
+      <article>
+        <span>Predicted resolution</span>
+        <strong>${escapeHtml(resolution)}</strong>
+      </article>
+      <article>
+        <span>Disruption cost</span>
+        <strong>${escapeHtml(simulation.disruptionCost.toFixed(2))}</strong>
+      </article>
+    </div>
+    <div class="repair-diff">
+      <article>
+        <span>Before</span>
+        <p>${escapeHtml(targetBefore?.text || "No target claim found.")}</p>
+      </article>
+      <article>
+        <span>After</span>
+        <p>${escapeHtml(targetAfter?.text || "No target claim found.")}</p>
+      </article>
+    </div>
+    <div class="repair-impact">
+      <span>Affected: ${simulation.affectedClaims.map((id) => `<strong>${escapeHtml(id)}</strong>`).join(" ")}</span>
+      <small>${escapeHtml(dependencyText)}</small>
+      <p>${escapeHtml(simulation.explanation)}</p>
+    </div>
+  `;
 }
 
 function renderPipeline() {
@@ -1301,6 +1383,7 @@ function renderRevisionReplay() {
         <span class="revision-copy">
           <strong>${escapeHtml(revisionLabel(revision.type))}</strong>
           <span>${escapeHtml(revision.text)}</span>
+          ${renderRevisionEvidence(revision)}
           <time datetime="${escapeHtml(revision.time)}">${escapeHtml(formatTime(revision.time))}</time>
         </span>
       `;
@@ -1309,12 +1392,22 @@ function renderRevisionReplay() {
   );
 }
 
+function renderRevisionEvidence(revision) {
+  if (!revision.affectedClaims?.length && revision.predictedResolutionScore === null && revision.disruptionCost === null) return "";
+  const bits = [];
+  if (revision.affectedClaims?.length) bits.push(`Affected ${revision.affectedClaims.join(", ")}`);
+  if (revision.predictedResolutionScore !== null) bits.push(`Resolution ${Math.round(revision.predictedResolutionScore * 100)}%`);
+  if (revision.disruptionCost !== null) bits.push(`Cost ${Number(revision.disruptionCost).toFixed(2)}`);
+  return `<small class="revision-evidence">${escapeHtml(bits.join(" | "))}</small>`;
+}
+
 function renderAgentContract() {
   replaceChildren(
     els.agentContractList,
     [
       renderContractGroup("Claim fields", agentContract.claimFields),
       renderContractGroup("Relation fields", agentContract.relationFields),
+      renderContractGroup("Repair option fields", agentContract.repairOptionFields),
       renderContractGroup("Relation types", agentContract.relationTypes),
       renderContractGroup("Conflict kinds", agentContract.conflictKinds),
       ...agentContract.endpoints.map(([method, path, copy]) => {
@@ -1899,10 +1992,59 @@ function applySelectedRepair() {
   const conflict = getSelectedConflict();
   const repair = conflict?.repairs.find((item) => item.id === state.selectedRepairId);
   if (!conflict || !repair) return;
+  if (conflict.status === "repaired" && conflict.appliedRepairId === repair.id) {
+    state.activeNav = "replay";
+    saveState();
+    syncNav();
+    focusElement(els.revisionReplay);
+    return;
+  }
+  const simulation = buildRepairSimulation(conflict, repair);
+  const targetIndex = state.beliefs.findIndex((belief) => belief.id === simulation.targetClaimId);
+  if (targetIndex >= 0) {
+    const nextClaim = simulation.afterSnapshot.claims.find((claim) => claim.id === simulation.targetClaimId);
+    if (nextClaim) {
+      state.beliefs[targetIndex] = {
+        ...state.beliefs[targetIndex],
+        ...nextClaim,
+      };
+    }
+  }
+
+  const conflictIndex = state.conflicts.findIndex((item) => item.id === conflict.id);
+  if (conflictIndex >= 0) {
+    state.conflicts[conflictIndex] = {
+      ...state.conflicts[conflictIndex],
+      status: "repaired",
+      appliedRepairId: repair.id,
+      repairedAt: new Date().toISOString(),
+      repairSummary: simulation.explanation,
+    };
+  }
+
+  const application = normalizeRepairApplication({
+    id: nextRepairApplicationId(),
+    time: new Date().toISOString(),
+    conflictId: conflict.id,
+    repairId: repair.id,
+    actionType: simulation.actionType,
+    affectedClaims: simulation.affectedClaims,
+    predictedResolutionScore: simulation.predictedResolutionScore,
+    disruptionCost: simulation.disruptionCost,
+    beforeSnapshot: simulation.beforeSnapshot,
+    afterSnapshot: simulation.afterSnapshot,
+    explanation: simulation.explanation,
+  });
+  state.repairApplications.push(application);
 
   recordRevision("repair", `${repair.id} applied to ${conflict.id}: ${repair.title}.`, {
     conflictId: conflict.id,
     repairId: repair.id,
+    affectedClaims: simulation.affectedClaims,
+    predictedResolutionScore: simulation.predictedResolutionScore,
+    disruptionCost: simulation.disruptionCost,
+    beforeSnapshot: simulation.beforeSnapshot,
+    afterSnapshot: simulation.afterSnapshot,
   });
   state.activeStage = "action";
   state.activeNav = "replay";
@@ -1911,15 +2053,120 @@ function applySelectedRepair() {
   if (revisionStep) revisionStep.metric = `${state.revisions.length} revisions`;
 
   saveState();
-  renderStages();
-  renderPipeline();
-  renderRevisionReplay();
-  syncNav();
+  render();
   focusElement(els.revisionReplay);
   els.applyRepairBtn.querySelector("span").textContent = "Repair Applied";
   window.setTimeout(() => {
     els.applyRepairBtn.querySelector("span").textContent = "Apply Repair";
   }, 1400);
+}
+
+function buildRepairSimulation(conflict, repair) {
+  const targetClaimId = inferRepairTargetClaimId(conflict, repair);
+  const affectedClaims = [...new Set([targetClaimId, ...(conflict.core || []), conflict.claimA, conflict.claimB].filter(Boolean))];
+  const beforeSnapshot = buildRepairSnapshot(conflict, affectedClaims);
+  const targetClaim = findBelief(targetClaimId);
+  const actionType = inferRepairActionType(repair);
+  const disruptionCost = Number.isFinite(Number(repair.cost)) ? Number(repair.cost) : 0.75;
+  const predictedResolutionScore = roundNumber(clamp(0.96 - disruptionCost * 0.25 + (conflict.kind === "hard" ? 0.03 : 0), 0.42, 0.94));
+  const dependencyImpact = state.relations.filter((relation) => {
+    return affectedClaims.includes(relation.source) || affectedClaims.includes(relation.target);
+  }).length;
+  const afterClaims = beforeSnapshot.claims.map((claim) => {
+    if (claim.id !== targetClaimId) return claim;
+    return buildRepairedClaim(claim, repair, actionType);
+  });
+
+  return {
+    conflictId: conflict.id,
+    repairId: repair.id,
+    targetClaimId,
+    actionType,
+    affectedClaims,
+    disruptionCost,
+    predictedResolutionScore,
+    dependencyImpact,
+    beforeSnapshot,
+    afterSnapshot: {
+      ...beforeSnapshot,
+      conflictStatus: "repaired",
+      appliedRepairId: repair.id,
+      claims: afterClaims,
+    },
+    explanation: `${repair.title} changes ${targetClaim?.id || targetClaimId} with minimal disruption to ${affectedClaims.length} claim${affectedClaims.length === 1 ? "" : "s"}.`,
+  };
+}
+
+function buildRepairSnapshot(conflict, affectedClaims) {
+  const affectedSet = new Set(affectedClaims);
+  return {
+    conflict: {
+      id: conflict.id,
+      title: conflict.title,
+      kind: conflict.kind,
+      severity: conflict.severity,
+      status: conflict.status || "open",
+      core: conflict.core || [],
+    },
+    claims: affectedClaims.map((id) => normalizeBelief(findBelief(id) || { id, text: "", layer: "judgment" })),
+    relations: state.relations.filter((relation) => affectedSet.has(relation.source) || affectedSet.has(relation.target)).map(normalizeRelation),
+  };
+}
+
+function buildRepairedClaim(claim, repair, actionType) {
+  const repaired = { ...claim };
+  if (actionType === "adjust_confidence") {
+    repaired.confidence = clamp(Number(claim.confidence) - 8, 1, 100);
+  } else {
+    repaired.text = buildRepairedClaimText(claim, repair);
+  }
+  repaired.provenance = appendAuditNote(claim.provenance, `repaired via ${repair.id}`);
+  return repaired;
+}
+
+function buildRepairedClaimText(claim, repair) {
+  const text = repair.text || "";
+  const scopeNote = `Scope note: ${text}`;
+  if (claim.text.includes(text) || claim.text.includes(scopeNote)) return claim.text;
+  const addConstraint = text.match(/^Add constraint to [A-Z]\d+:\s*(.+)$/i);
+  if (addConstraint) {
+    const constraint = `Scope constraint: ${addConstraint[1]}`;
+    return claim.text.includes(constraint) ? claim.text : `${claim.text} ${constraint}`;
+  }
+  const refine = text.match(/^Refine [A-Z]\d+ to\s*(.+)$/i);
+  if (refine) return refine[1];
+  const decrease = text.match(/^Decrease weight of [A-Z]\d+\s*(.+)$/i);
+  if (decrease) {
+    const weightNote = `Weight note: decrease confidence ${decrease[1]}`;
+    return claim.text.includes(weightNote) ? claim.text : `${claim.text} ${weightNote}`;
+  }
+  return `${claim.text} ${scopeNote}`;
+}
+
+function inferRepairTargetClaimId(conflict, repair) {
+  const mentioned = String(repair.text || "").match(/\b([JPT]\d+)\b/i)?.[1]?.toUpperCase();
+  if (mentioned && findBelief(mentioned)) return mentioned;
+  if (repair.title?.toLowerCase().includes("judgment")) return conflict.claimA;
+  if (repair.title?.toLowerCase().includes("principle")) return conflict.claimB;
+  return conflict.claimB || conflict.claimA || conflict.core?.[0] || state.beliefs[0]?.id || "";
+}
+
+function inferRepairActionType(repair) {
+  const source = `${repair.title || ""} ${repair.text || ""}`.toLowerCase();
+  if (source.includes("reweight") || source.includes("decrease weight")) return "adjust_confidence";
+  if (source.includes("refine")) return "refine_claim";
+  if (source.includes("separate") || source.includes("split")) return "split_context";
+  if (source.includes("constraint") || source.includes("scope") || source.includes("limit")) return "add_scope_constraint";
+  return "scope_boundary";
+}
+
+function actionTypeLabel(actionType) {
+  return titleCase(String(actionType || "scope_boundary").replace(/_/g, " "));
+}
+
+function appendAuditNote(value, note) {
+  const base = String(value || "User supplied").trim();
+  return base.toLowerCase().includes(note.toLowerCase()) ? base : `${base}; ${note}`;
 }
 
 function exportApi() {
@@ -1935,6 +2182,7 @@ function exportApi() {
     schema: {
       claimFields: agentContract.claimFields,
       relationFields: agentContract.relationFields,
+      repairOptionFields: agentContract.repairOptionFields,
       relationTypes: agentContract.relationTypes,
       conflictKinds: agentContract.conflictKinds,
     },
@@ -1945,6 +2193,7 @@ function exportApi() {
     revisions: state.revisions,
     analysisRuns: state.analysisRuns,
     calibrationRounds: state.calibrationRounds,
+    repairApplications: state.repairApplications,
     privacyReceipt: buildPrivacyReceiptPayload(),
     migrationReport: state.migrationReport || buildDefaultMigrationReport(),
     benchmarkTargets,
@@ -1997,6 +2246,7 @@ function buildPrivacyReceiptPayload() {
       relationCount: state.relations.length,
       conflictCount: state.conflicts.length,
       calibrationRounds: state.calibrationRounds.length,
+      repairApplications: state.repairApplications.length,
     },
     processing: {
       storageMode: state.privacy.retention === "session-only" ? "sessionStorage" : "localStorage",
@@ -2063,6 +2313,7 @@ function importApi(event) {
         revisions: Array.isArray(parsed.revisions) ? parsed.revisions.map(normalizeRevision) : [],
         analysisRuns: Array.isArray(parsed.analysisRuns) ? parsed.analysisRuns.map(normalizeAnalysisRun) : [],
         calibrationRounds: Array.isArray(parsed.calibrationRounds) ? parsed.calibrationRounds.map(normalizeCalibrationRound) : [],
+        repairApplications: Array.isArray(parsed.repairApplications) ? parsed.repairApplications.map(normalizeRepairApplication) : [],
         migrationReport,
         privacy: { ...DEFAULT_PRIVACY, ...(parsed.privacy || parsed.session?.privacy || {}) },
         selectedConflictId: parsed.selectedConflictId || conflicts[0]?.id || "C-001",
@@ -2234,6 +2485,7 @@ function buildAgentContractPayload() {
     schemaVersion: agentContract.schemaVersion,
     claimFields: agentContract.claimFields,
     relationFields: agentContract.relationFields,
+    repairOptionFields: agentContract.repairOptionFields,
     relationTypes: agentContract.relationTypes,
     conflictKinds: agentContract.conflictKinds,
     endpoints: agentContract.endpoints.map(([method, path, description]) => ({ method, path, description })),
@@ -2267,6 +2519,13 @@ function nextRelationId() {
     .map((relation) => Number(String(relation.id).replace(/^[A-Z-]+/, "")) || 0)
     .reduce((highest, value) => Math.max(highest, value), 0);
   return `L-${String(max + 1).padStart(3, "0")}`;
+}
+
+function nextRepairApplicationId() {
+  const max = state.repairApplications
+    .map((application) => Number(String(application.id).replace(/^[A-Z-]+/, "")) || 0)
+    .reduce((highest, value) => Math.max(highest, value), 0);
+  return `RA-${String(max + 1).padStart(3, "0")}`;
 }
 
 function nextConflictNumber() {
