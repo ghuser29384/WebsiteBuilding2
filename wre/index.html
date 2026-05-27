@@ -174,6 +174,29 @@
         </div>
       </section>
 
+      <section id="dataRightsPanel" class="data-rights-panel" tabindex="-1" aria-labelledby="dataRightsTitle">
+        <div class="data-rights-head">
+          <div>
+            <h2 id="dataRightsTitle">Privacy Receipt & Migration</h2>
+            <p>Classify sensitive belief data, expose export/delete controls, and report how imported legacy sessions were mapped into the WRE 2.5 schema.</p>
+          </div>
+          <div class="data-rights-actions">
+            <button id="exportPrivacyBtn" class="utility-button compact" type="button">Export Receipt</button>
+            <button id="deleteLocalDataBtn" class="danger-button compact" type="button">Delete Local Data</button>
+          </div>
+        </div>
+        <div class="data-rights-grid">
+          <section aria-labelledby="privacyReceiptTitle">
+            <h3 id="privacyReceiptTitle">Privacy Receipt</h3>
+            <div id="privacyReceiptList" class="receipt-list"></div>
+          </section>
+          <section aria-labelledby="migrationReportTitle">
+            <h3 id="migrationReportTitle">Migration Report</h3>
+            <div id="migrationReportList" class="receipt-list"></div>
+          </section>
+        </div>
+      </section>
+
       <section id="analysisPanel" class="analysis-panel" tabindex="-1" aria-labelledby="analysisTitle">
         <div class="analysis-head">
           <div>

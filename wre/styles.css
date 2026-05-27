@@ -746,6 +746,95 @@ svg {
   font-weight: 650;
 }
 
+.data-rights-panel {
+  margin: 0 0 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.data-rights-panel:focus {
+  outline: 2px solid rgba(0, 107, 67, 0.24);
+  outline-offset: 2px;
+}
+
+.data-rights-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  padding: 14px;
+}
+
+.data-rights-head h2,
+.data-rights-grid h3 {
+  margin: 0 0 5px;
+  color: #17231f;
+  font-size: 14px;
+  font-weight: 760;
+}
+
+.data-rights-head p {
+  margin: 0;
+  color: #5c6872;
+  font-size: 11px;
+  line-height: 1.42;
+}
+
+.data-rights-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.danger-button.compact {
+  min-height: 31px;
+  padding: 0 10px;
+  font-size: 11px;
+}
+
+.data-rights-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 12px;
+}
+
+.receipt-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.receipt-item {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #fbfcfb;
+  padding: 9px;
+}
+
+.receipt-item span,
+.receipt-item strong {
+  display: block;
+}
+
+.receipt-item span {
+  color: #66727b;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.receipt-item strong {
+  margin-top: 3px;
+  color: #1f2937;
+  font-size: 11px;
+  font-weight: 760;
+  overflow-wrap: anywhere;
+}
+
 .analysis-panel {
   margin: 0 0 18px;
   border: 1px solid var(--line);
@@ -2474,6 +2563,8 @@ svg {
 
   .privacy-panel,
   .privacy-grid,
+  .data-rights-grid,
+  .receipt-list,
   .metadata-grid,
   .analysis-summary,
   .benchmark-list,
@@ -2548,6 +2639,7 @@ svg {
   }
 
   .workspace-heading,
+  .data-rights-head,
   .analysis-head,
   .calibration-head,
   .compose-head,
@@ -2556,6 +2648,10 @@ svg {
   .agent-contract-head {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .data-rights-actions {
+    flex-wrap: wrap;
   }
 
   .compose-tools,

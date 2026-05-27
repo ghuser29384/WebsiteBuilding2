@@ -401,6 +401,8 @@ const els = {
   tokenCount: document.getElementById("tokenCount"),
   storageStatus: document.getElementById("storageStatus"),
   exportBtn: document.getElementById("exportBtn"),
+  exportPrivacyBtn: document.getElementById("exportPrivacyBtn"),
+  deleteLocalDataBtn: document.getElementById("deleteLocalDataBtn"),
   importInput: document.getElementById("importInput"),
   resetLocalBtn: document.getElementById("resetLocalBtn"),
   clearComposerBtn: document.getElementById("clearComposerBtn"),
@@ -437,6 +439,9 @@ const els = {
   analysisPanel: document.getElementById("analysisPanel"),
   analysisSummary: document.getElementById("analysisSummary"),
   benchmarkList: document.getElementById("benchmarkList"),
+  dataRightsPanel: document.getElementById("dataRightsPanel"),
+  privacyReceiptList: document.getElementById("privacyReceiptList"),
+  migrationReportList: document.getElementById("migrationReportList"),
   calibrationPanel: document.getElementById("calibrationPanel"),
   calibrationForm: document.getElementById("calibrationForm"),
   casePrincipleInput: document.getElementById("casePrincipleInput"),
@@ -471,6 +476,7 @@ function createState() {
     revisions: [],
     analysisRuns: [],
     calibrationRounds: [],
+    migrationReport: null,
     privacy: { ...DEFAULT_PRIVACY },
     viewMode: "table",
     workbenchFilter: "all",
@@ -497,6 +503,7 @@ function loadState() {
       revisions: Array.isArray(parsed.revisions) ? parsed.revisions.map(normalizeRevision) : [],
       analysisRuns: Array.isArray(parsed.analysisRuns) ? parsed.analysisRuns.map(normalizeAnalysisRun) : [],
       calibrationRounds: Array.isArray(parsed.calibrationRounds) ? parsed.calibrationRounds.map(normalizeCalibrationRound) : [],
+      migrationReport: parsed.migrationReport || null,
       privacy: { ...DEFAULT_PRIVACY, ...(parsed.privacy || {}) },
       viewMode: parsed.viewMode === "graph" ? "graph" : "table",
       workbenchFilter: ["judgment", "principle", "theory"].includes(parsed.workbenchFilter) ? parsed.workbenchFilter : "all",
@@ -687,6 +694,8 @@ function bindEvents() {
   });
 
   els.exportBtn.addEventListener("click", exportApi);
+  els.exportPrivacyBtn.addEventListener("click", exportPrivacyReceipt);
+  els.deleteLocalDataBtn.addEventListener("click", deleteLocalData);
   els.exportCalibrationBtn.addEventListener("click", exportCalibrationRounds);
   els.importInput.addEventListener("change", importApi);
   els.resetLocalBtn.addEventListener("click", resetLocalSession);
@@ -716,6 +725,7 @@ function render() {
   renderClaimWorkbench();
   renderRevisionReplay();
   renderAgentContract();
+  renderDataRightsPanel();
   renderAnalysisPanel();
   renderCalibrationPanel();
   renderPipeline();
@@ -1234,6 +1244,44 @@ function renderCalibrationPanel() {
   );
 }
 
+function renderDataRightsPanel() {
+  const receipt = buildPrivacyReceiptPayload();
+  const migration = state.migrationReport || buildDefaultMigrationReport();
+  replaceChildren(
+    els.privacyReceiptList,
+    [
+      ["Storage", receipt.processing.storageMode],
+      ["Cloud sync", receipt.processing.cloudSync ? "Opted in" : "Off"],
+      ["Model triage", receipt.processing.nliTriage ? "Opted in" : "Off"],
+      ["Retention", retentionLabel(receipt.processing.retention)],
+      ["Sensitive claims", `${receipt.classification.potentiallySensitive} flagged`],
+      ["User rights", "Access, export, delete, correction"],
+    ].map(([label, value]) => renderReceiptItem(label, value))
+  );
+
+  replaceChildren(
+    els.migrationReportList,
+    [
+      ["Status", migration.status],
+      ["Mapped claims", String(migration.mappedClaims)],
+      ["Mapped conflicts", String(migration.mappedConflicts)],
+      ["Legacy conflicts", String(migration.legacyUnverified)],
+      ["Ambiguous fields", String(migration.ambiguousFields.length)],
+      ["Generated", formatTime(migration.generatedAt)],
+    ].map(([label, value]) => renderReceiptItem(label, value))
+  );
+}
+
+function renderReceiptItem(label, value) {
+  const item = document.createElement("article");
+  item.className = "receipt-item";
+  item.innerHTML = `
+    <span>${escapeHtml(label)}</span>
+    <strong>${escapeHtml(value)}</strong>
+  `;
+  return item;
+}
+
 function runLocalAnalysis() {
   const report = buildAnalysisReport();
   const generatedConflicts = report.generatedConflicts.filter((conflict) => !hasConflictBetween(conflict.claimA, conflict.claimB));
@@ -1627,10 +1675,20 @@ function exportApi() {
     revisions: state.revisions,
     analysisRuns: state.analysisRuns,
     calibrationRounds: state.calibrationRounds,
+    privacyReceipt: buildPrivacyReceiptPayload(),
+    migrationReport: state.migrationReport || buildDefaultMigrationReport(),
     benchmarkTargets,
     agentContract: buildAgentContractPayload(),
   };
   downloadJson(payload, "normativity-wre-session.json");
+}
+
+function exportPrivacyReceipt() {
+  const payload = buildPrivacyReceiptPayload();
+  recordRevision("privacy", "Exported a local privacy receipt for the current WRE session.");
+  saveState();
+  renderRevisionReplay();
+  downloadJson(payload, "normativity-wre-privacy-receipt.json");
 }
 
 function exportBenchmark() {
@@ -1645,6 +1703,44 @@ function exportBenchmark() {
     },
     "normativity-wre-benchmark.json"
   );
+}
+
+function buildPrivacyReceiptPayload() {
+  const sensitivityCounts = state.beliefs.reduce((counts, belief) => {
+    const key = belief.sensitivity || "private";
+    counts[key] = (counts[key] || 0) + 1;
+    return counts;
+  }, {});
+  const potentiallySensitive = state.beliefs.filter((belief) => {
+    return belief.sensitivity === "private" || belief.domain === "normative" || belief.domain === "meta";
+  }).length;
+
+  return {
+    schemaVersion: "wre-2.5-privacy-receipt",
+    generatedAt: new Date().toISOString(),
+    sessionId: "sess_7f2c9e7a",
+    classification: {
+      beliefContent: "potentially-sensitive philosophical, political, religious, or moral commitments",
+      potentiallySensitive,
+      sensitivityCounts,
+      claimCount: state.beliefs.length,
+      conflictCount: state.conflicts.length,
+      calibrationRounds: state.calibrationRounds.length,
+    },
+    processing: {
+      storageMode: state.privacy.retention === "session-only" ? "sessionStorage" : "localStorage",
+      retention: state.privacy.retention,
+      cloudSync: Boolean(state.privacy.cloudSync),
+      nliTriage: Boolean(state.privacy.nliTriage),
+      thirdPartyProcessing: state.privacy.cloudSync || state.privacy.nliTriage ? "opt-in only" : "none selected",
+    },
+    userRights: {
+      access: "Export API or privacy receipt",
+      export: "JSON session, benchmark, and calibration exports",
+      delete: "Delete Local Data removes WRE local/session storage keys",
+      correction: "Edit by importing corrected JSON or adding revised claims/rounds",
+    },
+  };
 }
 
 function exportCalibrationRounds() {
@@ -1686,13 +1782,15 @@ function importApi(event) {
       const beliefs = Array.isArray(parsed.beliefs) ? parsed.beliefs : Array.isArray(parsed.claims) ? parsed.claims : [];
       const conflicts = Array.isArray(parsed.conflicts) ? parsed.conflicts : [];
       if (!beliefs.length || !conflicts.length) return;
+      const migrationReport = buildMigrationReport(parsed, beliefs, conflicts);
       state = {
         ...createState(),
         beliefs: beliefs.map(normalizeBelief),
-        conflicts: conflicts.map(normalizeConflict),
+        conflicts: conflicts.map((conflict) => normalizeImportedConflict(conflict, migrationReport)),
         revisions: Array.isArray(parsed.revisions) ? parsed.revisions.map(normalizeRevision) : [],
         analysisRuns: Array.isArray(parsed.analysisRuns) ? parsed.analysisRuns.map(normalizeAnalysisRun) : [],
         calibrationRounds: Array.isArray(parsed.calibrationRounds) ? parsed.calibrationRounds.map(normalizeCalibrationRound) : [],
+        migrationReport,
         privacy: { ...DEFAULT_PRIVACY, ...(parsed.privacy || parsed.session?.privacy || {}) },
         selectedConflictId: parsed.selectedConflictId || conflicts[0]?.id || "C-001",
         viewMode: parsed.viewMode === "graph" ? "graph" : "table",
@@ -1709,6 +1807,50 @@ function importApi(event) {
   reader.readAsText(file);
 }
 
+function normalizeImportedConflict(conflict, migrationReport) {
+  const normalized = normalizeConflict(conflict);
+  if (migrationReport.status !== "native-wre-2.5") {
+    normalized.verification = "legacy-unverified";
+    normalized.engine = [...new Set([...(normalized.engine || []), "Legacy import review"])];
+  }
+  return normalized;
+}
+
+function buildMigrationReport(parsed, beliefs, conflicts) {
+  const schemaVersion = parsed.schemaVersion || parsed.version || "legacy/unknown";
+  const native = schemaVersion === "wre-2.5";
+  const ambiguousFields = [];
+  if (!parsed.schemaVersion) ambiguousFields.push("schemaVersion");
+  if (Array.isArray(parsed.claims) && !Array.isArray(parsed.beliefs)) ambiguousFields.push("claims mapped to beliefs");
+  if (!parsed.agentContract) ambiguousFields.push("agentContract");
+  if (!parsed.session?.privacy && !parsed.privacy) ambiguousFields.push("privacy");
+  return {
+    generatedAt: new Date().toISOString(),
+    sourceSchemaVersion: schemaVersion,
+    status: native ? "native-wre-2.5" : "legacy-imported",
+    mappedClaims: beliefs.length,
+    mappedConflicts: conflicts.length,
+    legacyUnverified: native ? 0 : conflicts.length,
+    ambiguousFields,
+    notes: native
+      ? "Imported data already declares WRE 2.5 schema."
+      : "Legacy conflicts are marked legacy-unverified until a local analysis run re-checks them.",
+  };
+}
+
+function buildDefaultMigrationReport() {
+  return {
+    generatedAt: state.createdAt,
+    sourceSchemaVersion: "seed",
+    status: "native-seed",
+    mappedClaims: state.beliefs.length,
+    mappedConflicts: state.conflicts.length,
+    legacyUnverified: state.conflicts.filter((conflict) => conflict.verification === "legacy-unverified").length,
+    ambiguousFields: [],
+    notes: "Current sample session is already normalized into the local WRE 2.5 model.",
+  };
+}
+
 function resetLocalSession() {
   const confirmed = window.confirm("Reset the local WRE session and restore the sample workspace?");
   if (!confirmed) return;
@@ -1716,6 +1858,16 @@ function resetLocalSession() {
   sessionStorage.removeItem(STORAGE_KEY);
   state = createState();
   render();
+}
+
+function deleteLocalData() {
+  const confirmed = window.confirm("Delete local WRE data from this browser and restore the sample workspace?");
+  if (!confirmed) return;
+  localStorage.removeItem(STORAGE_KEY);
+  sessionStorage.removeItem(STORAGE_KEY);
+  state = createState();
+  render();
+  focusElement(els.dataRightsPanel);
 }
 
 function updatePrivacyControls() {
@@ -1731,6 +1883,7 @@ function updatePrivacyControls() {
   saveState();
   syncPrivacyControls();
   syncStorageStatus();
+  renderDataRightsPanel();
   renderAnalysisPanel();
   renderPipeline();
   renderRevisionReplay();
