@@ -132,6 +132,10 @@
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5Z" /></svg>
           <span>View Guidance</span>
         </button>
+        <button id="analyzeBtn" class="primary-button" type="button">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16" /><path d="M4 12h10" /><path d="M4 19h7" /><path d="m16 17 2 2 4-5" /></svg>
+          <span>Analyze Session</span>
+        </button>
       </div>
 
       <section class="privacy-panel" aria-label="Local-first privacy and analysis controls">
@@ -168,6 +172,21 @@
             </select>
           </label>
         </div>
+      </section>
+
+      <section id="analysisPanel" class="analysis-panel" tabindex="-1" aria-labelledby="analysisTitle">
+        <div class="analysis-head">
+          <div>
+            <h2 id="analysisTitle">Local Hybrid Analysis</h2>
+            <p>Run deterministic rule checks, graph retrieval, optional NLI triage, and repair-readiness scoring before sending anything to a server.</p>
+          </div>
+          <button id="exportBenchmarkBtn" class="utility-button compact" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12" /><path d="m8 11 4 4 4-4" /><path d="M5 20h14" /></svg>
+            <span>Export Benchmark</span>
+          </button>
+        </div>
+        <div id="analysisSummary" class="analysis-summary"></div>
+        <div id="benchmarkList" class="benchmark-list" aria-label="Evaluation targets"></div>
       </section>
 
       <section class="families-grid" aria-label="Belief families">

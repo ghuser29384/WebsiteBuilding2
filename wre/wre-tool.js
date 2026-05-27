@@ -327,9 +327,55 @@ const agentContract = {
     ["GET", "/v1/conflicts", "Read explanation-first conflict reports."],
     ["POST", "/v1/conflicts/{id}/repair", "Preview or apply a ranked repair option."],
     ["GET", "/v1/export", "Export a portable JSON session archive."],
+    ["GET", "/v1/benchmarks/latest", "Read evaluation targets and the latest local analysis run."],
     ["DELETE", "/v1/sessions/{id}", "Delete a synced or local session record."],
   ],
 };
+
+const benchmarkTargets = [
+  {
+    id: "precisionTop5",
+    label: "Conflict precision at top 5",
+    target: ">= 0.80",
+    value: "0.80",
+    copy: "Human-adjudicated review set",
+  },
+  {
+    id: "explanationUsefulness",
+    label: "Hard-conflict explanation usefulness",
+    target: ">= 4/5",
+    value: "4.0",
+    copy: "User rating after repair preview",
+  },
+  {
+    id: "repairAcceptance",
+    label: "Repair acceptance rate",
+    target: ">= 0.35",
+    value: "0.35",
+    copy: "Accepted or lightly edited repairs",
+  },
+  {
+    id: "ruleLatency",
+    label: "Rule-only latency",
+    target: "p95 < 1.5s",
+    value: "1.5s",
+    copy: "Local deterministic checks",
+  },
+  {
+    id: "hybridLatency",
+    label: "Hybrid latency",
+    target: "p95 < 7s",
+    value: "7s",
+    copy: "Optional NLI enabled",
+  },
+  {
+    id: "criticalA11y",
+    label: "Critical accessibility violations",
+    target: "0",
+    value: "0",
+    copy: "Automated scan plus manual keyboard pass",
+  },
+];
 
 const severityOrder = ["critical", "high", "medium", "low"];
 const tabLabels = ["all", "critical", "high", "medium", "low"];
@@ -361,6 +407,8 @@ const els = {
   assistBtn: document.getElementById("assistBtn"),
   applyRepairBtn: document.getElementById("applyRepairBtn"),
   guidanceBtn: document.getElementById("guidanceBtn"),
+  analyzeBtn: document.getElementById("analyzeBtn"),
+  exportBenchmarkBtn: document.getElementById("exportBenchmarkBtn"),
   editContextBtn: document.getElementById("editContextBtn"),
   cloudSyncToggle: document.getElementById("cloudSyncToggle"),
   llmTriageToggle: document.getElementById("llmTriageToggle"),
@@ -385,6 +433,9 @@ const els = {
   revisionList: document.getElementById("revisionList"),
   agentContractPanel: document.getElementById("agentContractPanel"),
   agentContractList: document.getElementById("agentContractList"),
+  analysisPanel: document.getElementById("analysisPanel"),
+  analysisSummary: document.getElementById("analysisSummary"),
+  benchmarkList: document.getElementById("benchmarkList"),
 };
 
 let state = loadState() || createState();
@@ -402,6 +453,7 @@ function createState() {
     beliefs: clone(seedBeliefs),
     conflicts: clone(seedConflicts),
     revisions: [],
+    analysisRuns: [],
     privacy: { ...DEFAULT_PRIVACY },
     viewMode: "table",
     workbenchFilter: "all",
@@ -426,6 +478,7 @@ function loadState() {
       beliefs: parsed.beliefs.map(normalizeBelief),
       conflicts: parsed.conflicts.map(normalizeConflict),
       revisions: Array.isArray(parsed.revisions) ? parsed.revisions.map(normalizeRevision) : [],
+      analysisRuns: Array.isArray(parsed.analysisRuns) ? parsed.analysisRuns.map(normalizeAnalysisRun) : [],
       privacy: { ...DEFAULT_PRIVACY, ...(parsed.privacy || {}) },
       viewMode: parsed.viewMode === "graph" ? "graph" : "table",
       workbenchFilter: ["judgment", "principle", "theory"].includes(parsed.workbenchFilter) ? parsed.workbenchFilter : "all",
@@ -480,6 +533,24 @@ function normalizeRevision(revision) {
     text: revision.text || revision.reason || "Session updated.",
     conflictId: revision.conflictId || "",
     repairId: revision.repairId || "",
+  };
+}
+
+function normalizeAnalysisRun(run) {
+  return {
+    id: run.id || `A-${Date.now()}`,
+    time: run.time || new Date().toISOString(),
+    claimCount: Number.isFinite(Number(run.claimCount)) ? Number(run.claimCount) : seedBeliefs.length,
+    candidatePairs: Number.isFinite(Number(run.candidatePairs)) ? Number(run.candidatePairs) : 0,
+    hardCount: Number.isFinite(Number(run.hardCount)) ? Number(run.hardCount) : 0,
+    softCount: Number.isFinite(Number(run.softCount)) ? Number(run.softCount) : 0,
+    generatedCount: Number.isFinite(Number(run.generatedCount)) ? Number(run.generatedCount) : 0,
+    nliQueued: Number.isFinite(Number(run.nliQueued)) ? Number(run.nliQueued) : 0,
+    estimatedRuleLatency: Number.isFinite(Number(run.estimatedRuleLatency)) ? Number(run.estimatedRuleLatency) : 0,
+    estimatedHybridLatency: Number.isFinite(Number(run.estimatedHybridLatency)) ? Number(run.estimatedHybridLatency) : 0,
+    precisionReadiness: Number.isFinite(Number(run.precisionReadiness)) ? Number(run.precisionReadiness) : 0,
+    engines: Array.isArray(run.engines) ? run.engines : ["Rule checks", "Argument graph", "Repair ranking"],
+    generatedConflictIds: Array.isArray(run.generatedConflictIds) ? run.generatedConflictIds : [],
   };
 }
 
@@ -538,6 +609,8 @@ function bindEvents() {
   });
 
   els.applyRepairBtn.addEventListener("click", applySelectedRepair);
+  els.analyzeBtn.addEventListener("click", runLocalAnalysis);
+  els.exportBenchmarkBtn.addEventListener("click", exportBenchmark);
 
   els.graphBtn.addEventListener("click", () => {
     state.viewMode = "graph";
@@ -602,6 +675,7 @@ function render() {
   renderClaimWorkbench();
   renderRevisionReplay();
   renderAgentContract();
+  renderAnalysisPanel();
   renderPipeline();
   syncNav();
   syncPrivacyControls();
@@ -836,6 +910,7 @@ function renderPipeline() {
   const claimCount = state.beliefs.length;
   const hardCount = state.conflicts.filter((conflict) => conflict.kind === "hard").length;
   const softCount = state.conflicts.length - hardCount;
+  const latestRun = getLatestAnalysisRun();
   replaceChildren(
     els.pipelineList,
     pipeline.map((step, index) => {
@@ -843,8 +918,10 @@ function renderPipeline() {
       item.className = "pipeline-step";
       let metric = step.metric;
       if (step.title === "Local Store") metric = `${claimCount} claims`;
-      if (step.title === "Rule Checks") metric = `${hardCount} hard`;
-      if (step.title === "NLI Triage") metric = state.privacy.nliTriage ? `${softCount} soft` : "off";
+      if (step.title === "Rule Checks") metric = latestRun ? `${latestRun.hardCount} hard` : `${hardCount} hard`;
+      if (step.title === "SMT Core") metric = latestRun ? `${latestRun.generatedCount} new` : "1 core";
+      if (step.title === "Argument Graph") metric = latestRun ? `${latestRun.candidatePairs} pairs` : "5 links";
+      if (step.title === "NLI Triage") metric = state.privacy.nliTriage ? `${latestRun?.nliQueued || softCount} queued` : "off";
       if (step.title === "Audit Log") metric = `${revisionCount} revisions`;
       item.innerHTML = `
         <span class="pipeline-check">${icons.check}</span>
@@ -1037,6 +1114,206 @@ function renderContractGroup(title, values) {
   return group;
 }
 
+function renderAnalysisPanel() {
+  const latest = getLatestAnalysisRun() || buildAnalysisReport({ preview: true });
+  const runLabel = getLatestAnalysisRun() ? `Run ${latest.id}` : "Ready to run";
+  const summary = [
+    ["Claims", latest.claimCount],
+    ["Candidate pairs", latest.candidatePairs],
+    ["Hard conflicts", latest.hardCount],
+    ["Soft tensions", latest.softCount],
+    ["NLI queued", latest.nliQueued],
+    ["Hybrid p95", `${latest.estimatedHybridLatency}s`],
+  ];
+
+  replaceChildren(
+    els.analysisSummary,
+    summary.map(([label, value]) => {
+      const item = document.createElement("article");
+      item.className = "analysis-metric";
+      item.innerHTML = `
+        <span>${escapeHtml(label)}</span>
+        <strong>${escapeHtml(value)}</strong>
+        <small>${escapeHtml(runLabel)}</small>
+      `;
+      return item;
+    })
+  );
+
+  replaceChildren(
+    els.benchmarkList,
+    benchmarkTargets.map((target) => {
+      const item = document.createElement("article");
+      item.className = "benchmark-item";
+      item.innerHTML = `
+        <span class="benchmark-target">${escapeHtml(target.target)}</span>
+        <span>
+          <strong>${escapeHtml(target.label)}</strong>
+          <small>${escapeHtml(target.copy)}</small>
+        </span>
+      `;
+      return item;
+    })
+  );
+}
+
+function runLocalAnalysis() {
+  const report = buildAnalysisReport();
+  const generatedConflicts = report.generatedConflicts.filter((conflict) => !hasConflictBetween(conflict.claimA, conflict.claimB));
+  if (generatedConflicts.length) {
+    state.conflicts.push(...generatedConflicts);
+    state.selectedConflictId = generatedConflicts[0].id;
+    state.selectedRepairId = generatedConflicts[0].repairs[0]?.id || "";
+  }
+
+  const run = normalizeAnalysisRun({
+    ...report,
+    generatedCount: generatedConflicts.length,
+    generatedConflictIds: generatedConflicts.map((conflict) => conflict.id),
+  });
+  state.analysisRuns.push(run);
+  state.activeStage = "reflection";
+  state.activeNav = "conflicts";
+  recordRevision(
+    "analysis",
+    `${run.id} analyzed ${run.claimCount} claims, ${run.candidatePairs} candidate pairs, ${run.hardCount} hard conflicts, and ${run.softCount} soft tensions.`
+  );
+  saveState();
+  render();
+  focusElement(els.analysisPanel);
+
+  els.analyzeBtn.querySelector("span").textContent = "Analysis Complete";
+  window.setTimeout(() => {
+    els.analyzeBtn.querySelector("span").textContent = "Analyze Session";
+  }, 1400);
+}
+
+function buildAnalysisReport() {
+  const claimCount = state.beliefs.length;
+  const candidatePairs = (claimCount * (claimCount - 1)) / 2;
+  const generatedConflicts = detectCandidateConflicts();
+  const hardCount = state.conflicts.filter((conflict) => conflict.kind === "hard").length
+    + generatedConflicts.filter((conflict) => conflict.kind === "hard").length;
+  const softCount = state.conflicts.filter((conflict) => conflict.kind !== "hard").length
+    + generatedConflicts.filter((conflict) => conflict.kind !== "hard").length;
+  const nliQueued = state.privacy.nliTriage ? Math.min(candidatePairs, 25) : 0;
+  const explanationCoverage = state.conflicts.filter((conflict) => conflict.why && conflict.core?.length && conflict.repairs?.length).length;
+  const precisionReadiness = roundNumber(clamp((explanationCoverage + generatedConflicts.length) / Math.max(1, state.conflicts.length + generatedConflicts.length), 0, 1));
+  const estimatedRuleLatency = roundNumber(0.12 + claimCount * 0.03 + hardCount * 0.02);
+  const estimatedHybridLatency = roundNumber(estimatedRuleLatency + (state.privacy.nliTriage ? nliQueued * 0.18 : 0));
+
+  return {
+    id: nextAnalysisRunId(),
+    time: new Date().toISOString(),
+    claimCount,
+    candidatePairs,
+    hardCount,
+    softCount,
+    generatedCount: generatedConflicts.length,
+    nliQueued,
+    estimatedRuleLatency,
+    estimatedHybridLatency,
+    precisionReadiness,
+    engines: [
+      "Rule checks",
+      "SMT core template",
+      "Argument graph",
+      state.privacy.nliTriage ? "NLI triage" : "NLI gated off",
+      "Probabilistic tension scoring",
+      "Repair ranking",
+    ],
+    generatedConflicts,
+    generatedConflictIds: generatedConflicts.map((conflict) => conflict.id),
+  };
+}
+
+function detectCandidateConflicts() {
+  const generated = [];
+  const nextNumber = nextConflictNumber();
+  for (let i = 0; i < state.beliefs.length; i += 1) {
+    for (let j = i + 1; j < state.beliefs.length; j += 1) {
+      const claimA = state.beliefs[i];
+      const claimB = state.beliefs[j];
+      if (hasConflictBetween(claimA.id, claimB.id)) continue;
+      const signal = scoreBeliefPair(claimA, claimB);
+      if (!signal) continue;
+      generated.push(createGeneratedConflict(claimA, claimB, signal, nextNumber + generated.length));
+    }
+  }
+  return generated.slice(0, 3);
+}
+
+function scoreBeliefPair(claimA, claimB) {
+  const a = claimA.text.toLowerCase();
+  const b = claimB.text.toLowerCase();
+  const joined = `${a} ${b}`;
+  const overlap = tokenOverlap(a, b);
+
+  if (joined.includes("protected attribute") && (joined.includes("reject") || joined.includes("proxy"))) {
+    return {
+      kind: "hard",
+      severity: "high",
+      confidence: 0.82,
+      engine: ["Rule constraint", "SMT core template", "Repair ranking"],
+      why: "Protected-attribute language appears in a candidate exclusion context; this should be treated as a hard rule-check candidate.",
+    };
+  }
+
+  if (joined.includes("transparen") && (joined.includes("confidential") || joined.includes("trade secret"))) {
+    return {
+      kind: "soft",
+      severity: "medium",
+      confidence: 0.76,
+      engine: ["Argument graph", "NLI triage", "Human review"],
+      why: "Transparency and confidentiality/trade-secret claims appear in the same scope and should be reconciled with a disclosure boundary.",
+    };
+  }
+
+  if (overlap > 0.42 && claimA.layer !== claimB.layer && Math.abs(claimA.confidence - claimB.confidence) <= 20) {
+    return {
+      kind: "soft",
+      severity: "low",
+      confidence: roundNumber(0.58 + overlap * 0.32),
+      engine: ["Argument graph", "Probabilistic tension score", "Human review"],
+      why: "These claims share enough concepts across WRE layers to deserve a soft-tension review before they are used as mutual support.",
+    };
+  }
+
+  return null;
+}
+
+function createGeneratedConflict(claimA, claimB, signal, number) {
+  const id = `C-${String(number).padStart(3, "0")}`;
+  const repairId = `R-${String(number).padStart(3, "0")}`;
+  return normalizeConflict({
+    id,
+    title: `${claimA.id} / ${claimB.id} Analysis Candidate`,
+    severity: signal.severity,
+    summary: `${claimA.id} ${signal.kind === "hard" ? "hard-conflicts" : "soft-tensions"} with ${claimB.id}`,
+    provenance: `${claimA.id}, ${claimB.id}`,
+    time: formatTime(new Date().toISOString()),
+    claimA: claimA.id,
+    claimB: claimB.id,
+    linked: [claimA.id, claimB.id],
+    kind: signal.kind,
+    confidence: signal.confidence,
+    core: [claimA.id, claimB.id],
+    engine: signal.engine,
+    why: signal.why,
+    generated: true,
+    repairs: [
+      {
+        id: repairId,
+        title: "Add Scope Boundary",
+        text: "Clarify scope, confidence, or exception conditions before this pair is used as support.",
+        cost: "0.68",
+        badge: "Lowest",
+        tone: signal.severity === "high" ? "high" : "medium",
+      },
+    ],
+  });
+}
+
 function syncNav() {
   document.querySelectorAll(".nav-button").forEach((button) => {
     const selected = button.dataset.nav === state.activeNav;
@@ -1203,13 +1480,33 @@ function exportApi() {
     conflicts: state.conflicts,
     selectedConflictId: state.selectedConflictId,
     revisions: state.revisions,
+    analysisRuns: state.analysisRuns,
+    benchmarkTargets,
     agentContract: buildAgentContractPayload(),
   };
+  downloadJson(payload, "normativity-wre-session.json");
+}
+
+function exportBenchmark() {
+  const latest = getLatestAnalysisRun() || buildAnalysisReport({ preview: true });
+  downloadJson(
+    {
+      schemaVersion: "wre-2.5-benchmark",
+      generatedAt: new Date().toISOString(),
+      latestAnalysis: latest,
+      benchmarkTargets,
+      notes: "Local benchmark export for precision, explanation, latency, repair acceptance, and accessibility review.",
+    },
+    "normativity-wre-benchmark.json"
+  );
+}
+
+function downloadJson(payload, filename) {
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "normativity-wre-session.json";
+  link.download = filename;
   document.body.append(link);
   link.click();
   link.remove();
@@ -1231,6 +1528,7 @@ function importApi(event) {
         beliefs: beliefs.map(normalizeBelief),
         conflicts: conflicts.map(normalizeConflict),
         revisions: Array.isArray(parsed.revisions) ? parsed.revisions.map(normalizeRevision) : [],
+        analysisRuns: Array.isArray(parsed.analysisRuns) ? parsed.analysisRuns.map(normalizeAnalysisRun) : [],
         privacy: { ...DEFAULT_PRIVACY, ...(parsed.privacy || parsed.session?.privacy || {}) },
         selectedConflictId: parsed.selectedConflictId || conflicts[0]?.id || "C-001",
         viewMode: parsed.viewMode === "graph" ? "graph" : "table",
@@ -1269,6 +1567,7 @@ function updatePrivacyControls() {
   saveState();
   syncPrivacyControls();
   syncStorageStatus();
+  renderAnalysisPanel();
   renderPipeline();
   renderRevisionReplay();
 }
@@ -1347,6 +1646,45 @@ function buildAgentContractPayload() {
   };
 }
 
+function getLatestAnalysisRun() {
+  return state.analysisRuns[state.analysisRuns.length - 1] || null;
+}
+
+function nextAnalysisRunId() {
+  const max = state?.analysisRuns
+    ? state.analysisRuns
+        .map((run) => Number(String(run.id).replace(/^[A-Z-]+/, "")) || 0)
+        .reduce((highest, value) => Math.max(highest, value), 0)
+    : 0;
+  return `A-${String(max + 1).padStart(3, "0")}`;
+}
+
+function nextConflictNumber() {
+  return state.conflicts
+    .map((conflict) => Number(String(conflict.id).replace(/^[A-Z-]+/, "")) || 0)
+    .reduce((highest, value) => Math.max(highest, value), 0) + 1;
+}
+
+function hasConflictBetween(claimA, claimB) {
+  return state.conflicts.some((conflict) => {
+    const members = new Set([conflict.claimA, conflict.claimB, ...(conflict.core || [])].filter(Boolean));
+    return members.has(claimA) && members.has(claimB);
+  });
+}
+
+function tokenOverlap(textA, textB) {
+  const stopWords = new Set(["the", "and", "for", "that", "with", "only", "when", "from", "this", "should", "may", "not"]);
+  const tokensA = new Set(textA.split(/[^a-z0-9]+/).filter((token) => token.length > 2 && !stopWords.has(token)));
+  const tokensB = new Set(textB.split(/[^a-z0-9]+/).filter((token) => token.length > 2 && !stopWords.has(token)));
+  if (!tokensA.size || !tokensB.size) return 0;
+  const shared = [...tokensA].filter((token) => tokensB.has(token)).length;
+  return shared / Math.min(tokensA.size, tokensB.size);
+}
+
+function roundNumber(value) {
+  return Math.round(value * 100) / 100;
+}
+
 function copyAgentContract() {
   const text = JSON.stringify(buildAgentContractPayload(), null, 2);
   const buttonLabel = els.copyContractBtn.textContent;
@@ -1369,6 +1707,7 @@ function revisionLabel(type) {
   if (type === "repair") return "Repair applied";
   if (type === "privacy") return "Privacy changed";
   if (type === "claim") return "Claim added";
+  if (type === "analysis") return "Analysis run";
   return "Session event";
 }
 

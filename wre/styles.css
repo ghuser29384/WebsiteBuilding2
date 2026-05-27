@@ -632,6 +632,11 @@ svg {
   min-width: 118px;
 }
 
+.workspace-heading .primary-button {
+  flex: 0 0 auto;
+  min-width: 148px;
+}
+
 .privacy-panel {
   display: grid;
   grid-template-columns: minmax(210px, 0.9fr) minmax(360px, 1.4fr);
@@ -739,6 +744,124 @@ svg {
   padding: 0 7px;
   font-size: 11px;
   font-weight: 650;
+}
+
+.analysis-panel {
+  margin: 0 0 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.analysis-panel:focus {
+  outline: 2px solid rgba(0, 107, 67, 0.24);
+  outline-offset: 2px;
+}
+
+.analysis-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  padding: 14px;
+}
+
+.analysis-head h2 {
+  margin: 0 0 5px;
+  color: #17231f;
+  font-size: 14px;
+  font-weight: 760;
+}
+
+.analysis-head p {
+  margin: 0;
+  color: #5c6872;
+  font-size: 11px;
+  line-height: 1.42;
+}
+
+.analysis-summary {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(90px, 1fr));
+  border-bottom: 1px solid var(--line);
+}
+
+.analysis-metric {
+  min-width: 0;
+  border-right: 1px solid var(--line);
+  padding: 12px 10px;
+}
+
+.analysis-metric:last-child {
+  border-right: 0;
+}
+
+.analysis-metric span,
+.analysis-metric small {
+  display: block;
+  color: #6b767f;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.analysis-metric strong {
+  display: block;
+  margin: 4px 0 2px;
+  color: #111827;
+  font-size: 19px;
+  font-weight: 780;
+  line-height: 1.05;
+}
+
+.benchmark-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding: 12px;
+}
+
+.benchmark-item {
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  gap: 8px;
+  align-items: center;
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #fbfcfb;
+  padding: 9px;
+}
+
+.benchmark-target {
+  display: grid;
+  min-height: 30px;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  background: var(--green-soft);
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.benchmark-item strong,
+.benchmark-item small {
+  display: block;
+}
+
+.benchmark-item strong {
+  color: #1f2937;
+  font-size: 11px;
+  font-weight: 760;
+}
+
+.benchmark-item small {
+  margin-top: 2px;
+  color: #64717b;
+  font-size: 10px;
+  line-height: 1.28;
 }
 
 .families-grid {
@@ -2179,6 +2302,8 @@ svg {
   .privacy-panel,
   .privacy-grid,
   .metadata-grid,
+  .analysis-summary,
+  .benchmark-list,
   .replay-contract-grid,
   .graph-grid {
     grid-template-columns: 1fr;
@@ -2238,6 +2363,7 @@ svg {
   }
 
   .workspace-heading,
+  .analysis-head,
   .compose-head,
   .composer-footer,
   .revision-head,
