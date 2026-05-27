@@ -147,6 +147,49 @@ const seedBeliefs = [
   },
 ];
 
+const seedRelations = [
+  {
+    id: "L-001",
+    source: "J1",
+    target: "P1",
+    type: "supports",
+    weight: 0.88,
+    rationale: "The judgment is a concrete application of equal respect and non-discrimination.",
+  },
+  {
+    id: "L-002",
+    source: "J2",
+    target: "P2",
+    type: "supports",
+    weight: 0.72,
+    rationale: "Experience can be relevant when proportionality is constrained by validation evidence.",
+  },
+  {
+    id: "L-003",
+    source: "T3",
+    target: "P2",
+    type: "undercuts",
+    weight: 0.74,
+    rationale: "Bias research undercuts broad use of experience where it operates as a proxy.",
+  },
+  {
+    id: "L-004",
+    source: "J3",
+    target: "P3",
+    type: "supports",
+    weight: 0.76,
+    rationale: "Candidate transparency is part of fair opportunity.",
+  },
+  {
+    id: "L-005",
+    source: "T1",
+    target: "J3",
+    type: "depends_on",
+    weight: 0.69,
+    rationale: "Disclosure duties depend on legal constraints around protected notes and trade secrets.",
+  },
+];
+
 const seedConflicts = [
   {
     id: "C-001",
@@ -320,9 +363,13 @@ const pipeline = [
 const agentContract = {
   schemaVersion: "wre-2.5",
   claimFields: ["id", "layer", "text", "domain", "confidence", "timeScope", "provenance", "sensitivity"],
+  relationFields: ["id", "source", "target", "type", "weight", "rationale"],
   relationTypes: ["supports", "conflicts", "neutral", "implies", "depends_on", "undercuts"],
   conflictKinds: ["hard", "soft", "nlp"],
   endpoints: [
+    ["POST", "/v1/sessions", "Create a local or synced WRE session with explicit privacy mode."],
+    ["POST", "/v1/beliefs", "Add or batch import typed judgments, principles, and background theories."],
+    ["POST", "/v1/relations", "Add or batch import support, conflict, neutral, implication, dependency, and undercut links."],
     ["POST", "/v1/analyze", "Run rule, SMT, graph, NLI, and probabilistic checks."],
     ["GET", "/v1/conflicts", "Read explanation-first conflict reports."],
     ["POST", "/v1/conflicts/{id}/repair", "Preview or apply a ranked repair option."],
@@ -472,6 +519,7 @@ function createState() {
     selectedConflictId: "C-001",
     selectedRepairId: "R-001",
     beliefs: clone(seedBeliefs),
+    relations: clone(seedRelations),
     conflicts: clone(seedConflicts),
     revisions: [],
     analysisRuns: [],
@@ -495,10 +543,12 @@ function loadState() {
     if (!raw) return null;
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed.beliefs) || !Array.isArray(parsed.conflicts)) return null;
+    const beliefs = parsed.beliefs.map(normalizeBelief);
     return {
       ...createState(),
       ...parsed,
-      beliefs: parsed.beliefs.map(normalizeBelief),
+      beliefs,
+      relations: normalizeRelationSet(parsed.relations, beliefs, parsed.conflicts),
       conflicts: parsed.conflicts.map(normalizeConflict),
       revisions: Array.isArray(parsed.revisions) ? parsed.revisions.map(normalizeRevision) : [],
       analysisRuns: Array.isArray(parsed.analysisRuns) ? parsed.analysisRuns.map(normalizeAnalysisRun) : [],
@@ -549,6 +599,36 @@ function normalizeConflict(conflict) {
     repairs: Array.isArray(conflict.repairs) ? conflict.repairs : [],
     linked: Array.isArray(conflict.linked) ? conflict.linked : [],
   };
+}
+
+function normalizeRelation(relation, fallbackIndex = 0) {
+  const type = agentContract.relationTypes.includes(relation.type) ? relation.type : "neutral";
+  const source = relation.source || relation.source_claim_id || relation.sourceClaimId || relation.from || "";
+  const target = relation.target || relation.target_claim_id || relation.targetClaimId || relation.to || "";
+  return {
+    id: relation.id || relation.relationId || `L-${String(fallbackIndex + 1).padStart(3, "0")}`,
+    source,
+    target,
+    type,
+    weight: Number.isFinite(Number(relation.weight)) ? clamp(Number(relation.weight), 0, 1) : 0.5,
+    rationale: relation.rationale || relation.reason || "",
+  };
+}
+
+function normalizeRelationSet(relations, beliefs, conflicts = []) {
+  const beliefIds = new Set((beliefs || []).map((belief) => belief.id));
+  const sourceRelations = Array.isArray(relations) && relations.length
+    ? relations.map(normalizeRelation)
+    : deriveRelationsFromClaimsAndConflicts(beliefs || [], conflicts || []);
+  const seen = new Set();
+  return sourceRelations.filter((relation) => {
+    const key = `${relation.source}:${relation.type}:${relation.target}`;
+    if (!beliefIds.has(relation.source) || !beliefIds.has(relation.target) || relation.source === relation.target || seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
 }
 
 function normalizeRevision(revision) {
@@ -961,6 +1041,7 @@ function renderDetail() {
 function renderPipeline() {
   const revisionCount = state.revisions.length;
   const claimCount = state.beliefs.length;
+  const relationCount = state.relations.length;
   const hardCount = state.conflicts.filter((conflict) => conflict.kind === "hard").length;
   const softCount = state.conflicts.length - hardCount;
   const latestRun = getLatestAnalysisRun();
@@ -973,7 +1054,7 @@ function renderPipeline() {
       if (step.title === "Local Store") metric = `${claimCount} claims`;
       if (step.title === "Rule Checks") metric = latestRun ? `${latestRun.hardCount} hard` : `${hardCount} hard`;
       if (step.title === "SMT Core") metric = latestRun ? `${latestRun.generatedCount} new` : "1 core";
-      if (step.title === "Argument Graph") metric = latestRun ? `${latestRun.candidatePairs} pairs` : "5 links";
+      if (step.title === "Argument Graph") metric = latestRun ? `${latestRun.candidatePairs} pairs` : `${relationCount} links`;
       if (step.title === "NLI Triage") metric = state.privacy.nliTriage ? `${latestRun?.nliQueued || softCount} queued` : "off";
       if (step.title === "Audit Log") metric = `${revisionCount} revisions`;
       item.innerHTML = `
@@ -1034,6 +1115,7 @@ function renderTableView() {
     </tbody>
   `;
   children.push(table);
+  children.push(renderRelationEditor());
   replaceChildren(els.claimWorkbenchPanel, children);
 }
 
@@ -1051,6 +1133,10 @@ function renderGraphView() {
   const visibleConflicts = state.conflicts.filter((conflict) => {
     if (state.workbenchFilter === "all") return true;
     return visibleIds.has(conflict.claimA) || visibleIds.has(conflict.claimB) || (conflict.core || []).some((id) => visibleIds.has(id));
+  });
+  const visibleRelations = state.relations.filter((relation) => {
+    if (state.workbenchFilter === "all") return true;
+    return visibleIds.has(relation.source) || visibleIds.has(relation.target);
   });
   const layers = [
     ["judgment", "Judgments"],
@@ -1072,7 +1158,17 @@ function renderGraphView() {
         </section>
       `).join("")}
     </div>
-    <div class="graph-relations" aria-label="Conflict relations">
+    <div class="graph-relations" aria-label="Claim and conflict relations">
+      <h3>Claim Relations</h3>
+      ${visibleRelations.length ? visibleRelations.map((relation) => `
+        <article class="relation-row relation-row-explicit">
+          <span class="relation-type-pill ${escapeHtml(relation.type)}">${escapeHtml(relationTypeLabel(relation.type))}</span>
+          <strong>${escapeHtml(relation.source)} → ${escapeHtml(relation.target)}</strong>
+          <p>${escapeHtml(relation.rationale || "No rationale recorded.")}</p>
+          <small>${escapeHtml(Math.round(relation.weight * 100))}% weight</small>
+        </article>
+      `).join("") : '<article class="relation-empty">No explicit relations match this filter.</article>'}
+      <h3>Conflict Relations</h3>
       ${visibleConflicts.map((conflict) => `
         <article class="relation-row${conflict.id === selectedConflict?.id ? " is-selected" : ""}">
           <span class="severity-pill ${escapeHtml(conflict.severity)}">${escapeHtml(titleCase(conflict.kind))}</span>
@@ -1086,7 +1182,84 @@ function renderGraphView() {
   const filterBar = renderWorkbenchFilter();
   if (filterBar) children.push(filterBar);
   children.push(graph);
+  children.push(renderRelationEditor());
   replaceChildren(els.claimWorkbenchPanel, children);
+}
+
+function renderRelationEditor() {
+  const section = document.createElement("section");
+  section.className = "relation-editor";
+  section.setAttribute("aria-labelledby", "relationEditorTitle");
+  const sourceId = state.beliefs[0]?.id || "";
+  const targetId = state.beliefs[1]?.id || sourceId;
+  const relationRows = state.relations.map((relation) => {
+    const source = findBelief(relation.source);
+    const target = findBelief(relation.target);
+    return `
+      <article class="relation-editor-row" role="listitem">
+        <span class="relation-type-pill ${escapeHtml(relation.type)}">${escapeHtml(relationTypeLabel(relation.type))}</span>
+        <span class="relation-editor-copy">
+          <strong>${escapeHtml(relation.source)} → ${escapeHtml(relation.target)}</strong>
+          <span>${escapeHtml(source?.text || "Missing source claim")} / ${escapeHtml(target?.text || "Missing target claim")}</span>
+          <small>${escapeHtml(relation.rationale || "No rationale recorded.")} · ${escapeHtml(Math.round(relation.weight * 100))}% weight</small>
+        </span>
+        <button class="relation-remove-button" type="button" data-remove-relation="${escapeHtml(relation.id)}" aria-label="Remove relation ${escapeHtml(relation.id)}">Remove</button>
+      </article>
+    `;
+  }).join("");
+
+  section.innerHTML = `
+    <div class="relation-editor-head">
+      <div>
+        <h3 id="relationEditorTitle">Relation Editor</h3>
+        <p>Create keyboard-editable support, conflict, neutral, implication, dependency, and undercut links for the agent graph.</p>
+      </div>
+      <span>${escapeHtml(state.relations.length)} links</span>
+    </div>
+    <form class="relation-form">
+      <label>
+        <span>Source claim</span>
+        <select name="source" ${state.beliefs.length < 2 ? "disabled" : ""}>${renderBeliefOptions(sourceId)}</select>
+      </label>
+      <label>
+        <span>Relation type</span>
+        <select name="type">
+          ${agentContract.relationTypes.map((type) => `<option value="${escapeHtml(type)}">${escapeHtml(relationTypeLabel(type))}</option>`).join("")}
+        </select>
+      </label>
+      <label>
+        <span>Target claim</span>
+        <select name="target" ${state.beliefs.length < 2 ? "disabled" : ""}>${renderBeliefOptions(targetId)}</select>
+      </label>
+      <label>
+        <span>Weight <output name="weightOutput">65%</output></span>
+        <input name="weight" type="range" min="0" max="100" value="65">
+      </label>
+      <label class="relation-rationale-field">
+        <span>Rationale</span>
+        <input name="rationale" type="text" placeholder="Why does this link matter?">
+      </label>
+      <button class="primary-button" type="submit" ${state.beliefs.length < 2 ? "disabled" : ""}>Add Relation</button>
+    </form>
+    <div class="relation-editor-list" role="list">
+      ${relationRows || '<article class="relation-empty" role="listitem">No explicit relations yet. Add at least two claims, then link them here.</article>'}
+    </div>
+  `;
+
+  const form = section.querySelector(".relation-form");
+  const weightInput = form.querySelector("[name='weight']");
+  const weightOutput = form.querySelector("[name='weightOutput']");
+  weightInput.addEventListener("input", () => {
+    weightOutput.textContent = `${weightInput.value}%`;
+  });
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    addRelationFromForm(form);
+  });
+  section.querySelectorAll("[data-remove-relation]").forEach((button) => {
+    button.addEventListener("click", () => removeRelation(button.dataset.removeRelation));
+  });
+  return section;
 }
 
 function renderWorkbenchFilter() {
@@ -1141,6 +1314,7 @@ function renderAgentContract() {
     els.agentContractList,
     [
       renderContractGroup("Claim fields", agentContract.claimFields),
+      renderContractGroup("Relation fields", agentContract.relationFields),
       renderContractGroup("Relation types", agentContract.relationTypes),
       renderContractGroup("Conflict kinds", agentContract.conflictKinds),
       ...agentContract.endpoints.map(([method, path, copy]) => {
@@ -1264,6 +1438,7 @@ function renderDataRightsPanel() {
     [
       ["Status", migration.status],
       ["Mapped claims", String(migration.mappedClaims)],
+      ["Mapped relations", String(migration.mappedRelations || 0)],
       ["Mapped conflicts", String(migration.mappedConflicts)],
       ["Legacy conflicts", String(migration.legacyUnverified)],
       ["Ambiguous fields", String(migration.ambiguousFields.length)],
@@ -1315,7 +1490,7 @@ function runLocalAnalysis() {
 
 function buildAnalysisReport() {
   const claimCount = state.beliefs.length;
-  const candidatePairs = (claimCount * (claimCount - 1)) / 2;
+  const candidatePairs = getCandidatePairs().length;
   const generatedConflicts = detectCandidateConflicts();
   const hardCount = state.conflicts.filter((conflict) => conflict.kind === "hard").length
     + generatedConflicts.filter((conflict) => conflict.kind === "hard").length;
@@ -1355,15 +1530,11 @@ function buildAnalysisReport() {
 function detectCandidateConflicts() {
   const generated = [];
   const nextNumber = nextConflictNumber();
-  for (let i = 0; i < state.beliefs.length; i += 1) {
-    for (let j = i + 1; j < state.beliefs.length; j += 1) {
-      const claimA = state.beliefs[i];
-      const claimB = state.beliefs[j];
-      if (hasConflictBetween(claimA.id, claimB.id)) continue;
-      const signal = scoreBeliefPair(claimA, claimB);
-      if (!signal) continue;
-      generated.push(createGeneratedConflict(claimA, claimB, signal, nextNumber + generated.length));
-    }
+  for (const { claimA, claimB } of getCandidatePairs()) {
+    if (hasConflictBetween(claimA.id, claimB.id)) continue;
+    const signal = scoreBeliefPair(claimA, claimB);
+    if (!signal) continue;
+    generated.push(createGeneratedConflict(claimA, claimB, signal, nextNumber + generated.length));
   }
   return generated.slice(0, 3);
 }
@@ -1373,6 +1544,18 @@ function scoreBeliefPair(claimA, claimB) {
   const b = claimB.text.toLowerCase();
   const joined = `${a} ${b}`;
   const overlap = tokenOverlap(a, b);
+  const relationContext = getRelationsBetween(claimA.id, claimB.id);
+  const explicitConflict = relationContext.find((relation) => relation.type === "conflicts" || relation.type === "undercuts");
+
+  if (explicitConflict && explicitConflict.weight >= 0.55) {
+    return {
+      kind: explicitConflict.type === "conflicts" ? "hard" : "soft",
+      severity: explicitConflict.weight >= 0.78 ? "high" : "medium",
+      confidence: roundNumber(clamp(explicitConflict.weight, 0.55, 0.95)),
+      engine: ["Argument graph", "Rule constraint", "Repair ranking"],
+      why: `The explicit ${relationTypeLabel(explicitConflict.type).toLowerCase()} relation between ${claimA.id} and ${claimB.id} is strong enough to require review: ${explicitConflict.rationale}`,
+    };
+  }
 
   if (joined.includes("protected attribute") && (joined.includes("reject") || joined.includes("proxy"))) {
     return {
@@ -1405,6 +1588,40 @@ function scoreBeliefPair(claimA, claimB) {
   }
 
   return null;
+}
+
+function getCandidatePairs() {
+  const pairs = new Map();
+  const addPair = (sourceId, targetId, reason) => {
+    const claimA = findBelief(sourceId);
+    const claimB = findBelief(targetId);
+    if (!claimA || !claimB || claimA.id === claimB.id) return;
+    const key = [claimA.id, claimB.id].sort().join(":");
+    if (!pairs.has(key)) pairs.set(key, { claimA, claimB, reason });
+  };
+
+  state.relations.forEach((relation) => addPair(relation.source, relation.target, relation.type));
+  state.conflicts.forEach((conflict) => {
+    addPair(conflict.claimA, conflict.claimB, "existing-conflict");
+    (conflict.core || []).forEach((id) => addPair(conflict.claimA, id, "conflict-core"));
+  });
+
+  for (let i = 0; i < state.beliefs.length; i += 1) {
+    for (let j = i + 1; j < state.beliefs.length; j += 1) {
+      const claimA = state.beliefs[i];
+      const claimB = state.beliefs[j];
+      const overlap = tokenOverlap(claimA.text.toLowerCase(), claimB.text.toLowerCase());
+      if (overlap > 0.32 || claimA.layer !== claimB.layer) addPair(claimA.id, claimB.id, "lexical-or-cross-layer");
+    }
+  }
+
+  return [...pairs.values()];
+}
+
+function getRelationsBetween(claimA, claimB) {
+  return state.relations.filter((relation) => {
+    return (relation.source === claimA && relation.target === claimB) || (relation.source === claimB && relation.target === claimA);
+  });
 }
 
 function createGeneratedConflict(claimA, claimB, signal, number) {
@@ -1556,6 +1773,57 @@ function addBelief() {
   render();
 }
 
+function addRelationFromForm(form) {
+  const data = new FormData(form);
+  const source = String(data.get("source") || "");
+  const target = String(data.get("target") || "");
+  const type = String(data.get("type") || "neutral");
+  const weight = Number(data.get("weight") || 65) / 100;
+  const rationale = String(data.get("rationale") || "").trim();
+
+  if (!source || !target || source === target) {
+    form.querySelector("[name='target']").focus();
+    return;
+  }
+
+  const existing = state.relations.find((relation) => {
+    return relation.source === source && relation.target === target && relation.type === type;
+  });
+  if (existing) {
+    form.querySelector("[name='type']").focus();
+    return;
+  }
+
+  const relation = normalizeRelation({
+    id: nextRelationId(),
+    source,
+    target,
+    type,
+    weight,
+    rationale: rationale || `${source} ${relationTypeLabel(type).toLowerCase()} ${target}.`,
+  });
+  state.relations.push(relation);
+  state.activeStage = "integration";
+  recordRevision("relation", `Added ${relation.id}: ${source} ${relationTypeLabel(type).toLowerCase()} ${target}.`, {
+    relationId: relation.id,
+  });
+  saveState();
+  render();
+  focusElement(els.claimWorkbenchPanel);
+}
+
+function removeRelation(relationId) {
+  const relation = state.relations.find((item) => item.id === relationId);
+  if (!relation) return;
+  state.relations = state.relations.filter((item) => item.id !== relationId);
+  recordRevision("relation", `Removed ${relation.id}: ${relation.source} ${relationTypeLabel(relation.type).toLowerCase()} ${relation.target}.`, {
+    relationId: relation.id,
+  });
+  saveState();
+  render();
+  focusElement(els.claimWorkbenchPanel);
+}
+
 function recordCalibrationRound() {
   const round = normalizeCalibrationRound({
     id: nextCalibrationRoundId(),
@@ -1666,10 +1934,12 @@ function exportApi() {
     },
     schema: {
       claimFields: agentContract.claimFields,
+      relationFields: agentContract.relationFields,
       relationTypes: agentContract.relationTypes,
       conflictKinds: agentContract.conflictKinds,
     },
     beliefs: state.beliefs.map(normalizeBelief),
+    relations: state.relations.map(normalizeRelation),
     conflicts: state.conflicts,
     selectedConflictId: state.selectedConflictId,
     revisions: state.revisions,
@@ -1724,6 +1994,7 @@ function buildPrivacyReceiptPayload() {
       potentiallySensitive,
       sensitivityCounts,
       claimCount: state.beliefs.length,
+      relationCount: state.relations.length,
       conflictCount: state.conflicts.length,
       calibrationRounds: state.calibrationRounds.length,
     },
@@ -1782,10 +2053,12 @@ function importApi(event) {
       const beliefs = Array.isArray(parsed.beliefs) ? parsed.beliefs : Array.isArray(parsed.claims) ? parsed.claims : [];
       const conflicts = Array.isArray(parsed.conflicts) ? parsed.conflicts : [];
       if (!beliefs.length || !conflicts.length) return;
-      const migrationReport = buildMigrationReport(parsed, beliefs, conflicts);
+      const relations = normalizeRelationSet(parsed.relations, beliefs.map(normalizeBelief), conflicts);
+      const migrationReport = buildMigrationReport(parsed, beliefs, conflicts, relations);
       state = {
         ...createState(),
         beliefs: beliefs.map(normalizeBelief),
+        relations,
         conflicts: conflicts.map((conflict) => normalizeImportedConflict(conflict, migrationReport)),
         revisions: Array.isArray(parsed.revisions) ? parsed.revisions.map(normalizeRevision) : [],
         analysisRuns: Array.isArray(parsed.analysisRuns) ? parsed.analysisRuns.map(normalizeAnalysisRun) : [],
@@ -1816,12 +2089,13 @@ function normalizeImportedConflict(conflict, migrationReport) {
   return normalized;
 }
 
-function buildMigrationReport(parsed, beliefs, conflicts) {
+function buildMigrationReport(parsed, beliefs, conflicts, relations = []) {
   const schemaVersion = parsed.schemaVersion || parsed.version || "legacy/unknown";
   const native = schemaVersion === "wre-2.5";
   const ambiguousFields = [];
   if (!parsed.schemaVersion) ambiguousFields.push("schemaVersion");
   if (Array.isArray(parsed.claims) && !Array.isArray(parsed.beliefs)) ambiguousFields.push("claims mapped to beliefs");
+  if (!Array.isArray(parsed.relations)) ambiguousFields.push("relations derived from references/conflicts");
   if (!parsed.agentContract) ambiguousFields.push("agentContract");
   if (!parsed.session?.privacy && !parsed.privacy) ambiguousFields.push("privacy");
   return {
@@ -1829,6 +2103,7 @@ function buildMigrationReport(parsed, beliefs, conflicts) {
     sourceSchemaVersion: schemaVersion,
     status: native ? "native-wre-2.5" : "legacy-imported",
     mappedClaims: beliefs.length,
+    mappedRelations: relations.length,
     mappedConflicts: conflicts.length,
     legacyUnverified: native ? 0 : conflicts.length,
     ambiguousFields,
@@ -1844,6 +2119,7 @@ function buildDefaultMigrationReport() {
     sourceSchemaVersion: "seed",
     status: "native-seed",
     mappedClaims: state.beliefs.length,
+    mappedRelations: state.relations.length,
     mappedConflicts: state.conflicts.length,
     legacyUnverified: state.conflicts.filter((conflict) => conflict.verification === "legacy-unverified").length,
     ambiguousFields: [],
@@ -1957,6 +2233,7 @@ function buildAgentContractPayload() {
   return {
     schemaVersion: agentContract.schemaVersion,
     claimFields: agentContract.claimFields,
+    relationFields: agentContract.relationFields,
     relationTypes: agentContract.relationTypes,
     conflictKinds: agentContract.conflictKinds,
     endpoints: agentContract.endpoints.map(([method, path, description]) => ({ method, path, description })),
@@ -1985,10 +2262,73 @@ function nextCalibrationRoundId() {
   return `Q-${String(max + 1).padStart(3, "0")}`;
 }
 
+function nextRelationId() {
+  const max = state.relations
+    .map((relation) => Number(String(relation.id).replace(/^[A-Z-]+/, "")) || 0)
+    .reduce((highest, value) => Math.max(highest, value), 0);
+  return `L-${String(max + 1).padStart(3, "0")}`;
+}
+
 function nextConflictNumber() {
   return state.conflicts
     .map((conflict) => Number(String(conflict.id).replace(/^[A-Z-]+/, "")) || 0)
     .reduce((highest, value) => Math.max(highest, value), 0) + 1;
+}
+
+function deriveRelationsFromClaimsAndConflicts(beliefs, conflicts) {
+  const beliefIds = new Set(beliefs.map((belief) => belief.id));
+  const relations = [];
+  const seen = new Set();
+  const addDerived = (source, target, type, weight, rationale) => {
+    const key = `${source}:${type}:${target}`;
+    if (!beliefIds.has(source) || !beliefIds.has(target) || source === target || seen.has(key)) return;
+    seen.add(key);
+    relations.push({
+      id: `L-${String(relations.length + 1).padStart(3, "0")}`,
+      source,
+      target,
+      type,
+      weight,
+      rationale,
+    });
+  };
+
+  beliefs.forEach((belief) => {
+    extractClaimReferences(belief.text).forEach((reference) => {
+      addDerived(
+        belief.id,
+        reference,
+        "depends_on",
+        0.62,
+        `Derived from ${belief.id}'s natural-language reference to @${reference}.`
+      );
+    });
+  });
+
+  conflicts.forEach((conflict) => {
+    addDerived(
+      conflict.claimA,
+      conflict.claimB,
+      "conflicts",
+      Number.isFinite(Number(conflict.confidence)) ? clamp(Number(conflict.confidence), 0, 1) : 0.7,
+      conflict.summary || `Derived from legacy conflict ${conflict.id || "record"}.`
+    );
+    (conflict.linked || []).forEach((linkedId) => {
+      addDerived(
+        conflict.claimA,
+        linkedId,
+        "depends_on",
+        0.58,
+        `Derived from ${conflict.id || "legacy conflict"} linked context.`
+      );
+    });
+  });
+
+  return relations.map(normalizeRelation);
+}
+
+function extractClaimReferences(text) {
+  return [...String(text || "").matchAll(/@([JPT]\d+)/gi)].map((match) => match[1].toUpperCase());
 }
 
 function hasConflictBetween(claimA, claimB) {
@@ -2053,9 +2393,22 @@ function revisionLabel(type) {
   if (type === "repair") return "Repair applied";
   if (type === "privacy") return "Privacy changed";
   if (type === "claim") return "Claim added";
+  if (type === "relation") return "Relation updated";
   if (type === "analysis") return "Analysis run";
   if (type === "calibration") return "Calibration round";
   return "Session event";
+}
+
+function relationTypeLabel(type) {
+  if (type === "depends_on") return "Depends on";
+  return titleCase(String(type || "neutral").replace(/_/g, " "));
+}
+
+function renderBeliefOptions(selectedId) {
+  return state.beliefs.map((belief) => {
+    const selected = belief.id === selectedId ? " selected" : "";
+    return `<option value="${escapeHtml(belief.id)}"${selected}>${escapeHtml(belief.id)} · ${escapeHtml(labelForLayer(belief.layer))}</option>`;
+  }).join("");
 }
 
 function formatTime(value) {

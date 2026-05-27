@@ -1670,9 +1670,17 @@ svg {
   gap: 8px;
 }
 
+.graph-relations h3 {
+  margin: 4px 0 0;
+  color: #52606a;
+  font-size: 10px;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
 .relation-row {
   display: grid;
-  grid-template-columns: auto auto minmax(0, 1fr);
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
   gap: 9px;
   align-items: center;
   border: 1px solid var(--line);
@@ -1696,6 +1704,196 @@ svg {
   color: #56616b;
   font-size: 11px;
   line-height: 1.35;
+}
+
+.relation-row small {
+  color: #6a747d;
+  font-size: 10px;
+  font-weight: 760;
+  white-space: nowrap;
+}
+
+.relation-type-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 22px;
+  border: 1px solid #bbd9cb;
+  border-radius: 999px;
+  background: #edf8f2;
+  color: var(--green);
+  padding: 0 8px;
+  font-size: 10px;
+  font-weight: 820;
+  white-space: nowrap;
+}
+
+.relation-type-pill.conflicts,
+.relation-type-pill.undercuts {
+  border-color: #f1c9b9;
+  background: #fff3ed;
+  color: #9c4a22;
+}
+
+.relation-type-pill.neutral,
+.relation-type-pill.depends_on {
+  border-color: #d9dee3;
+  background: #f6f8f9;
+  color: #52606a;
+}
+
+.relation-type-pill.implies {
+  border-color: #bfd4ee;
+  background: #eef6ff;
+  color: var(--blue);
+}
+
+.relation-empty {
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: #fbfcfb;
+  color: #66737d;
+  padding: 10px;
+  font-size: 11px;
+}
+
+.relation-editor {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid var(--line);
+  background: #fbfcfb;
+  padding: 14px;
+}
+
+.relation-editor-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.relation-editor-head h3 {
+  margin: 0 0 5px;
+  color: #111827;
+  font-size: 13px;
+  font-weight: 760;
+}
+
+.relation-editor-head p {
+  max-width: 620px;
+  margin: 0;
+  color: #63707a;
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.relation-editor-head > span {
+  flex: 0 0 auto;
+  color: var(--green);
+  font-size: 11px;
+  font-weight: 820;
+}
+
+.relation-form {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(120px, 1fr)) auto;
+  gap: 10px;
+  align-items: end;
+}
+
+.relation-form label {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.relation-form span {
+  color: #58656f;
+  font-size: 10px;
+  font-weight: 760;
+  text-transform: uppercase;
+}
+
+.relation-form select,
+.relation-form input[type="text"] {
+  min-height: 34px;
+  width: 100%;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: #26313d;
+  padding: 0 9px;
+  font-size: 12px;
+}
+
+.relation-form input[type="range"] {
+  width: 100%;
+}
+
+.relation-rationale-field {
+  grid-column: span 2;
+}
+
+.relation-editor-list {
+  display: grid;
+  gap: 8px;
+}
+
+.relation-editor-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  padding: 9px;
+}
+
+.relation-editor-copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.relation-editor-copy strong,
+.relation-editor-copy span,
+.relation-editor-copy small {
+  overflow-wrap: anywhere;
+}
+
+.relation-editor-copy strong {
+  color: #1f2937;
+  font-size: 12px;
+}
+
+.relation-editor-copy span {
+  color: #47535d;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.relation-editor-copy small {
+  color: #6a747d;
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.relation-remove-button {
+  min-height: 30px;
+  border: 1px solid #f0c5bb;
+  border-radius: var(--radius-sm);
+  background: #fff7f4;
+  color: #994022;
+  padding: 0 9px;
+  font-size: 10px;
+  font-weight: 820;
+}
+
+.relation-remove-button:hover,
+.relation-remove-button:focus-visible {
+  border-color: #d7836b;
+  color: #7d2f16;
 }
 
 .replay-contract-grid {
@@ -2571,11 +2769,13 @@ svg {
   .calibration-form,
   .calibration-log,
   .replay-contract-grid,
+  .relation-form,
   .graph-grid {
     grid-template-columns: 1fr;
   }
 
-  .calibration-wide {
+  .calibration-wide,
+  .relation-rationale-field {
     grid-column: auto;
   }
 
@@ -2645,7 +2845,8 @@ svg {
   .compose-head,
   .composer-footer,
   .revision-head,
-  .agent-contract-head {
+  .agent-contract-head,
+  .relation-editor-head {
     align-items: stretch;
     flex-direction: column;
   }
@@ -2658,6 +2859,16 @@ svg {
   .composer-meta,
   .workbench-head {
     flex-wrap: wrap;
+  }
+
+  .relation-row,
+  .relation-editor-row {
+    grid-template-columns: 1fr;
+    align-items: start;
+  }
+
+  .relation-row small {
+    white-space: normal;
   }
 
   .local-status {
