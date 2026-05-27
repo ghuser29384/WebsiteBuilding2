@@ -317,6 +317,20 @@ const pipeline = [
   { icon: "history", title: "Audit Log", subtitle: "Revision replay", metric: "0 revisions" },
 ];
 
+const agentContract = {
+  schemaVersion: "wre-2.5",
+  claimFields: ["id", "layer", "text", "domain", "confidence", "timeScope", "provenance", "sensitivity"],
+  relationTypes: ["supports", "conflicts", "neutral", "implies", "depends_on", "undercuts"],
+  conflictKinds: ["hard", "soft", "nlp"],
+  endpoints: [
+    ["POST", "/v1/analyze", "Run rule, SMT, graph, NLI, and probabilistic checks."],
+    ["GET", "/v1/conflicts", "Read explanation-first conflict reports."],
+    ["POST", "/v1/conflicts/{id}/repair", "Preview or apply a ranked repair option."],
+    ["GET", "/v1/export", "Export a portable JSON session archive."],
+    ["DELETE", "/v1/sessions/{id}", "Delete a synced or local session record."],
+  ],
+};
+
 const severityOrder = ["critical", "high", "medium", "low"];
 const tabLabels = ["all", "critical", "high", "medium", "low"];
 
@@ -363,6 +377,14 @@ const els = {
   claimWorkbenchPanel: document.getElementById("claimWorkbenchPanel"),
   detailCore: document.getElementById("detailCore"),
   detailEngine: document.getElementById("detailEngine"),
+  graphBtn: document.getElementById("graphBtn"),
+  viewAllConflictsBtn: document.getElementById("viewAllConflictsBtn"),
+  reviewLatestBtn: document.getElementById("reviewLatestBtn"),
+  copyContractBtn: document.getElementById("copyContractBtn"),
+  revisionReplay: document.getElementById("revisionReplay"),
+  revisionList: document.getElementById("revisionList"),
+  agentContractPanel: document.getElementById("agentContractPanel"),
+  agentContractList: document.getElementById("agentContractList"),
 };
 
 let state = loadState() || createState();
@@ -382,6 +404,8 @@ function createState() {
     revisions: [],
     privacy: { ...DEFAULT_PRIVACY },
     viewMode: "table",
+    workbenchFilter: "all",
+    graphFocusConflictId: "",
     createdAt: "2025-05-15T10:42:00.000Z",
   };
 }
@@ -401,8 +425,11 @@ function loadState() {
       ...parsed,
       beliefs: parsed.beliefs.map(normalizeBelief),
       conflicts: parsed.conflicts.map(normalizeConflict),
+      revisions: Array.isArray(parsed.revisions) ? parsed.revisions.map(normalizeRevision) : [],
       privacy: { ...DEFAULT_PRIVACY, ...(parsed.privacy || {}) },
       viewMode: parsed.viewMode === "graph" ? "graph" : "table",
+      workbenchFilter: ["judgment", "principle", "theory"].includes(parsed.workbenchFilter) ? parsed.workbenchFilter : "all",
+      graphFocusConflictId: parsed.graphFocusConflictId || "",
     };
   } catch {
     return null;
@@ -446,12 +473,23 @@ function normalizeConflict(conflict) {
   };
 }
 
+function normalizeRevision(revision) {
+  return {
+    time: revision.time || new Date().toISOString(),
+    type: revision.type || "audit",
+    text: revision.text || revision.reason || "Session updated.",
+    conflictId: revision.conflictId || "",
+    repairId: revision.repairId || "",
+  };
+}
+
 function bindEvents() {
   document.querySelectorAll(".nav-button").forEach((button) => {
     button.addEventListener("click", () => {
       state.activeNav = button.dataset.nav;
       saveState();
       syncNav();
+      focusWorkflowNav(button.dataset.nav);
     });
   });
 
@@ -469,7 +507,7 @@ function bindEvents() {
   });
 
   document.querySelectorAll("[data-filter-layer]").forEach((button) => {
-    button.addEventListener("click", () => focusComposer(button.dataset.filterLayer));
+    button.addEventListener("click", () => showWorkbenchLayer(button.dataset.filterLayer));
   });
 
   els.beliefText.addEventListener("input", updateTokenCount);
@@ -501,6 +539,27 @@ function bindEvents() {
 
   els.applyRepairBtn.addEventListener("click", applySelectedRepair);
 
+  els.graphBtn.addEventListener("click", () => {
+    state.viewMode = "graph";
+    state.activeNav = "conflicts";
+    state.graphFocusConflictId = state.selectedConflictId;
+    saveState();
+    syncNav();
+    syncViewMode();
+    renderClaimWorkbench();
+    focusElement(els.claimWorkbenchPanel);
+  });
+
+  els.viewAllConflictsBtn.addEventListener("click", () => {
+    state.activeTab = "all";
+    state.activeNav = "conflicts";
+    saveState();
+    renderTabs();
+    renderConflicts();
+    syncNav();
+    focusElement(document.querySelector(".conflict-panel"));
+  });
+
   els.guidanceBtn.addEventListener("click", () => {
     insertAtCursor(
       els.beliefText,
@@ -523,6 +582,15 @@ function bindEvents() {
   [els.cloudSyncToggle, els.llmTriageToggle, els.retentionSelect].forEach((control) => {
     control.addEventListener("change", updatePrivacyControls);
   });
+
+  els.reviewLatestBtn.addEventListener("click", () => {
+    state.activeNav = "replay";
+    saveState();
+    syncNav();
+    focusElement(els.revisionReplay);
+  });
+
+  els.copyContractBtn.addEventListener("click", copyAgentContract);
 }
 
 function render() {
@@ -532,6 +600,8 @@ function render() {
   renderConflicts();
   renderDetail();
   renderClaimWorkbench();
+  renderRevisionReplay();
+  renderAgentContract();
   renderPipeline();
   syncNav();
   syncPrivacyControls();
@@ -561,6 +631,7 @@ function renderStages() {
         state.activeStage = stage.id;
         saveState();
         renderStages();
+        focusStage(stage.id);
       });
       return button;
     })
@@ -571,6 +642,7 @@ function renderBeliefs() {
   renderBeliefLayer("judgment", els.judgmentList);
   renderBeliefLayer("principle", els.principleList);
   renderBeliefLayer("theory", els.theoryList);
+  syncLayerCounts();
 }
 
 function renderBeliefLayer(layer, container) {
@@ -643,9 +715,13 @@ function renderConflicts() {
       button.addEventListener("click", () => {
         state.selectedConflictId = conflict.id;
         state.selectedRepairId = conflict.repairs[0]?.id || "";
+        state.activeNav = "conflicts";
+        state.graphFocusConflictId = conflict.id;
         saveState();
         renderConflicts();
         renderDetail();
+        renderClaimWorkbench();
+        syncNav();
       });
       return button;
     })
@@ -792,6 +868,11 @@ function renderClaimWorkbench() {
 }
 
 function renderTableView() {
+  const visibleBeliefs = getVisibleBeliefs();
+  const children = [];
+  const filterBar = renderWorkbenchFilter();
+  if (filterBar) children.push(filterBar);
+
   const table = document.createElement("table");
   table.className = "claim-table";
   table.innerHTML = `
@@ -808,7 +889,7 @@ function renderTableView() {
       </tr>
     </thead>
     <tbody>
-      ${state.beliefs.map((belief) => `
+      ${visibleBeliefs.map((belief) => `
         <tr>
           <td><span class="belief-id">${escapeHtml(belief.id)}</span></td>
           <td>${escapeHtml(labelForLayer(belief.layer))}</td>
@@ -822,12 +903,25 @@ function renderTableView() {
       `).join("")}
     </tbody>
   `;
-  replaceChildren(els.claimWorkbenchPanel, [table]);
+  children.push(table);
+  replaceChildren(els.claimWorkbenchPanel, children);
 }
 
 function renderGraphView() {
   const graph = document.createElement("div");
   graph.className = "graph-view";
+  const selectedConflict = state.conflicts.find((conflict) => conflict.id === state.graphFocusConflictId) || getSelectedConflict();
+  const focusedIds = new Set([
+    selectedConflict?.claimA,
+    selectedConflict?.claimB,
+    ...(selectedConflict?.core || []),
+  ].filter(Boolean));
+  const visibleBeliefs = getVisibleBeliefs();
+  const visibleIds = new Set(visibleBeliefs.map((belief) => belief.id));
+  const visibleConflicts = state.conflicts.filter((conflict) => {
+    if (state.workbenchFilter === "all") return true;
+    return visibleIds.has(conflict.claimA) || visibleIds.has(conflict.claimB) || (conflict.core || []).some((id) => visibleIds.has(id));
+  });
   const layers = [
     ["judgment", "Judgments"],
     ["principle", "Principles"],
@@ -838,8 +932,8 @@ function renderGraphView() {
       ${layers.map(([layer, label]) => `
         <section class="graph-lane" aria-label="${escapeHtml(label)}">
           <h3>${escapeHtml(label)}</h3>
-          ${state.beliefs.filter((belief) => belief.layer === layer).map((belief) => `
-            <article class="graph-node ${escapeHtml(layer)}">
+          ${visibleBeliefs.filter((belief) => belief.layer === layer).map((belief) => `
+            <article class="graph-node ${escapeHtml(layer)}${focusedIds.has(belief.id) ? " is-focus" : ""}">
               <span class="belief-id">${escapeHtml(belief.id)}</span>
               <p>${escapeHtml(belief.text)}</p>
               <small>${escapeHtml(belief.confidence)}% · ${escapeHtml(titleCase(belief.domain))}</small>
@@ -849,8 +943,8 @@ function renderGraphView() {
       `).join("")}
     </div>
     <div class="graph-relations" aria-label="Conflict relations">
-      ${state.conflicts.map((conflict) => `
-        <article class="relation-row">
+      ${visibleConflicts.map((conflict) => `
+        <article class="relation-row${conflict.id === selectedConflict?.id ? " is-selected" : ""}">
           <span class="severity-pill ${escapeHtml(conflict.severity)}">${escapeHtml(titleCase(conflict.kind))}</span>
           <strong>${escapeHtml(conflict.claimA)} → ${escapeHtml(conflict.claimB)}</strong>
           <p>${escapeHtml(conflict.summary)}</p>
@@ -858,12 +952,96 @@ function renderGraphView() {
       `).join("")}
     </div>
   `;
-  replaceChildren(els.claimWorkbenchPanel, [graph]);
+  const children = [];
+  const filterBar = renderWorkbenchFilter();
+  if (filterBar) children.push(filterBar);
+  children.push(graph);
+  replaceChildren(els.claimWorkbenchPanel, children);
+}
+
+function renderWorkbenchFilter() {
+  if (state.workbenchFilter === "all") return null;
+  const bar = document.createElement("div");
+  bar.className = "workbench-filter";
+  bar.innerHTML = `
+    <span>Showing ${escapeHtml(labelForLayer(state.workbenchFilter).toLowerCase())} claims</span>
+    <button type="button">Clear filter</button>
+  `;
+  bar.querySelector("button").addEventListener("click", () => {
+    state.workbenchFilter = "all";
+    saveState();
+    renderClaimWorkbench();
+  });
+  return bar;
+}
+
+function renderRevisionReplay() {
+  const revisions = [...state.revisions].map(normalizeRevision).reverse();
+  if (!revisions.length) {
+    const empty = document.createElement("li");
+    empty.className = "revision-empty";
+    empty.innerHTML = `
+      <strong>No revisions yet</strong>
+      <span>Apply a repair, add a claim, or change privacy controls to create an auditable replay entry.</span>
+    `;
+    replaceChildren(els.revisionList, [empty]);
+    return;
+  }
+
+  replaceChildren(
+    els.revisionList,
+    revisions.slice(0, 8).map((revision, index) => {
+      const item = document.createElement("li");
+      item.className = "revision-item";
+      item.innerHTML = `
+        <span class="revision-index">${index + 1}</span>
+        <span class="revision-copy">
+          <strong>${escapeHtml(revisionLabel(revision.type))}</strong>
+          <span>${escapeHtml(revision.text)}</span>
+          <time datetime="${escapeHtml(revision.time)}">${escapeHtml(formatTime(revision.time))}</time>
+        </span>
+      `;
+      return item;
+    })
+  );
+}
+
+function renderAgentContract() {
+  replaceChildren(
+    els.agentContractList,
+    [
+      renderContractGroup("Claim fields", agentContract.claimFields),
+      renderContractGroup("Relation types", agentContract.relationTypes),
+      renderContractGroup("Conflict kinds", agentContract.conflictKinds),
+      ...agentContract.endpoints.map(([method, path, copy]) => {
+        const item = document.createElement("article");
+        item.className = "contract-endpoint";
+        item.innerHTML = `
+          <span>${escapeHtml(method)}</span>
+          <strong>${escapeHtml(path)}</strong>
+          <p>${escapeHtml(copy)}</p>
+        `;
+        return item;
+      }),
+    ]
+  );
+}
+
+function renderContractGroup(title, values) {
+  const group = document.createElement("article");
+  group.className = "contract-group";
+  group.innerHTML = `
+    <strong>${escapeHtml(title)}</strong>
+    <p>${values.map(escapeHtml).join(", ")}</p>
+  `;
+  return group;
 }
 
 function syncNav() {
   document.querySelectorAll(".nav-button").forEach((button) => {
-    button.classList.toggle("is-active", button.dataset.nav === state.activeNav);
+    const selected = button.dataset.nav === state.activeNav;
+    button.classList.toggle("is-active", selected);
+    button.setAttribute("aria-pressed", String(selected));
   });
 }
 
@@ -961,9 +1139,8 @@ function addBelief() {
   };
 
   state.beliefs.push(belief);
-  state.revisions.push({
-    time: new Date().toISOString(),
-    text: `Added ${belief.id} to ${labelForLayer(layer).toLowerCase()}.`,
+  recordRevision("claim", `Added ${belief.id} to ${labelForLayer(layer).toLowerCase()} with ${belief.confidence}% confidence.`, {
+    claimId: belief.id,
   });
   els.beliefText.value = "";
   els.timeScopeInput.value = "";
@@ -985,9 +1162,9 @@ function applySelectedRepair() {
   const repair = conflict?.repairs.find((item) => item.id === state.selectedRepairId);
   if (!conflict || !repair) return;
 
-  state.revisions.push({
-    time: new Date().toISOString(),
-    text: `${repair.id} applied to ${conflict.id}: ${repair.title}.`,
+  recordRevision("repair", `${repair.id} applied to ${conflict.id}: ${repair.title}.`, {
+    conflictId: conflict.id,
+    repairId: repair.id,
   });
   state.activeStage = "action";
   state.activeNav = "replay";
@@ -998,7 +1175,9 @@ function applySelectedRepair() {
   saveState();
   renderStages();
   renderPipeline();
+  renderRevisionReplay();
   syncNav();
+  focusElement(els.revisionReplay);
   els.applyRepairBtn.querySelector("span").textContent = "Repair Applied";
   window.setTimeout(() => {
     els.applyRepairBtn.querySelector("span").textContent = "Apply Repair";
@@ -1016,21 +1195,15 @@ function exportApi() {
       privacy: state.privacy,
     },
     schema: {
-      claimFields: ["id", "layer", "text", "domain", "confidence", "timeScope", "provenance", "sensitivity"],
-      relationTypes: ["supports", "conflicts", "neutral", "implies", "depends_on", "undercuts"],
-      conflictKinds: ["hard", "soft", "nlp"],
+      claimFields: agentContract.claimFields,
+      relationTypes: agentContract.relationTypes,
+      conflictKinds: agentContract.conflictKinds,
     },
     beliefs: state.beliefs.map(normalizeBelief),
     conflicts: state.conflicts,
     selectedConflictId: state.selectedConflictId,
     revisions: state.revisions,
-    agentContract: {
-      analyze: "POST /v1/analyze",
-      conflicts: "GET /v1/conflicts",
-      repair: "POST /v1/conflicts/{id}/repair",
-      export: "GET /v1/export",
-      delete: "DELETE /v1/sessions/{id}",
-    },
+    agentContract: buildAgentContractPayload(),
   };
   const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);
@@ -1057,9 +1230,11 @@ function importApi(event) {
         ...createState(),
         beliefs: beliefs.map(normalizeBelief),
         conflicts: conflicts.map(normalizeConflict),
-        revisions: Array.isArray(parsed.revisions) ? parsed.revisions : [],
+        revisions: Array.isArray(parsed.revisions) ? parsed.revisions.map(normalizeRevision) : [],
         privacy: { ...DEFAULT_PRIVACY, ...(parsed.privacy || parsed.session?.privacy || {}) },
         selectedConflictId: parsed.selectedConflictId || conflicts[0]?.id || "C-001",
+        viewMode: parsed.viewMode === "graph" ? "graph" : "table",
+        workbenchFilter: ["judgment", "principle", "theory"].includes(parsed.workbenchFilter) ? parsed.workbenchFilter : "all",
       };
       saveState();
       render();
@@ -1087,14 +1262,125 @@ function updatePrivacyControls() {
     nliTriage: Boolean(els.llmTriageToggle.checked),
     retention: els.retentionSelect.value || DEFAULT_PRIVACY.retention,
   };
-  state.revisions.push({
-    time: new Date().toISOString(),
-    text: `Updated privacy controls: ${state.privacy.cloudSync ? "sync eligible" : "local only"}, ${state.privacy.nliTriage ? "NLI triage on" : "NLI triage off"}, ${retentionLabel(state.privacy.retention)} retention.`,
-  });
+  recordRevision(
+    "privacy",
+    `Updated privacy controls: ${state.privacy.cloudSync ? "sync eligible" : "local only"}, ${state.privacy.nliTriage ? "NLI triage on" : "NLI triage off"}, ${retentionLabel(state.privacy.retention)} retention.`
+  );
   saveState();
   syncPrivacyControls();
   syncStorageStatus();
   renderPipeline();
+  renderRevisionReplay();
+}
+
+function syncLayerCounts() {
+  document.querySelectorAll("[data-filter-layer]").forEach((button) => {
+    const layer = button.dataset.filterLayer;
+    const count = state.beliefs.filter((belief) => belief.layer === layer).length;
+    button.textContent = `View all (${count})`;
+  });
+}
+
+function showWorkbenchLayer(layer) {
+  if (!["judgment", "principle", "theory"].includes(layer)) return;
+  state.workbenchFilter = layer;
+  state.viewMode = "table";
+  state.activeNav = "intake";
+  saveState();
+  syncNav();
+  syncViewMode();
+  renderClaimWorkbench();
+  focusElement(els.claimWorkbenchPanel);
+}
+
+function getVisibleBeliefs() {
+  if (state.workbenchFilter === "all") return state.beliefs;
+  return state.beliefs.filter((belief) => belief.layer === state.workbenchFilter);
+}
+
+function focusWorkflowNav(nav) {
+  const targets = {
+    intake: document.getElementById("workspace"),
+    conflicts: document.querySelector(".conflict-panel"),
+    repair: document.querySelector(".detail-panel"),
+    replay: els.revisionReplay,
+  };
+  focusElement(targets[nav]);
+}
+
+function focusStage(stageId) {
+  const stageTargets = {
+    preparation: document.querySelector(".session-card"),
+    collection: document.querySelector(".compose-card"),
+    integration: document.querySelector(".claim-workbench"),
+    reflection: document.querySelector(".conflict-panel"),
+    action: els.revisionReplay,
+  };
+  focusElement(stageTargets[stageId]);
+}
+
+function focusElement(element) {
+  if (!element) return;
+  if (!element.hasAttribute("tabindex")) element.setAttribute("tabindex", "-1");
+  element.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+  element.focus({ preventScroll: true });
+}
+
+function recordRevision(type, text, extra = {}) {
+  state.revisions.push(
+    normalizeRevision({
+      time: new Date().toISOString(),
+      type,
+      text,
+      ...extra,
+    })
+  );
+}
+
+function buildAgentContractPayload() {
+  return {
+    schemaVersion: agentContract.schemaVersion,
+    claimFields: agentContract.claimFields,
+    relationTypes: agentContract.relationTypes,
+    conflictKinds: agentContract.conflictKinds,
+    endpoints: agentContract.endpoints.map(([method, path, description]) => ({ method, path, description })),
+  };
+}
+
+function copyAgentContract() {
+  const text = JSON.stringify(buildAgentContractPayload(), null, 2);
+  const buttonLabel = els.copyContractBtn.textContent;
+  const markCopied = () => {
+    els.copyContractBtn.textContent = "Copied";
+    window.setTimeout(() => {
+      els.copyContractBtn.textContent = buttonLabel;
+    }, 1200);
+  };
+
+  if (navigator.clipboard?.writeText) {
+    navigator.clipboard.writeText(text).then(markCopied).catch(() => exportApi());
+    return;
+  }
+
+  exportApi();
+}
+
+function revisionLabel(type) {
+  if (type === "repair") return "Repair applied";
+  if (type === "privacy") return "Privacy changed";
+  if (type === "claim") return "Claim added";
+  return "Session event";
+}
+
+function formatTime(value) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString([], {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
 }
 
 function updateTokenCount() {

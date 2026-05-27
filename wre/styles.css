@@ -1150,6 +1150,33 @@ svg {
   max-height: 410px;
 }
 
+.workbench-filter {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  border-bottom: 1px solid var(--line);
+  background: #f8faf9;
+  padding: 9px 10px;
+  color: #40505b;
+  font-size: 11px;
+  font-weight: 760;
+}
+
+.workbench-filter button {
+  min-height: 26px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-sm);
+  background: #ffffff;
+  color: var(--green);
+  padding: 0 9px;
+  font-size: 10px;
+  font-weight: 760;
+}
+
 .claim-table {
   width: 100%;
   min-width: 840px;
@@ -1232,6 +1259,12 @@ svg {
   border-left-color: var(--orange);
 }
 
+.graph-node.is-focus {
+  border-color: var(--green);
+  background: #f4fbf7;
+  box-shadow: inset 0 0 0 1px rgba(0, 107, 67, 0.18);
+}
+
 .graph-node p {
   grid-column: 2;
   margin: 0;
@@ -1263,6 +1296,11 @@ svg {
   padding: 9px;
 }
 
+.relation-row.is-selected {
+  border-color: var(--green);
+  background: #f5fbf8;
+}
+
 .relation-row strong {
   color: #1f2937;
   font-size: 11px;
@@ -1273,6 +1311,178 @@ svg {
   color: #56616b;
   font-size: 11px;
   line-height: 1.35;
+}
+
+.replay-contract-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 0.82fr);
+  gap: 18px;
+  margin-top: 18px;
+}
+
+.revision-panel,
+.agent-contract-panel {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: #ffffff;
+  overflow: hidden;
+}
+
+.revision-panel:focus,
+.agent-contract-panel:focus,
+.workspace-panel:focus,
+.conflict-panel:focus,
+.detail-panel:focus,
+.pipeline-panel:focus {
+  outline: 2px solid rgba(0, 107, 67, 0.24);
+  outline-offset: 2px;
+}
+
+.revision-head,
+.agent-contract-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  padding: 14px;
+}
+
+.revision-head h2,
+.agent-contract-head h2 {
+  margin: 0 0 5px;
+  color: #111827;
+  font-size: 14px;
+  font-weight: 760;
+}
+
+.revision-head p,
+.agent-contract-head p {
+  margin: 0;
+  color: #63707a;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.revision-list {
+  display: grid;
+  gap: 0;
+  max-height: 278px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: auto;
+}
+
+.revision-item,
+.revision-empty {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 9px;
+  border-bottom: 1px solid var(--line);
+  padding: 11px 14px;
+}
+
+.revision-empty {
+  grid-template-columns: 1fr;
+}
+
+.revision-item:last-child,
+.revision-empty:last-child {
+  border-bottom: 0;
+}
+
+.revision-index {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  background: #f8faf9;
+  color: var(--green);
+  font-size: 10px;
+  font-weight: 760;
+}
+
+.revision-copy,
+.revision-empty {
+  min-width: 0;
+}
+
+.revision-copy strong,
+.revision-empty strong {
+  display: block;
+  color: #17202b;
+  font-size: 11px;
+  font-weight: 760;
+}
+
+.revision-copy span,
+.revision-empty span {
+  display: block;
+  margin-top: 3px;
+  color: #3a4652;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.revision-copy time {
+  display: block;
+  margin-top: 6px;
+  color: #76838d;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.agent-contract-list {
+  display: grid;
+  gap: 8px;
+  max-height: 278px;
+  overflow: auto;
+  padding: 12px;
+}
+
+.contract-group,
+.contract-endpoint {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: #fbfcfb;
+  padding: 9px;
+}
+
+.contract-group strong,
+.contract-endpoint strong {
+  color: #17202b;
+  font-size: 11px;
+  font-weight: 760;
+}
+
+.contract-group p,
+.contract-endpoint p {
+  margin: 4px 0 0;
+  color: #56616b;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.contract-endpoint {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  gap: 3px 8px;
+}
+
+.contract-endpoint span {
+  grid-row: 1 / span 2;
+  display: grid;
+  min-height: 24px;
+  place-items: center;
+  border-radius: var(--radius-sm);
+  background: var(--blue-soft);
+  color: var(--blue);
+  font-size: 10px;
+  font-weight: 800;
 }
 
 .conflict-panel {
@@ -1969,6 +2179,7 @@ svg {
   .privacy-panel,
   .privacy-grid,
   .metadata-grid,
+  .replay-contract-grid,
   .graph-grid {
     grid-template-columns: 1fr;
   }
@@ -2028,7 +2239,9 @@ svg {
 
   .workspace-heading,
   .compose-head,
-  .composer-footer {
+  .composer-footer,
+  .revision-head,
+  .agent-contract-head {
     align-items: stretch;
     flex-direction: column;
   }

@@ -75,7 +75,7 @@
     </nav>
 
     <div class="top-actions">
-      <span id="storageStatus" class="local-status">Local-only</span>
+      <span id="storageStatus" class="local-status" aria-live="polite">Local-only</span>
       <label class="import-button" for="importInput">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12" /><path d="m8 7 4-4 4 4" /><path d="M5 20h14" /></svg>
         <span>Import</span>
@@ -311,9 +311,33 @@
         </div>
         <div id="claimWorkbenchPanel" class="workbench-panel"></div>
       </section>
+
+      <section class="replay-contract-grid" aria-label="Replay and agent contract">
+        <section id="revisionReplay" class="revision-panel" tabindex="-1" aria-labelledby="revisionReplayTitle">
+          <div class="revision-head">
+            <div>
+              <h2 id="revisionReplayTitle">Revision Replay</h2>
+              <p>Audit local changes, repair choices, and privacy-control updates before exporting a session.</p>
+            </div>
+            <button id="reviewLatestBtn" class="utility-button compact" type="button">Review Latest</button>
+          </div>
+          <ol id="revisionList" class="revision-list"></ol>
+        </section>
+
+        <section id="agentContractPanel" class="agent-contract-panel" tabindex="-1" aria-labelledby="agentContractTitle">
+          <div class="agent-contract-head">
+            <div>
+              <h2 id="agentContractTitle">Agent Contract</h2>
+              <p>Stable JSON fields and API verbs for software agents using the same local claim graph.</p>
+            </div>
+            <button id="copyContractBtn" class="utility-button compact" type="button">Copy JSON</button>
+          </div>
+          <div id="agentContractList" class="agent-contract-list"></div>
+        </section>
+      </section>
     </section>
 
-    <aside class="conflict-panel" aria-label="Conflict review queue">
+    <aside class="conflict-panel" tabindex="-1" aria-label="Conflict review queue">
       <div class="queue-head">
         <div>
           <h2>Conflict Review Queue</h2>
@@ -330,7 +354,7 @@
       </button>
     </aside>
 
-    <aside class="detail-panel" aria-label="Selected conflict detail">
+    <aside class="detail-panel" tabindex="-1" aria-label="Selected conflict detail">
       <div class="detail-head">
         <div>
           <p id="detailId" class="detail-id">C-001</p>
@@ -387,7 +411,7 @@
       </div>
     </aside>
 
-    <section class="pipeline-panel" aria-label="WRE pipeline">
+    <section class="pipeline-panel" tabindex="-1" aria-label="WRE pipeline">
       <div class="pipeline-title">
         <h2>WRE Pipeline</h2>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 17v.01" /><path d="M12 13a3 3 0 1 0-3-3" /><circle cx="12" cy="12" r="9" /></svg>
