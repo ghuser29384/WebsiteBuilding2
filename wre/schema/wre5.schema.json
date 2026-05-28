@@ -1,0 +1,121 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://normativity.org/wre/schema/wre5.schema.json",
+  "title": "Normativity WRE5 Local-First Belief Graph Export",
+  "type": "object",
+  "required": ["schemaVersion", "session", "beliefItems", "claims", "relations", "conflicts"],
+  "properties": {
+    "schemaVersion": { "const": "wre-5" },
+    "session": { "type": "object" },
+    "beliefItems": { "type": "array", "items": { "$ref": "#/$defs/BeliefItem" } },
+    "claims": { "type": "array", "items": { "$ref": "#/$defs/Claim" } },
+    "relations": { "type": "array", "items": { "$ref": "#/$defs/Relation" } },
+    "conflicts": { "type": "array", "items": { "$ref": "#/$defs/Conflict" } },
+    "revisions": { "type": "array", "items": { "type": "object" } }
+  },
+  "$defs": {
+    "PropositionObject": {
+      "type": "object",
+      "required": ["actor", "action", "modality", "polarity", "scope", "exceptions"],
+      "properties": {
+        "actor": { "type": "string", "minLength": 1 },
+        "action": { "type": "string", "minLength": 1 },
+        "object": { "type": "string" },
+        "propositionType": {
+          "type": "string",
+          "enum": ["judgment", "principle", "background_theory", "belief_statement", "exception", "empirical_premise", "meta", "deontic", "descriptive"]
+        },
+        "modality": { "type": "string", "enum": ["is", "ought", "must", "must_not", "permitted", "forbidden"] },
+        "polarity": { "type": "string", "enum": ["positive", "negative", "mixed", "unknown"] },
+        "scope": { "type": "string" },
+        "exceptions": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "BeliefItem": {
+      "type": "object",
+      "required": ["id", "family", "rawText", "propositionObject", "confidence", "provenance", "claimIds", "revisionStatus"],
+      "properties": {
+        "id": { "type": "string" },
+        "family": { "type": "string", "enum": ["judgment", "principle", "theory", "background", "meta"] },
+        "rawText": { "type": "string", "minLength": 1 },
+        "propositionObject": { "$ref": "#/$defs/PropositionObject" },
+        "confidence": { "type": "number", "minimum": 1, "maximum": 100 },
+        "entrenchment": { "type": "number", "minimum": 1, "maximum": 100 },
+        "scope": { "type": "object" },
+        "provenance": { "type": "object" },
+        "evidenceRefs": { "type": "array", "items": { "type": "string" } },
+        "references": { "type": "array", "items": { "type": "string" } },
+        "claimIds": { "type": "array", "items": { "type": "string" } },
+        "revisionStatus": { "type": "string", "enum": ["active", "draft", "accepted_tension", "retired"] }
+      }
+    },
+    "Claim": {
+      "type": "object",
+      "required": ["id", "layer", "text", "propositionObject", "modality", "polarity", "confidence", "provenanceObject"],
+      "properties": {
+        "id": { "type": "string" },
+        "beliefItemId": { "type": "string" },
+        "kind": { "type": "string" },
+        "layer": { "type": "string", "enum": ["judgment", "principle", "theory"] },
+        "text": { "type": "string", "minLength": 1 },
+        "proposition": { "type": "string" },
+        "propositionObject": { "$ref": "#/$defs/PropositionObject" },
+        "domain": { "type": "string", "enum": ["normative", "empirical", "conceptual", "meta"] },
+        "modality": { "type": "string", "enum": ["is", "ought", "must", "must_not", "permitted", "forbidden"] },
+        "polarity": { "type": "string", "enum": ["positive", "negative", "mixed", "unknown"] },
+        "scope": { "type": "string" },
+        "exceptions": { "type": "array", "items": { "type": "string" } },
+        "confidence": { "type": "number", "minimum": 1, "maximum": 100 },
+        "entrenchment": { "type": "number", "minimum": 1, "maximum": 100 },
+        "provenanceObject": { "type": "object" },
+        "evidenceRefs": { "type": "array", "items": { "type": "string" } },
+        "status": { "type": "string", "enum": ["active", "draft", "accepted_tension", "retired"] }
+      }
+    },
+    "Relation": {
+      "type": "object",
+      "required": ["id", "source", "target", "type", "weight"],
+      "properties": {
+        "id": { "type": "string" },
+        "source": { "type": "string" },
+        "target": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": ["supports", "contradicts", "implies", "depends_on", "exception_to", "attacks", "entails", "undercuts", "scopes", "defines"]
+        },
+        "weight": { "type": "number", "minimum": 0, "maximum": 1 },
+        "rationale": { "type": "string" }
+      }
+    },
+    "Conflict": {
+      "type": "object",
+      "required": ["id", "title", "severity", "kind", "conflictClass", "core", "why", "repairs"],
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "severity": { "type": "string", "enum": ["critical", "high", "medium", "low"] },
+        "kind": { "type": "string", "enum": ["hard", "soft", "nlp", "accepted_tension"] },
+        "conflictClass": {
+          "type": "string",
+          "enum": ["direct_contradiction", "principle_judgment_mismatch", "theory_judgment_mismatch", "deontic_clash", "scope_exception_mismatch", "unsupported_belief", "semantic_tension"]
+        },
+        "signalType": { "type": "string" },
+        "core": { "type": "array", "items": { "type": "string" } },
+        "why": { "type": "string" },
+        "repairs": { "type": "array", "items": { "$ref": "#/$defs/RepairOption" } }
+      }
+    },
+    "RepairOption": {
+      "type": "object",
+      "required": ["id", "actionType", "targetId", "text"],
+      "properties": {
+        "id": { "type": "string" },
+        "actionType": { "type": "string", "enum": ["revise_scope", "add_exception", "lower_confidence", "edit_text", "archive_item", "request_missing_evidence"] },
+        "targetId": { "type": "string" },
+        "text": { "type": "string" },
+        "estimatedCost": { "type": "number", "minimum": 0 },
+        "disruptionCost": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}

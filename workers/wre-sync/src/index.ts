@@ -1,4 +1,4 @@
-const WRE_SCHEMA_VERSION = "wre-3";
+const WRE_SCHEMA_VERSION = "wre-5";
 const DEFAULT_BODY_LIMIT_BYTES = 262_144;
 const DEFAULT_RATE_LIMIT_PER_HOUR = 60;
 const HEX_64_RE = /^[a-f0-9]{64}$/;
@@ -83,6 +83,7 @@ export async function handleRequest(request: Request, env: Env, ctx?: ExecutionC
       return jsonResponse(request, env, {
         status: "ok",
         schemaVersion: WRE_SCHEMA_VERSION,
+        canonicalStoreTarget: "Browser IndexedDB by default; Cloudflare D1/R2 stores only optional encrypted sync metadata and packets",
         storage: {
           d1: Boolean(env.WRE_SYNC_DB),
           r2: Boolean(env.WRE_SYNC_ARCHIVES),

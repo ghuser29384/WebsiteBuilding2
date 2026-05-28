@@ -22,7 +22,7 @@
   <meta name="twitter:description" content="Compose beliefs, review conflicts, inspect repair options, and replay revisions.">
   <meta name="twitter:image" content="https://normativity.org/assets/Normativity%20Logo.png">
   <link rel="icon" type="image/png" href="../assets/Normativity%20Favicon.png">
-  <link rel="stylesheet" href="./styles.css?v=wre3-sync">
+  <link rel="stylesheet" href="./styles.css?v=wre5-belief-graph-setup">
   <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -117,7 +117,9 @@
           <div><dt>Session ID</dt><dd id="sessionId">sess_7f2c9e7a</dd></div>
           <div><dt>Created</dt><dd id="sessionCreated">May 15, 2025 10:42 AM</dd></div>
           <div><dt>Status</dt><dd><span class="status-dot"></span>Active</dd></div>
-          <div><dt>Scope</dt><dd>AI hiring assistant</dd></div>
+          <div><dt>Scope</dt><dd id="sessionScope">Sample scenario: AI hiring assistant</dd></div>
+          <div><dt>Actor</dt><dd id="sessionActor">Individual human</dd></div>
+          <div><dt>Workflow</dt><dd id="sessionWorkflow">Individual WRE</dd></div>
           <div><dt>Mode</dt><dd id="sessionMode">Local only</dd></div>
           <div><dt>Retention</dt><dd id="sessionRetention">Until deleted</dd></div>
         </dl>
@@ -143,6 +145,70 @@
           <span>Analyze Session</span>
         </button>
       </div>
+
+      <section class="setup-panel" tabindex="-1" aria-labelledby="setupTitle">
+        <div class="setup-head">
+          <div>
+            <h2 id="setupTitle">Setup Wizard</h2>
+            <p>Choose the actor, workflow, active scope, and import context that shape the typed belief-base model.</p>
+          </div>
+          <form id="setupForm" class="setup-form" onsubmit="return false">
+            <label for="setupTemplateInput">
+              <span>Template</span>
+              <select id="setupTemplateInput" name="template">
+                <option value="individual_human">Individual Human</option>
+                <option value="ai_agent">AI Agent</option>
+                <option value="team">Team</option>
+                <option value="institution">Institution</option>
+                <option value="import_trace">Import Trace</option>
+              </select>
+            </label>
+            <label for="actorKindInput">
+              <span>Actor</span>
+              <select id="actorKindInput" name="actorKind">
+                <option value="individual_human">Individual human</option>
+                <option value="ai_agent">AI agent</option>
+                <option value="team">Team</option>
+                <option value="institution">Institution</option>
+              </select>
+            </label>
+            <label for="workflowModeInput">
+              <span>Workflow</span>
+              <select id="workflowModeInput" name="workflowMode">
+                <option value="individual">Individual WRE</option>
+                <option value="shared">Shared equilibrium</option>
+                <option value="import_trace">Import trace</option>
+              </select>
+            </label>
+            <label class="setup-wide" for="activeScopeInput">
+              <span>Active scope</span>
+              <input id="activeScopeInput" name="activeScope" type="text" placeholder="AI hiring assistant">
+            </label>
+            <label for="jurisdictionInput">
+              <span>Jurisdiction</span>
+              <input id="jurisdictionInput" name="jurisdiction" type="text" placeholder="US">
+            </label>
+            <label for="timeHorizonInput">
+              <span>Time</span>
+              <input id="timeHorizonInput" name="timeHorizon" type="text" placeholder="2026 pilot">
+            </label>
+            <label class="setup-wide" for="conditionsInput">
+              <span>Conditions</span>
+              <input id="conditionsInput" name="conditions" type="text" placeholder="Private local review">
+            </label>
+            <label class="setup-wide" for="importTraceInput">
+              <span>Import trace</span>
+              <input id="importTraceInput" name="importTrace" type="text" placeholder="Imported trace pending">
+            </label>
+            <label class="setup-toggle" for="sharedEquilibriumInput">
+              <input id="sharedEquilibriumInput" name="sharedEquilibrium" type="checkbox">
+              <span>Shared equilibrium</span>
+            </label>
+            <button class="primary-button setup-submit" type="button">Apply Setup</button>
+          </form>
+        </div>
+        <div id="setupProfileList" class="setup-profile-list" aria-label="Active WRE setup profile"></div>
+      </section>
 
       <section class="privacy-panel" aria-label="Local-first privacy and analysis controls">
         <div class="privacy-copy">
@@ -180,7 +246,7 @@
           <label class="control-card" for="privacyModeSelect">
             <span>
               <strong>Privacy mode</strong>
-              <small>Explicit WRE3 storage and sharing scope</small>
+              <small>Explicit WRE5 storage and sharing scope</small>
             </span>
             <select id="privacyModeSelect">
               <option value="local_only">Local only</option>
@@ -196,7 +262,7 @@
         <div class="data-rights-head">
           <div>
             <h2 id="dataRightsTitle">Privacy Receipt & Migration</h2>
-            <p>Classify sensitive belief data, expose export/delete controls, and report how imported legacy sessions were mapped into the WRE 2.5 schema.</p>
+            <p>Classify sensitive belief data, expose export/delete controls, and report how imported legacy sessions were mapped into the WRE5 schema.</p>
           </div>
           <div class="data-rights-actions">
             <button id="exportPrivacyBtn" class="utility-button compact" type="button">Export Receipt</button>
@@ -333,6 +399,24 @@
         <div id="analysisSummary" class="analysis-summary"></div>
         <div id="benchmarkList" class="benchmark-list" aria-label="Evaluation targets"></div>
         <div id="evaluationList" class="evaluation-list" aria-label="Latest local evaluation evidence"></div>
+        <section class="missing-info-panel" aria-labelledby="missingInfoTitle">
+          <div class="missing-info-head">
+            <div>
+              <h3 id="missingInfoTitle">Missing Information Requests</h3>
+              <p>Scope, provenance, evidence, and relation-path gaps that should be resolved before hard repairs are treated as stable.</p>
+            </div>
+          </div>
+          <div id="missingInfoList" class="missing-info-list" aria-label="Open evidence requests"></div>
+        </section>
+        <section class="rule-pack-panel" aria-labelledby="rulePackTitle">
+          <div class="rule-pack-head">
+            <div>
+              <h3 id="rulePackTitle">Domain Rule Packs</h3>
+              <p>Deterministic plugin hooks for deontic logic, probabilistic coherence, factual evidence, and organizational policy constraints.</p>
+            </div>
+          </div>
+          <div id="rulePackList" class="rule-pack-list" aria-label="Available deterministic rule packs"></div>
+        </section>
         <section class="constraint-workbench" aria-labelledby="constraintTitle">
           <div class="constraint-head">
             <div>
@@ -551,16 +635,18 @@
                 <option value="belief_statement">Belief statement</option>
                 <option value="exception">Exception</option>
                 <option value="empirical_premise">Empirical premise</option>
+                <option value="meta">Meta claim</option>
               </select>
             </label>
             <label for="modalityInput">
               <span>Modality</span>
               <select id="modalityInput">
-                <option value="should">Should</option>
+                <option value="ought">Ought</option>
                 <option value="is">Is</option>
-                <option value="causes">Causes</option>
-                <option value="permits">Permits</option>
-                <option value="forbids">Forbids</option>
+                <option value="must">Must</option>
+                <option value="must_not">Must not</option>
+                <option value="permitted">Permitted</option>
+                <option value="forbidden">Forbidden</option>
               </select>
             </label>
             <label for="polarityInput">
@@ -581,6 +667,18 @@
                 <option value="meta">Metaethical</option>
               </select>
             </label>
+            <label for="propositionActorInput">
+              <span>Actor</span>
+              <input id="propositionActorInput" type="text" placeholder="e.g., hiring_decision">
+            </label>
+            <label for="propositionActionInput">
+              <span>Action</span>
+              <input id="propositionActionInput" type="text" placeholder="e.g., uses_experience_proxy">
+            </label>
+            <label for="propositionObjectInput">
+              <span>Object</span>
+              <input id="propositionObjectInput" type="text" placeholder="e.g., protected_traits">
+            </label>
             <label for="confidenceInput">
               <span>Confidence <output id="confidenceOutput" for="confidenceInput">72%</output></span>
               <input id="confidenceInput" type="range" min="1" max="100" value="72">
@@ -596,6 +694,30 @@
             <label for="provenanceInput">
               <span>Provenance</span>
               <input id="provenanceInput" type="text" placeholder="e.g., interview rubric, study, intuition">
+            </label>
+            <label for="sourceTypeInput">
+              <span>Source type</span>
+              <select id="sourceTypeInput">
+                <option value="user_supplied">User supplied</option>
+                <option value="user">User</option>
+                <option value="agent">Agent</option>
+                <option value="assistant">Assistant</option>
+                <option value="import">Import</option>
+                <option value="document">Document</option>
+                <option value="dataset">Dataset</option>
+                <option value="ai_trace">AI trace</option>
+                <option value="interview">Interview</option>
+                <option value="policy">Policy</option>
+                <option value="external_reference">External reference</option>
+              </select>
+            </label>
+            <label for="evidenceRefsInput">
+              <span>Evidence refs</span>
+              <input id="evidenceRefsInput" type="text" placeholder="e.g., EV-1; policy-2026; doi">
+            </label>
+            <label for="exceptionsInput">
+              <span>Exceptions</span>
+              <input id="exceptionsInput" type="text" placeholder="e.g., validated_role_relevance; explicit_consent">
             </label>
             <label for="sensitivityInput">
               <span>Sensitivity</span>
@@ -647,8 +769,8 @@
             <p>Switch between the visual graph and a keyboard-friendly table view of the same claim records.</p>
           </div>
           <div class="view-switcher" role="tablist" aria-label="Claim workspace view">
-            <button class="view-mode-button is-active" type="button" role="tab" aria-selected="true" data-view-mode="table">Table</button>
-            <button class="view-mode-button" type="button" role="tab" aria-selected="false" data-view-mode="graph">Graph</button>
+            <button class="view-mode-button" type="button" role="tab" aria-selected="false" data-view-mode="table">Table</button>
+            <button class="view-mode-button is-active" type="button" role="tab" aria-selected="true" data-view-mode="graph">Graph</button>
           </div>
         </div>
         <div id="claimWorkbenchPanel" class="workbench-panel"></div>
@@ -675,6 +797,9 @@
             <div class="agent-contract-actions">
               <button id="copyContractBtn" class="utility-button compact" type="button">Copy JSON</button>
               <button id="exportOpenApiBtn" class="utility-button compact" type="button">Export OpenAPI</button>
+              <button id="exportJsonSchemaBtn" class="utility-button compact" type="button">Export Schema</button>
+              <a class="utility-button compact" href="./schema/wre5.schema.json">Schema JSON</a>
+              <a class="utility-button compact" href="./sdk/wre-client.mjs">SDK</a>
               <button id="exportJsonLdBtn" class="utility-button compact" type="button">Export JSON-LD</button>
               <button id="exportCsvBtn" class="utility-button compact" type="button">Export CSV</button>
             </div>
@@ -737,6 +862,11 @@
       <section class="detail-section">
         <h3>Relation Path</h3>
         <div id="detailRelationPath" class="relation-path-list"></div>
+      </section>
+
+      <section class="detail-section">
+        <h3>Evidence Requests</h3>
+        <div id="detailEvidenceRequests" class="evidence-request-list"></div>
       </section>
 
       <section class="detail-section">
@@ -811,6 +941,6 @@
     </div>
   </section>
 
-  <script defer src="./wre-tool.js?v=wre3-sync"></script>
+  <script defer src="./wre-tool.js?v=wre5-belief-graph-setup"></script>
 </body>
 </html>

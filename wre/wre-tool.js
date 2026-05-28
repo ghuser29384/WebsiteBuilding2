@@ -1,11 +1,14 @@
-const STORAGE_KEY = "normativity-wre-dashboard-v4";
+const STORAGE_KEY = "normativity-wre-dashboard-v5";
+const PREVIOUS_STORAGE_KEY = "normativity-wre-dashboard-v4";
 const INDEXED_DB_NAME = "normativity-wre-local-first";
 const INDEXED_DB_VERSION = 1;
 const INDEXED_DB_STORE = "sessions";
 const INDEXED_DB_SESSION_ID = "sess_7f2c9e7a";
-const WRE_SCHEMA_VERSION = "wre-3";
-const LEGACY_SCHEMA_VERSION = "wre-2.5";
-const WRE_ENGINE_VERSION = "local-wre-engine-3.0.0";
+const WRE_SCHEMA_VERSION = "wre-5";
+const PREVIOUS_SCHEMA_VERSION = "wre-4";
+const LEGACY_SCHEMA_VERSION = "wre-3";
+const OLDER_SCHEMA_VERSION = "wre-2.5";
+const WRE_ENGINE_VERSION = "local-wre-engine-5.0.0";
 const DEFAULT_SYNC_ENDPOINT = "http://127.0.0.1:8787";
 const DEFAULT_PRIVACY = {
   privacyMode: "local_only",
@@ -32,10 +35,113 @@ const DEFAULT_SECURITY_CONTROLS = {
   restoreDrillCadence: "monthly",
   dpiaReview: "DPIA-style privacy review mapped before sync or third-party processing.",
   asvsMapping: "OWASP ASVS control map drafted for auth, session handling, uploads, secrets, and logging.",
+  incidentRunbook: "NIST-style incident runbook and contact path required before shared or public sync.",
+  modelTrainingPolicy: "Default models are never trained on belief content without informed opt-in.",
+  humanReviewPath: "Human review remains available for disputes, unclear explanations, and high-impact repairs.",
   cspMode: "meta-policy-for-static-wre",
   dependencyScanning: "dependabot-root-and-worker-npm",
   publicFormAbuse: "turnstile-ready-before-public-share-or-sign-up",
 };
+
+const DEFAULT_AGENT_PROFILE = {
+  id: "agent-local-human",
+  displayName: "Local decision-maker",
+  actorKind: "individual_human",
+  workflowMode: "individual",
+  templateId: "individual_human",
+  activeScope: "AI hiring assistant",
+  jurisdiction: "US",
+  timeHorizon: "2026 pilot",
+  conditions: "Private local review",
+  importTraceSource: "",
+  sharedEquilibrium: false,
+  permissionsModel: "private-by-default",
+  canonicalStore: "local-indexeddb",
+};
+
+const setupTemplates = [
+  {
+    id: "individual_human",
+    label: "Individual Human",
+    actorKind: "individual_human",
+    workflowMode: "individual",
+    displayName: "Local decision-maker",
+    activeScope: "Personal decision review",
+    conditions: "Private local reflection",
+    seedFocus: "judgments, principles, and background theories",
+  },
+  {
+    id: "ai_agent",
+    label: "AI Agent",
+    actorKind: "ai_agent",
+    workflowMode: "individual",
+    displayName: "Normative assistant",
+    activeScope: "Agent policy and response constraints",
+    conditions: "Imported prompt, tool, and policy trace",
+    seedFocus: "system commitments, task constraints, and observed reasoning trace",
+  },
+  {
+    id: "team",
+    label: "Team",
+    actorKind: "team",
+    workflowMode: "shared",
+    displayName: "Team workspace",
+    activeScope: "Team policy review",
+    conditions: "Role-scoped shared equilibrium with private dissent preserved",
+    seedFocus: "member commitments, live objections, and shared repair decisions",
+  },
+  {
+    id: "institution",
+    label: "Institution",
+    actorKind: "institution",
+    workflowMode: "shared",
+    displayName: "Institutional policy owner",
+    activeScope: "Institutional rule and policy review",
+    conditions: "Permissioned audit, retention, and accountability requirements",
+    seedFocus: "formal policy, legal constraints, stakeholder evidence, and exceptions",
+  },
+  {
+    id: "import_trace",
+    label: "Import Trace",
+    actorKind: "ai_agent",
+    workflowMode: "import_trace",
+    displayName: "Imported reasoning trace",
+    activeScope: "Reasoning-trace normalization",
+    conditions: "Imported JSON, transcript, or model/tool trace awaiting typed claim extraction",
+    seedFocus: "raw belief items, normalized claims, provenance gaps, and lazy enrichment",
+  },
+];
+
+const domainRulePacks = [
+  {
+    id: "deontic-logic",
+    label: "Deontic Logic",
+    status: "available",
+    engine: "rule",
+    checks: ["permission-forbiddance clash", "obligation exception scope", "direct negation"],
+  },
+  {
+    id: "probabilistic-coherence",
+    label: "Probabilistic Coherence",
+    status: "available",
+    engine: "local-probability",
+    checks: ["confidence threshold clash", "entrenchment-weight mismatch", "repair reversal risk"],
+  },
+  {
+    id: "factual-evidence",
+    label: "Factual Evidence",
+    status: "available",
+    engine: "evidence-request",
+    checks: ["missing source", "unsupported empirical claim", "stale or ambiguous reference"],
+  },
+  {
+    id: "organizational-policy",
+    label: "Organizational Policy",
+    status: "available",
+    engine: "policy-constraint",
+    checks: ["jurisdiction scope", "permission boundary", "audit-retention requirement"],
+  },
+];
 
 const icons = {
   clipboard: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3h6l1 2h3v16H5V5h3l1-2Z" /><path d="M9 7h6" /></svg>',
@@ -96,6 +202,16 @@ const seedBeliefs = [
     timeScope: "Hiring policy review",
     provenance: "Considered case judgment",
     sensitivity: "private",
+    propositionObject: {
+      actor: "hiring_decision",
+      action: "uses_protected_attributes",
+      object: "candidates",
+      propositionType: "deontic",
+      modality: "forbidden",
+      polarity: "positive",
+      scope: "general_hiring_policy",
+      exceptions: [],
+    },
   },
   {
     id: "J2",
@@ -106,6 +222,16 @@ const seedBeliefs = [
     timeScope: "Hiring policy review",
     provenance: "Structured interview rubric",
     sensitivity: "private",
+    propositionObject: {
+      actor: "hiring_decision",
+      action: "uses_relevant_experience",
+      object: "role_fit",
+      propositionType: "deontic",
+      modality: "permitted",
+      polarity: "positive",
+      scope: "validated_role_relevance",
+      exceptions: ["proxy_for_protected_attributes"],
+    },
   },
   {
     id: "J3",
@@ -116,6 +242,16 @@ const seedBeliefs = [
     timeScope: "Candidate communications",
     provenance: "Fair process intuition",
     sensitivity: "private",
+    propositionObject: {
+      actor: "employer",
+      action: "discloses_decision_reasons",
+      object: "candidates",
+      propositionType: "deontic",
+      modality: "must",
+      polarity: "positive",
+      scope: "candidate_communications",
+      exceptions: ["protected_internal_notes"],
+    },
   },
   {
     id: "P1",
@@ -126,6 +262,16 @@ const seedBeliefs = [
     timeScope: "General hiring ethics",
     provenance: "Normative principle",
     sensitivity: "private",
+    propositionObject: {
+      actor: "hiring_decision",
+      action: "respects_equal_status",
+      object: "candidates",
+      propositionType: "principle",
+      modality: "must",
+      polarity: "positive",
+      scope: "general_hiring_ethics",
+      exceptions: [],
+    },
   },
   {
     id: "P2",
@@ -136,6 +282,16 @@ const seedBeliefs = [
     timeScope: "Selection criteria",
     provenance: "Normative principle",
     sensitivity: "private",
+    propositionObject: {
+      actor: "selection_criterion",
+      action: "tracks_job_relevance",
+      object: "candidate_evaluation",
+      propositionType: "principle",
+      modality: "must",
+      polarity: "positive",
+      scope: "selection_criteria",
+      exceptions: ["unvalidated_proxy_signal"],
+    },
   },
   {
     id: "P3",
@@ -146,6 +302,16 @@ const seedBeliefs = [
     timeScope: "General hiring ethics",
     provenance: "Normative principle",
     sensitivity: "private",
+    propositionObject: {
+      actor: "hiring_process",
+      action: "preserves_fair_opportunity",
+      object: "candidates",
+      propositionType: "principle",
+      modality: "must",
+      polarity: "positive",
+      scope: "general_hiring_ethics",
+      exceptions: [],
+    },
   },
   {
     id: "T1",
@@ -156,6 +322,16 @@ const seedBeliefs = [
     timeScope: "US hiring context",
     provenance: "Legal background",
     sensitivity: "private",
+    propositionObject: {
+      actor: "title_vii",
+      action: "constrains_protected_attribute_use",
+      object: "hiring_decision",
+      propositionType: "background_theory",
+      modality: "is",
+      polarity: "positive",
+      scope: "us_hiring_context",
+      exceptions: [],
+    },
   },
   {
     id: "T2",
@@ -166,6 +342,16 @@ const seedBeliefs = [
     timeScope: "Personnel selection evidence",
     provenance: "Background research",
     sensitivity: "private",
+    propositionObject: {
+      actor: "structured_interview",
+      action: "predicts_role_performance",
+      object: "candidate_evaluation",
+      propositionType: "background_theory",
+      modality: "is",
+      polarity: "positive",
+      scope: "personnel_selection_evidence",
+      exceptions: ["poorly_validated_rubric"],
+    },
   },
   {
     id: "T3",
@@ -176,6 +362,16 @@ const seedBeliefs = [
     timeScope: "Evaluator behavior",
     provenance: "Background research",
     sensitivity: "private",
+    propositionObject: {
+      actor: "cognitive_bias",
+      action: "amplifies_proxy_risk",
+      object: "experience_signals",
+      propositionType: "background_theory",
+      modality: "is",
+      polarity: "positive",
+      scope: "evaluator_behavior",
+      exceptions: ["validated_structured_controls"],
+    },
   },
 ];
 
@@ -219,6 +415,14 @@ const seedRelations = [
     type: "depends_on",
     weight: 0.69,
     rationale: "Disclosure duties depend on legal constraints around protected notes and trade secrets.",
+  },
+  {
+    id: "L-006",
+    source: "P1",
+    target: "J1",
+    type: "defines",
+    weight: 0.81,
+    rationale: "P1 defines the protected-attribute boundary used when J1 is normalized into a non-discrimination claim.",
   },
 ];
 
@@ -424,28 +628,46 @@ const pipeline = [
 
 const agentContract = {
   schemaVersion: WRE_SCHEMA_VERSION,
-  claimFields: ["id", "kind", "layer", "text", "canonicalForm", "domain", "modality", "polarity", "scope", "confidence", "entrenchment", "provenance", "sensitivity", "status"],
+  beliefItemFields: ["id", "family", "rawText", "propositionObject", "confidence", "entrenchment", "scope", "provenance", "evidenceRefs", "references", "claimIds", "revisionStatus"],
+  claimFields: ["id", "beliefItemId", "kind", "layer", "proposition", "propositionObject", "text", "canonicalForm", "domain", "modality", "polarity", "scope", "scopeObject", "exceptions", "confidence", "entrenchment", "provenance", "provenanceObject", "evidenceRefs", "references", "sensitivity", "status", "revisionStatus"],
   relationFields: ["id", "source", "target", "type", "weight", "rationale"],
   constraintFields: ["id", "name", "language", "body", "severity", "enabled"],
+  agentProfileFields: ["id", "displayName", "actorKind", "workflowMode", "activeScope", "jurisdiction", "timeHorizon", "conditions", "permissionsModel", "canonicalStore"],
   formalRunFields: ["id", "analysisRunId", "status", "assertions", "constraints", "unsatCores", "repairRanking"],
   argumentationRunFields: ["id", "analysisRunId", "attackEdges", "defenseEdges", "admissibleSet", "vulnerableClaims", "groundedExtension"],
   triageRunFields: ["id", "analysisRunId", "nliMode", "candidateLimit", "reviewQueue", "formalizationCandidates", "probabilisticSummary"],
   syncPacketFields: ["workspace", "manifest", "mutationSet", "edgeContract", "conflictPolicy", "readiness", "backend"],
-  repairOptionFields: ["id", "conflictId", "actionType", "affectedClaims", "predictedResolutionScore", "disruptionCost", "explanation"],
+  repairOptionFields: ["id", "conflictId", "actionType", "targetId", "affectedClaims", "predictedResolutionScore", "estimatedCost", "disruptionCost", "explanation"],
   revisionEventFields: ["id", "time", "type", "text", "schemaVersion", "algorithmVersion", "affectedClaims", "beforeHash", "afterHash"],
+  evidenceRequestFields: ["id", "targetType", "targetId", "priority", "prompt", "reason", "suggestedAction", "status"],
+  rulePackFields: ["id", "label", "status", "engine", "checks"],
   exportFormats: ["application/json", "application/ld+json", "text/csv"],
-  relationTypes: ["supports", "attacks", "contradicts", "entails", "undercuts", "scopes", "depends_on", "exception_to"],
-  legacyRelationTypes: ["conflicts", "implies", "neutral"],
+  relationTypes: ["supports", "contradicts", "implies", "depends_on", "exception_to", "attacks", "entails", "undercuts", "scopes", "defines"],
+  legacyRelationTypes: ["conflicts", "neutral"],
   conflictKinds: ["hard", "soft", "nlp", "accepted_tension"],
+  conflictClasses: ["direct_contradiction", "principle_judgment_mismatch", "theory_judgment_mismatch", "deontic_clash", "scope_exception_mismatch", "unsupported_belief", "semantic_tension"],
+  conflictSignals: ["direct_negation", "implication_conflict", "deontic_clash", "threshold_conflict", "scope_clash", "exception_mismatch", "rule_constraint", "semantic_tension", "unsupported_belief"],
+  architecture: {
+    frontend: "Static local-first frontend, TypeScript-ready without a mandatory framework migration",
+    canonicalStore: "IndexedDB in the browser with webStorage fallback for session-only or degraded modes",
+    syncArtifacts: "Optional Cloudflare Workers + D1/R2 encrypted packets after explicit user opt-in",
+    deterministicAuthority: "Local rule, graph, scope, and evidence checks remain authoritative",
+    optionalAssist: "LLM/NLI assists can draft normalization or explanation but cannot overrule deterministic checks",
+  },
+  publicArtifacts: ["wre/schema/wre5.schema.json", "wre/sdk/wre-client.mjs"],
   endpoints: [
     ["GET", "/health", "Check Worker health without reading or writing session data."],
     ["POST", "/v1/sessions", "Create a local or synced WRE session with explicit privacy mode."],
+    ["POST", "/v1/belief-items", "Add raw belief items before deterministic normalization into typed claims."],
     ["POST", "/v1/beliefs", "Add or batch import typed judgments, principles, and background theories."],
     ["POST", "/v1/workspaces", "Create an encrypted sync workspace and token verifier."],
-    ["POST", "/v1/relations", "Add or batch import support, attack, contradiction, entailment, undercut, scope, dependency, and exception links."],
+    ["POST", "/v1/relations", "Add or batch import support, attack, contradiction, entailment, undercut, scope, definition, dependency, and exception links."],
     ["POST", "/v1/constraints", "Add rule, SHACL, or SMT templates for deterministic hard-conflict checks."],
     ["POST", "/v1/analyze", "Run rule, SMT, graph, NLI, and probabilistic checks."],
     ["GET", "/v1/conflicts", "Read explanation-first conflict reports."],
+    ["GET", "/v1/evidence-requests", "Read missing-information requests generated by local deterministic checks."],
+    ["GET", "/v1/rule-packs", "Read available deterministic domain-rule pack hooks."],
+    ["POST", "/v1/rule-packs/{id}/run", "Preview a deterministic domain-rule pack against the active claim graph."],
     ["GET", "/v1/formal-trace/latest", "Read the latest named-assertion trace with SMT-style unsat cores."],
     ["GET", "/v1/argumentation/latest", "Read attack, defense, vulnerability, and admissible-set analysis."],
     ["GET", "/v1/triage/latest", "Read NLI-style candidate-pair triage and probabilistic soft-tension scores."],
@@ -455,6 +677,7 @@ const agentContract = {
     ["GET", "/v1/sessions/{id}/manifest", "Read opaque encrypted-packet manifest metadata."],
     ["POST", "/v1/conflicts/{id}/repair", "Preview or apply a ranked repair option."],
     ["GET", "/v1/export", "Export a portable JSON, JSON-LD, or CSV session archive."],
+    ["GET", "/v1/schema/wre5", "Read the public WRE5 local-first belief graph schema and agent contract."],
     ["GET", "/v1/benchmarks/latest", "Read evaluation targets and the latest local analysis run."],
     ["GET", "/v1/calibration-rounds", "Read case-loop calibration and disagreement rounds."],
     ["DELETE", "/v1/sessions/{id}", "Delete a synced or local session record."],
@@ -625,16 +848,23 @@ const els = {
   modalityInput: document.getElementById("modalityInput"),
   polarityInput: document.getElementById("polarityInput"),
   claimDomain: document.getElementById("claimDomain"),
+  propositionActorInput: document.getElementById("propositionActorInput"),
+  propositionActionInput: document.getElementById("propositionActionInput"),
+  propositionObjectInput: document.getElementById("propositionObjectInput"),
   confidenceInput: document.getElementById("confidenceInput"),
   confidenceOutput: document.getElementById("confidenceOutput"),
   entrenchmentInput: document.getElementById("entrenchmentInput"),
   entrenchmentOutput: document.getElementById("entrenchmentOutput"),
   timeScopeInput: document.getElementById("timeScopeInput"),
   provenanceInput: document.getElementById("provenanceInput"),
+  sourceTypeInput: document.getElementById("sourceTypeInput"),
+  evidenceRefsInput: document.getElementById("evidenceRefsInput"),
+  exceptionsInput: document.getElementById("exceptionsInput"),
   sensitivityInput: document.getElementById("sensitivityInput"),
   claimStatusInput: document.getElementById("claimStatusInput"),
   beliefErrorSummary: document.getElementById("beliefErrorSummary"),
   claimWorkbenchPanel: document.getElementById("claimWorkbenchPanel"),
+  detailEvidenceRequests: document.getElementById("detailEvidenceRequests"),
   detailCore: document.getElementById("detailCore"),
   detailEngine: document.getElementById("detailEngine"),
   graphBtn: document.getElementById("graphBtn"),
@@ -642,6 +872,7 @@ const els = {
   reviewLatestBtn: document.getElementById("reviewLatestBtn"),
   copyContractBtn: document.getElementById("copyContractBtn"),
   exportOpenApiBtn: document.getElementById("exportOpenApiBtn"),
+  exportJsonSchemaBtn: document.getElementById("exportJsonSchemaBtn"),
   exportJsonLdBtn: document.getElementById("exportJsonLdBtn"),
   exportCsvBtn: document.getElementById("exportCsvBtn"),
   revisionReplay: document.getElementById("revisionReplay"),
@@ -649,10 +880,26 @@ const els = {
   agentContractPanel: document.getElementById("agentContractPanel"),
   agentContractList: document.getElementById("agentContractList"),
   agentExampleList: document.getElementById("agentExampleList"),
+  setupForm: document.getElementById("setupForm"),
+  setupTemplateInput: document.getElementById("setupTemplateInput"),
+  actorKindInput: document.getElementById("actorKindInput"),
+  workflowModeInput: document.getElementById("workflowModeInput"),
+  activeScopeInput: document.getElementById("activeScopeInput"),
+  jurisdictionInput: document.getElementById("jurisdictionInput"),
+  timeHorizonInput: document.getElementById("timeHorizonInput"),
+  conditionsInput: document.getElementById("conditionsInput"),
+  importTraceInput: document.getElementById("importTraceInput"),
+  sharedEquilibriumInput: document.getElementById("sharedEquilibriumInput"),
+  setupProfileList: document.getElementById("setupProfileList"),
+  sessionScope: document.getElementById("sessionScope"),
+  sessionActor: document.getElementById("sessionActor"),
+  sessionWorkflow: document.getElementById("sessionWorkflow"),
   analysisPanel: document.getElementById("analysisPanel"),
   analysisSummary: document.getElementById("analysisSummary"),
   benchmarkList: document.getElementById("benchmarkList"),
   evaluationList: document.getElementById("evaluationList"),
+  missingInfoList: document.getElementById("missingInfoList"),
+  rulePackList: document.getElementById("rulePackList"),
   constraintForm: document.getElementById("constraintForm"),
   constraintNameInput: document.getElementById("constraintNameInput"),
   constraintLanguageInput: document.getElementById("constraintLanguageInput"),
@@ -716,10 +963,11 @@ function createState() {
     activeTab: "all",
     selectedConflictId: "C-001",
     selectedRepairId: "R-001",
-    beliefs: clone(seedBeliefs),
-    relations: clone(seedRelations),
+    agentProfile: normalizeAgentProfile(DEFAULT_AGENT_PROFILE),
+    beliefs: clone(seedBeliefs).map(normalizeBelief),
+    relations: clone(seedRelations).map(normalizeRelation),
     constraints: clone(seedConstraints),
-    conflicts: clone(seedConflicts),
+    conflicts: clone(seedConflicts).map(normalizeConflict),
     revisions: [],
     analysisRuns: [],
     formalRuns: [],
@@ -731,8 +979,9 @@ function createState() {
     migrationReport: null,
     privacy: { ...DEFAULT_PRIVACY },
     securityControls: { ...DEFAULT_SECURITY_CONTROLS },
-    viewMode: "table",
+    viewMode: "graph",
     workbenchFilter: "all",
+    relationTypeFilter: "all",
     graphFocusConflictId: "",
     createdAt: "2025-05-15T10:42:00.000Z",
     updatedAt: new Date().toISOString(),
@@ -744,11 +993,20 @@ function clone(value) {
 }
 
 function normalizeStatePayload(parsed) {
-  if (!parsed || !Array.isArray(parsed.beliefs) || !Array.isArray(parsed.conflicts)) return null;
-  const beliefs = parsed.beliefs.map(normalizeBelief);
+  if (!parsed || !Array.isArray(parsed.conflicts)) return null;
+  const beliefSource = Array.isArray(parsed.beliefs)
+    ? parsed.beliefs
+    : Array.isArray(parsed.claims)
+      ? parsed.claims
+      : Array.isArray(parsed.beliefItems)
+        ? parsed.beliefItems.map(beliefItemToClaim)
+        : [];
+  if (!beliefSource.length) return null;
+  const beliefs = beliefSource.map(normalizeBelief);
   return {
     ...createState(),
     ...parsed,
+    agentProfile: normalizeAgentProfile(parsed.agentProfile || parsed.session?.agentProfile || parsed.session),
     beliefs,
     relations: normalizeRelationSet(parsed.relations, beliefs, parsed.conflicts),
     constraints: Array.isArray(parsed.constraints) ? parsed.constraints.map(normalizeConstraint) : clone(seedConstraints),
@@ -766,6 +1024,7 @@ function normalizeStatePayload(parsed) {
     securityControls: normalizeSecurityControls(parsed.securityControls),
     viewMode: parsed.viewMode === "graph" ? "graph" : "table",
     workbenchFilter: ["judgment", "principle", "theory"].includes(parsed.workbenchFilter) ? parsed.workbenchFilter : "all",
+    relationTypeFilter: agentContract.relationTypes.includes(parsed.relationTypeFilter) ? parsed.relationTypeFilter : "all",
     graphFocusConflictId: parsed.graphFocusConflictId || "",
     updatedAt: parsed.updatedAt || parsed.savedAt || parsed.createdAt || new Date().toISOString(),
   };
@@ -792,7 +1051,10 @@ function normalizePrivacy(privacy = {}) {
 
 function loadState() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY) || sessionStorage.getItem(STORAGE_KEY);
+    const raw = localStorage.getItem(STORAGE_KEY)
+      || sessionStorage.getItem(STORAGE_KEY)
+      || localStorage.getItem(PREVIOUS_STORAGE_KEY)
+      || sessionStorage.getItem(PREVIOUS_STORAGE_KEY);
     if (!raw) return null;
     return normalizeStatePayload(JSON.parse(raw));
   } catch {
@@ -806,6 +1068,8 @@ function saveState() {
   if (state.privacy?.retention === "session-only") {
     sessionStorage.setItem(STORAGE_KEY, serialized);
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(PREVIOUS_STORAGE_KEY);
+    sessionStorage.removeItem(PREVIOUS_STORAGE_KEY);
     storageInfo.primary = "sessionStorage";
     storageInfo.lastSavedAt = state.updatedAt;
     deleteIndexedDbState().then(() => {
@@ -819,6 +1083,7 @@ function saveState() {
   }
   localStorage.setItem(STORAGE_KEY, serialized);
   sessionStorage.removeItem(STORAGE_KEY);
+  sessionStorage.removeItem(PREVIOUS_STORAGE_KEY);
   storageInfo.primary = storageInfo.indexedDb === "active" ? "IndexedDB" : "localStorage";
   storageInfo.lastSavedAt = state.updatedAt;
   writeIndexedDbState(state).then(() => {
@@ -920,47 +1185,272 @@ function deleteIndexedDbState() {
 }
 
 function normalizeBelief(belief) {
-  const layer = ["judgment", "principle", "theory"].includes(belief.layer) ? belief.layer : "judgment";
+  const layer = normalizeBeliefLayer(belief.layer || belief.family);
   const kind = normalizeClaimKind(belief.kind || belief.claimKind || belief.type || layer);
-  const scope = belief.scope || belief.timeScope || belief.time_scope || "Unscoped";
+  const scope = normalizeScopeText(belief.scope || belief.scopeObject || belief.timeScope || belief.time_scope || "Unscoped");
+  const scopeObject = normalizeScopeObject(belief.scopeObject || belief.scope, {
+    layer,
+    textScope: scope,
+    domain: belief.domain || (layer === "theory" ? "empirical" : "normative"),
+  });
+  const provenanceObject = normalizeProvenanceObject(belief.provenanceObject || belief.provenance || belief.source_refs, belief);
+  const evidenceRefs = normalizeEvidenceRefs(belief.evidenceRefs || belief.evidence_refs || belief.evidence || provenanceObject.evidenceRefs);
+  const propositionSource = belief.proposition && typeof belief.proposition === "object" ? belief.proposition : belief.propositionObject || belief.structuredProposition || {};
+  const text = typeof belief.proposition === "string"
+    ? belief.proposition
+    : belief.text || belief.rawText || belief.claimText || propositionSource.claimText || "";
+  const propositionObject = normalizePropositionObject(propositionSource, {
+    ...belief,
+    text,
+    layer,
+    kind,
+    domain: belief.domain || (layer === "theory" ? "empirical" : "normative"),
+    scope,
+  });
+  const modality = normalizeClaimModality(belief.modality || propositionObject.modality, text);
+  const polarity = normalizeClaimPolarity(belief.polarity || propositionObject.polarity, text);
+  propositionObject.modality = modality;
+  propositionObject.polarity = polarity;
+  propositionObject.propositionType = normalizePropositionType(propositionObject.propositionType || kind || layer, layer);
+  propositionObject.scope = propositionObject.scope || scope;
   return {
     id: belief.id || `${prefixForLayer(layer)}0`,
+    beliefItemId: belief.beliefItemId || belief.belief_item_id || `BI-${belief.id || `${prefixForLayer(layer)}0`}`,
     kind,
     layer,
-    text: belief.text || "",
-    canonicalForm: belief.canonicalForm || canonicalizeClaimText(belief.text || ""),
+    proposition: text,
+    propositionObject,
+    structuredProposition: propositionObject,
+    exceptions: propositionObject.exceptions,
+    text,
+    canonicalForm: belief.canonicalForm || canonicalizeClaimText(text),
     domain: belief.domain || (layer === "theory" ? "empirical" : "normative"),
-    modality: normalizeClaimModality(belief.modality, belief.text || ""),
-    polarity: normalizeClaimPolarity(belief.polarity, belief.text || ""),
+    modality,
+    polarity,
     confidence: Number.isFinite(Number(belief.confidence)) ? clamp(Number(belief.confidence), 1, 100) : 70,
     entrenchment: Number.isFinite(Number(belief.entrenchment)) ? clamp(Number(belief.entrenchment), 1, 100) : defaultEntrenchmentForLayer(layer),
     scope,
+    scopeObject,
     timeScope: scope,
-    provenance: belief.provenance || belief.source_refs || "User supplied",
+    provenance: provenanceObject.sourceRef || "User supplied",
+    sourceType: provenanceObject.sourceType,
+    provenanceObject: {
+      ...provenanceObject,
+      evidenceRefs,
+    },
+    evidenceRefs,
+    references: Array.isArray(belief.references) ? belief.references : extractClaimReferences(text),
     sensitivity: belief.sensitivity || belief.sensitivity_tags || "private",
     status: normalizeClaimStatus(belief.status),
+    revisionStatus: normalizeClaimStatus(belief.revisionStatus || belief.revision_status || belief.status),
   };
+}
+
+function normalizeAgentProfile(profile = {}) {
+  const template = setupTemplates.find((item) => item.id === profile.templateId || item.id === profile.template_id)
+    || setupTemplates.find((item) => item.id === DEFAULT_AGENT_PROFILE.templateId);
+  const merged = { ...DEFAULT_AGENT_PROFILE, ...(template || {}), ...(profile || {}) };
+  const actorKind = ["individual_human", "ai_agent", "team", "institution"].includes(merged.actorKind)
+    ? merged.actorKind
+    : DEFAULT_AGENT_PROFILE.actorKind;
+  const workflowMode = ["individual", "shared", "import_trace"].includes(merged.workflowMode)
+    ? merged.workflowMode
+    : DEFAULT_AGENT_PROFILE.workflowMode;
+  return {
+    id: String(merged.id || DEFAULT_AGENT_PROFILE.id),
+    displayName: String(merged.displayName || merged.name || template?.displayName || DEFAULT_AGENT_PROFILE.displayName),
+    actorKind,
+    workflowMode,
+    templateId: setupTemplates.some((item) => item.id === merged.templateId) ? merged.templateId : template?.id || DEFAULT_AGENT_PROFILE.templateId,
+    activeScope: String(merged.activeScope || merged.scope || DEFAULT_AGENT_PROFILE.activeScope).trim() || DEFAULT_AGENT_PROFILE.activeScope,
+    jurisdiction: String(merged.jurisdiction || DEFAULT_AGENT_PROFILE.jurisdiction).trim() || DEFAULT_AGENT_PROFILE.jurisdiction,
+    timeHorizon: String(merged.timeHorizon || merged.time || DEFAULT_AGENT_PROFILE.timeHorizon).trim() || DEFAULT_AGENT_PROFILE.timeHorizon,
+    conditions: String(merged.conditions || DEFAULT_AGENT_PROFILE.conditions).trim() || DEFAULT_AGENT_PROFILE.conditions,
+    importTraceSource: String(merged.importTraceSource || merged.import_trace_source || "").trim(),
+    sharedEquilibrium: workflowMode === "shared" || Boolean(merged.sharedEquilibrium),
+    permissionsModel: String(merged.permissionsModel || DEFAULT_AGENT_PROFILE.permissionsModel),
+    canonicalStore: String(merged.canonicalStore || DEFAULT_AGENT_PROFILE.canonicalStore),
+  };
+}
+
+function beliefItemToClaim(item = {}) {
+  const family = normalizeBeliefLayer(item.family || item.layer);
+  const claimId = Array.isArray(item.claimIds) && item.claimIds[0] ? item.claimIds[0] : item.claimId || item.id?.replace(/^BI-/, "") || `${prefixForLayer(family)}0`;
+  const sourceClaim = Array.isArray(item.normalizedClaims) && item.normalizedClaims[0] ? item.normalizedClaims[0] : {};
+  const propositionObject = item.propositionObject || item.structuredProposition || sourceClaim.propositionObject || sourceClaim.structuredProposition || (typeof sourceClaim.proposition === "object" ? sourceClaim.proposition : {});
+  return {
+    id: claimId,
+    beliefItemId: item.id || `BI-${claimId}`,
+    layer: family,
+    kind: item.kind || family,
+    proposition: typeof item.proposition === "string" ? item.proposition : item.rawText || item.text || sourceClaim.text || "",
+    propositionObject,
+    text: typeof item.proposition === "string" ? item.proposition : item.rawText || item.text || sourceClaim.text || "",
+    confidence: item.confidence,
+    entrenchment: item.entrenchment,
+    scope: item.scope,
+    provenance: item.provenance,
+    evidenceRefs: item.evidenceRefs,
+    references: item.references,
+    status: item.revisionStatus || item.status,
+  };
+}
+
+function normalizePropositionObject(value = {}, fallback = {}) {
+  const source = value && typeof value === "object" ? value : {};
+  const text = String(fallback.text || fallback.rawText || fallback.proposition || "").trim();
+  const actor = normalizePropositionToken(source.actor || fallback.actor || inferActorFromText(text));
+  const action = normalizePropositionToken(source.action || fallback.action || inferActionFromText(text));
+  const object = normalizePropositionToken(source.object || fallback.object || inferObjectFromText(text));
+  const scope = normalizeScopeText(source.scope || fallback.scope || fallback.timeScope || fallback.activeScope || DEFAULT_AGENT_PROFILE.activeScope);
+  const exceptions = normalizeExceptionList(source.exceptions || fallback.exceptions || fallback.exception || fallback.exceptionList);
+  return {
+    actor: actor || "unspecified_actor",
+    action: action || canonicalPredicateFromText(text) || "unspecified_action",
+    object,
+    propositionType: normalizePropositionType(source.propositionType || source.type || fallback.kind || fallback.layer, fallback.layer),
+    modality: normalizeClaimModality(source.modality || fallback.modality, text),
+    polarity: normalizeClaimPolarity(source.polarity || fallback.polarity, text),
+    scope,
+    exceptions,
+  };
+}
+
+function normalizePropositionType(value, layer = "judgment") {
+  const type = String(value || "").replace(/-/g, "_").toLowerCase();
+  if (["judgment", "principle", "background_theory", "belief_statement", "exception", "empirical_premise", "meta", "deontic", "descriptive"].includes(type)) {
+    return type;
+  }
+  if (layer === "theory") return "background_theory";
+  if (layer === "principle") return "principle";
+  return "judgment";
+}
+
+function normalizePropositionToken(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/['"]/g, "")
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function normalizeExceptionList(value) {
+  if (Array.isArray(value)) return value.map(normalizePropositionToken).filter(Boolean);
+  return String(value || "")
+    .split(/[\n,;]+/)
+    .map(normalizePropositionToken)
+    .filter(Boolean);
+}
+
+function inferActorFromText(text) {
+  const lower = String(text || "").toLowerCase();
+  if (lower.includes("candidate")) return "candidate";
+  if (lower.includes("employer") || lower.includes("hiring")) return "hiring_decision";
+  if (lower.includes("agent") || lower.includes("assistant")) return "agent";
+  if (lower.includes("institution")) return "institution";
+  return "";
+}
+
+function inferActionFromText(text) {
+  const lower = String(text || "").toLowerCase();
+  if (lower.includes("protected attribute") || lower.includes("protected trait")) return "uses_protected_attributes";
+  if (lower.includes("experience")) return "uses_relevant_experience";
+  if (lower.includes("transparent") || lower.includes("disclos")) return "discloses_decision_reasons";
+  if (lower.includes("confidential") || lower.includes("trade secret")) return "withholds_confidential_information";
+  if (lower.includes("bias")) return "amplifies_proxy_risk";
+  return "";
+}
+
+function inferObjectFromText(text) {
+  const lower = String(text || "").toLowerCase();
+  if (lower.includes("candidate")) return "candidates";
+  if (lower.includes("protected attribute") || lower.includes("protected trait")) return "protected_attributes";
+  if (lower.includes("experience")) return "experience_signal";
+  if (lower.includes("role")) return "role_fit";
+  return "";
+}
+
+function canonicalPredicateFromText(text) {
+  return predicateTokens(text).slice(0, 4).join("_");
+}
+
+function normalizeScopeText(value) {
+  if (value && typeof value === "object") {
+    const fields = [value.domain, value.actor, value.time, value.jurisdiction, value.conditions].filter(Boolean);
+    return fields.join(" / ") || value.text || "Unscoped";
+  }
+  return String(value || "Unscoped").trim() || "Unscoped";
+}
+
+function normalizeScopeObject(value, fallback = {}) {
+  const source = value && typeof value === "object" ? value : {};
+  const textScope = normalizeScopeText(value || fallback.textScope || DEFAULT_AGENT_PROFILE.activeScope);
+  return {
+    domain: String(source.domain || fallback.domain || "general"),
+    actor: String(source.actor || DEFAULT_AGENT_PROFILE.displayName),
+    time: String(source.time || source.timeHorizon || DEFAULT_AGENT_PROFILE.timeHorizon),
+    jurisdiction: String(source.jurisdiction || DEFAULT_AGENT_PROFILE.jurisdiction),
+    conditions: String(source.conditions || textScope),
+  };
+}
+
+function normalizeProvenanceObject(value, belief = {}) {
+  const source = value && typeof value === "object" ? value : {};
+  const sourceRef = typeof value === "string" ? value : source.sourceRef || source.source_ref || belief.provenance || belief.source_refs || "User supplied";
+  return {
+    sourceType: normalizeSourceType(source.sourceType || source.source_type || belief.sourceType || belief.source_type),
+    sourceRef: String(sourceRef || "User supplied").trim() || "User supplied",
+    importedAt: source.importedAt || source.imported_at || "",
+    evidenceRefs: normalizeEvidenceRefs(source.evidenceRefs || source.evidence_refs || belief.evidenceRefs || belief.evidence_refs),
+  };
+}
+
+function normalizeSourceType(value) {
+  const sourceType = String(value || "user_supplied").replace(/-/g, "_").toLowerCase();
+  if (["user_supplied", "user", "agent", "import", "assistant", "document", "dataset", "ai_trace", "interview", "policy", "external_reference"].includes(sourceType)) return sourceType;
+  return "user_supplied";
+}
+
+function normalizeEvidenceRefs(value) {
+  if (Array.isArray(value)) return value.map((item) => String(item).trim()).filter(Boolean);
+  return String(value || "")
+    .split(/[\n,;]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function normalizeBeliefLayer(value) {
+  const layer = String(value || "").toLowerCase().replace(/-/g, "_").trim();
+  if (layer === "principle") return "principle";
+  if (layer === "theory" || layer === "background" || layer === "background_theory" || layer === "meta") return "theory";
+  return "judgment";
 }
 
 function normalizeClaimKind(value) {
   const kind = String(value || "").replace(/-/g, "_").toLowerCase();
-  if (["judgment", "principle", "background_theory", "belief_statement", "exception", "empirical_premise"].includes(kind)) {
+  if (["judgment", "principle", "background_theory", "belief_statement", "exception", "empirical_premise", "meta"].includes(kind)) {
     return kind;
   }
   if (kind === "theory") return "background_theory";
+  if (kind === "background") return "background_theory";
   if (kind === "background theory") return "background_theory";
   return "belief_statement";
 }
 
 function normalizeClaimModality(value, text = "") {
-  const modality = String(value || "").toLowerCase();
-  if (["should", "is", "causes", "permits", "forbids"].includes(modality)) return modality;
+  const modality = String(value || "").replace(/-/g, "_").toLowerCase();
+  if (["is", "ought", "must", "must_not", "permitted", "forbidden"].includes(modality)) return modality;
+  if (modality === "should") return "ought";
+  if (modality === "permits" || modality === "permit" || modality === "may") return "permitted";
+  if (modality === "forbids" || modality === "forbid" || modality === "prohibits") return "forbidden";
+  if (modality === "causes") return "is";
   const lower = text.toLowerCase();
-  if (lower.includes("must not") || lower.includes("forbid") || lower.includes("prohibit")) return "forbids";
-  if (lower.includes("may ") || lower.includes("permit")) return "permits";
-  if (lower.includes("cause") || lower.includes("leads to")) return "causes";
+  if (lower.includes("must not") || lower.includes("should not") || lower.includes("forbid") || lower.includes("prohibit")) return "forbidden";
+  if (lower.includes(" must ") || lower.startsWith("must ") || lower.includes("required")) return "must";
+  if (lower.includes("may ") || lower.includes("permit")) return "permitted";
   if (lower.includes(" is ") || lower.includes(" are ")) return "is";
-  return "should";
+  return "ought";
 }
 
 function normalizeClaimPolarity(value, text = "") {
@@ -988,7 +1478,7 @@ function normalizeRelationType(value) {
   const type = String(value || "").replace(/-/g, "_").toLowerCase();
   if (agentContract.relationTypes.includes(type)) return type;
   if (type === "conflicts") return "contradicts";
-  if (type === "implies") return "entails";
+  if (type === "entails" || type === "implies") return "implies";
   if (type === "neutral") return "depends_on";
   return "depends_on";
 }
@@ -996,21 +1486,90 @@ function normalizeRelationType(value) {
 function normalizeConflict(conflict) {
   const status = ["open", "repaired", "ignored", "accepted_tension"].includes(conflict.status) ? conflict.status : "open";
   const core = Array.isArray(conflict.core) ? conflict.core : [conflict.claimA, conflict.claimB].filter(Boolean);
+  const signalType = normalizeConflictSignal(conflict.signalType || conflict.signal_type || (conflict.kind === "hard" ? "rule_constraint" : "semantic_tension"));
+  const conflictClass = normalizeConflictClass(conflict.conflictClass || conflict.conflict_class || conflict.class || signalType);
   return {
     ...conflict,
     kind: conflict.kind || "soft",
+    conflictClass,
+    signalType,
     confidence: Number.isFinite(Number(conflict.confidence)) ? Number(conflict.confidence) : 0.7,
     core,
     engine: Array.isArray(conflict.engine) ? conflict.engine : ["Rule constraint", "Human review"],
     constraintId: conflict.constraintId || "",
-    repairs: Array.isArray(conflict.repairs) ? conflict.repairs : [],
+    repairs: ensureWre5RepairOptions({ ...conflict, core, signalType, conflictClass }, Array.isArray(conflict.repairs) ? conflict.repairs : []),
     linked: Array.isArray(conflict.linked) ? conflict.linked : [],
     status,
     minimalConflictSet: Array.isArray(conflict.minimalConflictSet) ? conflict.minimalConflictSet : core,
     evidencePath: Array.isArray(conflict.evidencePath) ? conflict.evidencePath : [],
     downstreamClaims: Array.isArray(conflict.downstreamClaims) ? conflict.downstreamClaims : [],
+    evidenceRequests: Array.isArray(conflict.evidenceRequests) ? conflict.evidenceRequests : [],
     algorithmVersion: conflict.algorithmVersion || WRE_ENGINE_VERSION,
   };
+}
+
+function normalizeConflictSignal(value) {
+  const signal = String(value || "").replace(/-/g, "_").toLowerCase();
+  return agentContract.conflictSignals.includes(signal) ? signal : "semantic_tension";
+}
+
+function normalizeConflictClass(value) {
+  const conflictClass = String(value || "").replace(/-/g, "_").toLowerCase();
+  if (agentContract.conflictClasses.includes(conflictClass)) return conflictClass;
+  if (conflictClass === "direct_negation") return "direct_contradiction";
+  if (conflictClass === "scope_clash" || conflictClass === "exception_mismatch") return "scope_exception_mismatch";
+  if (conflictClass === "threshold_conflict") return "deontic_clash";
+  if (conflictClass === "rule_constraint") return "principle_judgment_mismatch";
+  return "semantic_tension";
+}
+
+function ensureWre5RepairOptions(conflict, repairs) {
+  const fallbackTargetId = conflict.claimB || conflict.core?.[1] || conflict.claimA || conflict.core?.[0] || "";
+  const normalized = repairs.map((repair) => ({
+    ...repair,
+    targetId: repair.targetId || repair.target_id || repair.targetClaimId || fallbackTargetId,
+    actionType: repair.actionType || inferRepairActionType(repair),
+  }));
+  const sourceText = normalized.map((repair) => `${repair.title || ""} ${repair.text || ""} ${repair.actionType || ""}`.toLowerCase()).join(" ");
+  const conflictNumber = Number(String(conflict.id || "").replace(/^[A-Z-]+/, "")) || normalized.length + 1;
+  const additions = [];
+  if (!sourceText.includes("exception")) {
+    additions.push({
+      id: `R-${String(1000 + conflictNumber).padStart(4, "0")}`,
+      title: "Add Exception",
+      text: "Add a scoped exception to preserve the stronger commitment while preventing overgeneralization.",
+      cost: "0.32",
+      badge: "Lowest",
+      tone: conflict.severity === "critical" ? "high" : "medium",
+      targetId: conflict.claimB || conflict.core?.[1] || conflict.claimA || "",
+      actionType: "add_exception",
+    });
+  }
+  if (!sourceText.includes("scope")) {
+    additions.push({
+      id: `R-${String(2000 + conflictNumber).padStart(4, "0")}`,
+      title: "Revise Scope",
+      text: "Narrow the actor, object, or condition scope so both claims can remain true under distinct circumstances.",
+      cost: "0.46",
+      badge: "Scope",
+      tone: "medium",
+      targetId: conflict.claimB || conflict.claimA || "",
+      actionType: "revise_scope",
+    });
+  }
+  if (!sourceText.includes("confidence")) {
+    additions.push({
+      id: `R-${String(3000 + conflictNumber).padStart(4, "0")}`,
+      title: "Lower Confidence",
+      text: "Reduce confidence in the less-entrenched claim while preserving it for further evidence review.",
+      cost: "0.51",
+      badge: "Minimal change",
+      tone: "medium",
+      targetId: conflict.claimB || conflict.claimA || "",
+      actionType: "lower_confidence",
+    });
+  }
+  return [...normalized, ...additions];
 }
 
 function normalizeRelation(relation, fallbackIndex = 0) {
@@ -1086,7 +1645,7 @@ function normalizeRepairApplication(application) {
     time: application.time || new Date().toISOString(),
     conflictId: application.conflictId || "",
     repairId: application.repairId || "",
-    actionType: application.actionType || "scope_boundary",
+    actionType: application.actionType || "revise_scope",
     affectedClaims: Array.isArray(application.affectedClaims) ? application.affectedClaims : [],
     predictedResolutionScore: Number.isFinite(Number(application.predictedResolutionScore)) ? Number(application.predictedResolutionScore) : 0,
     disruptionCost: Number.isFinite(Number(application.disruptionCost)) ? Number(application.disruptionCost) : 0,
@@ -1107,11 +1666,13 @@ function normalizeAnalysisRun(run) {
     hardCount: Number.isFinite(Number(run.hardCount)) ? Number(run.hardCount) : 0,
     softCount: Number.isFinite(Number(run.softCount)) ? Number(run.softCount) : 0,
     generatedCount: Number.isFinite(Number(run.generatedCount)) ? Number(run.generatedCount) : 0,
+    missingInfoCount: Number.isFinite(Number(run.missingInfoCount)) ? Number(run.missingInfoCount) : 0,
     nliQueued: Number.isFinite(Number(run.nliQueued)) ? Number(run.nliQueued) : 0,
     estimatedRuleLatency: Number.isFinite(Number(run.estimatedRuleLatency)) ? Number(run.estimatedRuleLatency) : 0,
     estimatedHybridLatency: Number.isFinite(Number(run.estimatedHybridLatency)) ? Number(run.estimatedHybridLatency) : 0,
     precisionReadiness: Number.isFinite(Number(run.precisionReadiness)) ? Number(run.precisionReadiness) : 0,
     engines: Array.isArray(run.engines) ? run.engines : ["Rule checks", "Argument graph", "Repair ranking"],
+    deterministicSignals: Array.isArray(run.deterministicSignals) ? run.deterministicSignals : [],
     generatedConflictIds: Array.isArray(run.generatedConflictIds) ? run.generatedConflictIds : [],
   };
 }
@@ -1197,6 +1758,9 @@ function normalizeSecurityControls(controls = {}) {
     restoreDrillCadence: source.restoreDrillCadence || DEFAULT_SECURITY_CONTROLS.restoreDrillCadence,
     dpiaReview: source.dpiaReview || DEFAULT_SECURITY_CONTROLS.dpiaReview,
     asvsMapping: source.asvsMapping || DEFAULT_SECURITY_CONTROLS.asvsMapping,
+    incidentRunbook: source.incidentRunbook || DEFAULT_SECURITY_CONTROLS.incidentRunbook,
+    modelTrainingPolicy: source.modelTrainingPolicy || DEFAULT_SECURITY_CONTROLS.modelTrainingPolicy,
+    humanReviewPath: source.humanReviewPath || DEFAULT_SECURITY_CONTROLS.humanReviewPath,
     cspMode: source.cspMode || DEFAULT_SECURITY_CONTROLS.cspMode,
     dependencyScanning: source.dependencyScanning || DEFAULT_SECURITY_CONTROLS.dependencyScanning,
     publicFormAbuse: source.publicFormAbuse || DEFAULT_SECURITY_CONTROLS.publicFormAbuse,
@@ -1256,6 +1820,14 @@ function bindEvents() {
   els.confidenceInput.addEventListener("input", syncConfidenceOutput);
   els.entrenchmentInput.addEventListener("input", syncEntrenchmentOutput);
   els.caseConfidenceInput.addEventListener("input", syncCaseConfidenceOutput);
+
+  els.setupForm.addEventListener("submit", (event) => {
+    event.preventDefault();
+    updateAgentProfileFromForm();
+  });
+  els.setupForm.querySelector(".setup-submit")?.addEventListener("click", updateAgentProfileFromForm);
+  els.setupTemplateInput.addEventListener("change", applySelectedSetupTemplate);
+  els.workflowModeInput.addEventListener("change", syncSharedEquilibriumFromWorkflow);
 
   els.beliefForm.addEventListener("submit", (event) => {
     event.preventDefault();
@@ -1363,6 +1935,7 @@ function bindEvents() {
 
   els.copyContractBtn.addEventListener("click", copyAgentContract);
   els.exportOpenApiBtn.addEventListener("click", exportOpenApiContract);
+  els.exportJsonSchemaBtn.addEventListener("click", exportJsonSchemaContract);
   els.exportJsonLdBtn.addEventListener("click", exportJsonLd);
   els.exportCsvBtn.addEventListener("click", exportCsvSummary);
   els.seedCalibrationBtn.addEventListener("click", seedCalibrationFromConflict);
@@ -1370,6 +1943,7 @@ function bindEvents() {
 }
 
 function render() {
+  renderSetupProfile();
   renderStages();
   renderBeliefs();
   renderTabs();
@@ -1385,6 +1959,7 @@ function render() {
   renderAccessibleSummary();
   syncNav();
   syncPrivacyControls();
+  syncSetupControls();
   syncViewMode();
   syncConfidenceOutput();
   syncEntrenchmentOutput();
@@ -1392,6 +1967,86 @@ function render() {
   syncSyncBackendControls();
   syncStorageStatus();
   updateTokenCount();
+}
+
+function renderSetupProfile() {
+  if (!els.setupProfileList) return;
+  const profile = normalizeAgentProfile(state.agentProfile);
+  const template = setupTemplates.find((item) => item.id === profile.templateId) || setupTemplates[0];
+  const beliefItems = buildBeliefItems();
+  const missingInfo = buildMissingInformationReport({ preview: true });
+  replaceChildren(
+    els.setupProfileList,
+    [
+      ["Actor", actorKindLabel(profile.actorKind)],
+      ["Workflow", workflowModeLabel(profile.workflowMode)],
+      ["Template", template.label],
+      ["Active scope", profile.activeScope],
+      ["Jurisdiction", profile.jurisdiction],
+      ["Belief items", `${beliefItems.length} raw-to-claim records`],
+      ["Evidence requests", `${missingInfo.requests.length} open`],
+      ["Store target", "Local-first browser"],
+    ].map(([label, value]) => renderReceiptItem(label, value))
+  );
+}
+
+function syncSetupControls() {
+  if (!els.setupForm) return;
+  state.agentProfile = normalizeAgentProfile(state.agentProfile);
+  const profile = state.agentProfile;
+  els.setupTemplateInput.value = profile.templateId;
+  els.actorKindInput.value = profile.actorKind;
+  els.workflowModeInput.value = profile.workflowMode;
+  els.activeScopeInput.value = profile.activeScope;
+  els.jurisdictionInput.value = profile.jurisdiction;
+  els.timeHorizonInput.value = profile.timeHorizon;
+  els.conditionsInput.value = profile.conditions;
+  els.importTraceInput.value = profile.importTraceSource;
+  els.sharedEquilibriumInput.checked = Boolean(profile.sharedEquilibrium);
+  if (els.sessionScope) els.sessionScope.textContent = `Sample scenario: ${profile.activeScope}`;
+  if (els.sessionActor) els.sessionActor.textContent = actorKindLabel(profile.actorKind);
+  if (els.sessionWorkflow) els.sessionWorkflow.textContent = workflowModeLabel(profile.workflowMode);
+}
+
+function updateAgentProfileFromForm() {
+  const previous = normalizeAgentProfile(state.agentProfile);
+  state.agentProfile = normalizeAgentProfile({
+    ...previous,
+    templateId: els.setupTemplateInput.value,
+    actorKind: els.actorKindInput.value,
+    workflowMode: els.workflowModeInput.value,
+    activeScope: els.activeScopeInput.value,
+    jurisdiction: els.jurisdictionInput.value,
+    timeHorizon: els.timeHorizonInput.value,
+    conditions: els.conditionsInput.value,
+    importTraceSource: els.importTraceInput.value,
+    sharedEquilibrium: Boolean(els.sharedEquilibriumInput.checked),
+    canonicalStore: previous.canonicalStore,
+  });
+  recordRevision(
+    "setup",
+    `Updated ${actorKindLabel(state.agentProfile.actorKind).toLowerCase()} setup for ${workflowModeLabel(state.agentProfile.workflowMode).toLowerCase()} workflow in ${state.agentProfile.activeScope}.`
+  );
+  saveState();
+  render();
+  focusElement(els.setupProfileList);
+}
+
+function applySelectedSetupTemplate() {
+  const template = setupTemplates.find((item) => item.id === els.setupTemplateInput.value);
+  if (!template) return;
+  els.actorKindInput.value = template.actorKind;
+  els.workflowModeInput.value = template.workflowMode;
+  els.activeScopeInput.value = template.activeScope;
+  els.conditionsInput.value = template.conditions;
+  els.sharedEquilibriumInput.checked = template.workflowMode === "shared";
+  if (template.workflowMode === "import_trace" && !els.importTraceInput.value.trim()) {
+    els.importTraceInput.value = "Imported trace pending";
+  }
+}
+
+function syncSharedEquilibriumFromWorkflow() {
+  els.sharedEquilibriumInput.checked = els.workflowModeInput.value === "shared";
 }
 
 function openCommandPalette() {
@@ -1541,6 +2196,7 @@ function getCommandDefinitions() {
     { id: "add-judgment", label: "Add judgment", group: "Intake", keywords: "case claim", run: () => focusComposer("judgment") },
     { id: "add-principle", label: "Add principle", group: "Intake", keywords: "normative claim", run: () => focusComposer("principle") },
     { id: "add-theory", label: "Add background theory", group: "Intake", keywords: "empirical conceptual claim", run: () => focusComposer("theory") },
+    { id: "setup-profile", label: "Open setup profile", group: "Setup", keywords: "agent actor team institution import trace", run: focusSetupProfile },
     { id: "table-view", label: "Table view", group: "Workspace", keywords: "linear claims", run: () => setWorkbenchView("table") },
     { id: "graph-view", label: "Graph view", group: "Workspace", keywords: "relations links", run: () => setWorkbenchView("graph") },
     { id: "all-conflicts", label: "View conflict queue", group: "Conflicts", keywords: "review", run: viewAllConflicts },
@@ -1559,6 +2215,8 @@ function getCommandDefinitions() {
     { id: "focus-argumentation", label: "View argumentation review", group: "Analysis", keywords: "attack defense admissible vulnerable", run: focusArgumentationReview },
     { id: "export-argumentation", label: "Export argumentation report", group: "Export", keywords: "attack defense admissible graph", run: exportArgumentationReport },
     { id: "focus-triage", label: "View NLI triage", group: "Analysis", keywords: "nli probabilistic soft tension score", run: focusTriageReview },
+    { id: "focus-evidence-requests", label: "View evidence requests", group: "Analysis", keywords: "missing information provenance evidence", run: focusEvidenceRequests },
+    { id: "focus-rule-packs", label: "View rule packs", group: "Analysis", keywords: "deontic probabilistic factual policy plugin hooks", run: focusRulePacks },
     { id: "export-triage", label: "Export triage report", group: "Export", keywords: "nli probabilistic candidate pairs", run: exportTriageReport },
     { id: "replay", label: "Review replay", group: "Replay", keywords: "revision audit log", run: reviewReplay },
     { id: "calibration", label: "Open calibration loop", group: "Calibration", keywords: "case disagreement confidence", run: focusCalibrationLoop },
@@ -1574,6 +2232,7 @@ function getCommandDefinitions() {
     { id: "security-controls", label: "Open security controls", group: "Privacy", keywords: "quota abuse body size budget", run: focusSecurityControls },
     { id: "encrypted-archive", label: "Focus encrypted archive", group: "Privacy", keywords: "backup sync passphrase", run: focusEncryptedArchive },
     { id: "export-openapi", label: "Export OpenAPI contract", group: "Export", keywords: "agent schema endpoint json", run: exportOpenApiContract },
+    { id: "export-json-schema", label: "Export WRE5 JSON schema", group: "Export", keywords: "public schema belief item claim sdk", run: exportJsonSchemaContract },
     { id: "export-accessibility", label: "Export accessibility report", group: "Export", keywords: "wcag keyboard screen reader", run: exportAccessibilityReport },
   ];
 }
@@ -1594,9 +2253,12 @@ function buildAccessibleSummaryText() {
   const latestTriage = getLatestTriageRun();
   const syncPacket = buildSyncPacketPayload();
   const security = buildSecurityReportPayload();
+  const missingInfo = buildMissingInformationReport({ preview: true });
   return [
-    `WRE session has ${state.beliefs.length} claims, ${state.relations.length} relations, ${state.constraints.length} constraints, and ${state.conflicts.length} conflicts.`,
+    `WRE session has ${buildBeliefItems().length} belief items, ${state.beliefs.length} claims, ${state.relations.length} relations, ${state.constraints.length} constraints, and ${state.conflicts.length} conflicts.`,
+    `Setup mode is ${actorKindLabel(state.agentProfile.actorKind)} with ${workflowModeLabel(state.agentProfile.workflowMode)} workflow.`,
     `${hardCount} hard conflicts and ${state.conflicts.length - hardCount} soft tensions are currently tracked.`,
+    `${missingInfo.requests.length} missing-information requests are open.`,
     `${repairedCount} conflicts are marked repaired and ${acceptedTensionCount} known tensions are preserved.`,
     `Security launch gate is ${security.summary.launchGate}.`,
     `Selected conflict ${selectedConflict?.id || "none"}: ${selectedConflict?.title || "none selected"}.`,
@@ -1654,7 +2316,7 @@ function renderBeliefLayer(layer, container) {
         <span class="belief-id">${escapeHtml(belief.id)}</span>
         <span class="belief-copy">
           <p>${escapeHtml(belief.text)}</p>
-          <small>${escapeHtml(claimKindLabel(belief.kind || belief.layer))} · ${escapeHtml(titleCase(belief.modality || "should"))} · ${escapeHtml(belief.confidence)}% confidence · ${escapeHtml(belief.entrenchment || defaultEntrenchmentForLayer(layer))}% entrenched</small>
+          <small>${escapeHtml(claimKindLabel(belief.kind || belief.layer))} · ${escapeHtml(titleCase(String(belief.modality || "ought").replace(/_/g, " ")))} · ${escapeHtml(belief.confidence)}% confidence · ${escapeHtml(belief.entrenchment || defaultEntrenchmentForLayer(layer))}% entrenched</small>
         </span>
         <button class="row-menu" type="button" aria-label="More actions for ${escapeHtml(belief.id)}">${icons.dots}</button>
       `;
@@ -1708,6 +2370,7 @@ function renderConflicts() {
           ${conflict.status === "accepted_tension" ? '<span class="repair-status-pill accepted">Accepted tension</span>' : ""}
         </span>
         <p>${escapeHtml(conflict.summary)}</p>
+        <p>Class: ${escapeHtml(conflictClassLabel(conflict.conflictClass))}</p>
         <p>Provenance: ${escapeHtml(conflict.provenance)}</p>
         <time>${escapeHtml(conflict.time)}</time>
         <span class="conflict-card-chevron">${icons.chevron}</span>
@@ -1782,7 +2445,15 @@ function renderDetail() {
           `;
           return item;
         })
-      : [emptyExplanationItem("No explicit relation path yet. Add support, attack, contradiction, entailment, undercut, scope, dependency, or exception links to strengthen this explanation.")]
+      : [emptyExplanationItem("No explicit relation path yet. Add support, attack, contradiction, entailment, undercut, scope, definition, dependency, or exception links to strengthen this explanation.")]
+  );
+
+  const evidenceRequests = buildEvidenceRequestsForConflict(conflict);
+  replaceChildren(
+    els.detailEvidenceRequests,
+    evidenceRequests.length
+      ? evidenceRequests.map(renderEvidenceRequestItem)
+      : [emptyExplanationItem("No missing evidence request is attached to this conflict core.")]
   );
 
   replaceChildren(
@@ -1808,7 +2479,7 @@ function renderDetail() {
     [
       { title: "Claim A", id: conflict.claimA },
       { title: "Claim B", id: conflict.claimB },
-    ].map(({ title, id }) => {
+    ].filter(({ id }) => Boolean(id)).map(({ title, id }) => {
       const belief = findBelief(id);
       const box = document.createElement("article");
       box.className = "claim-box";
@@ -1817,6 +2488,7 @@ function renderDetail() {
         <div class="claim-box-row">
           <span class="belief-id">${escapeHtml(id)}</span>
           <p>${escapeHtml(belief?.text || "No linked claim available.")}</p>
+          ${belief ? `<small>${escapeHtml(propositionCoreLabel(belief))}</small>` : ""}
         </div>
       `;
       return box;
@@ -1987,7 +2659,7 @@ function renderTableView() {
       <tr>
         <th scope="col">ID</th>
         <th scope="col">Kind</th>
-        <th scope="col">Claim</th>
+        <th scope="col">Proposition</th>
         <th scope="col">Modality</th>
         <th scope="col">Polarity</th>
         <th scope="col">Domain</th>
@@ -2004,13 +2676,16 @@ function renderTableView() {
         <tr>
           <td><span class="belief-id">${escapeHtml(belief.id)}</span></td>
           <td>${escapeHtml(claimKindLabel(belief.kind || belief.layer))}</td>
-          <td>${escapeHtml(belief.text)}</td>
-          <td>${escapeHtml(titleCase(belief.modality || "should"))}</td>
+          <td>
+            <strong>${escapeHtml(belief.text)}</strong>
+            <small class="claim-core">${escapeHtml(propositionCoreLabel(belief))}</small>
+          </td>
+          <td>${escapeHtml(titleCase(String(belief.modality || "ought").replace(/_/g, " ")))}</td>
           <td>${escapeHtml(titleCase(belief.polarity || "unknown"))}</td>
           <td>${escapeHtml(titleCase(belief.domain))}</td>
           <td>${escapeHtml(belief.confidence)}%</td>
           <td>${escapeHtml(belief.entrenchment || defaultEntrenchmentForLayer(belief.layer))}%</td>
-          <td>${escapeHtml(belief.timeScope)}</td>
+          <td>${escapeHtml(belief.timeScope)}${belief.exceptions?.length ? `; exceptions: ${escapeHtml(belief.exceptions.join(", "))}` : ""}</td>
           <td>${escapeHtml(belief.provenance)}</td>
           <td>${escapeHtml(titleCase(belief.sensitivity))}</td>
           <td>${escapeHtml(claimStatusLabel(belief.status))}</td>
@@ -2038,7 +2713,7 @@ function renderGraphView() {
     if (state.workbenchFilter === "all") return true;
     return visibleIds.has(conflict.claimA) || visibleIds.has(conflict.claimB) || (conflict.core || []).some((id) => visibleIds.has(id));
   });
-  const visibleRelations = state.relations.filter((relation) => {
+  const visibleRelations = getVisibleRelations().filter((relation) => {
     if (state.workbenchFilter === "all") return true;
     return visibleIds.has(relation.source) || visibleIds.has(relation.target);
   });
@@ -2056,7 +2731,7 @@ function renderGraphView() {
             <article class="graph-node ${escapeHtml(layer)}${focusedIds.has(belief.id) ? " is-focus" : ""}">
               <span class="belief-id">${escapeHtml(belief.id)}</span>
               <p>${escapeHtml(belief.text)}</p>
-              <small>${escapeHtml(belief.confidence)}% · ${escapeHtml(titleCase(belief.domain))}</small>
+              <small>${escapeHtml(propositionCoreLabel(belief))} · ${escapeHtml(belief.confidence)}% · ${escapeHtml(titleCase(belief.domain))}</small>
             </article>
           `).join("")}
         </section>
@@ -2096,7 +2771,7 @@ function renderRelationEditor() {
   section.setAttribute("aria-labelledby", "relationEditorTitle");
   const sourceId = state.beliefs[0]?.id || "";
   const targetId = state.beliefs[1]?.id || sourceId;
-  const relationRows = state.relations.map((relation) => {
+  const relationRows = getVisibleRelations().map((relation) => {
     const source = findBelief(relation.source);
     const target = findBelief(relation.target);
     return `
@@ -2116,9 +2791,9 @@ function renderRelationEditor() {
     <div class="relation-editor-head">
       <div>
         <h3 id="relationEditorTitle">Relation Editor</h3>
-        <p>Create keyboard-editable support, attack, contradiction, entailment, undercut, scope, dependency, and exception links for the agent graph.</p>
+        <p>Create keyboard-editable support, attack, contradiction, entailment, undercut, scope, definition, dependency, and exception links for the agent graph.</p>
       </div>
-      <span>${escapeHtml(state.relations.length)} links</span>
+      <span>${escapeHtml(getVisibleRelations().length)} / ${escapeHtml(state.relations.length)} links</span>
     </div>
     <form class="relation-form">
       <div class="error-summary relation-error-summary" role="alert" tabindex="-1" hidden></div>
@@ -2168,15 +2843,28 @@ function renderRelationEditor() {
 }
 
 function renderWorkbenchFilter() {
-  if (state.workbenchFilter === "all") return null;
   const bar = document.createElement("div");
   bar.className = "workbench-filter";
+  const layerLabel = state.workbenchFilter === "all" ? "all claim families" : `${labelForLayer(state.workbenchFilter).toLowerCase()} claims`;
   bar.innerHTML = `
-    <span>Showing ${escapeHtml(labelForLayer(state.workbenchFilter).toLowerCase())} claims</span>
-    <button type="button">Clear filter</button>
+    <span>Showing ${escapeHtml(layerLabel)}</span>
+    <label>
+      <span class="visually-hidden">Relation type filter</span>
+      <select name="relationTypeFilter">
+        <option value="all">All relation types</option>
+        ${agentContract.relationTypes.map((type) => `<option value="${escapeHtml(type)}"${state.relationTypeFilter === type ? " selected" : ""}>${escapeHtml(relationTypeLabel(type))}</option>`).join("")}
+      </select>
+    </label>
+    <button type="button">Clear filters</button>
   `;
+  bar.querySelector("select").addEventListener("change", (event) => {
+    state.relationTypeFilter = event.target.value;
+    saveState();
+    renderClaimWorkbench();
+  });
   bar.querySelector("button").addEventListener("click", () => {
     state.workbenchFilter = "all";
+    state.relationTypeFilter = "all";
     saveState();
     renderClaimWorkbench();
   });
@@ -2231,15 +2919,23 @@ function renderAgentContract() {
   replaceChildren(
     els.agentContractList,
     [
+      renderContractGroup("Architecture", Object.values(agentContract.architecture)),
+      renderContractGroup("Public artifacts", agentContract.publicArtifacts),
+      renderContractGroup("Agent profile fields", agentContract.agentProfileFields),
+      renderContractGroup("Belief item fields", agentContract.beliefItemFields),
       renderContractGroup("Claim fields", agentContract.claimFields),
       renderContractGroup("Relation fields", agentContract.relationFields),
       renderContractGroup("Constraint fields", agentContract.constraintFields),
       renderContractGroup("Repair option fields", agentContract.repairOptionFields),
       renderContractGroup("Revision event fields", agentContract.revisionEventFields),
+      renderContractGroup("Evidence request fields", agentContract.evidenceRequestFields),
+      renderContractGroup("Rule-pack hooks", domainRulePacks.map((pack) => pack.id)),
       renderContractGroup("Export formats", agentContract.exportFormats),
       renderContractGroup("Local storage", [buildStorageReportPayload().summary]),
       renderContractGroup("Relation types", agentContract.relationTypes),
       renderContractGroup("Conflict kinds", agentContract.conflictKinds),
+      renderContractGroup("Conflict classes", agentContract.conflictClasses),
+      renderContractGroup("Conflict signals", agentContract.conflictSignals),
       renderContractGroup("JSON schemas", Object.keys(buildJsonSchemasPayload().schemas)),
       ...agentContract.endpoints.map(([method, path, copy]) => {
         const item = document.createElement("article");
@@ -2287,13 +2983,17 @@ function renderAnalysisPanel() {
   const formal = getLatestFormalRun() || buildFormalTrace({ preview: true, analysisRun: latest });
   const argumentation = getLatestArgumentationRun() || buildArgumentationRun({ preview: true, analysisRun: latest });
   const triage = getLatestTriageRun() || buildTriageRun({ preview: true, analysisRun: latest });
+  const missingInfo = buildMissingInformationReport({ preview: true });
   const runLabel = getLatestAnalysisRun() ? `Run ${latest.id}` : "Ready to run";
   const summary = [
     ["Claims", latest.claimCount],
+    ["Belief items", buildBeliefItems().length],
     ["Candidate pairs", latest.candidatePairs],
     ["Constraint hits", latest.constraintMatches || 0],
     ["Unsat cores", formal.unsatCores.length],
     ["Attack edges", argumentation.attackEdges.length],
+    ["Evidence requests", missingInfo.requests.length],
+    ["Rule packs", domainRulePacks.length],
     ["Triage flags", triage.formalizationCandidates.length],
     ["Hard conflicts", latest.hardCount],
     ["Soft tensions", latest.softCount],
@@ -2357,6 +3057,8 @@ function renderAnalysisPanel() {
   );
 
   renderConstraintWorkbench();
+  renderMissingInformationPanel(missingInfo);
+  renderRulePackPanel();
   renderFormalTrace(formal);
   renderArgumentationReview(argumentation);
   renderTriageReview(triage);
@@ -2498,6 +3200,47 @@ function renderTriageReview(triage = getLatestTriageRun() || buildTriageRun({ pr
   replaceChildren(els.triageList, [summary, ...topItems]);
 }
 
+function renderMissingInformationPanel(report = buildMissingInformationReport({ preview: true })) {
+  if (!els.missingInfoList) return;
+  const requests = report.requests.slice(0, 8);
+  replaceChildren(
+    els.missingInfoList,
+    requests.length
+      ? requests.map(renderEvidenceRequestItem)
+      : [emptyExplanationItem("No missing-information request is open for the current claim graph.")]
+  );
+}
+
+function renderEvidenceRequestItem(request) {
+  const item = document.createElement("article");
+  item.className = `evidence-request-item is-${request.priority || "review"}`;
+  item.innerHTML = `
+    <span>${escapeHtml(request.id)} · ${escapeHtml(titleCase(String(request.priority || "review").replace(/_/g, " ")))}</span>
+    <strong>${escapeHtml(request.targetId || request.targetType)}</strong>
+    <p>${escapeHtml(request.prompt)}</p>
+    <small>${escapeHtml(request.suggestedAction)} · ${escapeHtml(request.reason)}</small>
+  `;
+  return item;
+}
+
+function renderRulePackPanel() {
+  if (!els.rulePackList) return;
+  replaceChildren(
+    els.rulePackList,
+    domainRulePacks.map((pack) => {
+      const item = document.createElement("article");
+      item.className = "rule-pack-item";
+      item.innerHTML = `
+        <span>${escapeHtml(pack.engine)}</span>
+        <strong>${escapeHtml(pack.label)}</strong>
+        <p>${escapeHtml(pack.checks.join(", "))}</p>
+        <small>${escapeHtml(pack.status)} · deterministic hook</small>
+      `;
+      return item;
+    })
+  );
+}
+
 function renderCalibrationPanel() {
   const rounds = [...state.calibrationRounds].map(normalizeCalibrationRound).reverse();
   els.calibrationCount.textContent = `${state.calibrationRounds.length} round${state.calibrationRounds.length === 1 ? "" : "s"}`;
@@ -2550,6 +3293,7 @@ function renderDataRightsPanel() {
       ["Retention", retentionLabel(receipt.processing.retention)],
       ["Encrypted archive", receipt.processing.encryptedArchive],
       ["Sync packet", syncPacket.readiness.status],
+      ["Evidence requests", `${receipt.classification.evidenceRequests} open`],
       ["API abuse controls", security.summary.abuseResistance],
       ["Sensitive claims", `${receipt.classification.potentiallySensitive} flagged`],
       ["User rights", "Access, export, delete, correction"],
@@ -2598,6 +3342,9 @@ function renderDataRightsPanel() {
       ["Compliance", `${security.summary.complianceStatus} (${security.summary.launchGate})`],
       ["Telemetry", security.controls.telemetryMode],
       ["Restore drill", security.controls.restoreDrillCadence],
+      ["Incident runbook", security.controls.incidentRunbook],
+      ["Model training", security.controls.modelTrainingPolicy],
+      ["Human review", security.controls.humanReviewPath],
     ].map(([label, value]) => renderReceiptItem(label, value))
   );
 }
@@ -2649,7 +3396,7 @@ function runLocalAnalysis() {
   state.activeNav = "conflicts";
   recordRevision(
     "analysis",
-    `${run.id} analyzed ${run.claimCount} claims, ${run.constraintCount} constraints, ${run.candidatePairs} candidate pairs, ${run.hardCount} hard conflicts, ${run.softCount} soft tensions, ${formalRun.unsatCores.length} formal unsat cores, ${argumentationRun.attackEdges.length} argumentation attacks, and ${triageRun.formalizationCandidates.length} NLI/probabilistic formalization flags.`
+    `${run.id} analyzed ${run.claimCount} claims, ${run.constraintCount} constraints, ${run.candidatePairs} candidate pairs, ${run.hardCount} hard conflicts, ${run.softCount} soft tensions, ${formalRun.unsatCores.length} formal unsat cores, ${argumentationRun.attackEdges.length} argumentation attacks, ${run.missingInfoCount} evidence requests, and ${triageRun.formalizationCandidates.length} NLI/probabilistic formalization flags.`
   );
   saveState();
   render();
@@ -2685,6 +3432,8 @@ function buildAnalysisReport() {
   const generatedConflicts = detectCandidateConflicts();
   const constraintMatches = countConstraintMatches();
   const security = buildSecurityReportPayload();
+  const missingInfo = buildMissingInformationReport({ preview: true });
+  const deterministicSignals = summarizeDeterministicSignals(generatedConflicts);
   const hardCount = state.conflicts.filter((conflict) => conflict.kind === "hard").length
     + generatedConflicts.filter((conflict) => conflict.kind === "hard").length;
   const softCount = state.conflicts.filter((conflict) => conflict.kind !== "hard").length
@@ -2706,6 +3455,7 @@ function buildAnalysisReport() {
     hardCount,
     softCount,
     generatedCount: generatedConflicts.length,
+    missingInfoCount: missingInfo.requests.length,
     nliQueued,
     estimatedRuleLatency,
     estimatedHybridLatency,
@@ -2717,10 +3467,155 @@ function buildAnalysisReport() {
       state.privacy.nliTriage ? "NLI triage" : "NLI gated off",
       "Probabilistic tension scoring",
       "Repair ranking",
+      "Missing information requests",
     ],
+    deterministicSignals,
     generatedConflicts,
     generatedConflictIds: generatedConflicts.map((conflict) => conflict.id),
   };
+}
+
+function buildBeliefItems() {
+  return state.beliefs.map((belief) => {
+    const claim = normalizeBelief(belief);
+    return {
+      id: claim.beliefItemId || `BI-${claim.id}`,
+      family: claim.layer,
+      rawText: claim.text,
+      propositionObject: claim.propositionObject,
+      confidence: claim.confidence,
+      entrenchment: claim.entrenchment,
+      scope: claim.scopeObject,
+      provenance: claim.provenanceObject,
+      evidenceRefs: claim.evidenceRefs,
+      references: claim.references,
+      claimIds: [claim.id],
+      revisionStatus: claim.revisionStatus,
+      normalizedClaims: [{
+        id: claim.id,
+        proposition: claim.proposition || claim.text,
+        propositionObject: claim.propositionObject,
+        canonicalForm: claim.canonicalForm,
+        modality: claim.modality,
+        polarity: claim.polarity,
+        domain: claim.domain,
+      }],
+    };
+  });
+}
+
+function buildMissingInformationReport({ preview = false } = {}) {
+  const requests = detectMissingInformation();
+  const grouped = requests.reduce((counts, request) => {
+    counts[request.targetType] = (counts[request.targetType] || 0) + 1;
+    return counts;
+  }, {});
+  return {
+    id: preview ? "ER-preview" : `ER-${Date.now()}`,
+    schemaVersion: `${WRE_SCHEMA_VERSION}-evidence-requests`,
+    generatedAt: new Date().toISOString(),
+    status: requests.length ? "needs-evidence" : "complete",
+    requests,
+    grouped,
+  };
+}
+
+function detectMissingInformation() {
+  const requests = [];
+  const seen = new Set();
+  const addRequest = (request) => {
+    const key = `${request.targetType}:${request.targetId}:${request.reason}`;
+    if (seen.has(key)) return;
+    seen.add(key);
+    requests.push({
+      id: `ER-${String(requests.length + 1).padStart(3, "0")}`,
+      status: "open",
+      ...request,
+    });
+  };
+
+  state.beliefs.map(normalizeBelief).forEach((claim) => {
+    if (!claim.scope || claim.scope === "Unscoped" || claim.scopeObject.conditions === "Unscoped") {
+      addRequest({
+        targetType: "claim",
+        targetId: claim.id,
+        priority: claim.entrenchment >= 75 ? "high" : "review",
+        prompt: `Clarify the actor, time, jurisdiction, or conditions for ${claim.id}.`,
+        reason: "scope-missing",
+        suggestedAction: "add_scope_qualifier",
+        targetClaims: [claim.id],
+      });
+    }
+    if (!claim.provenance || claim.provenance === "User supplied") {
+      addRequest({
+        targetType: "claim",
+        targetId: claim.id,
+        priority: claim.confidence >= 80 ? "high" : "review",
+        prompt: `Add provenance for ${claim.id} before using it as stable support.`,
+        reason: "provenance-missing",
+        suggestedAction: "request_missing_evidence",
+        targetClaims: [claim.id],
+      });
+    }
+    if (!claim.evidenceRefs.length && ["empirical", "conceptual"].includes(claim.domain)) {
+      addRequest({
+        targetType: "claim",
+        targetId: claim.id,
+        priority: claim.confidence >= 70 ? "high" : "review",
+        prompt: `Attach evidence references for ${claim.id}.`,
+        reason: "evidence-refs-missing",
+        suggestedAction: "request_missing_evidence",
+        targetClaims: [claim.id],
+      });
+    }
+  });
+
+  state.conflicts.map(normalizeConflict).forEach((conflict) => {
+    const explanation = buildConflictExplanation(conflict);
+    const priority = conflict.severity === "critical" || conflict.kind === "hard" ? "critical" : conflict.severity === "high" ? "high" : "review";
+    if (!explanation.relationPath.length) {
+      addRequest({
+        targetType: "conflict",
+        targetId: conflict.id,
+        priority,
+        prompt: `Add relation evidence for ${conflict.id}'s minimal conflict set.`,
+        reason: "relation-path-missing",
+        suggestedAction: "link_support_attack_or_definition",
+        targetClaims: explanation.minimalConflictSet,
+      });
+    }
+    if (!conflict.evidencePath.length && priority !== "review") {
+      addRequest({
+        targetType: "conflict",
+        targetId: conflict.id,
+        priority,
+        prompt: `Attach evidence path or mark why ${conflict.id} should remain unresolved.`,
+        reason: "conflict-evidence-missing",
+        suggestedAction: "request_missing_evidence",
+        targetClaims: explanation.minimalConflictSet,
+      });
+    }
+  });
+
+  return requests.slice(0, 16);
+}
+
+function buildEvidenceRequestsForConflict(conflict) {
+  const explanation = buildConflictExplanation(conflict);
+  const memberSet = new Set(explanation.minimalConflictSet);
+  return buildMissingInformationReport({ preview: true }).requests.filter((request) => {
+    if (request.targetType === "conflict" && request.targetId === conflict.id) return true;
+    return (request.targetClaims || []).some((claimId) => memberSet.has(claimId));
+  }).slice(0, 5);
+}
+
+function summarizeDeterministicSignals(generatedConflicts = []) {
+  const counts = [...state.conflicts, ...generatedConflicts].reduce((summary, conflict) => {
+    const signal = normalizeConflictSignal(conflict.signalType || (conflict.kind === "hard" ? "rule_constraint" : "semantic_tension"));
+    summary[signal] = (summary[signal] || 0) + 1;
+    return summary;
+  }, {});
+  return Object.entries(counts).map(([signal, count]) => ({ signal, count }));
 }
 
 function buildFormalTrace({ preview = false, analysisRun = null } = {}) {
@@ -2767,15 +3662,20 @@ function buildNamedAssertion(claim) {
     smtName: claimSmtName(normalized.id),
     symbol: claimSymbol(normalized),
     literal: claimLiteral(normalized),
+    propositionObject: normalized.propositionObject,
+    exceptions: normalized.exceptions,
     polarity: normalized.polarity,
     modality: normalized.modality,
     layer: normalized.layer,
     kind: normalized.kind,
     domain: normalized.domain,
     scope: normalized.scope,
+    scopeObject: normalized.scopeObject,
     confidence: normalized.confidence,
     entrenchment: normalized.entrenchment,
     source: normalized.provenance,
+    sourceType: normalized.sourceType,
+    evidenceRefs: normalized.evidenceRefs,
     sensitivity: normalized.sensitivity,
   };
 }
@@ -2950,7 +3850,7 @@ function buildSupportEdges() {
   const edges = [];
   const seen = new Set();
   state.relations
-    .filter((relation) => ["supports", "entails", "depends_on", "scopes", "exception_to"].includes(relation.type))
+    .filter((relation) => ["supports", "implies", "entails", "depends_on", "scopes", "defines", "exception_to"].includes(relation.type))
     .forEach((relation) => {
       addArgumentEdge(edges, seen, {
         id: `S-${relation.id}`,
@@ -3139,6 +4039,17 @@ function conflictWeight(conflict) {
   return roundNumber(clamp(Number(conflict.confidence || 0.65) + severityBoost, 0.45, 0.98));
 }
 
+function leastEntrenchedClaimId(claims) {
+  return claims
+    .filter(Boolean)
+    .map((claim) => normalizeBelief(claim))
+    .sort((a, b) => {
+      const aCost = Number(a.entrenchment || defaultEntrenchmentForLayer(a.layer)) + Number(a.confidence || 50) * 0.2;
+      const bCost = Number(b.entrenchment || defaultEntrenchmentForLayer(b.layer)) + Number(b.confidence || 50) * 0.2;
+      return aCost - bCost;
+    })[0]?.id || "";
+}
+
 function buildTriageRun({ preview = false, analysisRun = null } = {}) {
   const run = analysisRun || getLatestAnalysisRun() || { id: preview ? "A-preview" : "" };
   const security = buildSecurityReportPayload();
@@ -3194,7 +4105,7 @@ function scoreTriagePair(claimA, claimB, reason) {
   if (contradictionProbability < 0.32 && semanticOverlap < 0.32) return null;
   const confidenceWeight = roundNumber(((Number(claimA.confidence || 50) + Number(claimB.confidence || 50)) / 2) / 100);
   const provenanceWeight = roundNumber((provenanceScore(claimA) + provenanceScore(claimB)) / 2);
-  const relationModifier = relationContext.some((relation) => relation.type === "supports" || relation.type === "entails")
+  const relationModifier = relationContext.some((relation) => ["supports", "implies", "entails"].includes(relation.type))
     ? 1.15
     : relationContext.some((relation) => ["attacks", "contradicts", "undercuts"].includes(relation.type))
       ? 1.1
@@ -3246,7 +4157,7 @@ function estimateContradictionProbability(claimA, claimB, relationContext, joine
 }
 
 function estimateEntailmentProbability(relationContext, semanticOverlap, contradictionProbability) {
-  const support = relationContext.find((relation) => ["supports", "entails", "depends_on", "scopes", "exception_to"].includes(relation.type));
+  const support = relationContext.find((relation) => ["supports", "implies", "entails", "depends_on", "scopes", "defines", "exception_to"].includes(relation.type));
   const base = support ? Number(support.weight || 0.62) : semanticOverlap * 0.45;
   return roundNumber(clamp(base * (1 - contradictionProbability * 0.5), 0, 0.92));
 }
@@ -3300,6 +4211,8 @@ function buildEvaluationReport({ preview = false } = {}) {
   const restoreReady = hasWebCrypto() && Boolean(els.exportEncryptedBtn && els.encryptedArchiveInput);
   const storageReady = storage.indexedDb.primary || state.privacy.retention === "session-only";
   const syncPacket = buildSyncPacketPayload();
+  const missingInfo = buildMissingInformationReport({ preview: true });
+  const publicSchema = buildJsonSchemasPayload();
   const abuseReadiness = roundNumber([
     security.controls.quotaPerHour > 0,
     security.controls.bodyLimitKb <= 512,
@@ -3325,6 +4238,8 @@ function buildEvaluationReport({ preview = false } = {}) {
     buildEvaluationMetric("unsatCoreTrace", "Unsat-core trace", latestFormal.unsatCores.length ? 1 : 0.5, 1, ">=", "", `${latestFormal.id} is ${latestFormal.status} with ${latestFormal.assertions.length} assertions and ${latestFormal.unsatCores.length} core(s).`),
     buildEvaluationMetric("argumentationCoverage", "Argumentation coverage", latestArgumentation.attackEdges.length ? 1 : 0.5, 1, ">=", "", `${latestArgumentation.id} has ${latestArgumentation.attackEdges.length} attacks, ${latestArgumentation.defenseEdges.length} defenses, and ${latestArgumentation.admissibleSet.length} admissible claims.`),
     buildEvaluationMetric("triageCoverage", "NLI/probabilistic triage", latestTriage.reviewQueue.length ? 1 : 0.5, 1, ">=", "", `${latestTriage.id} scored ${latestTriage.reviewQueue.length} candidate pairs with ${latestTriage.formalizationCandidates.length} formalization flags and no external model calls.`),
+    buildEvaluationMetric("missingInfoDetection", "Missing information detection", missingInfo.requests.length ? 1 : 0.5, 1, ">=", "", `${missingInfo.requests.length} claim/conflict evidence requests generated from provenance, scope, and relation gaps.`),
+    buildEvaluationMetric("publicSchemaContract", "Public schema contract", publicSchema.schemas.BeliefItem && publicSchema.schemas.Claim && publicSchema.schemas.PropositionObject && publicSchema.schemas.EvidenceRequest ? 1 : 0, 1, "===", "", `${Object.keys(publicSchema.schemas).length} WRE5 JSON schemas available for export and SDK use.`),
     buildEvaluationMetric("repairAcceptance", "Repair acceptance", repairAcceptance, 0.35, ">=", "", `${repairedConflicts} repaired conflicts and ${state.repairApplications.length} recorded applications.`),
     buildEvaluationMetric("taskCompletion", "Core task completion", coreTaskCompletion, 0.8, ">=", "", "Covers entering claims, linking relations, seeing an explained conflict, and deciding repair or accepted tension."),
     buildEvaluationMetric("timeToFirstExplainedConflict", "Time to first explained conflict", firstExplainedConflictSeconds, 180, "<=", "s", "Proxy target for private-beta observation; conflict detail is visible immediately in the seeded session."),
@@ -3375,6 +4290,7 @@ function buildEvaluationReport({ preview = false } = {}) {
       formalTrace: latestFormal,
       argumentation: latestArgumentation,
       triage: latestTriage,
+      missingInformation: missingInfo,
       privacyReceipt: buildPrivacyReceiptPayload(),
     },
   });
@@ -3418,7 +4334,21 @@ function detectCandidateConflicts() {
     if (!signal) continue;
     generated.push(createGeneratedConflict(claimA, claimB, signal, nextNumber + generated.length));
   }
-  return generated.slice(0, 3);
+  const unsupported = detectUnsupportedBeliefConflicts(nextNumber + generated.length);
+  generated.push(...unsupported);
+  return generated.slice(0, 5);
+}
+
+function detectUnsupportedBeliefConflicts(startNumber) {
+  return state.beliefs
+    .map(normalizeBelief)
+    .filter((claim) => {
+      if (state.conflicts.some((conflict) => conflict.conflictClass === "unsupported_belief" && conflict.core?.includes(claim.id))) return false;
+      const centrality = state.relations.filter((relation) => relation.source === claim.id || relation.target === claim.id).length;
+      return claim.status === "active" && claim.confidence >= 80 && centrality >= 1 && !claim.evidenceRefs.length && claim.provenance === "User supplied";
+    })
+    .slice(0, 2)
+    .map((claim, index) => createUnsupportedBeliefConflict(claim, startNumber + index));
 }
 
 function countConstraintMatches() {
@@ -3434,6 +4364,8 @@ function scoreBeliefPair(claimA, claimB) {
   const joined = `${a} ${b}`;
   const overlap = tokenOverlap(a, b);
   const relationContext = getRelationsBetween(claimA.id, claimB.id);
+  const deterministicSignal = scoreDeterministicPair(claimA, claimB, overlap, relationContext);
+  if (deterministicSignal) return deterministicSignal;
   const constraintSignal = scoreConstraintPair(claimA, claimB, joined);
   if (constraintSignal) return constraintSignal;
   const explicitConflict = relationContext.find((relation) => ["attacks", "contradicts", "undercuts"].includes(relation.type));
@@ -3443,6 +4375,8 @@ function scoreBeliefPair(claimA, claimB) {
       kind: explicitConflict.type === "contradicts" ? "hard" : "soft",
       severity: explicitConflict.weight >= 0.78 ? "high" : "medium",
       confidence: roundNumber(clamp(explicitConflict.weight, 0.55, 0.95)),
+      signalType: explicitConflict.type === "contradicts" ? "direct_negation" : "semantic_tension",
+      conflictClass: explicitConflict.type === "contradicts" ? "direct_contradiction" : crossLayerConflictClass(claimA, claimB),
       engine: ["Argument graph", "Rule constraint", "Repair ranking"],
       why: `The explicit ${relationTypeLabel(explicitConflict.type).toLowerCase()} relation between ${claimA.id} and ${claimB.id} is strong enough to require review: ${explicitConflict.rationale}`,
     };
@@ -3453,6 +4387,8 @@ function scoreBeliefPair(claimA, claimB) {
       kind: "hard",
       severity: "high",
       confidence: 0.82,
+      signalType: "rule_constraint",
+      conflictClass: crossLayerConflictClass(claimA, claimB),
       engine: ["Rule constraint", "SMT core template", "Repair ranking"],
       why: "Protected-attribute language appears in a candidate exclusion context; this should be treated as a hard rule-check candidate.",
     };
@@ -3463,6 +4399,8 @@ function scoreBeliefPair(claimA, claimB) {
       kind: "soft",
       severity: "medium",
       confidence: 0.76,
+      signalType: "scope_clash",
+      conflictClass: "scope_exception_mismatch",
       engine: ["Argument graph", "NLI triage", "Human review"],
       why: "Transparency and confidentiality/trade-secret claims appear in the same scope and should be reconciled with a disclosure boundary.",
     };
@@ -3473,12 +4411,132 @@ function scoreBeliefPair(claimA, claimB) {
       kind: "soft",
       severity: "low",
       confidence: roundNumber(0.58 + overlap * 0.32),
+      signalType: "semantic_tension",
+      conflictClass: crossLayerConflictClass(claimA, claimB),
       engine: ["Argument graph", "Probabilistic tension score", "Human review"],
       why: "These claims share enough concepts across WRE layers to deserve a soft-tension review before they are used as mutual support.",
     };
   }
 
   return null;
+}
+
+function scoreDeterministicPair(claimA, claimB, overlap, relationContext) {
+  const polarityA = normalizeClaimPolarity(claimA.polarity, claimA.text);
+  const polarityB = normalizeClaimPolarity(claimB.polarity, claimB.text);
+  const modalityA = normalizeClaimModality(claimA.modality, claimA.text);
+  const modalityB = normalizeClaimModality(claimB.modality, claimB.text);
+  const samePredicate = sameCoreProposition(claimA, claimB) || samePredicateKey(claimA, claimB) || overlap >= 0.58;
+  const explicitEntailment = relationContext.find((relation) => relation.type === "implies" || relation.type === "entails");
+  const explicitDefinition = relationContext.find((relation) => relation.type === "defines");
+
+  if (samePredicate && polarityA !== "mixed" && polarityB !== "mixed" && polarityA !== "unknown" && polarityB !== "unknown" && polarityA !== polarityB) {
+    return {
+      kind: "hard",
+      severity: "critical",
+      confidence: roundNumber(clamp(0.78 + overlap * 0.2, 0.78, 0.96)),
+      signalType: "direct_negation",
+      conflictClass: "direct_contradiction",
+      engine: ["Direct contradiction", "Typed proposition check", "Repair ranking"],
+      why: `${claimA.id} and ${claimB.id} share a typed actor/action/object scope but assert opposite polarity.`,
+    };
+  }
+
+  if (samePredicate && isDeonticClash(modalityA, modalityB)) {
+    return {
+      kind: "hard",
+      severity: "high",
+      confidence: roundNumber(clamp(0.74 + overlap * 0.18, 0.74, 0.93)),
+      signalType: "deontic_clash",
+      conflictClass: "deontic_clash",
+      engine: ["Deontic modality check", "Same-proposition check", "Repair ranking"],
+      why: `${claimA.id} and ${claimB.id} assign incompatible deontic modalities to the same scoped proposition.`,
+    };
+  }
+
+  if (explicitEntailment && polarityA !== polarityB && overlap >= 0.24) {
+    return {
+      kind: "hard",
+      severity: "high",
+      confidence: roundNumber(clamp(Number(explicitEntailment.weight || 0.7) + 0.1, 0.72, 0.95)),
+      signalType: "implication_conflict",
+      conflictClass: crossLayerConflictClass(claimA, claimB),
+      engine: ["Implication conflict", "Relation graph", "Repair ranking"],
+      why: `${explicitEntailment.source} implies ${explicitEntailment.target}, but the linked claims differ in polarity and need qualification.`,
+    };
+  }
+
+  if (explicitDefinition && overlap >= 0.32 && hasScopeClash(claimA, claimB)) {
+    return {
+      kind: "soft",
+      severity: "medium",
+      confidence: roundNumber(clamp(Number(explicitDefinition.weight || 0.62) + 0.08, 0.62, 0.86)),
+      signalType: "scope_clash",
+      conflictClass: "scope_exception_mismatch",
+      engine: ["Scope clash", "Definition relation", "Human review"],
+      why: `${claimA.id} and ${claimB.id} share a definition relation but use different scope boundaries.`,
+    };
+  }
+
+  return null;
+}
+
+function sameCoreProposition(claimA, claimB) {
+  const a = normalizeBelief(claimA).propositionObject;
+  const b = normalizeBelief(claimB).propositionObject;
+  const sameActor = a.actor && b.actor && a.actor === b.actor;
+  const sameAction = a.action && b.action && a.action === b.action;
+  const sameObject = (a.object || "") === (b.object || "");
+  const sameScope = normalizeScopeComparable(a.scope) === normalizeScopeComparable(b.scope);
+  if (sameActor && sameAction && sameObject && sameScope) return true;
+  return sameAction && sameObject && sameScope && Boolean(a.action);
+}
+
+function normalizeScopeComparable(value) {
+  return normalizePropositionToken(value || "default");
+}
+
+function isDeonticClash(left, right) {
+  const pair = new Set([left, right]);
+  return (pair.has("must") && pair.has("must_not"))
+    || (pair.has("must") && pair.has("forbidden"))
+    || (pair.has("permitted") && pair.has("forbidden"))
+    || (pair.has("ought") && pair.has("forbidden"));
+}
+
+function crossLayerConflictClass(claimA, claimB) {
+  const layers = new Set([claimA.layer, claimB.layer]);
+  if (layers.has("theory") && (layers.has("judgment") || layers.has("principle"))) return "theory_judgment_mismatch";
+  if (layers.has("principle") && layers.has("judgment")) return "principle_judgment_mismatch";
+  return "semantic_tension";
+}
+
+function samePredicateKey(claimA, claimB) {
+  const a = predicateTokens(claimA.text);
+  const b = predicateTokens(claimB.text);
+  if (!a.length || !b.length) return false;
+  const shared = a.filter((token) => b.includes(token));
+  return shared.length >= Math.min(3, Math.min(a.length, b.length));
+}
+
+function predicateTokens(text) {
+  const ignored = new Set(["should", "must", "may", "might", "could", "would", "not", "never", "without", "because", "only", "where", "when", "with", "from"]);
+  return String(text || "")
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((token) => token.length > 3 && !ignored.has(token))
+    .slice(0, 8);
+}
+
+function hasScopeClash(claimA, claimB) {
+  const scopeA = normalizeScopeObject(claimA.scopeObject || claimA.scope || claimA.timeScope);
+  const scopeB = normalizeScopeObject(claimB.scopeObject || claimB.scope || claimB.timeScope);
+  const fields = ["actor", "time", "jurisdiction", "conditions"];
+  return fields.filter((field) => {
+    const left = String(scopeA[field] || "").toLowerCase();
+    const right = String(scopeB[field] || "").toLowerCase();
+    return left && right && left !== right && left !== "unscoped" && right !== "unscoped";
+  }).length >= 2;
 }
 
 function scoreConstraintPair(claimA, claimB, joinedText) {
@@ -3492,11 +4550,20 @@ function scoreConstraintPair(claimA, claimB, joinedText) {
       severity: constraint.severity,
       confidence: roundNumber(clamp(score, 0.58, 0.96)),
       constraintId: constraint.id,
+      signalType: hard ? "rule_constraint" : "semantic_tension",
+      conflictClass: inferConstraintConflictClass(constraint, claimA, claimB),
       engine: ["Rule constraint", `${constraint.language.toUpperCase()} template`, "Unsat core preview"],
       why: `${constraint.id} ${constraint.name}: ${constraint.body}`,
     };
   }
   return null;
+}
+
+function inferConstraintConflictClass(constraint, claimA, claimB) {
+  const body = String(constraint.body || "").toLowerCase();
+  if (body.includes("evidence") || body.includes("source") || body.includes("provenance")) return "unsupported_belief";
+  if (body.includes("exception") || body.includes("scope")) return "scope_exception_mismatch";
+  return crossLayerConflictClass(claimA, claimB);
 }
 
 function constraintMatchScore(constraint, claimA, claimB, joinedText) {
@@ -3659,7 +4726,7 @@ function createGeneratedConflict(claimA, claimB, signal, number) {
   const constraint = signal.constraintId ? state.constraints.find((item) => item.id === signal.constraintId) : null;
   return normalizeConflict({
     id,
-    title: constraint ? `${constraint.name} Violation` : `${claimA.id} / ${claimB.id} Analysis Candidate`,
+    title: constraint ? `${constraint.name} Violation` : `${conflictClassLabel(signal.conflictClass)}: ${claimA.id} / ${claimB.id}`,
     severity: signal.severity,
     summary: `${claimA.id} ${signal.kind === "hard" ? "hard-conflicts" : "soft-tensions"} with ${claimB.id}`,
     provenance: `${claimA.id}, ${claimB.id}`,
@@ -3668,6 +4735,8 @@ function createGeneratedConflict(claimA, claimB, signal, number) {
     claimB: claimB.id,
     linked: [claimA.id, claimB.id],
     kind: signal.kind,
+    conflictClass: signal.conflictClass || normalizeConflictClass(signal.signalType),
+    signalType: signal.signalType || (signal.kind === "hard" ? "rule_constraint" : "semantic_tension"),
     confidence: signal.confidence,
     core: [claimA.id, claimB.id],
     engine: signal.engine,
@@ -3677,11 +4746,60 @@ function createGeneratedConflict(claimA, claimB, signal, number) {
     repairs: [
       {
         id: repairId,
-        title: "Add Scope Boundary",
-        text: "Clarify scope, confidence, or exception conditions before this pair is used as support.",
-        cost: "0.68",
+        title: signal.conflictClass === "direct_contradiction" ? "Revise Scope" : "Add Exception",
+        text: signal.conflictClass === "direct_contradiction"
+          ? "Revise one claim's actor, object, or scope if the two commitments are not meant to cover exactly the same case."
+          : "Add a scoped exception before this pair is used as support.",
+        cost: signal.conflictClass === "direct_contradiction" ? "0.44" : "0.36",
         badge: "Lowest",
         tone: signal.severity === "high" ? "high" : "medium",
+        actionType: signal.conflictClass === "direct_contradiction" ? "revise_scope" : "add_exception",
+        targetId: leastEntrenchedClaimId([claimA, claimB]),
+      },
+    ],
+  });
+}
+
+function createUnsupportedBeliefConflict(claim, number) {
+  const id = `C-${String(number).padStart(3, "0")}`;
+  return normalizeConflict({
+    id,
+    title: `Unsupported central belief: ${claim.id}`,
+    severity: claim.confidence >= 90 ? "high" : "medium",
+    summary: `${claim.id} has high confidence and graph centrality but no evidence reference`,
+    provenance: claim.id,
+    time: formatTime(new Date().toISOString()),
+    claimA: claim.id,
+    claimB: "",
+    linked: [claim.id],
+    kind: "soft",
+    conflictClass: "unsupported_belief",
+    signalType: "unsupported_belief",
+    confidence: roundNumber(clamp(claim.confidence / 100, 0.62, 0.92)),
+    core: [claim.id],
+    engine: ["Unsupported belief check", "Graph centrality", "Repair ranking"],
+    why: `${claim.id} is comparatively central and confident, but lacks evidence references or non-default provenance. WRE5 treats this as a reviewable instability rather than a logical contradiction.`,
+    generated: true,
+    repairs: [
+      {
+        id: `R-${String(number).padStart(3, "0")}`,
+        title: "Edit Text Or Evidence",
+        text: "Add provenance/evidence or lower confidence before using this claim as stable support.",
+        cost: "0.29",
+        badge: "Evidence",
+        tone: "medium",
+        actionType: "edit_text",
+        targetId: claim.id,
+      },
+      {
+        id: `R-${String(4000 + number).padStart(4, "0")}`,
+        title: "Lower Confidence",
+        text: "Lower confidence until provenance or evidence is attached.",
+        cost: "0.35",
+        badge: "Minimal change",
+        tone: "medium",
+        actionType: "lower_confidence",
+        targetId: claim.id,
       },
     ],
   });
@@ -3753,6 +4871,8 @@ function validateBeliefForm(text) {
   const errors = [];
   if (!text) errors.push({ field: "beliefText", message: "Enter a belief statement before adding the claim." });
   if (text && text.length < 12) errors.push({ field: "beliefText", message: "Use a complete claim, not a fragment." });
+  if (!els.propositionActorInput.value.trim()) errors.push({ field: "propositionActorInput", message: "Add the actor for the typed proposition." });
+  if (!els.propositionActionInput.value.trim()) errors.push({ field: "propositionActionInput", message: "Add the action or predicate for the typed proposition." });
   if (!els.timeScopeInput.value.trim()) errors.push({ field: "timeScopeInput", message: "Add a scope so the claim is not treated as universal by accident." });
   if (!els.provenanceInput.value.trim()) errors.push({ field: "provenanceInput", message: "Record a provenance source for audit replay." });
   return { valid: errors.length === 0, errors };
@@ -3760,7 +4880,7 @@ function validateBeliefForm(text) {
 
 function showBeliefErrors(errors) {
   setErrorSummary(els.beliefErrorSummary, errors);
-  [els.beliefText, els.timeScopeInput, els.provenanceInput].forEach(clearFieldInvalid);
+  [els.beliefText, els.propositionActorInput, els.propositionActionInput, els.timeScopeInput, els.provenanceInput].forEach(clearFieldInvalid);
   errors.forEach((error) => {
     const field = els[error.field];
     if (field) markFieldInvalid(field, error.message);
@@ -3770,7 +4890,7 @@ function showBeliefErrors(errors) {
 
 function clearBeliefErrors() {
   setErrorSummary(els.beliefErrorSummary, []);
-  [els.beliefText, els.timeScopeInput, els.provenanceInput].forEach(clearFieldInvalid);
+  [els.beliefText, els.propositionActorInput, els.propositionActionInput, els.timeScopeInput, els.provenanceInput].forEach(clearFieldInvalid);
 }
 
 function validateRelationForm({ source, target, rationale }) {
@@ -3873,11 +4993,45 @@ function claimStatusLabel(status) {
   return titleCase(normalizeClaimStatus(status).replace(/_/g, " "));
 }
 
+function conflictClassLabel(value) {
+  const normalized = normalizeConflictClass(value);
+  const labels = {
+    direct_contradiction: "Direct contradiction",
+    principle_judgment_mismatch: "Principle-judgment mismatch",
+    theory_judgment_mismatch: "Theory-judgment mismatch",
+    deontic_clash: "Deontic clash",
+    scope_exception_mismatch: "Scope/exception mismatch",
+    unsupported_belief: "Unsupported belief",
+    semantic_tension: "Semantic tension",
+  };
+  return labels[normalized] || "Semantic tension";
+}
+
+function propositionCoreLabel(claim) {
+  const proposition = normalizeBelief(claim).propositionObject;
+  const object = proposition.object ? ` / ${proposition.object}` : "";
+  const exceptions = proposition.exceptions?.length ? ` except ${proposition.exceptions.join(", ")}` : "";
+  return `${proposition.actor} / ${proposition.action}${object} / ${proposition.scope}${exceptions}`;
+}
+
 function privacyModeLabel(mode) {
   if (mode === "encrypted_sync") return "Encrypted sync";
   if (mode === "private_link") return "Private link";
   if (mode === "workspace") return "Workspace";
   return "Local only";
+}
+
+function actorKindLabel(kind) {
+  if (kind === "ai_agent") return "AI agent";
+  if (kind === "team") return "Team";
+  if (kind === "institution") return "Institution";
+  return "Individual human";
+}
+
+function workflowModeLabel(mode) {
+  if (mode === "shared") return "Shared equilibrium";
+  if (mode === "import_trace") return "Import trace";
+  return "Individual WRE";
 }
 
 function focusComposer(layer) {
@@ -3902,10 +5056,28 @@ function addBelief() {
   clearBeliefErrors();
 
   const layer = els.claimKind.value || inferLayer(text);
+  const id = nextBeliefId(layer);
+  const scopeText = els.timeScopeInput.value.trim() || state.agentProfile.activeScope || "Unscoped";
+  const evidenceRefs = normalizeEvidenceRefs(els.evidenceRefsInput.value);
+  const propositionObject = normalizePropositionObject({
+    actor: els.propositionActorInput.value,
+    action: els.propositionActionInput.value,
+    object: els.propositionObjectInput.value,
+    propositionType: els.claimTypeInput.value,
+    modality: els.modalityInput.value,
+    polarity: els.polarityInput.value,
+    scope: scopeText,
+    exceptions: normalizeExceptionList(els.exceptionsInput.value),
+  }, { text, layer, kind: els.claimTypeInput.value, domain: els.claimDomain.value, scope: scopeText });
   const belief = {
-    id: nextBeliefId(layer),
+    id,
+    beliefItemId: `BI-${id}`,
     layer,
     kind: els.claimTypeInput.value,
+    proposition: text,
+    propositionObject,
+    structuredProposition: propositionObject,
+    exceptions: propositionObject.exceptions,
     text,
     canonicalForm: canonicalizeClaimText(text),
     domain: els.claimDomain.value,
@@ -3913,11 +5085,27 @@ function addBelief() {
     polarity: els.polarityInput.value,
     confidence: Number(els.confidenceInput.value),
     entrenchment: Number(els.entrenchmentInput.value),
-    scope: els.timeScopeInput.value.trim() || "Unscoped",
-    timeScope: els.timeScopeInput.value.trim() || "Unscoped",
+    scope: scopeText,
+    scopeObject: {
+      domain: els.claimDomain.value,
+      actor: state.agentProfile.displayName,
+      time: state.agentProfile.timeHorizon,
+      jurisdiction: state.agentProfile.jurisdiction,
+      conditions: scopeText,
+    },
+    timeScope: scopeText,
     provenance: els.provenanceInput.value.trim() || "User supplied",
+    sourceType: els.sourceTypeInput.value,
+    provenanceObject: {
+      sourceType: els.sourceTypeInput.value,
+      sourceRef: els.provenanceInput.value.trim() || "User supplied",
+      evidenceRefs,
+    },
+    evidenceRefs,
+    references: extractClaimReferences(text),
     sensitivity: els.sensitivityInput.value,
     status: els.claimStatusInput.value,
+    revisionStatus: els.claimStatusInput.value,
   };
 
   state.beliefs.push(belief);
@@ -3925,8 +5113,13 @@ function addBelief() {
     claimId: belief.id,
   });
   els.beliefText.value = "";
+  els.propositionActorInput.value = "";
+  els.propositionActionInput.value = "";
+  els.propositionObjectInput.value = "";
   els.timeScopeInput.value = "";
   els.provenanceInput.value = "";
+  els.evidenceRefsInput.value = "";
+  els.exceptionsInput.value = "";
   els.claimStatusInput.value = "active";
   state.activeStage = "collection";
   saveState();
@@ -4218,8 +5411,7 @@ function buildRepairSimulation(conflict, repair) {
   const beforeSnapshot = buildRepairSnapshot(conflict, affectedClaims);
   const targetClaim = findBelief(targetClaimId);
   const actionType = inferRepairActionType(repair);
-  const entrenchmentPenalty = targetClaim ? Number(targetClaim.entrenchment || defaultEntrenchmentForLayer(targetClaim.layer)) / 400 : 0.15;
-  const disruptionCost = roundNumber(clamp((Number.isFinite(Number(repair.cost)) ? Number(repair.cost) : 0.75) + entrenchmentPenalty, 0, 1.4));
+  const disruptionCost = weightedRevisionCost(targetClaim, repair, conflict);
   const predictedResolutionScore = roundNumber(clamp(0.96 - disruptionCost * 0.25 + (conflict.kind === "hard" ? 0.03 : 0), 0.42, 0.94));
   const dependencyImpact = state.relations.filter((relation) => {
     return affectedClaims.includes(relation.source) || affectedClaims.includes(relation.target);
@@ -4249,6 +5441,19 @@ function buildRepairSimulation(conflict, repair) {
   };
 }
 
+function weightedRevisionCost(targetClaim, repair, conflict) {
+  const base = Number.isFinite(Number(repair.estimatedCost))
+    ? Number(repair.estimatedCost)
+    : Number.isFinite(Number(repair.cost))
+      ? Number(repair.cost)
+      : 0.75;
+  const normalized = targetClaim ? normalizeBelief(targetClaim) : null;
+  const confidencePenalty = normalized ? Number(normalized.confidence || 50) / 500 : 0.1;
+  const entrenchmentPenalty = normalized ? Number(normalized.entrenchment || defaultEntrenchmentForLayer(normalized.layer)) / 420 : 0.15;
+  const classDiscount = conflict?.conflictClass === "scope_exception_mismatch" && inferRepairActionType(repair) === "add_exception" ? -0.1 : 0;
+  return roundNumber(clamp(base + confidencePenalty + entrenchmentPenalty + classDiscount, 0, 1.4));
+}
+
 function buildRepairSnapshot(conflict, affectedClaims) {
   const affectedSet = new Set(affectedClaims);
   return {
@@ -4267,14 +5472,36 @@ function buildRepairSnapshot(conflict, affectedClaims) {
 
 function buildRepairedClaim(claim, repair, actionType) {
   const repaired = { ...claim };
-  if (actionType === "adjust_confidence") {
+  const propositionObject = normalizePropositionObject(claim.propositionObject, claim);
+  if (actionType === "archive_item") {
+    repaired.status = "retired";
+    repaired.revisionStatus = "retired";
+  } else if (actionType === "request_missing_evidence") {
+    repaired.status = "draft";
+    repaired.revisionStatus = "draft";
+  } else if (actionType === "lower_confidence" || actionType === "adjust_confidence" || actionType === "retract_or_lower_confidence") {
     repaired.confidence = clamp(Number(claim.confidence) - 8, 1, 100);
+  } else if (actionType === "add_exception") {
+    const nextException = normalizePropositionToken(repair.exception || repair.reason || repair.title || "reviewed_exception");
+    propositionObject.exceptions = [...new Set([...(propositionObject.exceptions || []), nextException].filter(Boolean))];
+    repaired.exceptions = propositionObject.exceptions;
+    repaired.text = buildRepairedClaimText(claim, repair);
+  } else if (actionType === "revise_scope") {
+    propositionObject.scope = normalizePropositionToken(`${propositionObject.scope || claim.scope || "scope"}_qualified`);
+    repaired.scope = propositionObject.scope;
+    repaired.timeScope = propositionObject.scope;
+    repaired.text = buildRepairedClaimText(claim, repair);
   } else {
     repaired.text = buildRepairedClaimText(claim, repair);
   }
+  repaired.propositionObject = propositionObject;
+  repaired.structuredProposition = propositionObject;
   repaired.canonicalForm = canonicalizeClaimText(repaired.text);
   repaired.scope = repaired.timeScope || repaired.scope || "Unscoped";
+  repaired.scopeObject = normalizeScopeObject(repaired.scopeObject || repaired.scope);
   repaired.provenance = appendAuditNote(claim.provenance, `repaired via ${repair.id}`);
+  repaired.provenanceObject = normalizeProvenanceObject(repaired.provenanceObject || repaired.provenance, repaired);
+  repaired.revisionStatus = repaired.status || "active";
   return normalizeBelief(repaired);
 }
 
@@ -4307,11 +5534,13 @@ function inferRepairTargetClaimId(conflict, repair) {
 
 function inferRepairActionType(repair) {
   const source = `${repair.title || ""} ${repair.text || ""}`.toLowerCase();
-  if (source.includes("reweight") || source.includes("decrease weight")) return "adjust_confidence";
-  if (source.includes("refine")) return "refine_claim";
-  if (source.includes("separate") || source.includes("split")) return "split_context";
-  if (source.includes("constraint") || source.includes("scope") || source.includes("limit")) return "add_scope_constraint";
-  return "scope_boundary";
+  if (["revise_scope", "add_exception", "lower_confidence", "edit_text", "archive_item"].includes(repair.actionType)) return repair.actionType;
+  if (source.includes("evidence") || source.includes("provenance") || source.includes("source")) return "request_missing_evidence";
+  if (source.includes("archive") || source.includes("retire") || source.includes("delete")) return "archive_item";
+  if (source.includes("retract") || source.includes("lower confidence") || source.includes("reweight") || source.includes("decrease weight")) return "lower_confidence";
+  if (source.includes("exception")) return "add_exception";
+  if (source.includes("scope") || source.includes("limit") || source.includes("constraint") || source.includes("qualifier") || source.includes("qualify")) return "revise_scope";
+  return "edit_text";
 }
 
 function actionTypeLabel(actionType) {
@@ -4383,27 +5612,38 @@ function buildSessionPayload() {
     session: {
       id: "sess_7f2c9e7a",
       created: state.createdAt,
-      scope: "AI hiring assistant",
+      scope: state.agentProfile.activeScope,
       status: "active",
+      agentProfile: normalizeAgentProfile(state.agentProfile),
       privacy: state.privacy,
       algorithmVersion: WRE_ENGINE_VERSION,
     },
     schema: {
+      beliefItemFields: agentContract.beliefItemFields,
       claimFields: agentContract.claimFields,
       relationFields: agentContract.relationFields,
       constraintFields: agentContract.constraintFields,
+      agentProfileFields: agentContract.agentProfileFields,
       formalRunFields: agentContract.formalRunFields,
       argumentationRunFields: agentContract.argumentationRunFields,
       triageRunFields: agentContract.triageRunFields,
       syncPacketFields: agentContract.syncPacketFields,
       repairOptionFields: agentContract.repairOptionFields,
       revisionEventFields: agentContract.revisionEventFields,
+      evidenceRequestFields: agentContract.evidenceRequestFields,
+      rulePackFields: agentContract.rulePackFields,
       exportFormats: agentContract.exportFormats,
       relationTypes: agentContract.relationTypes,
       conflictKinds: agentContract.conflictKinds,
+      conflictClasses: agentContract.conflictClasses,
+      conflictSignals: agentContract.conflictSignals,
+      architecture: agentContract.architecture,
     },
     jsonSchemas: buildJsonSchemasPayload(),
     openApi: buildOpenApiPayload(),
+    agentProfile: normalizeAgentProfile(state.agentProfile),
+    beliefItems: buildBeliefItems(),
+    claims: state.beliefs.map(normalizeBelief),
     beliefs: state.beliefs.map(normalizeBelief),
     relations: state.relations.map(normalizeRelation),
     constraints: state.constraints.map(normalizeConstraint),
@@ -4426,6 +5666,8 @@ function buildSessionPayload() {
     syncPacket: buildSyncPacketPayload(),
     privacyReceipt: buildPrivacyReceiptPayload(),
     accessibilityReport: buildAccessibilityReportPayload(),
+    missingInformation: buildMissingInformationReport(),
+    rulePacks: domainRulePacks,
     migrationReport: state.migrationReport || buildDefaultMigrationReport(),
     benchmarkTargets,
     agentContract: buildAgentContractPayload(),
@@ -4436,6 +5678,7 @@ function buildSessionPayload() {
 function buildJsonLdPayload() {
   const sessionId = "sess_7f2c9e7a";
   const sessionNode = `urn:wre:session:${sessionId}`;
+  const beliefItemNode = (id) => `urn:wre:belief-item:${id}`;
   const claimNode = (id) => `urn:wre:claim:${id}`;
   const relationNode = (id) => `urn:wre:relation:${id}`;
   const constraintNode = (id) => `urn:wre:constraint:${id}`;
@@ -4479,8 +5722,11 @@ function buildJsonLdPayload() {
       {
         "@id": sessionNode,
         "@type": "wre:Session",
-        name: "AI hiring assistant",
+        name: state.agentProfile.activeScope,
         created: state.createdAt,
+        actorKind: state.agentProfile.actorKind,
+        workflowMode: state.agentProfile.workflowMode,
+        activeScope: state.agentProfile.activeScope,
         privacyMode: state.privacy.privacyMode,
         retention: state.privacy.retention,
         apiAbuseResistance: security.summary.abuseResistance,
@@ -4490,6 +5736,27 @@ function buildJsonLdPayload() {
         triageFlags: triage.formalizationCandidates.length,
         syncReadiness: syncPacket.readiness.status,
       },
+      {
+        "@id": `urn:wre:agent-profile:${state.agentProfile.id}`,
+        "@type": "wre:AgentProfile",
+        name: state.agentProfile.displayName,
+        actorKind: state.agentProfile.actorKind,
+        workflowMode: state.agentProfile.workflowMode,
+        activeScope: state.agentProfile.activeScope,
+        jurisdiction: state.agentProfile.jurisdiction,
+        generatedBy: sessionNode,
+      },
+      ...buildBeliefItems().map((item) => ({
+        "@id": beliefItemNode(item.id),
+        "@type": "wre:BeliefItem",
+        name: item.id,
+        family: item.family,
+        text: item.rawText,
+        confidence: item.confidence,
+        entrenchment: item.entrenchment,
+        evidenceRefs: item.evidenceRefs,
+        generatedBy: sessionNode,
+      })),
       {
         "@id": `urn:wre:storage:${sessionId}`,
         "@type": "wre:StorageReport",
@@ -4517,6 +5784,7 @@ function buildJsonLdPayload() {
           "@id": claimNode(normalized.id),
           "@type": "wre:Claim",
           claimId: normalized.id,
+          beliefItem: beliefItemNode(normalized.beliefItemId),
           kind: normalized.kind,
           layer: normalized.layer,
           canonicalForm: normalized.canonicalForm,
@@ -4528,8 +5796,13 @@ function buildJsonLdPayload() {
           entrenchment: normalized.entrenchment,
           timeScope: normalized.timeScope,
           provenance: normalized.provenance,
+          sourceType: normalized.sourceType,
+          evidenceRefs: normalized.evidenceRefs,
+          propositionObject: normalized.propositionObject,
+          exceptions: normalized.exceptions,
           sensitivity: normalized.sensitivity,
           status: normalized.status,
+          proposition: normalized.proposition,
           text: normalized.text,
           generatedBy: sessionNode,
         };
@@ -4673,10 +5946,12 @@ function buildCsvSummaryPayload() {
   const storage = buildStorageReportPayload();
   const formal = getLatestFormalRun() || buildFormalTrace({ preview: true });
   const argumentation = getLatestArgumentationRun() || buildArgumentationRun({ preview: true });
+  const missingInfo = buildMissingInformationReport({ preview: true });
   const rows = [
+    ...buildBeliefItems().map((item) => ["belief_item", item.id, labelForLayer(item.family), "raw", "", "", item.revisionStatus, item.confidence, item.rawText, `${item.scope.conditions}; ${item.provenance.sourceType}: ${item.provenance.sourceRef}`]),
     ...state.beliefs.map((belief) => {
       const normalized = normalizeBelief(belief);
-      return ["claim", normalized.id, claimKindLabel(normalized.kind), `${normalized.modality}/${normalized.polarity}`, "", "", normalized.status, normalized.confidence, normalized.text, `${normalized.scope}; entrenchment ${normalized.entrenchment}%; ${normalized.provenance}; ${normalized.sensitivity}`];
+      return ["claim", normalized.id, claimKindLabel(normalized.kind), `${normalized.modality}/${normalized.polarity}`, "", "", normalized.status, normalized.confidence, normalized.proposition || normalized.text, `${normalized.scope}; entrenchment ${normalized.entrenchment}%; ${normalized.provenance}; ${normalized.sensitivity}`];
     }),
     ...state.relations.map((relation) => {
       const normalized = normalizeRelation(relation);
@@ -4693,6 +5968,8 @@ function buildCsvSummaryPayload() {
     ...argumentation.attackEdges.slice(0, 12).map((edge) => ["attack_edge", edge.id, edge.type, edge.relationId || edge.conflictId || "", edge.source, edge.target, "", edge.weight, edge.rationale, "argumentation graph"]),
     ["triage_run", triage.id, "NLI and probabilistic triage", triage.nliMode, "", "", triage.externalProcessing ? "external" : "local", triage.reviewQueue.length, `${triage.formalizationCandidates.length} formalization flags`, triage.probabilisticSummary.scoringFormula],
     ...triage.reviewQueue.slice(0, 12).map((item) => ["triage_pair", item.id, item.recommendation, item.retrievalReason, item.claimA, item.claimB, item.priority, item.softTensionScore, item.explanation, `nli ${item.contradictionProbability}; overlap ${item.semanticOverlap}`]),
+    ...missingInfo.requests.map((request) => ["evidence_request", request.id, request.targetId, request.reason, "", "", request.priority, "", request.prompt, request.suggestedAction]),
+    ...domainRulePacks.map((pack) => ["rule_pack", pack.id, pack.label, pack.engine, "", "", pack.status, pack.checks.length, pack.checks.join("; "), "deterministic plugin hook"]),
     ["sync_packet", "SYNC-001", "Optional sync packet", syncPacket.workspace.mode, "", "", syncPacket.readiness.status, syncPacket.readiness.score, `${syncPacket.mutationSet.count} mutation records; ${syncPacket.edgeContract.routes.length} routes`, syncPacket.manifest.idempotencyKey],
     ["security", "SEC-001", "API abuse resistance", security.summary.abuseResistance, "", "", security.summary.launchGate, security.controls.quotaPerHour, `Body ${security.controls.bodyLimitKb} KB; claims ${security.controls.analysisClaimCap}; NLI ${security.controls.nliPairCap}`, security.summary.complianceStatus],
     ["storage", "STORE-001", "Local-first persistence", storage.summary, "", "", storage.indexedDb.status, storage.indexedDb.primary ? 1 : 0, storage.extractorStatus, storage.lastSavedAt],
@@ -4806,6 +6083,10 @@ function exportOpenApiContract() {
   downloadJson(buildOpenApiPayload(), "normativity-wre-openapi.json");
 }
 
+function exportJsonSchemaContract() {
+  downloadJson(buildJsonSchemasPayload(), "normativity-wre5-json-schema.json");
+}
+
 async function exportEncryptedArchive() {
   const passphrase = getArchivePassphrase();
   if (!passphrase) return;
@@ -4875,6 +6156,9 @@ function buildSecurityReportPayload() {
       apiAbuse: "OWASP API Top 10 guardrails for quotas, body-size limits, and execution caps",
       observability: "OpenTelemetry-compatible event vocabulary without mandatory third-party telemetry",
       restoreDrills: `${controls.restoreDrillCadence} encrypted archive restore drill`,
+      incidentResponse: controls.incidentRunbook,
+      sensitiveUse: controls.modelTrainingPolicy,
+      humanReview: controls.humanReviewPath,
       contentSecurityPolicy: controls.cspMode,
       dependencyScanning: controls.dependencyScanning,
       publicFormAbuse: controls.publicFormAbuse,
@@ -4895,6 +6179,9 @@ function buildSecurityReportPayload() {
       telemetryMode: controls.telemetryMode,
       dpiaReview: controls.dpiaReview,
       asvsMapping: controls.asvsMapping,
+      incidentRunbook: controls.incidentRunbook,
+      modelTrainingPolicy: controls.modelTrainingPolicy,
+      humanReviewPath: controls.humanReviewPath,
       cspMapped: true,
       dependencyScanningMapped: true,
       turnstileReady: true,
@@ -4938,17 +6225,21 @@ function buildSyncPacketPayload() {
   const sessionId = INDEXED_DB_SESSION_ID;
   const generatedAt = new Date().toISOString();
   const snapshotHashes = {
+    beliefItems: hashPayload(buildBeliefItems()),
     beliefs: hashPayload(state.beliefs.map(normalizeBelief)),
     relations: hashPayload(state.relations.map(normalizeRelation)),
     constraints: hashPayload(state.constraints.map(normalizeConstraint)),
     conflicts: hashPayload(state.conflicts),
+    evidenceRequests: hashPayload(buildMissingInformationReport({ preview: true }).requests),
     revisions: hashPayload(state.revisions),
   };
   const mutationTypes = [
+    ["beliefItems", state.beliefs.length],
     ["claims", state.beliefs.length],
     ["relations", state.relations.length],
     ["constraints", state.constraints.length],
     ["conflicts", state.conflicts.length],
+    ["evidenceRequests", buildMissingInformationReport({ preview: true }).requests.length],
     ["revisions", state.revisions.length],
     ["analysisRuns", state.analysisRuns.length],
     ["formalRuns", state.formalRuns.length],
@@ -5009,6 +6300,7 @@ function buildSyncPacketPayload() {
       algorithmVersion: WRE_ENGINE_VERSION,
       objectPrefix: `r2://normativity-wre/${sessionId}/`,
       d1Tables: ["workspace", "sync_packet_manifest", "sync_audit_event", "sync_tombstone"],
+      canonicalTables: ["agent_profile", "session", "belief_item", "claim", "claim_relation", "evidence_link", "revision_event", "conflict_set", "repair_option", "snapshot"],
       idempotencyKey: `sync-${sessionId}-${hashPayload(snapshotHashes).slice(0, 12)}`,
     },
     mutationSet: {
@@ -5030,7 +6322,7 @@ function buildSyncPacketPayload() {
       rollback: "restore from encrypted archive or revision before accepting remote packet",
     },
     edgeContract: {
-      provider: "Cloudflare Workers + D1 metadata + R2 encrypted packets",
+      provider: "Cloudflare Workers + D1 metadata + R2 encrypted packets; the WRE5 canonical store is local IndexedDB unless sync is explicitly enabled",
       apiVersion: WRE_SCHEMA_VERSION,
       algorithmVersion: WRE_ENGINE_VERSION,
       auth: security.controls.syncAuthRequired ? "Bearer token required for synced workspaces" : "local export only; sync auth disabled",
@@ -5046,6 +6338,8 @@ function buildSyncPacketPayload() {
         { method: "GET", path: "/v1/sessions/{id}/manifest", purpose: "Read opaque encrypted packet metadata" },
         { method: "DELETE", path: "/v1/sessions/{id}", purpose: "Delete a synced session packet set and write a local tombstone" },
       ],
+      canonicalStore: agentContract.architecture.canonicalStore,
+      rlsBoundary: "agent_profile, session, belief_item, claim, and revision rows are scoped by owner/workspace role",
     },
     backend: {
       endpoint: state.privacy.syncEndpoint || DEFAULT_SYNC_ENDPOINT,
@@ -5108,6 +6402,9 @@ function buildPrivacyReceiptPayload() {
       beliefContent: "potentially-sensitive philosophical, political, religious, or moral commitments",
       potentiallySensitive,
       sensitivityCounts,
+      agentKind: state.agentProfile.actorKind,
+      workflowMode: state.agentProfile.workflowMode,
+      beliefItemCount: buildBeliefItems().length,
       claimCount: state.beliefs.length,
       relationCount: state.relations.length,
       conflictCount: state.conflicts.length,
@@ -5116,6 +6413,7 @@ function buildPrivacyReceiptPayload() {
       triageRuns: state.triageRuns.length,
       calibrationRounds: state.calibrationRounds.length,
       repairApplications: state.repairApplications.length,
+      evidenceRequests: buildMissingInformationReport({ preview: true }).requests.length,
     },
     processing: {
       storageMode: state.privacy.retention === "session-only" ? "sessionStorage" : storage.indexedDb.primary ? "IndexedDB" : "localStorage",
@@ -5252,7 +6550,13 @@ function importApi(event) {
 }
 
 function applyImportedPayload(parsed) {
-  const beliefs = Array.isArray(parsed.beliefs) ? parsed.beliefs : Array.isArray(parsed.claims) ? parsed.claims : [];
+  const beliefs = Array.isArray(parsed.beliefs)
+    ? parsed.beliefs
+    : Array.isArray(parsed.claims)
+      ? parsed.claims
+      : Array.isArray(parsed.beliefItems)
+        ? parsed.beliefItems.map(beliefItemToClaim)
+        : [];
   const conflicts = Array.isArray(parsed.conflicts) ? parsed.conflicts : [];
   if (!beliefs.length || !conflicts.length) throw new Error("Import requires beliefs and conflicts.");
   const normalizedBeliefs = beliefs.map(normalizeBelief);
@@ -5260,6 +6564,7 @@ function applyImportedPayload(parsed) {
   const migrationReport = buildMigrationReport(parsed, beliefs, conflicts, relations);
   state = {
     ...createState(),
+    agentProfile: normalizeAgentProfile(parsed.agentProfile || parsed.session?.agentProfile || parsed.session),
     beliefs: normalizedBeliefs,
     relations,
     constraints: Array.isArray(parsed.constraints) ? parsed.constraints.map(normalizeConstraint) : clone(seedConstraints),
@@ -5278,6 +6583,7 @@ function applyImportedPayload(parsed) {
     selectedConflictId: parsed.selectedConflictId || conflicts[0]?.id || "C-001",
     viewMode: parsed.viewMode === "graph" ? "graph" : "table",
     workbenchFilter: ["judgment", "principle", "theory"].includes(parsed.workbenchFilter) ? parsed.workbenchFilter : "all",
+    relationTypeFilter: agentContract.relationTypes.includes(parsed.relationTypeFilter) ? parsed.relationTypeFilter : "all",
   };
 }
 
@@ -5288,7 +6594,7 @@ async function encryptSessionPayload(payload, passphrase) {
   const encoded = new TextEncoder().encode(JSON.stringify(payload));
   const ciphertext = await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, encoded);
   return {
-    schemaVersion: "wre-3-encrypted-archive",
+    schemaVersion: `${WRE_SCHEMA_VERSION}-encrypted-archive`,
     encryptedAt: new Date().toISOString(),
     manifest: {
       exportSchemaVersion: payload.schemaVersion,
@@ -5312,7 +6618,7 @@ async function encryptSessionPayload(payload, passphrase) {
 }
 
 async function decryptSessionPayload(archive, passphrase) {
-  if (![`${WRE_SCHEMA_VERSION}-encrypted-archive`, `${LEGACY_SCHEMA_VERSION}-encrypted-archive`].includes(archive.schemaVersion)) throw new Error("Unsupported archive.");
+  if (![`${WRE_SCHEMA_VERSION}-encrypted-archive`, `${PREVIOUS_SCHEMA_VERSION}-encrypted-archive`, `${LEGACY_SCHEMA_VERSION}-encrypted-archive`, `${OLDER_SCHEMA_VERSION}-encrypted-archive`].includes(archive.schemaVersion)) throw new Error("Unsupported archive.");
   const salt = base64ToArrayBuffer(archive.kdf?.salt || "");
   const iv = base64ToArrayBuffer(archive.cipher?.iv || "");
   const ciphertext = base64ToArrayBuffer(archive.payload || "");
@@ -5473,7 +6779,7 @@ function normalizeImportedConflict(conflict, migrationReport) {
 
 function buildMigrationReport(parsed, beliefs, conflicts, relations = []) {
   const schemaVersion = parsed.schemaVersion || parsed.version || "legacy/unknown";
-  const native = schemaVersion === WRE_SCHEMA_VERSION || schemaVersion === LEGACY_SCHEMA_VERSION;
+  const native = [WRE_SCHEMA_VERSION, PREVIOUS_SCHEMA_VERSION, LEGACY_SCHEMA_VERSION, OLDER_SCHEMA_VERSION].includes(schemaVersion);
   const constraints = Array.isArray(parsed.constraints) ? parsed.constraints : seedConstraints;
   const ambiguousFields = [];
   if (!parsed.schemaVersion) ambiguousFields.push("schemaVersion");
@@ -5509,7 +6815,7 @@ function buildDefaultMigrationReport() {
     mappedConflicts: state.conflicts.length,
     legacyUnverified: state.conflicts.filter((conflict) => conflict.verification === "legacy-unverified").length,
     ambiguousFields: [],
-    notes: "Current sample session is already normalized into the local WRE3 model.",
+    notes: "Current sample session is already normalized into the local WRE5 belief graph model.",
   };
 }
 
@@ -5517,7 +6823,9 @@ function resetLocalSession() {
   const confirmed = window.confirm("Reset the local WRE session and restore the sample workspace?");
   if (!confirmed) return;
   localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(PREVIOUS_STORAGE_KEY);
   sessionStorage.removeItem(STORAGE_KEY);
+  sessionStorage.removeItem(PREVIOUS_STORAGE_KEY);
   deleteIndexedDbState().catch(() => {});
   state = createState();
   storageInfo.indexedDb = window.indexedDB ? "pending" : "unavailable";
@@ -5531,7 +6839,9 @@ function deleteLocalData() {
   const confirmed = window.confirm("Delete local WRE data from this browser and restore the sample workspace?");
   if (!confirmed) return;
   localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(PREVIOUS_STORAGE_KEY);
   sessionStorage.removeItem(STORAGE_KEY);
+  sessionStorage.removeItem(PREVIOUS_STORAGE_KEY);
   deleteIndexedDbState().catch(() => {});
   state = createState();
   storageInfo.indexedDb = window.indexedDB ? "pending" : "unavailable";
@@ -5573,7 +6883,7 @@ function updateSyncBackendSettings() {
     syncEndpoint: els.syncEndpointInput.value.trim() || DEFAULT_SYNC_ENDPOINT,
     workspaceId: els.workspaceIdInput.value.trim(),
   });
-  recordRevision("privacy", `Updated WRE3 sync backend settings for ${state.privacy.syncEndpoint}.`);
+  recordRevision("privacy", `Updated WRE5 sync backend settings for ${state.privacy.syncEndpoint}.`);
   saveState();
   syncSyncBackendControls();
   renderDataRightsPanel();
@@ -5830,6 +7140,27 @@ function focusTriageReview() {
   focusElement(els.triageList);
 }
 
+function focusSetupProfile() {
+  state.activeStage = "preparation";
+  saveState();
+  renderStages();
+  focusElement(els.setupProfileList);
+}
+
+function focusEvidenceRequests() {
+  state.activeStage = "reflection";
+  saveState();
+  renderStages();
+  focusElement(els.missingInfoList);
+}
+
+function focusRulePacks() {
+  state.activeStage = "integration";
+  saveState();
+  renderStages();
+  focusElement(els.rulePackList);
+}
+
 function focusEncryptedArchive() {
   focusElement(els.dataRightsPanel);
   els.archivePassphraseInput.focus();
@@ -5849,6 +7180,11 @@ function getVisibleBeliefs() {
   return state.beliefs.filter((belief) => belief.layer === state.workbenchFilter);
 }
 
+function getVisibleRelations() {
+  if (!agentContract.relationTypes.includes(state.relationTypeFilter)) return state.relations;
+  return state.relations.filter((relation) => relation.type === state.relationTypeFilter);
+}
+
 function focusWorkflowNav(nav) {
   const targets = {
     intake: document.getElementById("workspace"),
@@ -5861,7 +7197,7 @@ function focusWorkflowNav(nav) {
 
 function focusStage(stageId) {
   const stageTargets = {
-    preparation: document.querySelector(".session-card"),
+    preparation: document.querySelector(".setup-panel") || document.querySelector(".session-card"),
     collection: document.querySelector(".compose-card"),
     integration: document.querySelector(".claim-workbench"),
     reflection: document.querySelector(".conflict-panel"),
@@ -5894,20 +7230,32 @@ function recordRevision(type, text, extra = {}) {
 function buildAgentContractPayload() {
   return {
     schemaVersion: agentContract.schemaVersion,
+    architecture: agentContract.architecture,
+    publicArtifacts: agentContract.publicArtifacts,
+    agentProfile: normalizeAgentProfile(state.agentProfile),
+    setupTemplates,
+    beliefItemFields: agentContract.beliefItemFields,
     claimFields: agentContract.claimFields,
     relationFields: agentContract.relationFields,
     constraintFields: agentContract.constraintFields,
+    agentProfileFields: agentContract.agentProfileFields,
     formalRunFields: agentContract.formalRunFields,
     argumentationRunFields: agentContract.argumentationRunFields,
     triageRunFields: agentContract.triageRunFields,
     syncPacketFields: agentContract.syncPacketFields,
     repairOptionFields: agentContract.repairOptionFields,
     revisionEventFields: agentContract.revisionEventFields,
+    evidenceRequestFields: agentContract.evidenceRequestFields,
+    rulePackFields: agentContract.rulePackFields,
     exportFormats: agentContract.exportFormats,
     relationTypes: agentContract.relationTypes,
     conflictKinds: agentContract.conflictKinds,
+    conflictClasses: agentContract.conflictClasses,
+    conflictSignals: agentContract.conflictSignals,
     jsonSchemas: buildJsonSchemasPayload(),
     examples: buildAgentRequestExamples(),
+    rulePacks: domainRulePacks,
+    missingInformation: buildMissingInformationReport({ preview: true }),
     endpoints: agentContract.endpoints.map(([method, path, description]) => ({ method, path, description })),
     exportFormats: agentContract.exportFormats,
     securityControls: normalizeSecurityControls(state.securityControls),
@@ -5921,26 +7269,110 @@ function buildJsonSchemasPayload() {
   return {
     schemaVersion: `${WRE_SCHEMA_VERSION}-json-schema`,
     generatedAt: new Date().toISOString(),
+    architecture: agentContract.architecture,
     schemas: {
+      AgentProfile: {
+        type: "object",
+        required: ["id", "actorKind", "workflowMode", "activeScope", "permissionsModel", "canonicalStore"],
+        properties: {
+          id: { type: "string" },
+          displayName: { type: "string" },
+          actorKind: { type: "string", enum: ["individual_human", "ai_agent", "team", "institution"] },
+          workflowMode: { type: "string", enum: ["individual", "shared", "import_trace"] },
+          templateId: { type: "string" },
+          activeScope: { type: "string" },
+          jurisdiction: { type: "string" },
+          timeHorizon: { type: "string" },
+          conditions: { type: "string" },
+          importTraceSource: { type: "string" },
+          sharedEquilibrium: { type: "boolean" },
+          permissionsModel: { type: "string" },
+          canonicalStore: { type: "string" },
+        },
+      },
+      ScopeObject: {
+        type: "object",
+        required: ["domain", "actor", "time", "jurisdiction", "conditions"],
+        properties: {
+          domain: { type: "string" },
+          actor: { type: "string" },
+          time: { type: "string" },
+          jurisdiction: { type: "string" },
+          conditions: { type: "string" },
+        },
+      },
+      ProvenanceObject: {
+        type: "object",
+        required: ["sourceType", "sourceRef", "evidenceRefs"],
+        properties: {
+          sourceType: { type: "string", enum: ["user_supplied", "user", "agent", "import", "assistant", "document", "dataset", "ai_trace", "interview", "policy", "external_reference"] },
+          sourceRef: { type: "string" },
+          importedAt: { type: "string" },
+          evidenceRefs: { type: "array", items: { type: "string" } },
+        },
+      },
+      PropositionObject: {
+        type: "object",
+        required: ["actor", "action", "modality", "polarity", "scope", "exceptions"],
+        properties: {
+          actor: { type: "string", minLength: 1 },
+          action: { type: "string", minLength: 1 },
+          object: { type: "string" },
+          propositionType: { type: "string", enum: ["judgment", "principle", "background_theory", "belief_statement", "exception", "empirical_premise", "meta", "deontic", "descriptive"] },
+          modality: { type: "string", enum: ["is", "ought", "must", "must_not", "permitted", "forbidden"] },
+          polarity: { type: "string", enum: ["positive", "negative", "mixed", "unknown"] },
+          scope: { type: "string" },
+          exceptions: { type: "array", items: { type: "string" } },
+        },
+      },
+      BeliefItem: {
+        type: "object",
+        required: ["id", "family", "rawText", "propositionObject", "confidence", "entrenchment", "scope", "provenance", "claimIds", "revisionStatus"],
+        properties: {
+          id: { type: "string", pattern: "^BI-[A-Z0-9-]+$" },
+          family: { type: "string", enum: ["judgment", "principle", "theory", "background", "meta"] },
+          rawText: { type: "string", minLength: 1 },
+          propositionObject: { $ref: "#/schemas/PropositionObject" },
+          confidence: { type: "number", minimum: 1, maximum: 100 },
+          entrenchment: { type: "number", minimum: 1, maximum: 100 },
+          scope: { $ref: "#/schemas/ScopeObject" },
+          provenance: { $ref: "#/schemas/ProvenanceObject" },
+          evidenceRefs: { type: "array", items: { type: "string" } },
+          references: { type: "array", items: { type: "string" } },
+          claimIds: { type: "array", items: { type: "string" } },
+          normalizedClaims: { type: "array", items: { type: "object" } },
+          revisionStatus: { type: "string", enum: ["active", "draft", "accepted_tension", "retired"] },
+        },
+      },
       Claim: {
         type: "object",
-        required: ["id", "kind", "layer", "text", "canonicalForm", "domain", "modality", "polarity", "scope", "confidence", "entrenchment", "provenance", "sensitivity", "status"],
+        required: ["id", "beliefItemId", "kind", "layer", "proposition", "propositionObject", "text", "canonicalForm", "domain", "modality", "polarity", "scope", "scopeObject", "confidence", "entrenchment", "provenance", "provenanceObject", "evidenceRefs", "sensitivity", "status", "revisionStatus"],
         properties: {
           id: { type: "string", pattern: "^[JPTB][0-9]+$" },
-          kind: { type: "string", enum: ["judgment", "principle", "background_theory", "belief_statement", "exception", "empirical_premise"] },
+          beliefItemId: { type: "string" },
+          kind: { type: "string", enum: ["judgment", "principle", "background_theory", "belief_statement", "exception", "empirical_premise", "meta"] },
           layer: { type: "string", enum: ["judgment", "principle", "theory"] },
+          proposition: { type: "string", minLength: 1 },
+          propositionObject: { $ref: "#/schemas/PropositionObject" },
           text: { type: "string", minLength: 1 },
           canonicalForm: { type: "string" },
           domain: { type: "string", enum: ["normative", "empirical", "conceptual", "meta"] },
-          modality: { type: "string", enum: ["should", "is", "causes", "permits", "forbids"] },
+          modality: { type: "string", enum: ["is", "ought", "must", "must_not", "permitted", "forbidden"] },
           polarity: { type: "string", enum: ["positive", "negative", "mixed", "unknown"] },
           scope: { type: "string" },
+          scopeObject: { $ref: "#/schemas/ScopeObject" },
+          exceptions: { type: "array", items: { type: "string" } },
           confidence: { type: "number", minimum: 1, maximum: 100 },
           entrenchment: { type: "number", minimum: 1, maximum: 100 },
           timeScope: { type: "string" },
           provenance: { type: "string" },
+          sourceType: { type: "string" },
+          provenanceObject: { $ref: "#/schemas/ProvenanceObject" },
+          evidenceRefs: { type: "array", items: { type: "string" } },
+          references: { type: "array", items: { type: "string" } },
           sensitivity: { type: "string", enum: ["private", "pseudonymous", "public"] },
           status: { type: "string", enum: ["active", "draft", "accepted_tension", "retired"] },
+          revisionStatus: { type: "string", enum: ["active", "draft", "accepted_tension", "retired"] },
         },
       },
       Relation: {
@@ -5979,6 +7411,8 @@ function buildJsonSchemasPayload() {
           claimB: { type: "string" },
           linked: { type: "array", items: { type: "string" } },
           kind: { type: "string", enum: agentContract.conflictKinds },
+          conflictClass: { type: "string", enum: agentContract.conflictClasses },
+          signalType: { type: "string", enum: agentContract.conflictSignals },
           confidence: { type: "number", minimum: 0, maximum: 1 },
           constraintId: { type: "string" },
           core: { type: "array", items: { type: "string" } },
@@ -5989,6 +7423,7 @@ function buildJsonSchemasPayload() {
           minimalConflictSet: { type: "array", items: { type: "string" } },
           evidencePath: { type: "array", items: { type: "object" } },
           downstreamClaims: { type: "array", items: { type: "object" } },
+          evidenceRequests: { type: "array", items: { $ref: "#/schemas/EvidenceRequest" } },
           algorithmVersion: { type: "string" },
           explanation: { type: "object" },
           repairs: { type: "array", items: { $ref: "#/schemas/RepairOption" } },
@@ -6002,12 +7437,40 @@ function buildJsonSchemasPayload() {
           conflictId: { type: "string" },
           title: { type: "string" },
           text: { type: "string" },
-          actionType: { type: "string" },
+          actionType: { type: "string", enum: ["revise_scope", "add_exception", "lower_confidence", "edit_text", "archive_item", "request_missing_evidence"] },
+          targetId: { type: "string" },
           affectedClaims: { type: "array", items: { type: "string" } },
           predictedResolutionScore: { type: "number", minimum: 0, maximum: 1 },
+          estimatedCost: { type: "number", minimum: 0 },
           disruptionCost: { type: "number", minimum: 0 },
           explanation: { type: "string" },
           cost: { type: "string" },
+        },
+      },
+      EvidenceRequest: {
+        type: "object",
+        required: ["id", "targetType", "targetId", "priority", "prompt", "reason", "suggestedAction", "status"],
+        properties: {
+          id: { type: "string", pattern: "^ER-[0-9]+$|^ER-preview$" },
+          targetType: { type: "string", enum: ["claim", "conflict", "relation", "session"] },
+          targetId: { type: "string" },
+          priority: { type: "string", enum: ["critical", "high", "review"] },
+          prompt: { type: "string" },
+          reason: { type: "string" },
+          suggestedAction: { type: "string" },
+          targetClaims: { type: "array", items: { type: "string" } },
+          status: { type: "string", enum: ["open", "resolved", "postponed"] },
+        },
+      },
+      RulePack: {
+        type: "object",
+        required: ["id", "label", "status", "engine", "checks"],
+        properties: {
+          id: { type: "string" },
+          label: { type: "string" },
+          status: { type: "string" },
+          engine: { type: "string" },
+          checks: { type: "array", items: { type: "string" } },
         },
       },
       RevisionEvent: {
@@ -6109,9 +7572,12 @@ function buildJsonSchemasPayload() {
           constraintMatches: { type: "number" },
           hardCount: { type: "number" },
           softCount: { type: "number" },
+          generatedCount: { type: "number" },
+          missingInfoCount: { type: "number" },
           nliQueued: { type: "number" },
           estimatedHybridLatency: { type: "number" },
           engines: { type: "array", items: { type: "string" } },
+          deterministicSignals: { type: "array", items: { type: "object" } },
         },
       },
       EvaluationRun: {
@@ -6132,7 +7598,7 @@ function buildJsonSchemasPayload() {
       },
       SecurityControls: {
         type: "object",
-        required: ["quotaPerHour", "bodyLimitKb", "analysisClaimCap", "nliPairCap", "monthlyBudgetUsd", "telemetryMode", "complianceStatus", "syncAuthRequired"],
+        required: ["quotaPerHour", "bodyLimitKb", "analysisClaimCap", "nliPairCap", "monthlyBudgetUsd", "telemetryMode", "complianceStatus", "syncAuthRequired", "incidentRunbook", "modelTrainingPolicy", "humanReviewPath"],
         properties: {
           quotaPerHour: { type: "number", minimum: 1 },
           bodyLimitKb: { type: "number", minimum: 16 },
@@ -6145,6 +7611,9 @@ function buildJsonSchemasPayload() {
           restoreDrillCadence: { type: "string" },
           dpiaReview: { type: "string" },
           asvsMapping: { type: "string" },
+          incidentRunbook: { type: "string" },
+          modelTrainingPolicy: { type: "string" },
+          humanReviewPath: { type: "string" },
           cspMode: { type: "string" },
           dependencyScanning: { type: "string" },
           publicFormAbuse: { type: "string" },
@@ -6152,10 +7621,13 @@ function buildJsonSchemasPayload() {
       },
       SessionExport: {
         type: "object",
-        required: ["schemaVersion", "session", "beliefs", "relations", "conflicts"],
+        required: ["schemaVersion", "session", "agentProfile", "beliefItems", "claims", "beliefs", "relations", "conflicts"],
         properties: {
           schemaVersion: { type: "string", const: WRE_SCHEMA_VERSION },
           session: { type: "object" },
+          agentProfile: { $ref: "#/schemas/AgentProfile" },
+          beliefItems: { type: "array", items: { $ref: "#/schemas/BeliefItem" } },
+          claims: { type: "array", items: { $ref: "#/schemas/Claim" } },
           beliefs: { type: "array", items: { $ref: "#/schemas/Claim" } },
           relations: { type: "array", items: { $ref: "#/schemas/Relation" } },
           constraints: { type: "array", items: { $ref: "#/schemas/Constraint" } },
@@ -6172,6 +7644,8 @@ function buildJsonSchemasPayload() {
           argumentationRuns: { type: "array", items: { $ref: "#/schemas/ArgumentationRun" } },
           triageRuns: { type: "array", items: { $ref: "#/schemas/TriageRun" } },
           syncPacket: { $ref: "#/schemas/SyncPacket" },
+          missingInformation: { type: "object", properties: { requests: { type: "array", items: { $ref: "#/schemas/EvidenceRequest" } } } },
+          rulePacks: { type: "array", items: { $ref: "#/schemas/RulePack" } },
           evaluationRuns: { type: "array", items: { $ref: "#/schemas/EvaluationRun" } },
           securityControls: { $ref: "#/schemas/SecurityControls" },
         },
@@ -6187,7 +7661,7 @@ function buildOpenApiPayload() {
     info: {
       title: "Normativity WRE Agent API",
       version: agentContract.schemaVersion,
-      description: "Deterministic WRE3 contract for local-first belief graph agents and optional encrypted Cloudflare sync.",
+      description: "Deterministic WRE5 local-first belief graph contract for humans, AI agents, teams, institutions, and optional encrypted Cloudflare sync.",
     },
     paths: Object.fromEntries(agentContract.endpoints.map(([method, path, description]) => {
       const operation = method.toLowerCase();
@@ -6217,6 +7691,8 @@ function buildOpenApiPayload() {
       },
     },
     "x-wre-examples": buildAgentRequestExamples(),
+    "x-wre-architecture": agentContract.architecture,
+    "x-wre-rule-packs": domainRulePacks,
     "x-wre-security": buildSecurityReportPayload(),
     "x-wre-storage": buildStorageReportPayload(),
   };
@@ -6230,6 +7706,7 @@ function endpointRequiresBearer(method, path) {
 
 function requestBodyForEndpoint(method, path) {
   if (method === "GET" || method === "DELETE") return undefined;
+  if (path === "/v1/belief-items") return jsonRequestBody("Belief item batch", { type: "object", properties: { beliefItems: { type: "array", items: { $ref: "#/components/schemas/BeliefItem" } } } });
   if (path === "/v1/beliefs") return jsonRequestBody("Claim batch", { type: "object", properties: { beliefs: { type: "array", items: { $ref: "#/components/schemas/Claim" } } } });
   if (path === "/v1/relations") return jsonRequestBody("Relation batch", { type: "object", properties: { relations: { type: "array", items: { $ref: "#/components/schemas/Relation" } } } });
   if (path === "/v1/constraints") return jsonRequestBody("Constraint batch", { type: "object", properties: { constraints: { type: "array", items: { $ref: "#/components/schemas/Constraint" } } } });
@@ -6280,7 +7757,8 @@ function requestBodyForEndpoint(method, path) {
       maxBodyKb: { type: "number", maximum: state.securityControls.bodyLimitKb },
     },
   });
-  if (path === "/v1/sessions") return jsonRequestBody("Session create", { type: "object", properties: { scope: { type: "string" }, privacy: { type: "object" } } });
+  if (path === "/v1/rule-packs/{id}/run") return jsonRequestBody("Rule-pack preview", { type: "object", properties: { sessionId: { type: "string" }, packId: { type: "string" }, mode: { type: "string", enum: ["preview", "apply"] } } });
+  if (path === "/v1/sessions") return jsonRequestBody("Session create", { type: "object", properties: { scope: { type: "string" }, agentProfile: { $ref: "#/components/schemas/AgentProfile" }, privacy: { type: "object" } } });
   return jsonRequestBody("WRE request", { type: "object" });
 }
 
@@ -6392,6 +7870,33 @@ function responseForEndpoint(method, path) {
     };
   }
 
+  if (path === "/v1/evidence-requests") {
+    return {
+      "200": {
+        description: "Missing-information requests for scope, provenance, evidence, and relation-path gaps.",
+        content: { "application/json": { schema: { type: "object", properties: { requests: { type: "array", items: { $ref: "#/components/schemas/EvidenceRequest" } } } } } },
+      },
+    };
+  }
+
+  if (path === "/v1/rule-packs") {
+    return {
+      "200": {
+        description: "Available deterministic rule-pack hooks.",
+        content: { "application/json": { schema: { type: "object", properties: { rulePacks: { type: "array", items: { $ref: "#/components/schemas/RulePack" } } } } } },
+      },
+    };
+  }
+
+  if (path === "/v1/schema/wre5") {
+    return {
+      "200": {
+        description: "Public WRE5 JSON schema and agent contract.",
+        content: { "application/json": { schema: { type: "object" } } },
+      },
+    };
+  }
+
   if (path === "/v1/export") {
     return {
       "200": {
@@ -6432,6 +7937,15 @@ function buildAgentRequestExamples() {
   const selectedConflict = getSelectedConflict();
   const selectedRepair = selectedConflict?.repairs.find((repair) => repair.id === state.selectedRepairId) || selectedConflict?.repairs[0];
   return [
+    {
+      method: "POST",
+      path: "/v1/belief-items",
+      description: "Batch add raw belief items before normalization into typed claims.",
+      body: {
+        agentProfile: normalizeAgentProfile(state.agentProfile),
+        beliefItems: buildBeliefItems().slice(0, 2),
+      },
+    },
     {
       method: "POST",
       path: "/v1/beliefs",
@@ -6497,6 +8011,22 @@ function buildAgentRequestExamples() {
       },
     },
     {
+      method: "GET",
+      path: "/v1/evidence-requests",
+      description: "Inspect missing-information requests generated by deterministic checks.",
+      body: {
+        requests: buildMissingInformationReport({ preview: true }).requests.slice(0, 3),
+      },
+    },
+    {
+      method: "GET",
+      path: "/v1/rule-packs",
+      description: "Inspect deterministic domain-rule pack hooks available to the session.",
+      body: {
+        rulePacks: domainRulePacks,
+      },
+    },
+    {
       method: "POST",
       path: "/v1/workspaces",
       description: "Create an encrypted sync workspace. Store the raw token in the browser; send only its verifier hash.",
@@ -6533,7 +8063,7 @@ function buildAgentRequestExamples() {
       description: "Request a portable archive as JSON, linked data, or a spreadsheet-safe summary.",
       body: {
         accept: agentContract.exportFormats,
-        includes: ["claims", "relations", "constraints", "conflicts", "revisions"],
+        includes: ["agentProfile", "beliefItems", "claims", "relations", "constraints", "conflicts", "evidenceRequests", "revisions"],
       },
     },
     {
@@ -6782,6 +8312,7 @@ function revisionLabel(type) {
   if (type === "analysis") return "Analysis run";
   if (type === "evaluation") return "Evaluation run";
   if (type === "calibration") return "Calibration round";
+  if (type === "setup") return "Setup changed";
   return "Session event";
 }
 
@@ -6789,8 +8320,10 @@ function relationTypeLabel(type) {
   if (type === "exception_to") return "Exception to";
   if (type === "depends_on") return "Depends on";
   if (type === "contradicts") return "Contradicts";
+  if (type === "implies") return "Implies";
   if (type === "entails") return "Entails";
   if (type === "scopes") return "Scopes";
+  if (type === "defines") return "Defines";
   return titleCase(String(type || "depends_on").replace(/_/g, " "));
 }
 

@@ -20,7 +20,7 @@ test("workspace creation stores a token verifier without returning the token", a
     privacyMode: "encrypted_sync",
     retentionPolicy: "until-deleted",
     tokenVerifierHash: await sha256Hex(token),
-    schemaVersion: "wre-3",
+    schemaVersion: "wre-5",
   });
   assert.equal(response.status, 201);
   const body = await response.json();
@@ -90,19 +90,19 @@ async function createWorkspace(env, token) {
     privacyMode: "encrypted_sync",
     retentionPolicy: "until-deleted",
     tokenVerifierHash: await sha256Hex(token),
-    schemaVersion: "wre-3",
+    schemaVersion: "wre-5",
   });
   return response.json();
 }
 
 function syncPayload(workspaceId) {
   return {
-    schemaVersion: "wre-3-encrypted-sync-push",
+    schemaVersion: "wre-5-encrypted-sync-push",
     workspaceId,
     sessionId: "sess_test",
     idempotencyKey: "idem_1",
     manifest: {
-      schemaVersion: "wre-3-sync-packet",
+      schemaVersion: "wre-5-sync-packet",
       sessionId: "sess_test",
       idempotencyKey: "idem_1",
       hashes: { claims: "abc123" },
