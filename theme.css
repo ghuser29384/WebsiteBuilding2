@@ -1499,3 +1499,374 @@ body.forethought-site .detail-outcome-card.no {
   border-color: #cdbec2 !important;
   background: var(--nm-no-soft) !important;
 }
+
+/*
+  Public-site audit layer.
+  These classes separate institutional pages from app/demo surfaces while
+  keeping the existing editorial visual system.
+*/
+body.forethought-site .public-main {
+  padding-bottom: 5rem;
+}
+
+body.forethought-site .public-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.28fr) minmax(280px, 0.72fr);
+  gap: clamp(1.5rem, 4vw, 3.5rem);
+  align-items: center;
+  padding: clamp(1.5rem, 3.5vw, 3.2rem) 0 clamp(1.2rem, 3vw, 2.4rem);
+}
+
+body.forethought-site .public-hero h1 {
+  max-width: 780px;
+  margin: 0;
+  font-size: clamp(2.35rem, 5.2vw, 3.85rem);
+  line-height: 0.99;
+  letter-spacing: 0;
+}
+
+body.forethought-site .public-hero .lead {
+  max-width: 780px;
+  margin: 1.35rem 0 0;
+  font-size: clamp(1.03rem, 1.6vw, 1.28rem);
+  line-height: 1.65;
+}
+
+body.forethought-site .public-hero-panel {
+  display: grid;
+  gap: 1rem;
+  padding: clamp(1rem, 2.4vw, 1.5rem);
+  border: 1px solid var(--nm-line);
+  background: rgba(247, 247, 244, 0.9);
+}
+
+body.forethought-site .public-hero-panel h2,
+body.forethought-site .public-hero-panel h3 {
+  margin: 0;
+  font-size: clamp(1.15rem, 2vw, 1.55rem);
+  line-height: 1.12;
+}
+
+body.forethought-site .public-note,
+body.forethought-site .audit-note {
+  padding: 1rem 1.1rem;
+  border-left: 3px solid var(--nm-signal);
+  background: rgba(255, 255, 255, 0.72);
+  color: var(--nm-muted);
+}
+
+body.forethought-site .public-note strong,
+body.forethought-site .audit-note strong {
+  color: var(--nm-ink);
+}
+
+body.forethought-site .public-section {
+  padding: clamp(2.5rem, 6vw, 5rem) 0;
+  border-top: 1px solid rgba(47, 45, 43, 0.08);
+}
+
+body.forethought-site .public-section:first-child {
+  border-top: 0;
+}
+
+body.forethought-site .public-section h2 {
+  margin: 0 0 1rem;
+  max-width: 900px;
+  font-size: clamp(1.85rem, 4vw, 3.55rem);
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+body.forethought-site .public-section .section-lede {
+  max-width: 820px;
+  margin: 0 0 1.4rem;
+  font-size: 1.04rem;
+  line-height: 1.65;
+}
+
+body.forethought-site .public-grid,
+body.forethought-site .artifact-grid,
+body.forethought-site .example-grid,
+body.forethought-site .policy-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+body.forethought-site .public-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+body.forethought-site .artifact-grid,
+body.forethought-site .example-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body.forethought-site .policy-grid {
+  grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr);
+  align-items: start;
+}
+
+body.forethought-site .public-card,
+body.forethought-site .artifact-card,
+body.forethought-site .example-card,
+body.forethought-site .policy-card,
+body.forethought-site .document-card,
+body.forethought-site .data-control-card {
+  padding: 1.1rem;
+  border: 1px solid var(--nm-line);
+  background: var(--nm-surface);
+}
+
+body.forethought-site .public-card h3,
+body.forethought-site .artifact-card h3,
+body.forethought-site .example-card h3,
+body.forethought-site .policy-card h3,
+body.forethought-site .document-card h3,
+body.forethought-site .data-control-card h3 {
+  margin: 0 0 0.55rem;
+  font-size: 1.25rem;
+  line-height: 1.12;
+}
+
+body.forethought-site .public-card p,
+body.forethought-site .artifact-card p,
+body.forethought-site .example-card p,
+body.forethought-site .policy-card p,
+body.forethought-site .document-card p,
+body.forethought-site .data-control-card p {
+  margin: 0.4rem 0 0;
+  line-height: 1.58;
+}
+
+body.forethought-site .public-card a,
+body.forethought-site .artifact-card a,
+body.forethought-site .document-card a {
+  display: inline-flex;
+  margin-top: 0.8rem;
+  font-weight: 700;
+  text-decoration: none;
+  border-bottom: 1px solid rgba(47, 61, 83, 0.35);
+}
+
+body.forethought-site .meta-row,
+body.forethought-site .document-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  margin: 0 0 0.85rem;
+}
+
+body.forethought-site .meta-row span,
+body.forethought-site .document-meta span,
+body.forethought-site .status-label,
+body.forethought-site .example-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.7rem;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--nm-line-strong);
+  background: var(--nm-surface-soft);
+  color: #4b5150;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+body.forethought-site .status-label.warning {
+  border-color: #cdbec2;
+  background: var(--nm-no-soft);
+  color: var(--nm-no);
+}
+
+body.forethought-site .status-label.good {
+  border-color: #bccac3;
+  background: var(--nm-yes-soft);
+  color: var(--nm-yes);
+}
+
+body.forethought-site .plain-list,
+body.forethought-site .policy-list,
+body.forethought-site .compact-list {
+  margin: 0.8rem 0 0;
+  padding-left: 1.1rem;
+}
+
+body.forethought-site .plain-list li,
+body.forethought-site .policy-list li,
+body.forethought-site .compact-list li {
+  margin: 0.45rem 0;
+  line-height: 1.55;
+}
+
+body.forethought-site .button-row.public-actions {
+  margin-top: 1.35rem;
+}
+
+body.forethought-site .app-boundary {
+  padding: clamp(1.4rem, 3vw, 2rem);
+  border: 1px solid #c8c4b8;
+  background: #f3f2ec;
+}
+
+body.forethought-site .app-boundary h2 {
+  margin-top: 0;
+}
+
+body.forethought-site .example-market-card {
+  border-top: 3px solid var(--nm-primary);
+}
+
+body.forethought-site .market-estimate {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.9rem;
+}
+
+body.forethought-site .market-bar {
+  display: grid;
+  grid-template-columns: 4.5rem minmax(0, 1fr) 3.5rem;
+  gap: 0.65rem;
+  align-items: center;
+  color: var(--nm-muted);
+  font-size: 0.9rem;
+}
+
+body.forethought-site .market-bar-track {
+  height: 0.7rem;
+  overflow: hidden;
+  border: 1px solid var(--nm-line-strong);
+  background: #ffffff;
+}
+
+body.forethought-site .market-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--nm-yes);
+}
+
+body.forethought-site .market-bar.no .market-bar-fill {
+  background: var(--nm-no);
+}
+
+body.forethought-site .data-table {
+  width: 100%;
+  margin-top: 1rem;
+  border-collapse: collapse;
+  background: var(--nm-surface);
+}
+
+body.forethought-site .data-table th,
+body.forethought-site .data-table td {
+  padding: 0.75rem;
+  border: 1px solid var(--nm-line);
+  text-align: left;
+  vertical-align: top;
+}
+
+body.forethought-site .data-table th {
+  color: var(--nm-ink);
+  font-weight: 700;
+}
+
+body.forethought-site .document-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 0.75fr) minmax(0, 1.25fr);
+  gap: clamp(1rem, 3vw, 2rem);
+  align-items: start;
+}
+
+body.forethought-site .document-body {
+  display: grid;
+  gap: 1rem;
+}
+
+body.forethought-site .citation-box {
+  padding: 1rem;
+  border: 1px dashed var(--nm-line-strong);
+  background: rgba(255, 255, 255, 0.62);
+  color: var(--nm-muted);
+}
+
+body.forethought-site .contact-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 1rem;
+  border: 1px solid var(--nm-line);
+  background: rgba(247, 247, 244, 0.88);
+}
+
+body.forethought-site .site-footer .public-footer-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+  margin-top: 1rem;
+}
+
+body.forethought-site .site-footer .public-footer-links a {
+  text-decoration: none;
+  font-weight: 700;
+}
+
+@media (max-width: 920px) {
+  body.forethought-site .public-hero,
+  body.forethought-site .public-grid,
+  body.forethought-site .artifact-grid,
+  body.forethought-site .example-grid,
+  body.forethought-site .policy-grid,
+  body.forethought-site .document-layout {
+    grid-template-columns: 1fr;
+  }
+
+  body.forethought-site .public-hero {
+    align-items: start;
+  }
+
+  body.forethought-site.public-page .header-inner {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
+  body.forethought-site.public-page .header-tools {
+    width: 100%;
+  }
+
+  body.forethought-site.public-page .main-nav {
+    position: static;
+    display: flex;
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  body.forethought-site.public-page .main-nav a,
+  body.forethought-site.public-page .main-nav a.nav-pill {
+    display: inline-flex;
+    width: auto;
+    min-height: 2.25rem;
+    align-items: center;
+    justify-content: center;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid var(--nm-line-strong);
+    background: rgba(255, 255, 255, 0.74);
+    font-size: 0.86rem;
+  }
+}
+
+@media (max-width: 620px) {
+  body.forethought-site .market-bar {
+    grid-template-columns: 1fr;
+    gap: 0.3rem;
+  }
+
+  body.forethought-site .data-table {
+    display: block;
+    overflow-x: auto;
+  }
+}
