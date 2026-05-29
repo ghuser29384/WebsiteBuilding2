@@ -1870,3 +1870,32 @@ body.forethought-site .site-footer .public-footer-links a {
     overflow-x: auto;
   }
 }
+
+@media print {
+  body.forethought-site {
+    background: #ffffff !important;
+  }
+
+  body.forethought-site .site-header,
+  body.forethought-site .site-footer,
+  body.forethought-site .button-row,
+  body.forethought-site .public-hero-panel nav {
+    display: none !important;
+  }
+
+  body.forethought-site .public-hero,
+  body.forethought-site .document-layout,
+  body.forethought-site .public-grid,
+  body.forethought-site .artifact-grid,
+  body.forethought-site .policy-grid {
+    display: block;
+  }
+
+  body.forethought-site .document-card,
+  body.forethought-site .public-card,
+  body.forethought-site .artifact-card,
+  body.forethought-site .policy-card {
+    break-inside: avoid;
+    margin-bottom: 1rem;
+  }
+}

@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="robots" content="index,follow,max-image-preview:large,max-snippet:-1,max-video-preview:-1">
+  <meta name="description" content="Normativity data handling posture for research pages, WRE demos, exports, retention, deletion, and pilot gates.">
+  <title>Data Handling | Normativity</title>
+  <link rel="canonical" href="https://normativity.org/data-handling.html">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Normativity">
+  <meta property="og:title" content="Data Handling | Normativity">
+  <meta property="og:description" content="Data handling posture for research pages, WRE demos, exports, retention, deletion, and pilot gates.">
+  <meta property="og:url" content="https://normativity.org/data-handling.html">
+  <meta property="og:image" content="https://normativity.org/assets/Normativity%20Logo.png">
+  <link rel="icon" type="image/png" href="assets/Normativity%20Favicon.png">
+  <link rel="stylesheet" href="conviction.css">
+  <link rel="stylesheet" href="theme.css">
+</head>
+<body class="forethought-site public-page">
+  <a class="skip-link" href="#main-content">Skip to main content</a>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a class="brand" href="index.html" aria-label="Normativity home"><img src="assets/Normativity%20Logo.png" alt="Normativity"></a>
+      <div class="header-tools">
+        <nav class="main-nav" aria-label="Primary">
+          <a href="research.html">Research</a>
+          <a href="research.html#agenda">Agenda</a>
+          <a href="index.html#tools">Tools</a>
+          <a href="safeguards.html">Safeguards</a>
+          <a href="privacy.html">Privacy</a>
+          <a href="governance.html">Governance</a>
+          <a href="contact.html">Contact</a>
+          <a class="nav-pill" href="app.html">Open App</a>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <main id="main-content" class="container public-main" tabindex="-1">
+    <section class="public-hero" aria-labelledby="dataTitle">
+      <div>
+        <h1 id="dataTitle">Data handling</h1>
+        <p class="lead">
+          Belief graphs, dialogue notes, confidence updates, and commitment records can be sensitive.
+          Normativity demos should default to local-first handling unless a page explicitly explains
+          sync, storage, retention, and deletion.
+        </p>
+      </div>
+      <aside class="public-hero-panel">
+        <h2>Current rule</h2>
+        <p>
+          If a tool does not clearly describe where data goes, treat it as a local demo and avoid entering
+          sensitive real-world information.
+        </p>
+        <div class="button-row public-actions">
+          <a class="btn btn-secondary" href="privacy.html">Read privacy FAQ</a>
+        </div>
+      </aside>
+    </section>
+
+    <section class="public-section" aria-labelledby="handlingTitle">
+      <div class="section-head">
+        <h2 id="handlingTitle">Handling matrix</h2>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Surface</th>
+            <th>Data involved</th>
+            <th>Default handling</th>
+            <th>Required before sync or publication</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Public research pages</td>
+            <td>Page visits and ordinary browser requests.</td>
+            <td>No first-party analytics declared on static pages.</td>
+            <td>Publish analytics provider, retention, opt-out, and purpose.</td>
+          </tr>
+          <tr>
+            <td>WRE demos</td>
+            <td>Judgments, principles, background theories, tensions, and repair notes.</td>
+            <td>Local-first demo storage and user-triggered export.</td>
+            <td>Consent, retention schedule, encryption posture, deletion path, and review owner.</td>
+          </tr>
+          <tr>
+            <td>Dialogue examples</td>
+            <td>Arguments, confidence changes, response text, and participant notes.</td>
+            <td>Labeled synthetic or illustrative examples on public pages.</td>
+            <td>Participant consent, redaction review, appeal path, and removal policy.</td>
+          </tr>
+          <tr>
+            <td>Contact requests</td>
+            <td>Email address, message content, and requested follow-up.</td>
+            <td>Handled through the sender's email provider and the receiving inbox.</td>
+            <td>Named data owner and published deletion/correction process.</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="public-section" aria-labelledby="controlsTitle">
+      <div class="section-head">
+        <h2 id="controlsTitle">Participant controls expected in production</h2>
+      </div>
+      <div class="public-grid">
+        <article class="public-card">
+          <h3>Export</h3>
+          <p>Machine-readable export for belief graphs, notes, confidence updates, and commitments.</p>
+        </article>
+        <article class="public-card">
+          <h3>Delete</h3>
+          <p>Clear deletion for local data and a documented request path for any server-side records.</p>
+        </article>
+        <article class="public-card">
+          <h3>Revoke</h3>
+          <p>Ability to retract public visibility or follow-through plans without public shaming.</p>
+        </article>
+        <article class="public-card">
+          <h3>Review</h3>
+          <p>Human review for contested records, moderation decisions, and correction requests.</p>
+        </article>
+        <article class="public-card">
+          <h3>Redact</h3>
+          <p>Pre-publication redaction for personal details, third-party claims, and sensitive beliefs.</p>
+        </article>
+        <article class="public-card">
+          <h3>Port</h3>
+          <p>Durable local files so users are not locked into a prototype or pilot service.</p>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer forethought-footer">
+    <div class="container">
+      <p><strong>Normativity</strong> treats sensitive belief and dialogue records as high-trust data.</p>
+      <nav class="public-footer-links" aria-label="Footer navigation">
+        <a href="privacy.html">Privacy</a>
+        <a href="safeguards.html">Safeguards</a>
+        <a href="governance.html">Governance</a>
+        <a href="legal.html">Legal Status</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+    </div>
+  </footer>
+</body>
+</html>

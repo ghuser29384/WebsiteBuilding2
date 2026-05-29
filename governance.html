@@ -26,9 +26,12 @@
       <div class="header-tools">
         <nav class="main-nav" aria-label="Primary">
           <a href="research.html">Research</a>
+          <a href="research.html#agenda">Agenda</a>
+          <a href="index.html#tools">Tools</a>
           <a href="safeguards.html">Safeguards</a>
-          <a href="privacy.html">Privacy</a>
+          <a href="about.html">About</a>
           <a href="governance.html" aria-current="page">Governance</a>
+          <a href="newsletter.html">Newsletter</a>
           <a href="contact.html">Contact</a>
           <a class="nav-pill" href="app.html">Open App</a>
         </nav>
@@ -50,11 +53,13 @@
         <div class="document-meta">
           <span class="status-label warning">People page incomplete</span>
           <span class="status-label warning">Board not yet published</span>
+          <span class="status-label warning">Legal status pending</span>
           <span class="status-label good">Pilot gates published</span>
         </div>
         <p>
           The site does not yet publish a complete named team or board. Until it does, public pilots
-          should be treated as research prototypes with conservative data collection.
+          should be treated as research prototypes with conservative data collection and no implied
+          institutional endorsement.
         </p>
       </aside>
     </section>
@@ -67,14 +72,17 @@
         <article class="public-card">
           <h3>Research claims</h3>
           <p>Research pages should include status, date, citation guidance, references, and known limits.</p>
+          <a href="research.html">Open research catalogue</a>
         </article>
         <article class="public-card">
           <h3>Pilot conduct</h3>
           <p>Dialogue and commitment pilots should follow the safeguards, review, and revocation rules.</p>
+          <a href="safeguards.html">Open safeguards</a>
         </article>
         <article class="public-card">
           <h3>Corrections</h3>
           <p>Material corrections should be routed through the contact path and reflected in page dates.</p>
+          <a href="changelog.html">Open changelog</a>
         </article>
       </div>
     </section>
@@ -86,8 +94,58 @@
       <p class="section-lede">
         No public funder list is currently published on this site. A production-quality institutional
         model should add funders, conflicts, nonprofit or corporate status, and decision rights before
-        claiming a Forethought-style trust posture.
+        asking visitors to rely on its pilot systems.
       </p>
+      <div class="button-row public-actions">
+        <a class="btn btn-primary" href="funding.html">Read funding status</a>
+        <a class="btn btn-secondary" href="legal.html">Read legal status</a>
+        <a class="btn btn-ghost" href="team.html">Read team status</a>
+      </div>
+    </section>
+
+    <section class="public-section">
+      <div class="section-head">
+        <h2>Governance artifacts</h2>
+        <p class="section-lede">
+          The site should expose the policies that make pilots bounded, reviewable, and reversible.
+        </p>
+      </div>
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Artifact</th>
+            <th>Current public location</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Moderation and dialogue policy</td>
+            <td><a href="safeguards.html#dialogue-policy">Safeguards</a></td>
+            <td>Pilot policy published; production detail pending.</td>
+          </tr>
+          <tr>
+            <td>Dispute review and revocation</td>
+            <td><a href="safeguards.html#follow-through">Safeguards</a></td>
+            <td>Pilot rules published; named reviewer pending.</td>
+          </tr>
+          <tr>
+            <td>Retention and deletion</td>
+            <td><a href="data-handling.html">Data handling</a></td>
+            <td>Default posture published; production retention schedule pending.</td>
+          </tr>
+          <tr>
+            <td>Pilot criteria and results</td>
+            <td><a href="pilot-results.html">Methods and pilot results</a></td>
+            <td>No empirical results published yet; reporting template published.</td>
+          </tr>
+          <tr>
+            <td>Public corrections</td>
+            <td><a href="changelog.html">Changelog</a></td>
+            <td>Changelog started; formal correction register pending.</td>
+          </tr>
+        </tbody>
+      </table>
     </section>
 
     <section class="public-section">
@@ -104,7 +162,7 @@
         <tbody>
           <tr>
             <td>Data collection</td>
-            <td>Publish storage, retention, export, deletion, and review procedures.</td>
+            <td>Publish storage, retention, export, deletion, review, and data-owner procedures.</td>
           </tr>
           <tr>
             <td>Commitments</td>
@@ -116,11 +174,27 @@
           </tr>
           <tr>
             <td>People and governance</td>
-            <td>Publish named responsible parties or explain anonymity with substitute trust signals.</td>
+            <td>Publish named responsible parties, legal status, funding, conflicts, and decision rights.</td>
           </tr>
         </tbody>
       </table>
     </section>
   </main>
+
+  <footer class="site-footer forethought-footer">
+    <div class="container">
+      <p><strong>Normativity Governance</strong> keeps pilot authority bounded while disclosures remain incomplete.</p>
+      <nav class="public-footer-links" aria-label="Footer navigation">
+        <a href="team.html">Team</a>
+        <a href="funding.html">Funding</a>
+        <a href="legal.html">Legal Status</a>
+        <a href="privacy.html">Privacy</a>
+        <a href="data-handling.html">Data Handling</a>
+        <a href="pilot-results.html">Pilot Results</a>
+        <a href="changelog.html">Changelog</a>
+        <a href="contact.html">Contact</a>
+      </nav>
+    </div>
+  </footer>
 </body>
 </html>
