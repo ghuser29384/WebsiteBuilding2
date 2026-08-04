@@ -1,0 +1,40 @@
+name: Vercel cost-control gate
+
+on:
+  pull_request:
+    paths:
+      - vercel.json
+      - scripts/vercel-ignore-build.mjs
+      - test/vercel-cost-controls.test.mjs
+      - .github/workflows/vercel-cost-controls.yml
+  push:
+    branches:
+      - main
+      - release/vercel-preview
+    paths:
+      - vercel.json
+      - scripts/vercel-ignore-build.mjs
+      - test/vercel-cost-controls.test.mjs
+      - .github/workflows/vercel-cost-controls.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: vercel-cost-controls-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Validate deployment controls
+        run: node --test test/vercel-cost-controls.test.mjs
